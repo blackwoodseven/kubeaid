@@ -1,0 +1,10 @@
+workerNodes:
+  maxSize: 3
+  minSize: 1
+  ami:
+    id: ami-03cd26c84ae9a587c
+  publicIP: false
+controlPlane:
+  ami:
+    id: ami-03cd26c84ae9a587c
+  publicIP: true
