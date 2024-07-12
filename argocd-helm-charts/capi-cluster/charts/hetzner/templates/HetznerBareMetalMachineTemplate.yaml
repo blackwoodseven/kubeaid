@@ -30,9 +30,33 @@ spec:
           size: 20G
         postInstallScript: |
           #!/bin/bash
+          if {{ .Values.robot.floating }}; then
+            wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+            chmod a+x /usr/local/bin/yq
+            touch /etc/netplan/60-floating-ip.yaml && chmod 600 /etc/netplan/60-floating-ip.yaml
+            interface_name=$(/usr/local/bin/yq '.network.ethernets.[] | key' /etc/netplan/01-netcfg.yaml)
+          cat << EOT > /etc/netplan/60-floating-ip.yaml
+          # Floating IP from Hetzner
+          network:
+            version: 2
+            renderer: networkd
+            ethernets:
+              $interface_name:
+                addresses:
+                - {{ .Values.controlPlaneEndpoint.host }}/32
+          EOT
+          fi
           mkdir -p /etc/cloud/cloud.cfg.d && touch /etc/cloud/cloud.cfg.d/99-custom-networking.cfg
           echo "network: { config: disabled }" > /etc/cloud/cloud.cfg.d/99-custom-networking.cfg
           apt-get update && apt-get install -y cloud-init apparmor apparmor-utils
+          cat << EOT > /etc/cloud/cloud.cfg.d/99-admin-ssh-keys.cfg
+          users:
+            - name: root
+              ssh_authorized_keys:
+              {{- range .Values.global.sshKeys }}
+               - {{ . }}
+              {{- end }}
+          EOT
           cloud-init clean --logs
       sshSpec:
         portAfterCloudInit: 22
@@ -42,4 +66,4 @@ spec:
             name: sshkey-name
             privateKey: ssh-privatekey
             publicKey: ssh-publickey
-          name: robot-ssh
+          name: capi-cluster-robot-ssh
