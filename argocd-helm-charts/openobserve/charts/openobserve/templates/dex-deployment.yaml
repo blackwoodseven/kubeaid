@@ -49,7 +49,6 @@ spec:
             timeoutSeconds: {{ .Values.probes.dex.config.livenessProbe.timeoutSeconds | default 10 }}
             successThreshold: {{ .Values.probes.dex.config.livenessProbe.successThreshold | default 1 }}
             failureThreshold: {{ .Values.probes.dex.config.livenessProbe.failureThreshold | default 3 }}
-            terminationGracePeriodSeconds: {{ .Values.probes.dex.config.livenessProbe.terminationGracePeriodSeconds | default 30 }}
           readinessProbe:
             httpGet:
               path: /healthz
@@ -77,8 +76,15 @@ spec:
             {{- end }}
       volumes:
         - name: config
-          configMap:
-            name: {{ include "openobserve.fullname" . }}-dex
+          secret:
+            {{- if .Values.externalSecret.enabled }}
+            secretName: {{ .Values.externalSecret.name }}
+            {{- else }}
+            secretName: {{ include "openobserve.fullname" . }}-dex
+            {{- end }}
+            items:
+              - key: dexConfig
+                path: config.docker.yaml
             
       {{- with .Values.enterprise.dex.nodeSelector }}
       nodeSelector:
