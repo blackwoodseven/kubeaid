@@ -377,6 +377,15 @@ local kp =
   } +
   {
     prometheus+: {
+      clusterRole+: {
+        rules+: [
+          {
+            apiGroups: [''],
+            resources: ['pods', 'services', 'endpoints'],
+            verbs: ['get', 'list', 'watch'],
+          },
+        ],
+    },
       prometheus+: {
         spec+: {
           externalUrl: if std.objectHas(vars, 'prometheus_ingress_host') then (
