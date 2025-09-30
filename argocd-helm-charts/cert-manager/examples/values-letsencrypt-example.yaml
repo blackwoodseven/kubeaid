@@ -1,0 +1,50 @@
+# Example Let's Encrypt Configuration for cert-manager
+# ===================================================
+# This file demonstrates how to configure Let's Encrypt as a certificate issuer
+# for cert-manager. This is an example file and should be customized for your
+# specific environment.
+#
+# To use this configuration:
+# 1. Copy this file to values-letsencrypt.yaml
+# 2. Update the email address and other values as needed
+# 3. Add the ClusterIssuer template to the cert-manager chart
+# 4. Reference this values file in the ArgoCD Application
+
+# Let's Encrypt Production ClusterIssuer
+letsencryptProd:
+  enabled: true
+  name: letsencrypt-prod
+  email: admin@example.com  # Replace with your email
+  server: https://acme-v02.api.letsencrypt.org/directory
+  privateKeySecretRef:
+    name: letsencrypt-prod
+  solvers:
+    - http01:
+        ingress:
+          class: traefik  # Adjust based on your ingress controller
+
+# Let's Encrypt Staging ClusterIssuer (for testing)
+letsencryptStaging:
+  enabled: false  # Set to true for testing
+  name: letsencrypt-staging
+  email: admin@example.com  # Replace with your email
+  server: https://acme-staging-v02.api.letsencrypt.org/directory
+  privateKeySecretRef:
+    name: letsencrypt-staging
+  solvers:
+    - http01:
+        ingress:
+          class: traefik  # Adjust based on your ingress controller
+
+# Additional configuration options
+certManager:
+  # Global configuration for cert-manager
+  global:
+    leaderElection:
+      namespace: cert-manager
+  # Webhook configuration
+  webhook:
+    securePort: 10250
+  # CA injector configuration
+  cainjector:
+    enabled: true
