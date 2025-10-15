@@ -240,8 +240,26 @@ kubectl apply -f argocdrepo-myreponame.yaml -n argocd
 
 ## Configure argocd with keycloak
 
-* Doc: https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/keycloak/
+* Upstream doc: https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/keycloak/#keycloak-and-argocd-with-pkce
 
+  - Follow upstream doc - for setting up keycloak client and groups
+    NB. You must choose the realm your users are in - NOT master realm.
+  - add 'your version of this' - to argocd values file,under argocd.configs:
+  ```
+      rbac:
+      policy.csv: |
+        g, ArgoCDAdmins, role:admin
+        g, ArgoCDDevs, role:readonly
+      scopes: '[groups, email]'
+    cm:
+      oidc.config: |
+        name: Keycloak
+        issuer: https://keycloak.obmondo.com/auth/realms/Obmondo
+        clientID: argocd
+        clientSecret: $oidc.keycloak.clientSecret
+        requestedScopes: ["openid", "profile", "email", "groups"]
+  ```
+  - update/create argocd-secret
   ```sh
   bcrypt-tool hash "lolpassword" 10
 
