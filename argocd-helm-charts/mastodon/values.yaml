@@ -1,0 +1,113 @@
+mastodon:
+  # Domain configuration
+  local_domain: ""
+
+  # Disable bundled databases - we use postgres-operator and redis-operator
+  postgresql:
+    enabled: false
+    postgresqlHostname: "mastodon-pgsql-rw"
+    postgresqlPort: 5432
+    auth:
+      database: mastodon
+      username: mastodon
+      existingSecret: "mastodon-pgsql-app"
+      secretKeys:
+        userPasswordKey: password
+
+  redis:
+    enabled: false
+    hostname: "mastodon-mastodon-redis-leader"
+    port: 6379
+
+  elasticsearch:
+    enabled: false
+
+  # Mastodon secrets
+  secrets:
+    secret_key_base: ""
+    otp_secret: ""
+    vapid:
+      private_key: ""
+      public_key: ""
+    activeRecordEncryption:
+      primaryKey: ""
+      deterministicKey: ""
+      keyDerivationSalt: ""
+    existingSecret: ""
+
+  # SMTP configuration
+  smtp:
+    server: ""
+    port: 587
+    from_address: ""
+    domain: ""
+    auth_method: plain
+    enable_starttls: auto
+    login: ""
+    password: ""
+    existingSecret: ""
+
+  # S3 configuration for media storage using SeaweedFS
+  s3:
+    enabled: true
+    bucket: "mastodon-media"
+    endpoint: "http://seaweedfs-s3.seaweedfs.svc.cluster.local:8333"
+    hostname: ""
+    region: "us-east-1"
+    protocol: http
+    access_key_id: ""
+    secret_access_key: ""
+    existingSecret: ""
+    alias_host: ""
+
+  # Streaming configuration
+  streaming:
+    replicas: 1
+
+  # Web configuration
+  web:
+    replicas: 1
+
+  # Sidekiq configuration
+  sidekiq:
+    replicas: 1
+
+  # Ingress configuration - OVERRIDE in customer config
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      kubernetes.io/ingress.class: nginx
+    hosts:
+      - host: ""
+        paths:
+          - path: '/'
+    tls:
+      - secretName: mastodon-tls
+        hosts:
+          - ""
+
+# PostgreSQL operator configuration
+postgres:
+  enabled: true
+  instance: 1
+  size: 10Gi
+  recover: false
+  bootstrap:
+    initdb:
+      database: mastodon
+      owner: mastodon
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: 500m
+    requests:
+      memory: 256Mi
+      cpu: 100m
+
+# Redis cluster configuration
+redisCluster:
+  enabled: true
+  replicas: 1
+  name: mastodon-redis
+  storage: 2Gi
