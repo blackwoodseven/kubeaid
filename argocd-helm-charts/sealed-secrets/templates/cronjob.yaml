@@ -31,13 +31,16 @@ spec:
             env:
           {{- if eq .Values.backup.provider "aws" }}
           {{- if not .Values.backup.kube2iamRole }}
-            - name: AWS_ACCESS_KEY_ID
-              value: {{ .Values.backup.access_key_id }}
-            - name: AWS_SECRET_ACCESS_KEY
+            - name: S3_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.backup.access_secret | default "backup-sealed-secrets-pod-env" }}
-                  key: AWS_SECRET_ACCESS_KEY
+                  name: {{ .Values.backup.s3Secret | default "backup-sealed-secrets-s3-credentials" }}
+                  key: S3_ACCESS_KEY_ID
+            - name: S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.backup.s3Secret | default "backup-sealed-secrets-s3-credentials" }}
+                  key: S3_SECRET_ACCESS_KEY
           {{- end }}
           {{- end }}
           {{- if eq .Values.backup.provider "azure" }}

@@ -13,12 +13,16 @@ data:
 
     # Check the provider and upload the file
     if [ $PROVIDER == "aws" ]; then
-      destination_bucket="s3://{{ .Values.backup.backupBucket }}/$(date +%Y%m%d).gz"
-      {{- if .Values.backup.s3endpoint }}
-      ENDPOINT="--endpoint-url={{ .Values.backup.s3endpoint }}"
+      # Set AWS environment variables from S3-generic ones for AWS CLI compatibility
+      export AWS_ACCESS_KEY_ID=$S3_ACCESS_KEY_ID
+      export AWS_SECRET_ACCESS_KEY=$S3_SECRET_ACCESS_KEY
+      
+      destination_bucket="s3://{{ .Values.backup.s3Bucket }}/$(date +%Y%m%d).gz"
+      {{- if .Values.backup.s3Endpoint }}
+      ENDPOINT="--endpoint-url={{ .Values.backup.s3Endpoint }}"
       {{ end }}
-      echo "Copying the sealed-secret backup to aws s3"
-      aws {{- if .Values.backup.s3endpoint }} $ENDPOINT{{- end }} s3 cp "$TEMP.gz" $destination_bucket
+      echo "Copying the sealed-secret backup to S3-compatible storage"
+      aws {{- if .Values.backup.s3Endpoint }} $ENDPOINT{{- end }} s3 cp "$TEMP.gz" $destination_bucket
     
     elif [ $PROVIDER == "azure" ]; then
       destination_container="{{ .Values.backup.destinationContainer }}"
