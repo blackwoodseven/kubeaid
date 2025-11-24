@@ -1,3 +1,5 @@
+{{- if .Values.postgresql.backups.enabled }}
+
 {{- $backups := .Values.postgresql.backups }}
 
 {{/* NOTE : While it is technically possible to reuse the same ObjectStore for multiple Cluster
@@ -51,3 +53,4 @@ spec:
       maxParallel: 8
 
   retentionPolicy: {{ $backups.retentionPolicy }}
+{{- end }}
