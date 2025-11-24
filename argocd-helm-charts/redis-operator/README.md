@@ -13,6 +13,8 @@ It has Custom Resource named:
 
 To support HA in every scenerio.
 
+You need to apply the above CRDs via server-side apply to avoid huge metadata annotations,
+
 ### upstream status
 
 Project is active.
