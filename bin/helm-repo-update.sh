@@ -20,15 +20,17 @@ fi
 
 for program in helm tar yq git; do
   if ! command -v "$program" >/dev/null; then
-    echo "Missing $program"
+    echo "Error: Required program '$program' is not installed or not in PATH"
+    echo "Please install $program and try again"
     exit 1
   fi
 done
 
-helm_version=$(helm version --template="{{.Version}}" | sed 's/[^[:alnum:]]\+//g; s/v//')
+helm_version_full=$(helm version --template="{{.Version}}" | sed 's/^v//')
+helm_version=$(echo "$helm_version_full" | awk -F. '{printf "%d%02d%02d", $1, $2, $3}')
 
-if [ ! "$helm_version" -ge "380" ] ; then
-  echo "I'm expecting helm version to be greater than 3.8.0"
+if [ "$helm_version" -lt "30800" ] ; then
+  echo "Error: Helm version must be >= 3.8.0 (found: $helm_version_full)"
   exit 1
 fi
 
@@ -70,6 +72,12 @@ while [[ $# -gt 0 ]]; do
       UPDATE_ALL=true
       ;;
     --update-helm-chart)
+      if [[ $# -eq 0 || "$1" =~ ^-- ]]; then
+        echo "Error: --update-helm-chart requires a chart name"
+        ARGFAIL
+        exit 1
+      fi
+
       UPDATE_HELM_CHART=$1
 
       if ! test -d "$ARGOCD_CHART_PATH/$UPDATE_HELM_CHART"; then
@@ -86,11 +94,20 @@ while [[ $# -gt 0 ]]; do
       ACTIONS=true
       ;;
     --skip-charts)
-      SKIP_CHARTS=$1
-
-      shift
+      if [[ $# -gt 0 && ! "$1" =~ ^-- ]]; then
+        SKIP_CHARTS=$1
+        shift
+      else
+        echo "Warning: --skip-charts provided without value, skipping no charts"
+      fi
       ;;
     --chart-version)
+      if [[ $# -eq 0 || "$1" =~ ^-- ]]; then
+        echo "Error: --chart-version requires a version number"
+        ARGFAIL
+        exit 1
+      fi
+
       CHART_VERSION=$1
 
       shift
@@ -110,8 +127,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Build an array based on the input
-IFS=',' read -ra SKIP_HELM_CHARTS <<< "$SKIP_CHARTS"
+# Build an array based on the input (safe for empty values)
+if [ -n "$SKIP_CHARTS" ]; then
+  IFS=',' read -ra SKIP_HELM_CHARTS <<< "$SKIP_CHARTS"
+else
+  SKIP_HELM_CHARTS=()
+fi
 
 # Function to get the current version from CHANGELOG.md
 get_current_version() {
@@ -185,12 +206,14 @@ function update_helm_chart {
   HELM_CHART_DEP_PRESENT=$(yq eval '.dependencies | length' "$HELM_CHART_YAML")
   HELM_CHART_DEP_PATH="$HELM_CHART_PATH/charts"
 
-  for SKIP_HELM_CHART in "${SKIP_HELM_CHARTS[@]}"; do
-      if [ "$HELM_REPO_NAME" == "$SKIP_HELM_CHART" ]; then
-          echo "Skipping $SKIP_HELM_CHART"
-          return
-      fi
-  done
+  if [ ${#SKIP_HELM_CHARTS[@]} -gt 0 ]; then
+    for SKIP_HELM_CHART in "${SKIP_HELM_CHARTS[@]}"; do
+        if [ "$HELM_REPO_NAME" == "$SKIP_HELM_CHART" ]; then
+            echo "Skipping $SKIP_HELM_CHART"
+            return
+        fi
+    done
+  fi
 
   # This chart does not have any dependencies, so lets not do helm dep up
   if [ "$HELM_CHART_DEP_PRESENT" -ne 0 ]; then
