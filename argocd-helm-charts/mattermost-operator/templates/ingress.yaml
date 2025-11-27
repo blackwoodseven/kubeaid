@@ -19,7 +19,7 @@ spec:
       - path: /
         backend:
           service:
-            name: mattermost-team-edition
+            name: mattermost
             port:
               number: 8989
         pathType: Prefix

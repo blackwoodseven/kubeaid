@@ -7,6 +7,15 @@ spec:
   imagePullPolicy: {{ .Values.mattermost.imagePullPolicy | default "IfNotPresent" }}
   version: {{ .Values.mattermost.version | default "10.9.4" }}
   size: {{ .Values.mattermost.size | default "5000users" }}
+  podExtensions:
+    {{- if .Values.mattermost.extraPorts }}
+    containerPorts:
+      {{- range .Values.mattermost.extraPorts }}
+      - name: {{ .name }}
+        containerPort: {{ .containerPort }}
+        protocol: {{ .protocol | default "TCP" }}
+      {{- end }}
+    {{- end }}
   scheduling:
     resources:
 {{ toYaml .Values.mattermost.resources | indent 6 }}
