@@ -1,0 +1,2 @@
+openproject:
+    tmpVolumesStorageClassName: {{ .Values.openproject.tmpVolumesStorageClassName | default .Values.persistence.storages.openproject.storageClassName }}
