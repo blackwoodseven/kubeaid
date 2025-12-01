@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "puppetserver.fullname" . }}-puppet-agent-exporter
+  name: puppet-agent-exporter
 spec:
   selector:
     matchLabels:

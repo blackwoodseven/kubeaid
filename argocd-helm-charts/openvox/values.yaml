@@ -81,9 +81,6 @@ puppetserver:
         size: 8Gi
   r10k:
     asSidecar: false
-    code:
-      cronJob:
-        schedule: "*/2 * * * *"
     hiera:
       cronJob:
         schedule: "*/2 * * * *"
@@ -158,3 +155,23 @@ puppetAgentExporter:
 
 blackbox:
   probe: true
+
+# Note: g10k is just a replacement of r10k
+# helm chart has not support to completely disable r10k
+# so adding a configmap for now
+g10k:
+  enabled: true
+  schedule: "*/2 * * * *"
+  image:
+    tag: v0.9.10
+    repository: ghcr.io/obmondo/g10k
+  code:
+    args:
+      - /etc/puppetlabs/puppet/r10k_code_entrypoint.sh;
+    extraSettings: {}
+    cronJob:
+      enabled: true
+      schedule: "*/5 * * * *"
+      splay: false
+      splayLimit: 60
+      successFile: ~/.r10k_hiera_cronjob.success

@@ -1,0 +1,40 @@
+{{- if .Values.g10k.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "puppetserver.name" . }}-g10k
+spec:
+  suspend: false
+  schedule: {{ .Values.g10k.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          volumes:
+            - name: puppet-code-storage
+              persistentVolumeClaim:
+                claimName: {{ template "puppetserver.name" . }}-code-claim
+            - name: g10k-code-volume
+              configMap:
+                name: {{ include "puppetserver.name" . }}-g10k-code-config
+          restartPolicy: OnFailure
+          containers:
+            - name: {{ include "puppetserver.name" . }}-g10k
+              securityContext:
+                {{- toYaml .Values.g10k.securityContext | nindent 16 }}
+              image: "{{ .Values.g10k.image.repository }}:{{ .Values.g10k.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.g10k.image.pullPolicy }}
+              args:
+                - /usr/local/bin/g10k -verbose -clonegit -tags -config /etc/puppetlabs/puppet/g10k_code.yaml
+              resources:
+                {{- toYaml .Values.g10k.resources | nindent 16 }}
+              volumeMounts:
+                - name: puppet-code-storage
+                  mountPath: /etc/puppetlabs/code/
+                - name: g10k-code-volume
+                  mountPath: /etc/puppetlabs/puppet/g10k_code.yaml
+                  subPath: g10k_code.yaml
+{{- end }}
