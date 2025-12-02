@@ -80,6 +80,7 @@ puppetserver:
       code:
         size: 8Gi
   r10k:
+    enabled: false
     asSidecar: false
     hiera:
       cronJob:
@@ -162,6 +163,8 @@ blackbox:
 g10k:
   enabled: true
   schedule: "*/2 * * * *"
+  podSecurityContext:
+    runAsNonRoot: true
   image:
     tag: v0.9.10
     repository: ghcr.io/obmondo/g10k
@@ -175,3 +178,58 @@ g10k:
       splay: false
       splayLimit: 60
       successFile: ~/.r10k_hiera_cronjob.success
+    extraRepos: {}
+    defaultRepoExtraConf: {}
+    viaHttps:
+      credentials:
+        netrc:
+          ## A multi-line string
+          value:  # |
+            #  NETRC CONTENTS
+        ## or set the r10k netrc file
+        ## from a pre-existing K8s secret
+        ## NOTE: Using this secret supercedes all other credentials settings.
+        existingSecret: ""
+    viaSsh:
+      credentials:
+        ssh:
+          ## A multi-line string
+          value:  # |
+            #  PRIV_KEY CONTENTS
+        known_hosts:
+          ## A multi-line string
+          value:  # |
+            #  KNOWN_HOSTS CONTENTS
+        ## or set the r10k known hosts file and SSH Private Key
+        ## from a pre-existing K8s secret
+        ## NOTE: Using this secret supercedes all other credentials settings.
+        existingSecret: ""
+  hiera:
+    extraEnvSecret: ""
+    extraSettings: {}
+    extraRepos: {}
+    defaultRepoExtraConf: {}
+    viaHttps:
+      credentials:
+        netrc:
+          ## A multi-line string
+          value:  # |
+            #  NETRC CONTENTS
+        ## or set the r10k netrc file
+        ## from a pre-existing K8s secret
+        ## NOTE: Using this secret supercedes all other credentials settings.
+        existingSecret: ""
+    viaSsh:
+      credentials:
+        ssh:
+          ## A multi-line string
+          value:  # |
+            #  PRIV_KEY CONTENTS
+        known_hosts:
+          ## A multi-line string
+          value:  # |
+            #  KNOWN_HOSTS CONTENTS
+        ## or set the r10k known hosts file and SSH Private Key
+        ## from a pre-existing K8s secret
+        ## NOTE: Using this secret supercedes all other credentials settings.
+        existingSecret: ""

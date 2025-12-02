@@ -13,16 +13,61 @@ spec:
     spec:
       template:
         spec:
+          securityContext:
+            {{- toYaml .Values.g10k.podSecurityContext | nindent 12 }}
+            runAsUser: {{ .Values.puppetserver.global.securityContext.runAsUser }}
+            runAsGroup: {{ .Values.puppetserver.global.securityContext.runAsGroup }}
+            fsGroup: {{ .Values.puppetserver.global.securityContext.fsGroup }}
           volumes:
             - name: puppet-code-storage
               persistentVolumeClaim:
                 claimName: {{ template "puppetserver.name" . }}-code-claim
-            - name: g10k-code-volume
+            - name: g10k-config-volume
               configMap:
-                name: {{ include "puppetserver.name" . }}-g10k-code-config
+                name: {{ include "puppetserver.name" . }}-g10k-config
+            {{- if or (.Values.g10k.code.viaSsh.credentials.existingSecret) (and (.Values.g10k.code.viaSsh.credentials.ssh.value) (.Values.g10k.code.viaSsh.credentials.known_hosts.value)) }}
+            - name: g10k-code-ssh
+              secret:
+                secretName: {{ .Values.g10k.code.viaSsh.credentials.existingSecret }}
+                defaultMode: 288 # = mode 0440
+                items:
+                  - key: id_rsa
+                    path: id_rsa
+                  - key: known_hosts
+                    path: known_hosts
+            {{- end }}
+            {{- if or .Values.g10k.code.viaHttps.credentials.existingSecret .Values.g10k.code.viaHttps.credentials.netrc.value }}
+            - name: g10k-code-netrc
+              secret:
+                secretName: {{ .Values.g10k.code.viaHttps.credentials.existingSecret }}
+                defaultMode: 288 # = mode 0440
+                items:
+                  - key: netrc
+                    path: .netrc
+            {{- end }}
+            {{- if or (.Values.g10k.hiera.viaSsh.credentials.existingSecret) (and (.Values.g10k.hiera.viaSsh.credentials.ssh.value) (.Values.g10k.hiera.viaSsh.credentials.known_hosts.value)) }}
+            - name: g10k-hiera-ssh
+              secret:
+                secretName: {{ .Values.g10k.hiera.viaSsh.credentials.existingSecret }}
+                defaultMode: 288 # = mode 0440
+                items:
+                  - key: id_rsa
+                    path: id_rsa
+                  - key: known_hosts
+                    path: known_hosts
+            {{- end }}
+            {{- if or .Values.g10k.hiera.viaHttps.credentials.existingSecret .Values.g10k.hiera.viaHttps.credentials.netrc.value }}
+            - name: g10k-hiera-netrc
+              secret:
+                secretName: {{ .Values.g10k.hiera.viaHttps.credentials.existingSecret }}
+                defaultMode: 288 # = mode 0440
+                items:
+                  - key: netrc
+                    path: .netrc
+            {{- end }}
           restartPolicy: OnFailure
           containers:
-            - name: {{ include "puppetserver.name" . }}-g10k
+            - name: g10k-code
               securityContext:
                 {{- toYaml .Values.g10k.securityContext | nindent 16 }}
               image: "{{ .Values.g10k.image.repository }}:{{ .Values.g10k.image.tag | default .Chart.AppVersion }}"
@@ -34,7 +79,49 @@ spec:
               volumeMounts:
                 - name: puppet-code-storage
                   mountPath: /etc/puppetlabs/code/
-                - name: g10k-code-volume
+                - name: g10k-config-volume
                   mountPath: /etc/puppetlabs/puppet/g10k_code.yaml
                   subPath: g10k_code.yaml
+               {{- with .Values.g10k.code.viaSsh.credentials }}
+               {{- if or (.existingSecret) (and (.ssh.value) (.known_hosts.value)) }}
+               - name: g10k-code-ssh
+                 mountPath: /home/puppet/.ssh
+               {{- end }}
+               {{- end }}
+               {{- with .Values.g10k.code.viaHttps.credentials }}
+               {{- if or .existingSecret .netrc.value }}
+               - name: g10k-code-netrc
+                 mountPath: /home/puppet/.netrc
+                 subPath: .netrc
+               {{- end }}
+               {{- end }}
+            - name: g10k-hiera
+              securityContext:
+                {{- toYaml .Values.g10k.securityContext | nindent 16 }}
+              image: "{{ .Values.g10k.image.repository }}:{{ .Values.g10k.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.g10k.image.pullPolicy }}
+              args:
+                - /usr/local/bin/g10k -verbose -clonegit -tags -config /etc/puppetlabs/puppet/g10k_hiera.yaml
+              resources:
+                {{- toYaml .Values.g10k.resources | nindent 16 }}
+              volumeMounts:
+                - name: puppet-code-storage
+                  mountPath: /etc/puppetlabs/code/
+                - name: g10k-config-volume
+                  mountPath: /etc/puppetlabs/puppet/g10k_hiera.yaml
+                  subPath: g10k_hiera.yaml
+                {{- with .Values.g10k.hiera.viaSsh.credentials }}
+                {{- if or (.existingSecret) (and (.ssh.value) (.known_hosts.value)) }}
+                - name: g10k-hiera-ssh
+                  mountPath: /home/puppet/.ssh
+                {{- end }}
+                {{- end }}
+                {{- with .Values.g10k.hiera.viaHttps.credentials }}
+                {{- if or .existingSecret .netrc.value }}
+                - name: g10k-hiera-netrc
+                  mountPath: /home/puppet/.netrc
+                  subPath: .netrc
+                {{- end }}
+                {{- end }}
+
 {{- end }}

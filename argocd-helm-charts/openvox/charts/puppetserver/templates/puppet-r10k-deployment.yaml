@@ -1,4 +1,4 @@
-{{- if and .Values.puppetserver.puppeturl (not .Values.r10k.asSidecar) (or ( eq .Values.puppetserver.compilers.kind "Deployment" ) ( not .Values.puppetserver.compilers.enabled ) ) }}
+{{- if and .Values.r10k.enabled .Values.puppetserver.puppeturl (not .Values.r10k.asSidecar) (or ( eq .Values.puppetserver.compilers.kind "Deployment" ) ( not .Values.puppetserver.compilers.enabled ) ) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,7 +36,6 @@ spec:
         runAsGroup: {{ .Values.global.securityContext.runAsGroup }}
         fsGroup: {{ .Values.global.securityContext.fsGroup }}
       containers:
-        {{- if .Values.r10k.enabled }}
         - name: r10k-code
           image: "{{ tpl .Values.r10k.image . }}:{{ tpl .Values.r10k.tag . }}"
           imagePullPolicy: {{ tpl .Values.r10k.imagePullPolicy . }}
@@ -112,7 +111,6 @@ spec:
             timeoutSeconds: 5
           securityContext:
             {{- toYaml .Values.r10k.containerSecurityContext | nindent 12 }}
-        {{- end }}
         {{- if (include "hiera.enable" .) }}
         - name: r10k-hiera
           image: "{{ tpl .Values.r10k.image . }}:{{ tpl .Values.r10k.tag . }}"
