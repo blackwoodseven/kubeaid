@@ -16,7 +16,7 @@ mastodon:
 
   redis:
     enabled: false
-    hostname: "mastodon-mastodon-redis-leader"
+    hostname: "mastodon-redis"
     port: 6379
 
   elasticsearch:
@@ -105,9 +105,14 @@ postgres:
       memory: 256Mi
       cpu: 100m
 
-# Redis cluster configuration
+# Redis cluster configuration (requires 3+ masters, use redis_standalone for single instance)
 redisCluster:
-  enabled: true
-  replicas: 1
+  enabled: false
+  replicas: 3
   name: mastodon-redis
+  storage: 2Gi
+
+# Redis standalone configuration
+redis_standalone:
+  enabled: true
   storage: 2Gi
