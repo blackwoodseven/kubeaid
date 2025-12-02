@@ -1,4 +1,4 @@
-{{- if (include "hiera.enable" .) }}
+{{- if and .Values.r10k.enabled (include "hiera.enable" .) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

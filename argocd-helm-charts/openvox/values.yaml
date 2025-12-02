@@ -171,21 +171,6 @@ g10k:
   code:
     args:
       - /etc/puppetlabs/puppet/r10k_code_entrypoint.sh;
-    extraSettings: {}
-    cronJob:
-      enabled: true
-      schedule: "*/5 * * * *"
-      splay: false
-      splayLimit: 60
-      successFile: ~/.r10k_hiera_cronjob.success
-    extraRepos: {}
-    defaultRepoExtraConf: {}
-    viaHttps:
-      credentials:
-        netrc:
-          ## A multi-line string
-          value:  # |
-        existingSecret: ""
     viaSsh:
       credentials:
         ssh:
@@ -196,16 +181,7 @@ g10k:
           value:  # |
         existingSecret: ""
   hiera:
-    extraEnvSecret: ""
-    extraSettings: {}
-    extraRepos: {}
-    defaultRepoExtraConf: {}
-    viaHttps:
-      credentials:
-        netrc:
-          ## A multi-line string
-          value:  # |
-        existingSecret: ""
+    extraRepository: {}
     viaSsh:
       credentials:
         ssh:
