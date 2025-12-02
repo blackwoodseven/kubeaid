@@ -185,24 +185,15 @@ g10k:
         netrc:
           ## A multi-line string
           value:  # |
-            #  NETRC CONTENTS
-        ## or set the r10k netrc file
-        ## from a pre-existing K8s secret
-        ## NOTE: Using this secret supercedes all other credentials settings.
         existingSecret: ""
     viaSsh:
       credentials:
         ssh:
           ## A multi-line string
           value:  # |
-            #  PRIV_KEY CONTENTS
         known_hosts:
           ## A multi-line string
           value:  # |
-            #  KNOWN_HOSTS CONTENTS
-        ## or set the r10k known hosts file and SSH Private Key
-        ## from a pre-existing K8s secret
-        ## NOTE: Using this secret supercedes all other credentials settings.
         existingSecret: ""
   hiera:
     extraEnvSecret: ""
@@ -214,22 +205,13 @@ g10k:
         netrc:
           ## A multi-line string
           value:  # |
-            #  NETRC CONTENTS
-        ## or set the r10k netrc file
-        ## from a pre-existing K8s secret
-        ## NOTE: Using this secret supercedes all other credentials settings.
         existingSecret: ""
     viaSsh:
       credentials:
         ssh:
           ## A multi-line string
           value:  # |
-            #  PRIV_KEY CONTENTS
         known_hosts:
           ## A multi-line string
           value:  # |
-            #  KNOWN_HOSTS CONTENTS
-        ## or set the r10k known hosts file and SSH Private Key
-        ## from a pre-existing K8s secret
-        ## NOTE: Using this secret supercedes all other credentials settings.
         existingSecret: ""
