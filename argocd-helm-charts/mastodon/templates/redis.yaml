@@ -1,8 +1,8 @@
-{{- if .Values.redis_standalone.enabled }}
+{{- if and .Values.redis.enabled (eq .Values.redis.mode "standalone") }}
 apiVersion: redis.redis.opstreelabs.in/v1beta2
 kind: Redis
 metadata:
-  name: {{ .Release.Name }}-redis
+  name: {{ .Values.redis.name | default (printf "%s-redis" .Release.Name) }}
 spec:
   kubernetesConfig:
     image: quay.io/opstree/redis:v7.2.6
@@ -23,8 +23,98 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: {{ .Values.redis_standalone.storage | default "1Gi" }}
+            storage: {{ .Values.redis.storage | default "2Gi" }}
   podSecurityContext:
     runAsUser: 1000
     fsGroup: 1000
+{{- else if and .Values.redis.enabled (eq .Values.redis.mode "cluster") }}
+apiVersion: redis.redis.opstreelabs.in/v1beta2
+kind: RedisCluster
+metadata:
+  name: {{ .Values.redis.name | default (printf "%s-redis" .Release.Name) }}
+spec:
+  clusterSize: {{ .Values.redis.replicas | default 3 }}
+  clusterVersion: v7
+  persistenceEnabled: true
+  podSecurityContext:
+    runAsUser: 1000
+    fsGroup: 1000
+  kubernetesConfig:
+    image: quay.io/opstree/redis:v7.2.6
+    imagePullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 101m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+  redisExporter:
+    enabled: false
+    image: quay.io/opstree/redis-exporter:v1.44.0
+    imagePullPolicy: Always
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+  storage:
+    volumeClaimTemplate:
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.redis.storage | default "2Gi" }}
+    nodeConfVolume: true
+    nodeConfVolumeClaimTemplate:
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.redis.storage | default "2Gi" }}
+{{- else if and .Values.redisCluster .Values.redisCluster.enabled }}
+apiVersion: redis.redis.opstreelabs.in/v1beta2
+kind: RedisCluster
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.redisCluster.name }}
+spec:
+  clusterSize: {{ .Values.redisCluster.replicas }}
+  clusterVersion: v7
+  persistenceEnabled: true
+  podSecurityContext:
+    runAsUser: 1000
+    fsGroup: 1000
+  kubernetesConfig:
+    image: quay.io/opstree/redis:v7.2.6
+    imagePullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 101m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+  redisExporter:
+    enabled: false
+    image: quay.io/opstree/redis-exporter:v1.44.0
+    imagePullPolicy: Always
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+  storage:
+    volumeClaimTemplate:
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.redisCluster.storage }}
+    nodeConfVolume: true
+    nodeConfVolumeClaimTemplate:
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.redisCluster.storage }}
 {{- end }}

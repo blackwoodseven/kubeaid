@@ -105,14 +105,11 @@ postgres:
       memory: 256Mi
       cpu: 100m
 
-# Redis cluster configuration (requires 3+ masters, use redis_standalone for single instance)
-redisCluster:
-  enabled: false
-  replicas: 3
+# Redis operator configuration
+# mode: "standalone" (single instance) or "cluster"
+redis:
+  enabled: true
+  mode: standalone  # standalone | cluster
   name: mastodon-redis
   storage: 2Gi
-
-# Redis standalone configuration
-redis_standalone:
-  enabled: true
-  storage: 2Gi
+  replicas: 3  # Only used when mode=cluster (minimum 3 for cluster mode)
