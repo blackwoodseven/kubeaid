@@ -1,6 +1,14 @@
 ---
 version: 2
 
+before:
+  hooks:
+    # Update all Helm charts before building
+    - bash bin/helm-repo-update.sh
+
+builds:
+  - skip: true
+
 changelog:
   use: gitea
   sort: asc
@@ -17,16 +25,37 @@ changelog:
     - title: 💫 Features
       regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
       order: 0
-    - title: 🐛 Bug fixes
+    - title: 🐛 Fixes
       regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
       order: 1
-    - title: 🎭 Puppet Modules
-      regexp: '^chore:\s(pin|update|added)\spuppet-.*'
+    - title: 🐛 Docs
+      regexp: '^.*?doc(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: 🎭 Major Version Upgrades
+      regexp: '^Major.*$'
+      order: 996
+    - title: 🎭 Minor Version Upgrades
+      regexp: '^Minor.*$'
+      order: 997
+    - title: 🎭 Patch Version Upgrades
+      regexp: '^Patched.*$'
       order: 998
     - title: 🥴 Others
       order: 999
-builds:
-  - skip: true
+
+
+release:
+  github:
+    owner: obmondo
+    name: kubeaid
+  prerelease: auto
+  make_latest: true
+  header: |
+    ## Release {{ .Tag }}
+
+    This release includes automated Helm chart updates.
+  footer: |
+    **Full Changelog**: https://github.com/obmondo/kubeaid/compare/{{ .PreviousTag }}...{{ .Tag }}
 
 gitea_urls:
   api: https://gitea.obmondo.com/api/v1
