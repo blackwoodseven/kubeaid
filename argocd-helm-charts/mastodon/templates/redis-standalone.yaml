@@ -1,21 +1,15 @@
-{{- if and .Values.redis.enabled (eq .Values.redis.mode "cluster") }}
+{{- if and .Values.redis.enabled (eq .Values.redis.mode "standalone") }}
 apiVersion: redis.redis.opstreelabs.in/v1beta2
-kind: RedisCluster
+kind: Redis
 metadata:
   name: {{ .Values.redis.name | default (printf "%s-redis" .Release.Name) }}
 spec:
-  clusterSize: {{ .Values.redis.replicas | default 3 }}
-  clusterVersion: v7
-  persistenceEnabled: true
-  podSecurityContext:
-    runAsUser: 1000
-    fsGroup: 1000
   kubernetesConfig:
     image: quay.io/opstree/redis:v7.2.6
     imagePullPolicy: IfNotPresent
     resources:
       requests:
-        cpu: 101m
+        cpu: 100m
         memory: 128Mi
       limits:
         memory: 256Mi
@@ -23,12 +17,6 @@ spec:
     enabled: false
     image: quay.io/opstree/redis-exporter:v1.44.0
     imagePullPolicy: Always
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        memory: 256Mi
   storage:
     volumeClaimTemplate:
       spec:
@@ -36,11 +24,7 @@ spec:
         resources:
           requests:
             storage: {{ .Values.redis.storage | default "2Gi" }}
-    nodeConfVolume: true
-    nodeConfVolumeClaimTemplate:
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: {{ .Values.redis.storage | default "2Gi" }}
+  podSecurityContext:
+    runAsUser: 1000
+    fsGroup: 1000
 {{- end }}
