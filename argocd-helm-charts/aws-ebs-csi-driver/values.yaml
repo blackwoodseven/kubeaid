@@ -1,5 +1,4 @@
 aws-ebs-csi-driver:
-  networkpolicies: false
   controller:
     revisionHistoryLimit: 0
   node:
