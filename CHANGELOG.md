@@ -2,6 +2,36 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## 20.1.2
+### Features
+- [`4e23594a81ea25d125ac0cd56ebee84f17998b7e`](../../commit/4e23594a81ea25d125ac0cd56ebee84f17998b7e) Add support for adding extra ports
+- [`95222a31d6d5814b5603c8e8bff802fd8bed1c36`](../../commit/95222a31d6d5814b5603c8e8bff802fd8bed1c36) feat: Add Mastodon Helm chart
+- [`a171cd469544fffe023e880ee7c733cc631a89f1`](../../commit/a171cd469544fffe023e880ee7c733cc631a89f1) feat: g10k puppet/openvox code support added
+- [`285bdc712fb6bccc1b002566c1f4eab9d7204ac8`](../../commit/285bdc712fb6bccc1b002566c1f4eab9d7204ac8) feat: g10k hiera support
+- [`65da6ad7b2a53b882ed1485561f6d734006da7c4`](../../commit/65da6ad7b2a53b882ed1485561f6d734006da7c4) Add standalone Redis support for Mastodon
+- [`3f1c05353346f323b8cc0be1640f41314406d616`](../../commit/3f1c05353346f323b8cc0be1640f41314406d616) implemeted redis-mode
+- [`362ed16db29f225673534e218e024c76054c9be6`](../../commit/362ed16db29f225673534e218e024c76054c9be6) mastodon: Consolidate Redis config with mode option
+- [`8b006109f8148174aed509d6cd5a28b9d20b071c`](../../commit/8b006109f8148174aed509d6cd5a28b9d20b071c) Support CAPI clusters with different folder and cluster names
+
+### Fixes
+- [`174588109c4fcaae893e08720efd132b3dda70ef`](../../commit/174588109c4fcaae893e08720efd132b3dda70ef) Add: out of shared memory case
+- [`caa524960d4aa06721dd883a2c8e6895c7028403`](../../commit/caa524960d4aa06721dd883a2c8e6895c7028403) fix(keycloakx): creating ObjectStore and BackupSchedule resources only when backups are enabled
+- [`85bece48c8f1ab09a8b18bb7e051046f460bc6a8`](../../commit/85bece48c8f1ab09a8b18bb7e051046f460bc6a8) fix: Hardcoded AWS_ACCESS_KEY_ID  and mount from Kubernetes Secret
+- [`dfbea0aaab6541e3499eea4e8a1c021df1c56450`](../../commit/dfbea0aaab6541e3499eea4e8a1c021df1c56450) fix(rook-ceph): remove null cpu limits from resource configurations to comply with Kubernetes standards
+- [`d6ef0fc4658164583fe439d3e3cb660d73a8ae76`](../../commit/d6ef0fc4658164583fe439d3e3cb660d73a8ae76) fix: yamllint
+- [`497845b9d18fbffe7856b4a9ca987fb15815383c`](../../commit/497845b9d18fbffe7856b4a9ca987fb15815383c) fix: identation issue for code setup in openvox/g10k
+- [`84901d64a7b72f39a53e4c7ebe0dd14629380ebe`](../../commit/84901d64a7b72f39a53e4c7ebe0dd14629380ebe) fix: removed the https setup in g10k, since it does not support netrc
+- [`5d7708e0b0c22574f9cc1827d34c3a80f306e564`](../../commit/5d7708e0b0c22574f9cc1827d34c3a80f306e564) fix: dont add r10k configmap and secret, if r10k is disabled
+- [`633f4bb370bf5f2a78a2cf08dfac519b4ccc07aa`](../../commit/633f4bb370bf5f2a78a2cf08dfac519b4ccc07aa) Remove legacy redisCluster section from Mastodon - not needed here
+
+### Docs
+- [`9961e7bcd1fd267a1855109b8eaaa56736fb391e`](../../commit/9961e7bcd1fd267a1855109b8eaaa56736fb391e) feat: add certificate issuer configuration documentation and example templates for cert-manager
+- [`b9cc8928a6d891b934c1742efbe9ffcbea670a9d`](../../commit/b9cc8928a6d891b934c1742efbe9ffcbea670a9d) Added docs for rebooting a kubernetes node
+- [`86c67bca9f3e6e1547e54c1a7be66ca8ada45852`](../../commit/86c67bca9f3e6e1547e54c1a7be66ca8ada45852) Improved guide of redis-operator helm chart
+- [`8c33bf5b15ce0f9b4b90e295abf8f8509325ad7e`](../../commit/8c33bf5b15ce0f9b4b90e295abf8f8509325ad7e) feat: unbound var resolved and improved docs
+- [`1198f6e77116767c62d7cd7be0f6c4112ae8e9b0`](../../commit/1198f6e77116767c62d7cd7be0f6c4112ae8e9b0) WIP: improving argocd keycloak docs..
+- [`638bb44ebb672e19ea7acd7472779d7258a8aa58`](../../commit/638bb44ebb672e19ea7acd7472779d7258a8aa58) add note  on kubeaid-argocd-apps.sh script usage
+
 ## 20.1.1
 ### Fixes
 - [`fa2628f34235afc67392f8b9d0a5ca11462d7a76`](../../commit/fa2628f34235afc67392f8b9d0a5ca11462d7a76) fix(capi-cluster/hetzner): disabling Hetzner network for HCloud servers | upgrading ClusterAPI component versions
