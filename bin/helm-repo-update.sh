@@ -515,6 +515,7 @@ function main (){
     # Update the version file
     # go release script can update with the correct tag
     echo "$NEW_VERSION" > VERSION
+    git add VERSION
 
     if [[ -n "$(git status --porcelain)" ]]; then
       git add -A "$ARGOCD_CHART_PATH"
