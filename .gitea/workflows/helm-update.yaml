@@ -1,0 +1,43 @@
+name: kubeaid
+
+on:
+  schedule:
+    - cron: "15 2 * * 7" # At 02:15 on Sunday.
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  kubeaid:
+    name: KubeAid Helm chart update
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/obmondo/kubeaid/helm-chart-update:1.0.0
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        fetch-tags: 'true'
+
+    - name: Configure Git
+      run: |
+        git config user.name "gitea-actions[bot]"
+        git config user.email "giteat-actions[bot]@obmondo.com"
+
+    - name: Update Helm charts
+      run: |
+        ./bin/helm-repo-update.sh --update-all
+
+    - name: Login to Gitea
+      env:
+        GIT_SERVER_URL: ${{ secrets.GIT_SERVER_URL }}
+        GIT_SERVER_TOKEN: ${{ secrets.GORELEASER_TOKEN }}
+      run: >-
+        tea login add
+        -u "$GIT_SERVER_URL"
+        -t "$GIT_SERVER_TOKEN"
+
+    - name: Create pull request
+      if: steps.no-pr.outcome == 'success'
+      shell: bash
+      run: >-
+        tea pr create -t "chore: Helm Chart update"

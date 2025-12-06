@@ -1,6 +1,6 @@
 FROM harbor.obmondo.com/obmondo/dockerfiles/noble-generic-build:1.0.0
 
-LABEL org.opencontainers.image.authors="Ashish Jaiswal <ashish@enableit.dk>"
+LABEL org.opencontainers.image.authors="Ashish Jaiswal <ashish@obmondo.com>"
 
 ENV GOPATH="/root/go"
 ENV PATH="/usr/lib/go-1.19/bin:${GOPATH}/bin:${PATH}"

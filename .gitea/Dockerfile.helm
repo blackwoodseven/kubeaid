@@ -1,0 +1,27 @@
+FROM harbor.obmondo.com/obmondo/dockerfiles/noble-generic-build:1.0.0
+
+LABEL org.opencontainers.image.authors="Ashish Jaiswal <ashish@obmondo.com>"
+
+WORKDIR /tmp
+
+RUN apt-get update        \
+    && apt-get install -y \
+    curl                  \
+    wget                  \
+    tar                   \
+    git
+
+# Helm
+RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+RUN chmod +x get_helm.sh
+RUN ./get_helm.sh --version v4.0.1
+
+# YQ
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 -O /usr/local/bin/yq
+RUN chmod +x /usr/local/bin/yq
+
+# Gitea client tool tea
+RUN wget -qO /usr/local/bin/tea https://dl.gitea.com/tea/0.11.1/tea-0.11.1-linux-amd64
+RUN chmod +x /usr/local/bin/tea
+
+WORKDIR /workspace
