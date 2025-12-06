@@ -512,6 +512,9 @@ function main (){
       fi
     } > "$COMMIT_MSG_FILE"
 
+    # Update the version file
+    # go release script can update with the correct tag
+    echo "$NEW_VERSION" > VERSION
 
     if [[ -n "$(git status --porcelain)" ]]; then
       git add -A "$ARGOCD_CHART_PATH"
@@ -519,7 +522,6 @@ function main (){
     fi
 
     rm -f "$COMMIT_MSG_FILE"
-    echo "$NEW_VERSION" > VERSION
   fi
 
   find . -name '*.tgz' -delete
