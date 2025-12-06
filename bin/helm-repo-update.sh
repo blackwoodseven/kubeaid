@@ -34,20 +34,49 @@ if [ "$helm_version" -lt "30800" ] ; then
   exit 1
 fi
 
+# Generate by claude to make it better readable
 function ARGFAIL() {
-  echo -n "
-Usage $0 [OPTIONS]:
-  --update-helm-chart       Update specific helm chart      [Need path to specific helm chart]
-  --update-all              Update all the helm chart       [Default: false]
-  --actions                 Run inside a GitHub or Gitea Action   [Default: false] (Only in CI)
-  --skip-charts             Skip updating certain charts    [Default: none]
-  --chart-version           Helm chart version              [Default: latest]
-  -h|--help
+  cat << 'EOF'
+Usage: ./helm-update.sh [OPTIONS]
 
-Example:
-# $0 --update-helm-chart traefik
-# $0 --update-all --skip-charts 'aws-efs-csi-driver,capi-cluster,grafana-operator,strimzi-kafka-operator'
-"
+OPTIONS:
+  --update-helm-chart CHART    Update a specific Helm chart
+                               Requires: Path or name of the chart
+
+  --update-all                 Update all Helm charts
+                               Default: false
+
+  --actions                    Run in CI/CD mode (GitHub/Gitea Actions)
+                               Default: false
+                               Note: Only use this flag in CI environments
+                               [Not Tested]
+
+  --skip-charts CHARTS         Comma-separated list of charts to skip
+                               Default: none
+                               Example: 'chart1,chart2,chart3'
+
+  --chart-version VERSION      Specify Helm chart version to update to
+                               Default: latest
+
+  -h, --help                   Display this help message
+
+EXAMPLES:
+  # Update a single chart
+  ./helm-update.sh --update-helm-chart traefik
+
+  # Update a specific chart to a specific version
+  ./helm-update.sh --update-helm-chart traefik --chart-version 25.0.0
+
+  # Update all charts
+  ./helm-update.sh --update-all
+
+  # Update all charts except specific ones
+  ./helm-update.sh --update-all --skip-charts 'aws-efs-csi-driver,capi-cluster,grafana-operator,strimzi-kafka-operator'
+
+  # Run in CI/CD mode
+  ./helm-update.sh --update-all --actions
+
+EOF
 }
 
 declare UPDATE_ALL=false
@@ -55,7 +84,7 @@ declare ACTIONS=false
 declare UPDATE_HELM_CHART=
 declare SKIP_CHARTS=
 declare ARGOCD_CHART_PATH="argocd-helm-charts"
-declare HELM_VERSION_LAST_UPDATE="./.helm_version_last_update"
+declare HELM_VERSION_LAST_UPDATE_FILE="./.helm_version_last_update"
 declare CHART_VERSION=
 
 # Arrays to track updates
@@ -214,30 +243,27 @@ function get_current_kubeaid_version() {
 
 # Function to compare two dates
 function compare_dates() {
-  local date1="$1"
-  local date2="$2"
-  local timestamp1
-  local timestamp2
-
   # Convert dates to seconds since epoch for easy comparison
-  timestamp1=$(date -d "$date1" +%s)
-  timestamp2=$(date -d "$date2" +%s)
+  timestamp1=$(date -d "$HELM_LAST_UPDATE_DATE" +%s)
+  timestamp2=$(date -d "$CURRENT_DATE" +%s)
 
   # Perform comparisons
   [[ "$timestamp1" -gt "$timestamp2" ]]
 }
 
+# Function check if helm chart has newer version in cache
+function compare_version() {
+  [ "$HELM_CHART_NEW_VERSION" != "$HELM_CHART_CURRENT_VERSION" ]
+}
+
 # Function to find the date in the .helm_version_last_update file
 # so we dont have to helm repo search, since it was update today locally
 # on the node, so next re-run is faster
-function get_last_update_date() {
-  local repo
-
-  repo="$1"
-
+function get_repo_last_update_date() {
   # Note: we only need to check if chart is present or not, if someone add duplicate entry
   # it should not fail
-  UPDATE_DATE=$(grep "$repo" "$CURRENT_DATE" | uniq | awk '{print $1}')
+  UPDATE_DATE=$(grep "$HELM_REPO_NAME" "$HELM_VERSION_LAST_UPDATE_FILE" | uniq | awk '{print $1}' || true)
+
   if [ -z "$UPDATE_DATE" ]; then
     date -d "1 day ago" '+%Y-%m-%d'
   else
@@ -245,12 +271,34 @@ function get_last_update_date() {
   fi
 }
 
+function get_helm_latest_version_from_cache() {
+  if compare_dates; then
+    HELM_CHART_NEW_VERSION=$(helm search repo --regexp "${HELM_CHART_NAME}/${HELM_CHART_NAME}[^-]" --version ">=$HELM_CHART_CURRENT_VERSION" --output yaml | yq eval '.[].version' -)
+  else
+    # Note: we only need to check if chart is present or not, if someone add duplicate entry
+    # it should not fail
+    _NEW_VERSION="$CURRENT_DATE $HELM_CHART_CURRENT_VERSION $HELM_REPO_NAME"
+
+    # Check if we have an upstream chart already present or not
+    HELM_CHART_NEW_VERSION_FROM_CACHE=$(grep "$_NEW_VERSION" "$HELM_VERSION_LAST_UPDATE_FILE" | uniq | awk '{print $2}' || true )
+    if [ -z "$HELM_CHART_NEW_VERSION_FROM_CACHE" ]; then
+      # If no version is found in the cache, ask the helm repo
+      HELM_CHART_NEW_VERSION=$(helm search repo --regexp "${HELM_CHART_NAME}/${HELM_CHART_NAME}[^-]" --version ">=$HELM_CHART_CURRENT_VERSION" --output yaml | yq eval '.[].version' -)
+    else
+      HELM_CHART_NEW_VERSION=$HELM_CHART_NEW_VERSION_FROM_CACHE
+    fi
+  fi
+}
+
+
 function add_last_update_date() {
-  if [ "$(grep -c "${CURRENT_DATE} $HELM_CHART_NAME" "$HELM_VERSION_LAST_UPDATE")" -eq 0 ]; then
-    echo "${CURRENT_DATE} $HELM_CHART_NAME" >> "$HELM_VERSION_LAST_UPDATE"
+  HELM_CHART_LINE="$CURRENT_DATE $HELM_CHART_NEW_VERSION $HELM_CHART_NAME"
+
+  if [ "$(grep -c "$HELM_CHART_LINE" "$HELM_VERSION_LAST_UPDATE_FILE")" -eq 0 ]; then
+    echo "$HELM_CHART_LINE" >> "$HELM_VERSION_LAST_UPDATE_FILE"
   else
     # Remove duplicate line if its present for any reason
-    sed -i "0,/${CURRENT_DATE} $HELM_CHART_NAME/b; /${CURRENT_DATE} $HELM_CHART_NAME/d" "$HELM_VERSION_LAST_UPDATE"
+    sed -i "0,/$HELM_CHART_LINE/b; /$HELM_CHART_LINE/d" "$HELM_VERSION_LAST_UPDATE_FILE"
   fi
 }
 
@@ -278,13 +326,13 @@ function update_helm_chart {
       HELM_CHART_CURRENT_VERSION=$(yq eval ".dependencies[$i].version" "$HELM_CHART_YAML")
       HELM_REPOSITORY_URL=$(yq eval ".dependencies[$i].repository" "$HELM_CHART_YAML")
 
-      local CURRENT_DATE
-      local HELM_LAST_UPDATE_DATE
-
       CURRENT_DATE="$(date '+%Y-%m-%d')"
-      HELM_LAST_UPDATE_DATE="$(get_last_update_date "$HELM_CHART_NAME")"
+      HELM_LAST_UPDATE_DATE="$(get_repo_last_update_date "$HELM_CHART_NAME")"
+      get_helm_latest_version_from_cache
+      add_last_update_date
 
-      if compare_dates "$HELM_LAST_UPDATE_DATE" "$CURRENT_DATE"; then
+      # Compare the dates first, if date is not matching current date, update the cache file
+      if compare_version ; then
         # Add the repo
         if ! helm repo list -o yaml | yq eval -e ".[].name == \"$HELM_CHART_NAME\"" >/dev/null 2>&1; then
           echo "Adding Helm repository $HELM_REPOSITORY_URL"
@@ -293,24 +341,11 @@ function update_helm_chart {
             continue
           }
         fi
-
-        # Check if we have an upstream chart already present or not
-        if [ -z "$HELM_CHART_NEW_VERSION" ]; then
-          HELM_CHART_NEW_VERSION=$(helm search repo --regexp "${HELM_CHART_NAME}/${HELM_CHART_NAME}[^-]" --version ">=$HELM_CHART_CURRENT_VERSION" --output yaml | yq eval '.[].version' -) || {
-            echo "Failed to search for $HELM_CHART_NAME. Skipping."
-            continue
-          }
-        fi
-      else
-        add_last_update_date
       fi
 
       # Compare the version of upstream chart and our local chart
       # if there is difference, run helm dep up or else skip
       if [ "$HELM_CHART_NEW_VERSION" != "$HELM_CHART_CURRENT_VERSION" ]; then
-        local update_type
-        update_type=$(get_update_type "$HELM_CHART_CURRENT_VERSION" "$HELM_CHART_NEW_VERSION")
-
         echo "HELMING $HELM_CHART_NAME"
 
         # Update the chart.yaml file
@@ -346,6 +381,9 @@ function update_helm_chart {
           echo "Failed to extract $expected_tar_file. Skipping."
           continue
         }
+
+        local update_type
+        update_type=$(get_update_type "$HELM_CHART_CURRENT_VERSION" "$HELM_CHART_NEW_VERSION")
 
         local update_line="- Updated $HELM_CHART_NAME from version $HELM_CHART_CURRENT_VERSION to $HELM_CHART_NEW_VERSION"
 
@@ -415,11 +453,10 @@ function main (){
         BUMP_TYPE="patch"
     else
       rm -f "$COMMIT_MSG_FILE"
-      exit 0
     fi
 
     NEW_VERSION=$(bump_version "$CURRENT_VERSION" "$BUMP_TYPE")
-    echo "New KubeAid version: ${GREEN}v$NEW_VERSION${NC}"
+    echo "New KubeAid version: v$NEW_VERSION${NC}"
 
     # Generate commit message
     {
@@ -446,8 +483,8 @@ function main (){
     } > "$COMMIT_MSG_FILE"
 
 
-    if [ -n "$(git status --porcelain)" ]; then
-      git add "$ARGOCD_CHART_PATH"
+    if [[ -n "$(git status --porcelain)" ]]; then
+      git add -U "$ARGOCD_CHART_PATH"
       git commit -F "$COMMIT_MSG_FILE"
     fi
 
