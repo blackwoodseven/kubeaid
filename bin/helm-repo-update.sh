@@ -253,7 +253,7 @@ function compare_dates() {
   timestamp2=$(date -d "$CURRENT_DATE" +%s)
 
   # Perform comparisons
-  [[ "$timestamp1" -gt "$timestamp2" ]]
+  [[ "$timestamp1" -ge "$timestamp2" ]]
 }
 
 # Function check if helm chart has newer version in cache
@@ -277,34 +277,30 @@ function get_repo_last_update_date() {
 }
 
 function get_helm_latest_version_from_cache() {
-  if compare_dates; then
-    HELM_CHART_NEW_VERSION=$(helm search repo --regexp "${HELM_CHART_NAME}/${HELM_CHART_NAME}[^-]" --version ">=$HELM_CHART_CURRENT_VERSION" --output yaml | yq eval '.[].version' -)
-  else
-    # Note: we only need to check if chart is present or not, if someone add duplicate entry
-    # it should not fail
-    _NEW_VERSION="$CURRENT_DATE $HELM_CHART_CURRENT_VERSION $HELM_CHART_NAME"
+  # Note: we only need to check if chart is present or not, if someone add duplicate entry
+  # it should not fail
+  _NEW_VERSION="$CURRENT_DATE $HELM_CHART_CURRENT_VERSION $HELM_CHART_NAME"
 
-    # Check if we have an upstream chart already present or not
-    # Note: cut is on purpose, since some chart might end up empty string in place of version
-    # in the cache file
-    HELM_CHART_NEW_VERSION_FROM_CACHE=$(grep "$_NEW_VERSION" "$HELM_VERSION_LAST_UPDATE_FILE" | uniq | cut -d ' ' -f2 || true )
-    if [ -z "$HELM_CHART_NEW_VERSION_FROM_CACHE" ]; then
-      if [ "$HELM_REPOSITORY_URL" = "null" ] || [[ "$HELM_REPOSITORY_URL" =~ ^oci:// ]]; then
-        # helm4 with OCI support does not support search in helm repo
-        # so lets stick to current version, one has to manually change the chart.yaml
-        # to get it updated.
-        HELM_CHART_NEW_VERSION=$HELM_CHART_CURRENT_VERSION
-      else
-        if [ -n "$HELM_REPOSITORY_URL" ]; then
-          # If no version is found in the cache, ask the helm repo
-          HELM_CHART_NEW_VERSION=$(helm search repo --regexp "${HELM_CHART_NAME}/${HELM_CHART_NAME}[^-]" --version ">=$HELM_CHART_CURRENT_VERSION" --output yaml | yq eval '.[].version' -)
-        else
-          HELM_CHART_NEW_VERSION="$HELM_CHART_DEP_CURRENT_VERSION"
-        fi
-      fi
+  # Check if we have an upstream chart already present or not
+  # Note: cut is on purpose, since some chart might end up empty string in place of version
+  # in the cache file
+  HELM_CHART_NEW_VERSION_FROM_CACHE=$(grep "$_NEW_VERSION" "$HELM_VERSION_LAST_UPDATE_FILE" | uniq | cut -d ' ' -f2 || true )
+  if [ -z "$HELM_CHART_NEW_VERSION_FROM_CACHE" ]; then
+    if [ "$HELM_REPOSITORY_URL" = "null" ] || [[ "$HELM_REPOSITORY_URL" =~ ^oci:// ]]; then
+      # helm4 with OCI support does not support search in helm repo
+      # so lets stick to current version, one has to manually change the chart.yaml
+      # to get it updated.
+      HELM_CHART_NEW_VERSION=$HELM_CHART_CURRENT_VERSION
     else
-      HELM_CHART_NEW_VERSION=$HELM_CHART_NEW_VERSION_FROM_CACHE
+      if [ -n "$HELM_REPOSITORY_URL" ]; then
+        # If no version is found in the cache, ask the helm repo
+        HELM_CHART_NEW_VERSION=$(helm search repo --regexp "${HELM_CHART_NAME}/${HELM_CHART_NAME}[^-]" --version ">=$HELM_CHART_CURRENT_VERSION" --output yaml | yq eval '.[].version' -)
+      else
+        HELM_CHART_NEW_VERSION="$HELM_CHART_DEP_CURRENT_VERSION"
+      fi
     fi
+  else
+    HELM_CHART_NEW_VERSION=$HELM_CHART_NEW_VERSION_FROM_CACHE
   fi
 }
 
@@ -312,11 +308,11 @@ function get_helm_latest_version_from_cache() {
 function add_last_update_date() {
   HELM_CHART_LINE="$CURRENT_DATE $HELM_CHART_NEW_VERSION $HELM_CHART_NAME"
 
-  if [ "$(grep -c "$HELM_CHART_LINE" "$HELM_VERSION_LAST_UPDATE_FILE")" -eq 0 ]; then
+  if [ "$(grep -c "$HELM_CHART_NAME" "$HELM_VERSION_LAST_UPDATE_FILE")" -eq 0 ]; then
     echo "$HELM_CHART_LINE" >> "$HELM_VERSION_LAST_UPDATE_FILE"
   else
     # Remove duplicate line if its present for any reason
-    sed -i "0,/$HELM_CHART_LINE/b; /$HELM_CHART_LINE/d" "$HELM_VERSION_LAST_UPDATE_FILE"
+    sed -i "/$HELM_CHART_NAME/d; \$a $CURRENT_DATE $HELM_CHART_LINE/d" "$HELM_VERSION_LAST_UPDATE_FILE"
   fi
 }
 
@@ -354,14 +350,11 @@ function update_helm_chart {
       CURRENT_DATE="$(date '+%Y-%m-%d')"
       HELM_LAST_UPDATE_DATE="$(get_repo_last_update_date "$HELM_CHART_NAME")"
 
-      get_helm_latest_version_from_cache
-      add_last_update_date
-
-      # Compare the dates first, if date is not matching current date, update the cache file
-      # Add the repo
-      if compare_version; then
-        # OCI support from 3.8 helm, we will default to v4 now
-        if [[ ! "$HELM_REPOSITORY_URL" =~ ^oci:// ]]; then
+      # OCI support from 3.8 helm, we will default to v4 now
+      if [[ ! "$HELM_REPOSITORY_URL" =~ ^oci:// ]]; then
+        # Compare the dates first, if date is not matching current date, update the cache file
+        # Add the repo
+        if ! compare_dates; then
           if ! helm repo list -o yaml | yq eval -e '.[].name'| grep "$HELM_CHART_NAME" >/dev/null 2>&1; then
             echo "Adding Helm repository $HELM_REPOSITORY_URL"
             helm repo add "$HELM_CHART_NAME" "$HELM_REPOSITORY_URL" >/dev/null || {
@@ -371,6 +364,12 @@ function update_helm_chart {
           fi
         fi
       fi
+
+      get_helm_latest_version_from_cache
+      add_last_update_date
+
+      # Compare the dates first, if date is not matching current date, update the cache file
+      # Add the repo
 
       # Compare the version of upstream chart and our local chart
       # if there is difference, run helm dep up or else skip
