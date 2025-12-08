@@ -138,6 +138,6 @@ cat "$RELEASE_NOTES_FILE" "$CHANGELOG_FILE.tmp" >> "$CHANGELOG_FILE"
 echo "Release notes generated: $CHANGELOG_FILE"
 rm -fr $CHANGELOG_FILE.tmp
 
-# git tag -a "$NEW_TAG" -m "Kubeaid Release $NEW_TAG"
-# git push origin --tags
-# git push github --tags
+git tag -a "$NEW_TAG" -m "Kubeaid Release $NEW_TAG"
+git push origin --tags
+git push github --tags
