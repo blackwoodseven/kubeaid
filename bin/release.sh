@@ -27,7 +27,7 @@ declare -a CONFIG_CHANGES
 declare -a OTHER_CHANGES
 
 get_updates() {
-  git log --format='%B' -n 1 "$short_hash" | sed -n "/### ${1} Version Upgrades/,/^$/p" | grep '^-' | sed "s/^- /- ($short_hash) /"
+  git log --format='%B' -n 1 "$short_hash" | sed -n "/### ${1} Version Upgrades/,/^$/p" | grep '^-' | sed "s/^- /- $short_hash /"
 }
 
 # Process commits
@@ -139,10 +139,20 @@ echo "Release notes generated: $CHANGELOG_FILE"
 rm -fr $CHANGELOG_FILE.tmp
 
 if [[ -n "$(git status --porcelain)" ]]; then
-  git add -A "$CHANGELOG_FILE"
-  git commit -F "chore(doc): Update changelog"
+  git add -A "$CHANGELOG_FILE" "$RELEASE_NOTES_FILE"
+  git commit -m "chore(doc): Update changelog"
 fi
 
 git tag -a "$NEW_TAG" -m "Kubeaid Release $NEW_TAG"
-git push origin --tags
-git push github --tags
+
+echo "Pushing changelog changes to Gitea"
+git push origin master
+
+echo "Pushing tag to Gitea"
+git push origin "$NEW_TAG"
+
+echo "Pushing changelog changes to Github"
+git push github master
+
+echo "Pushing tag to Github"
+git push github "$NEW_TAG"
