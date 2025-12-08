@@ -138,6 +138,11 @@ cat "$RELEASE_NOTES_FILE" "$CHANGELOG_FILE.tmp" >> "$CHANGELOG_FILE"
 echo "Release notes generated: $CHANGELOG_FILE"
 rm -fr $CHANGELOG_FILE.tmp
 
+if [[ -n "$(git status --porcelain)" ]]; then
+  git add -A "$CHANGELOG_FILE"
+  git commit -F "chore(doc): Update changelog"
+fi
+
 git tag -a "$NEW_TAG" -m "Kubeaid Release $NEW_TAG"
 git push origin --tags
 git push github --tags
