@@ -25,7 +25,7 @@ puppetserver:
       resources:
         requests:
           memory: 3096Mi
-          cpu: 1000m
+          cpu: 1
         limits:
           memory: 3096Mi
       ingress:

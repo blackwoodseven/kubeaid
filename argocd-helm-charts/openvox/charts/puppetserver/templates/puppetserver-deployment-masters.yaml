@@ -609,6 +609,7 @@ spec:
       {{- end }}
       securityContext:
         fsGroup: 999   # "puppet" GID
+        {{- toYaml .Values.puppetserver.masters.securityContext | nindent 8 }}
       volumes:
         {{- if (not .Values.puppetserver.compilers.enabled) }}
         - name: puppet-code-storage
