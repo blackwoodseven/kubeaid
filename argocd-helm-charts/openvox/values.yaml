@@ -30,6 +30,10 @@ puppetserver:
           memory: 3096Mi
       ingress:
         enabled: false
+      updateStrategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
     customentrypoints:
       enabled: true
       configmaps:
