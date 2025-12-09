@@ -18,6 +18,7 @@ spec:
             runAsUser: {{ .Values.puppetserver.global.securityContext.runAsUser }}
             runAsGroup: {{ .Values.puppetserver.global.securityContext.runAsGroup }}
             fsGroup: {{ .Values.puppetserver.global.securityContext.fsGroup }}
+            fsGroupChangePolicy: "OnRootMismatch"
           volumes:
             - name: puppet-code-storage
               persistentVolumeClaim:
