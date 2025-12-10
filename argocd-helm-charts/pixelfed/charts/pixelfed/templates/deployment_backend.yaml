@@ -1,0 +1,234 @@
+{{- if .Values.pixelfed.horizon.separate_deployment }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pixelfed.fullname" . }}-backend
+  labels:
+    {{- include "pixelfed.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.pixelfed.horizon.replicas }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "pixelfed.horizon.selectorLabels" . | nindent 6 }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  template:
+    metadata:
+      annotations:
+        # reload deployment if config files change
+        php-config-hash: {{ toJson .Values.phpConfigs | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap_env.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "pixelfed.horizon.selectorLabels" . | nindent 8 }}
+        {{- include "pixelfed.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "pixelfed.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.extraInitContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}-backend
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["php"]
+          args: ["artisan", "horizon"]
+          envFrom:
+            {{- with .Values.extraEnvFrom }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+            - configMapRef:
+                name: {{ include "pixelfed.fullname" . }}-env
+          env:
+            {{- with .Values.extraEnv }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+
+            # pixelfed app key
+            - name: APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  {{- if and .Values.pixelfed.app.existingSecret .Values.pixelfed.app.existingSecretKey }}
+                  name: {{ .Values.pixelfed.app.existingSecret }}
+                  key: {{ .Values.pixelfed.app.existingSecretKey }}
+                  {{- else }}
+                  name: {{ include "pixelfed.fullname" . }}-app-key
+                  key: key
+                  {{- end }}
+
+            # valkey AKA redis
+            {{- if and .Values.externalValkey.enabled .Values.externalValkey.existingSecretKeys.host }}
+            - name: REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  {{- if and .Values.externalValkey.existingSecret .Values.externalValkey.existingSecretKeys.host }}
+                  name: {{ .Values.externalValkey.existingSecret }}
+                  key: {{ .Values.externalValkey.existingSecretKeys.host }}
+                  {{- else }}
+                  name: {{ include "pixelfed.fullname" . }}-valkey
+                  key: host
+                  {{- end }}
+            {{- end }}
+
+            {{- if and .Values.externalValkey.enabled .Values.externalValkey.existingSecret .Values.externalValkey.existingSecretKeys.port }}
+            - name: REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  {{- if and .Values.externalValkey.existingSecret .Values.externalValkey.existingSecretKeys.port }}
+                  name: {{ .Values.externalValkey.existingSecret }}
+                  key: {{ .Values.externalValkey.existingSecretKeys.port }}
+                  {{- else }}
+                  name: {{ include "pixelfed.fullname" . }}-valkey
+                  key: port
+                  {{- end }}
+            {{- end }}
+
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  {{- if and .Values.externalValkey.enabled .Values.externalValkey.existingSecret }}
+                  name: {{ .Values.externalValkey.existingSecret }}
+                  key: {{ .Values.externalValkey.existingSecretKeys.password }}
+                  {{- else if and .Values.externalValkey.enabled (not .Values.externalValkey.existingSecret) }}
+                  name: {{ include "pixelfed.fullname" . }}-valkey
+                  key: password
+                  {{- else if .Values.valkey.auth.existingSecret }}
+                  name: {{ .Values.valkey.auth.existingSecret }}
+                  key: password
+                  {{- else }}
+                  name: {{ .Values.valkey.fullnameOverride }}
+                  key: valkey-password
+                  {{- end }}
+
+            # database configuration
+            {{- if .Values.externalDatabase.enabled }}
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.existingSecret .Values.externalDatabase.existingSecretKeys.host }}
+                  name: {{ .Values.externalDatabase.existingSecret }}
+                  key: {{ .Values.externalDatabase.existingSecretKeys.host }}
+                  {{- else if and .Values.externalDatabase.enabled (not .Values.externalDatabase.existingSecretKeys.host) }}
+                  name: {{ include "pixelfed.fullname" . }}-database
+                  key: host
+                  {{- end }}
+            {{- end }}
+
+            {{- if .Values.externalDatabase.enabled }}
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.existingSecret .Values.externalDatabase.existingSecretKeys.username }}
+                  name: {{ .Values.externalDatabase.existingSecret }}
+                  key: {{ .Values.externalDatabase.existingSecretKeys.username }}
+                  {{- else if and .Values.externalDatabase.enabled (not .Values.externalDatabase.existingSecretKeys.username) }}
+                  name: {{ include "pixelfed.fullname" . }}-database
+                  key: username
+                  {{- end }}
+            {{- end }}
+
+            {{- if .Values.externalDatabase.enabled }}
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.existingSecret .Values.externalDatabase.existingSecretKeys.database }}
+                  name: {{ .Values.externalDatabase.existingSecret }}
+                  key: {{ .Values.externalDatabase.existingSecretKeys.database }}
+                  {{- else if and .Values.externalDatabase.enabled (not .Values.externalDatabase.existingSecretKeys.database) }}
+                  name: {{ include "pixelfed.fullname" . }}-database
+                  key: database
+                  {{- end }}
+            {{- end }}
+
+            {{- if .Values.externalDatabase.enabled }}
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.existingSecret .Values.externalDatabase.existingSecretKeys.port }}
+                  name: {{ .Values.externalDatabase.existingSecret }}
+                  key: {{ .Values.externalDatabase.existingSecretKeys.port }}
+                  {{- else if and .Values.externalDatabase.enabled (not .Values.externalDatabase.existingSecretKeys.port) }}
+                  name: {{ include "pixelfed.fullname" . }}-database
+                  key: port
+                  {{- end }}
+            {{- end }}
+
+            - name: DB_PASSWORD
+              {{- if and .Values.externalDatabase.enabled (not .Values.externalDatabase.existingSecret) }}
+              value: {{ .Values.externalDatabase.password }}
+              {{- else }}
+              valueFrom:
+                secretKeyRef:
+                  {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.existingSecret }}
+                  name: {{ .Values.externalDatabase.existingSecret }}
+                  key: {{ .Values.externalDatabase.existingSecretKeys.password }}
+                  {{- else if .Values.postgresql.auth.existingSecret }}
+                  name: {{ .Values.postgresql.auth.existingSecret }}
+                  key: postgres-password
+                  {{- else }}
+                  name: {{ .Values.postgresql.fullnameOverride }}
+                  key: postgres-password
+                  {{- end }}
+              {{- end }}
+
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- if or .Values.extraVolumeMounts .Values.phpConfigs }}
+          volumeMounts:
+            {{- with .Values.extraVolumeMounts }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- range $key, $value := .Values.phpConfigs }}
+            - name: phpconfig
+              mountPath: {{ print "/usr/local/etc/php-fpm.d/%s" $key | quote }}
+              subPath: {{ $key }}
+            {{- end }}
+          {{- end }}{{/* end volumeMounts */}}
+
+      {{- if or .Values.phpConfigs .Values.extraVolumes }}
+      volumes:
+        {{- with .Values.extraVolumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.phpConfigs }}
+        - name: phpconfig
+          configMap:
+            name: {{ template "pixelfed.fullname" . }}-phpconfig
+        {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

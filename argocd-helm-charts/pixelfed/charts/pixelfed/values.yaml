@@ -1,0 +1,636 @@
+# Default values for pixelfed.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- This will set the replicaset count more information can be found here:
+# https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 1
+
+# This sets the container image more information can be found here:
+# https://kubernetes.io/docs/concepts/containers/images/
+image:
+  registry: ghcr.io
+  # -- you can see the source [ghcr.io/mattlqx/docker-pixelfed](https://ghcr.io/mattlqx/docker-pixelfed)
+  repository: mattlqx/docker-pixelfed@sha256
+  # -- This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag whose default is the chart appVersion
+  # (v0.12.4-nginx is currently broken due to migration errors with postgresl,
+  # so please either pin a sha tag or use dev-nging as the tag)
+  tag: "7d1d62c8552683225456c2a552ba8ca36afb24b32f706e425310de5bf84aeab1"
+
+# -- This is for the secretes for pulling an image from a private repository
+# more information can be found here:
+# https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+
+# -- This is to override the chart name.
+nameOverride: ""
+
+# -- This is to override the chart name, but used in more places
+fullnameOverride: ""
+
+# -- how many revisions of the deployment to keep for rollbacks
+revisionHistoryLimit: 10
+
+# -- template out extra environment variables
+extraEnv: []
+
+# -- template out extra environment variables e.g. from ConfigMaps or Secrets
+extraEnvFrom: []
+
+# This section builds out the service account more information can be found here:
+# https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# -- This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout:
+# https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+
+# -- This is for setting Kubernetes Labels to a Pod.
+# For more information checkout:
+# https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+# securityContext for the whole pixelfed pod
+podSecurityContext:
+  # -- user to run the pixelfed pod as
+  runAsUser: 33
+  # -- group to run the pixelfed pod as
+  runAsGroup: 33
+  # -- group to mount the filesystem as
+  fsGroup: 33
+
+# securityContext for the pixelfed container
+securityContext:
+  # -- user to run the pixelfed container as
+  runAsUser: 33
+  # runAsNonRoot: true
+  # readOnlyRootFilesystem: true
+  # capabilities:
+  #   drop:
+  #   - ALL
+
+# This is for setting up a service more information can be found here:
+# https://kubernetes.io/docs/concepts/services-networking/service/
+service:
+  # -- This sets the service type more information can be found here:
+  # https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+  type: ClusterIP
+  # -- This sets the ports more information can be found here:
+  # https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+  port: 80
+  # -- Port to attach to on the pods. Also sets what port nginx listens on inside the container.
+  targetPort: 8080
+
+# This block is for setting up the ingress for more information can be found here:
+# https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  # -- enable deploy an Ingress resource - network traffic from outside the cluster
+  enabled: false
+  # -- ingress class name, e.g. nginx
+  className: ""
+  # annotations to apply to the Ingress resource
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# -- set resource limits and requests for cpu, memory, and ephemeral storage
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# -- This is to setup the liveness probe
+# more information can be found here:
+# https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+livenessProbe: {}
+  #  httpGet:
+  #    path: /api/service/health-check
+  #    port: http
+
+# -- This is to setup the readiness probe
+# more information can be found here:
+# https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+readinessProbe: {}
+  #  httpGet:
+  #    path: /api/service/health-check
+  #    port: http
+
+autoscaling:
+  # -- enable autoscaling. more information can be found
+  # [here](https://kubernetes.io/docs/concepts/workloads/autoscaling/)
+  enabled: false
+  # -- minimum replicas to always keep up
+  minReplicas: 1
+  # -- max replicas to scale up to
+  maxReplicas: 100
+  # -- CPU limit a pod needs to hit to start autoscaling new pods
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# -- Additional volumes on the output Deployment definition
+extraVolumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# -- Additional volumeMounts on the output Deployment definition
+extraVolumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+# -- set extra init containers
+extraInitContainers: []
+
+# -- set sidecar containers to run along side the pixelfed container
+extraContainers: []
+
+# -- put the pixelfed pod on a specific node/nodegroup
+nodeSelector: {}
+
+# -- set tolerations of node taints
+tolerations: []
+
+# -- set affinity to specific nodes or nodegroups
+affinity: {}
+
+externalDatabase:
+  # -- enable using an external mysql or postgresql cluster
+  enabled: false
+  host: ""
+  port: 3306
+  database: pixelfed
+  username: ""
+  password: ""
+  # options: disable, require, allow, prefer, verify-full
+  # ssl_mode: ""
+  # path to ssl root cert
+  # ssl_root_cert:
+  # path to ssl cert
+  # ssl_cert: ""
+  # path to ssl key
+  # ssl_key: ""
+  # -- get database credentials from an existing Kubernetes Secret
+  existingSecret: ""
+  existingSecretKeys:
+    # --  key in existing Kubernetes Secret for host. If set, ignores externalDatabase.host
+    host: ""
+    # --  key in existing Kubernetes Secret for port. If set, ignores externalDatabase.port
+    port: ""
+    # --  key in existing Kubernetes Secret for database. If set, ignores externalDatabase.database
+    database: pixelfed
+    # --  key in existing Kubernetes Secret for username. If set, ignores externalDatabase.username
+    username: ""
+    # --  key in existing Kubernetes Secret for password. If set, ignores externalDatabase.password
+    password: ""
+
+# External Redis Configuration. Use this if you set valkey.enabled: false
+externalValkey:
+  # -- enable using an external valkey or redis cluster
+  enabled: false
+  client: "phpredis"
+  scheme: "tcp"
+  host: "valkey"
+  password: "null"
+  port: "6379"
+  # -- get valkey credentials from an existing Kubernetes Secret
+  existingSecret: ""
+  existingSecretKeys:
+    # --  key in existing Kubernetes Secret for host. If set, ignores externalValkey.host
+    host: ""
+    # --  key in existing Kubernetes Secret for port. If set, ignores externalValkey.port
+    port: ""
+    # --  key in existing Kubernetes Secret for password. If set, ignores externalValkey.password
+    password: ""
+
+# valkey is a fork of redis with a better license
+valkey:
+  # -- enable the bundled [valkey sub chart from Bitnami](https://github.com/bitnami/charts/blob/main/bitnami/valkey/README.md#parameters).
+  # Must set to true if externalValkey.enabled=false
+  enabled: true
+  fullnameOverride: "valkey"
+  global:
+    storageClass: ""
+
+  # for auth, we get the valkey credentials from an ExternalSecret
+  auth:
+    enabled: true
+    existingSecret: ""
+    existingSecretPasswordKey: "password"
+
+  # TLS settings
+  tls:
+    enabled: false
+    authClients: true
+    autoGenerated: false
+
+  # primary (control plane) configuration
+  primary:
+    # -- Laravel requires the ability to call FLUSHDB, which is disabled by default
+    disableCommands:
+      - FLUSHALL
+    persistence:
+      # -- enable to persistent primary data accross restarts
+      enabled: false
+      existingClaim: ""
+
+  # valkey replica configuration
+  replica:
+    persistence:
+      # -- enable to persistent replica data accross restarts
+      enabled: false
+      existingClaim: ""
+
+  # persistnent volume retention policy for the StatefulSet
+  persistentVolumeClaimRetentionPolicy:
+    enabled: true
+    whenScaled: Retain
+    whenDeleted: Retain
+
+  metrics:
+    # -- we use a grafana exporter that logs into valkey directly, but you can enable this if you don't use that
+    enabled: false
+
+  # -- definitions: https://github.com/bitnami/charts/blob/main/bitnami/common/templates/_resources.tpl#L15
+  # Options: nano, micro, small, medium, large, xlarge, 2xlarge
+  # default: nano
+  resourcesPreset: "small"
+
+postgresql:
+  # -- enable the bundled [postgresql sub chart from Bitnami](https://github.com/bitnami/charts/blob/main/bitnami/postgresql/README.md#parameters).
+  # Must set to true if externalDatabase.enabled=false
+  enabled: true
+  fullnameOverride: "postgresql"
+  global:
+    storageClass: ""
+
+  volumePermissions:
+    # -- If you get "mkdir: cannot create directory ‘/bitnami/postgresql/data’: Permission denied"
+    # error, set these (This often happens on setups like minikube)
+    enabled: false
+
+# -- PHP Configuration files
+# Will be injected in /usr/local/etc/php-fpm.d
+phpConfigs: {}
+  # www.conf: |-
+  #   [www]
+  #   user = www-data
+  #   group = www-data
+  #   security.limit_extensions = .php .css .js .html
+  #   pm = dynamic
+  #   pm.max_children = 350
+  #   pm.start_servers = 100
+  #   pm.min_spare_servers = 100
+  #   pm.max_spare_servers = 280
+
+persistence:
+  # -- enable persistence for the pixelfed pod
+  enabled: false
+  # -- storage class name
+  storageClassName: ""
+  # -- size of the persistent volume claim to create. Tgnored if persistence.existingClaim is set
+  storage: 2Gi
+  # -- accessMode
+  accessModes:
+    - ReadWriteOnce
+  # -- using an existing PVC instead of creating one with this chart
+  existingClaim: ""
+
+pixelfed:
+  db:
+    # -- options: sqlite mysql pgsql sqlsrv
+    connection: pgsql
+    # -- Automatically run [artisan migrate --force] if new migrations are detected.
+    apply_new_migrations_automatically: false
+
+  filesystem:
+    # -- Many applications store files both locally and in the cloud.
+    # For this reason, you may specify a default “cloud” driver here.
+    # This driver will be bound as the Cloud disk implementation in the container.
+    cloud: "s3"
+    driver: "local"
+
+  covid:
+    enable_label: true
+    label_url: "https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public"
+    label_org: "visit the WHO website"
+
+  # -- not entirely sure if this is a list of banned usernames or text to
+  # display instead of banned usernames
+  banned_usernames: ""
+
+  # -- delete local files after saving to the cloud
+  media_delete_local_after_cloud: true
+
+  # -- timezone for docker container
+  timezone: "europe/amsterdam"
+
+  # -- Experimental Configuration
+  exp_emc: true
+
+  # -- domain of admin interface
+  admin_domain: ""
+
+  # -- domain of session?
+  session_domain: ""
+
+  # -- trusted proxies
+  trusted_proxies: "*"
+
+  # horizon - for interfacing with redis
+  horizon:
+    # -- prefix will be used when storing all Horizon data in Redis
+    prefix: "horizon-"
+    # -- darkmode for the web interface in the admin panel
+    dark_mode: false
+    # -- Enable running Laravel Horizon in a separate deployment. Allow to scale the backend queue workers independently.
+    separate_deployment: false
+    # -- Number of replicas for the Horizon deployment when running separately. Ignored if autoscaling is enabled.
+    replicas: 1
+
+  # app specific settings
+  app:
+    # -- This key is used by the Illuminate encrypter service and should
+    # be set to a random, 32 character string, otherwise these encrypted strings
+    # will not be safe. If you don't generate one, we'll generate one for you
+    # however it will change everytime you upgrade the helm chart, so it should
+    # only be used for testing. In production, please set this, or pixelfed.app.existingSecret
+    key: ""
+    # -- use an existing Kuberentes Secret to store the app key
+    # If set, ignores pixelfed.app.key
+    existingSecret: ""
+    # -- key in pixelfed.app.existingSecret to use for the app key
+    existingSecretKey: ""
+    # -- The name of your server/instance
+    name: "Pixelfed"
+    # -- The app environment, keep it set to "production"
+    env: "production"
+    # -- change this to the domain of your pixelfed instance
+    url: "https://localhost"
+    # -- change this to the language code of your pixelfed instance
+    locale: "en"
+    # -- The domain of your server, without https://
+    domain: ""
+
+  # Laravel log settings
+  laravel:
+    # -- Laravel log channel. Pixelfed's default, 'stack', sends logs to the default Laravel logfile. 'stderr' allows Kubernetes to capture these logs
+    log_channel: stack
+    # -- logging level
+    log_level: "debug"
+
+  # -- Enable open registration for new accounts
+  open_registration: true
+
+  # -- Enforce email verification
+  enforce_email_verification: true
+
+  # -- The min password length
+  min_password_length: 16
+
+  # -- Enable account deletion (may be a requirement in some jurisdictions)
+  account_deletion: true
+
+  # -- Enable oAuth support, required for mobile/3rd party apps
+  oauth_enabled: true
+
+  # -- Enable the Stories feature
+  stories_enabled: false
+
+  # -- Enable custom emojis
+  custom_emoji: false
+
+  # -- max size for custom emojis, in... bytes?
+  custom_emoji_max_size: 2000000
+
+  # -- types of media to allow
+  media_types: "image/jpeg,image/png,image/gif"
+
+  # -- Enable the config cache to allow you to manage settings via the admin dashboard
+  enable_config_cache: true
+
+  # -- Set the image optimization quality, between 1-100. Lower uses less space, higher more quality
+  image_quality: 80
+
+  # -- The max allowed account size in KB
+  max_account_size: 1000000
+
+  # -- The max photo/video size in KB
+  max_photo_size: 15000
+
+  # -- The max user avatar size in KB
+  max_avatar_size: 2000
+
+  # -- The max post caption length
+  max_caption_length: 1000
+
+  # -- The max user bio length
+  max_bio_length: 256
+
+  # -- The max user display name length
+  max_name_length: 32
+
+  # -- The max number of media per post album
+  max_album_length: 6
+
+  # -- Force https url generation
+  force_https_urls: true
+
+  # -- exp loops (as in loops video? 🤷
+  exp_loops: false
+
+  # -- library to process images. options: "gd" (default), "imagick"
+  image_driver: "gd"
+
+  # your whole instance, or server, settings
+  instance:
+    # -- your server description
+    description: "Pixelfed - Photo sharing for everyone"
+    # -- Enable public access to the Discover feature
+    discover_public: false
+    # -- Allow anonymous access to hashtag feeds
+    public_hashtags: false
+    # -- enable the instance contact form
+    contact_form: false
+    # -- The public contact email for your server
+    contact_email: ""
+    # -- instance contact max per day
+    contact_max_per_day: 1
+    # -- Enable the profile embed feature
+    profile_embeds: true
+    # -- Enable the post embed feature
+    post_embeds: true
+    # -- Enable Curated Registration
+    cur_reg: false
+    # -- Enable the api/v1/peers API endpoint
+    show_peers: false
+
+    reports:
+      # -- Send a report email to the admin account for new autospam/reports
+      email_enabled: false
+      # -- A list of email addresses to deliver admin reports to
+      email_addresses: []
+      # -- Enable autospam reports (require INSTANCE_REPORTS_EMAIL_ENABLED)
+      email_autospam: false
+
+    landing:
+      # -- Enable the profile directory on the landing page
+      show_directory: true
+      # -- Enable the popular post explore on the landing page
+      show_explore: true
+
+  # public feed settings
+  pf:
+    # -- Hide sensitive posts from public/network feeds
+    hide_nsfw_on_public_feeds: false
+    # -- Store local avatars on S3 (Requires S3)
+    local_avatar_to_cloud: false
+    # -- Enable the Admin Invites feature
+    admin_invites_enabled: true
+    # -- The max number of user blocks per account
+    max_user_blocks: 50
+    # -- The max number of user mutes per account
+    max_user_mutes: 50
+    # -- The max number of domain blocks per account
+    max_domain_blocks: 50
+    # -- Enable S3/Object Storage
+    enable_cloud: false
+    # -- Limit max user registrations
+    max_users: 1000
+    # -- in KB
+    enforce_max_users: 2000
+    # -- Enable image optimization
+    optimize_images: true
+    # -- Enable video optimization
+    optimize_videos: true
+    # -- Max collection post limit
+    max_collection_length: 100
+
+  # ActivityPub Configuration
+  activity_pub:
+    # -- enable ActivityPub
+    enabled: false
+    remote_follow: false
+    inbox: false
+    outbox: false
+    sharedinbox: false
+    # activity pub logger?
+    logger_enabled: false
+
+  ###########################################################
+  # Federation
+  ###########################################################
+  # -- https://docs.pixelfed.org/technical-documentation/config/#atom_feeds
+  atom_feeds: "true"
+
+  # -- https://docs.pixelfed.org/technical-documentation/config/#nodeinfo
+  nodeinfo: "true"
+
+  # -- https://docs.pixelfed.org/technical-documentation/config/#webfinger
+  webfinger: "true"
+
+  # Mail Configuration (Post-Installer)
+  mail:
+    # -- options: "smtp" (default), "sendmail", "mailgun", "mandrill", "ses"
+    # "sparkpost", "log", "array"
+    driver: smtp
+    # -- mail server hostname
+    host: smtp.mailtrap.io
+    # -- mail server port
+    port: 2525
+    # -- mail server username
+    username: ""
+    # -- mail server password
+    password: ""
+    # -- mail server encryption type
+    encryption: "tls"
+    # -- address to use for sending emails
+    from_address: "pixelfed@example.com"
+    # -- name to use for sending emails
+    from_name: "Pixelfed"
+
+    # -- name of an existing Kubernetes Secret for mail credentials
+    existingSecret: ""
+    # keys in existing secret
+    existingSecretKeys:
+      # --  key in existing Kubernetes Secret for host. If set, ignores mail.host
+      host: ""
+      # --  key in existing Kubernetes Secret for port. If set, ignores mail.port
+      port: ""
+      # --  key in existing Kubernetes Secret for username. If set, ignores mail.username
+      username: ""
+      # --  key in existing Kubernetes Secret for password. If set, ignores mail.password
+      password: ""
+
+  # S3 Configuration (Required if .Values.pixelfed.pf.enable_cloud is true)
+  s3:
+    # -- s3 url including protocol such as https://s3.domain.com
+    url: ""
+    # -- s3 endpoint excluding protocol such as s3.domain.com
+    endpoint: ""
+    # -- s3 bucket
+    bucket: ""
+    # -- s3 region
+    region: ""
+    # -- s3 access_key_id. ignored if s3.existingSecretKeys.access_key_id is set
+    access_key_id: ""
+    # -- s3 secret_access_key. ignored if s3.existingSecretKeys.secret_access_key is set
+    secret_access_key: ""
+    # --  use S3 path type instead of using a DNS subdomain
+    use_path_style_endpoint: false
+
+    # -- name of an existing Kubernetes Secret for s3 credentials
+    existingSecret: ""
+    existingSecretKeys:
+      # --  key in existing Kubernetes Secret for url. If set, ignores s3.url
+      url: ""
+      # --  key in existing Kubernetes Secret for endpoint. If set, ignores s3.endpoint
+      endpoint: ""
+      # --  key in existing Kubernetes Secret for access_key_id. If set, ignores s3.access_key_id
+      access_key_id: ""
+      # --  key in existing Kubernetes Secret for secret_access_key. If set, ignores s3.secret_access_key
+      secret_access_key: ""
+
+mariadb:
+  # -- enable mariadb subchart - currently experimental for this chart
+  # read more about the values: https://github.com/bitnami/charts/tree/main/bitnami/mariadb
+  enabled: false
+  auth:
+    # -- Name for a custom database to create
+    database: "pixelfed"
+    # -- Name for a custom user to create
+    username: "pixelfed"
+    # -- Password for the root user. Ignored if existing secret is provided.
+    rootPassword: "newRootPassword123"
+    # -- Password for the new user. Ignored if existing secret is provided
+    password: "newUserPassword123"
+    # -- MariaDB replication user password. Ignored if existing secret is provided
+    replicationPassword: "newReplicationPassword123"
+    # -- Use existing secret for password details (auth.rootPassword,
+    # auth.password, auth.replicationPassword will be ignored and picked up
+    # from this secret). The secret has to contain the keys mariadb-root-password,
+    # mariadb-replication-password and mariadb-password
+    existingSecret: new-password-secret
