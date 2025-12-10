@@ -22,6 +22,23 @@ The `bare-metal` provider is used to provision a KubeAid managed Kubernetes clus
 
 - Have [Docker](https://www.docker.com/products/docker-desktop/) running locally.
 
+Additionally, each server should meet the following the prerequisites :
+
+- `KubeAid CLI` must be able to SSH as the `root` user.
+
+- The server's hostname (stored in `/etc/hostname`) must not contain any uppercase letters.
+  > It might happen that the server's hostname initially contained uppercase letters. And you fixed
+  > it using the `hostnamectl` command.
+  >
+  > But, keep in mind that this won't automatically fix the relevant mappings in `/etc/hosts` file.
+  > 127.0.0.1, the server's public and private IP addresses might still be mapped to the old
+  > hostname.
+  > So, please ensure that you've fixed those mappings as well.
+
+- Docker must not be installed. And Docker's APT source and keyring must not be added to the system.
+
+- `socat`, `conntrack` and `pigz` packages must be installed in the system.
+
 ## Installation
 
 ```bash
