@@ -1,0 +1,194 @@
+pixelfed:
+  # Disable bundled databases - we use postgres-operator and redis-operator
+  postgresql:
+    enabled: false
+  valkey:
+    enabled: false
+  mariadb:
+    enabled: false
+
+  # External PostgreSQL configuration using postgres-operator
+  externalDatabase:
+    enabled: true
+    host: "pixelfed-pgsql-rw"
+    port: 5432
+    database: pixelfed
+    username: pixelfed
+    existingSecret: "pixelfed-pgsql-app"
+    existingSecretKeys:
+      password: "password"
+
+  # External Redis configuration using redis-operator
+  externalValkey:
+    enabled: true
+    client: "phpredis"
+    scheme: "tcp"
+    host: "pixelfed-redis"
+    password: "null"
+    port: "6379"
+
+  # Persistence configuration
+  persistence:
+    enabled: true
+    storageClassName: ""
+    storage: 10Gi
+    accessModes:
+      - ReadWriteOnce
+
+  # Pixelfed application configuration
+  pixelfed:
+    db:
+      connection: pgsql
+      apply_new_migrations_automatically: true
+
+    filesystem:
+      cloud: "s3"
+      driver: "local"
+
+    timezone: "UTC"
+
+    app:
+      name: "Pixelfed"
+      env: "production"
+      url: ""  # OVERRIDE in customer config - https://your-domain.com
+      locale: "en"
+      domain: ""  # OVERRIDE in customer config - your-domain.com
+
+    laravel:
+      log_channel: stderr
+      log_level: "info"
+
+    open_registration: false
+    enforce_email_verification: true
+    min_password_length: 16
+    account_deletion: true
+    oauth_enabled: true
+    stories_enabled: false
+    custom_emoji: true
+    force_https_urls: true
+
+    image_quality: 80
+    max_account_size: 1000000
+    max_photo_size: 15000
+    max_avatar_size: 2000
+    max_caption_length: 1000
+    max_bio_length: 256
+    max_name_length: 32
+    max_album_length: 6
+
+    media_types: "image/jpeg,image/png,image/gif"
+    image_driver: "gd"
+
+    instance:
+      description: "Pixelfed - Photo sharing for everyone"
+      discover_public: false
+      public_hashtags: false
+      contact_form: false
+      contact_email: ""
+      profile_embeds: true
+      post_embeds: true
+      show_peers: false
+
+    activity_pub:
+      enabled: true
+      remote_follow: true
+      inbox: true
+      outbox: true
+      sharedinbox: true
+
+    atom_feeds: "true"
+    nodeinfo: "true"
+    webfinger: "true"
+
+    mail:
+      driver: smtp
+      host: ""
+      port: 587
+      encryption: "tls"
+      from_address: ""
+      from_name: "Pixelfed"
+      existingSecret: ""
+      existingSecretKeys:
+        username: ""
+        password: ""
+
+    pf:
+      enable_cloud: false
+      admin_invites_enabled: true
+      max_user_blocks: 50
+      max_user_mutes: 50
+      max_domain_blocks: 50
+      optimize_images: true
+      optimize_videos: true
+
+    s3:
+      url: ""
+      endpoint: ""
+      bucket: ""
+      region: ""
+      use_path_style_endpoint: true
+      existingSecret: ""
+      existingSecretKeys:
+        access_key_id: ""
+        secret_access_key: ""
+
+  # Ingress configuration
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+    hosts:
+      - host: ""
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls:
+      - secretName: pixelfed-tls
+        hosts:
+          - ""
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+  # Security context
+  podSecurityContext:
+    runAsUser: 33
+    runAsGroup: 33
+    fsGroup: 33
+
+  securityContext:
+    runAsUser: 33
+
+# CloudNative-PG operator configuration
+postgres:
+  enabled: true
+  instance: 1
+  size: 10Gi
+  recover: false
+  bootstrap:
+    initdb:
+      database: pixelfed
+      owner: pixelfed
+  resources:
+    limits:
+      memory: 1Gi
+      cpu: 500m
+    requests:
+      memory: 512Mi
+      cpu: 250m
+
+# Redis operator configuration
+# mode: "standalone" (single instance) or "cluster"
+redis:
+  enabled: true
+  mode: standalone  # standalone | cluster
+  name: pixelfed-redis
+  storage: 2Gi
+  replicas: 3  # Only used when mode=cluster (minimum 3 for cluster mode)

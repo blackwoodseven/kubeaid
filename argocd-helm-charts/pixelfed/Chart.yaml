@@ -1,0 +1,17 @@
+apiVersion: v2
+name: pixelfed
+version: 1.0.0
+description: A Helm chart for deploying Pixelfed - a federated social media app focused on photos
+# Note: The upstream chart (v0.23.0) has bugs in templates/configmap_env.yaml
+# We include a patched version in charts/
+# Bug 1: Line 50-51 uses .Values inside a `with` block for contact_email
+#   Original: {{- with .Values.pixelfed.instance.contact_email }}
+#   Patched:  {{- if .Values.pixelfed.instance.contact_email }}
+# Bug 2: Line 143 sets REDIS_HOST to port instead of host
+#   Original: REDIS_HOST: {{ .Values.externalValkey.port | quote }}
+#   Patched:  REDIS_HOST: {{ .Values.externalValkey.host | quote }}
+dependencies:
+  - name: pixelfed
+    version: 0.23.0
+    # Manually patched from upstream https://github.com/small-hack/pixelfed-chart
+    # Chart has template bugs that have been fixed locally
