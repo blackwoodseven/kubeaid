@@ -8,14 +8,14 @@ data:
     sources:
       :linuxaid:
         remote: '{{ .Values.puppetserver.puppetserver.puppeturl }}'
-        basedir: '{{ .Values.puppetserver.puppetserver.puppetbasedir }}'
+        basedir: '/tmp/linuxaid'
   g10k_hiera.yaml: |
     :cachedir: '/etc/puppetlabs/code/g10k_cache'
     :sources:
       {{- if .Values.g10k.hiera.hieradataurl }}
       :hiera_repo:
         remote: '{{ .Values.g10k.hiera.hieradataurl }}'
-        basedir: '/etc/puppetlabs/code/hiera-data'
+        basedir: '/tmp/linuxaid-config'
       {{- end }}
       {{- if .Values.g10k.hiera.extraRepository }}
       {{- toYaml .Values.g10k.hiera.extraRepository | nindent 6 }}
