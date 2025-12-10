@@ -56,7 +56,10 @@ spec:
               image: "{{ .Values.g10k.image.repository }}:{{ .Values.g10k.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.g10k.image.pullPolicy }}
               args:
+                - set -e
+                - mkdir -p /tmp/linuxaid
                 - /usr/local/bin/g10k -verbose -clonegit -tags -config /etc/puppetlabs/puppet/g10k_code.yaml
+                - /usr/bin/rsync -avc --delete /tmp/linuxaid {{ .Values.puppetserver.puppetserver.puppetbasedir }}
               resources:
                 {{- toYaml .Values.g10k.resources | nindent 16 }}
               volumeMounts:
@@ -77,7 +80,10 @@ spec:
               image: "{{ .Values.g10k.image.repository }}:{{ .Values.g10k.image.tag | default .Chart.AppVersion }}"
               imagePullPolicy: {{ .Values.g10k.image.pullPolicy }}
               args:
+                - set -e
+                - mkdir -p /tmp/linuxaid-config
                 - /usr/local/bin/g10k -verbose -clonegit -tags -config /etc/puppetlabs/puppet/g10k_hiera.yaml
+                - /usr/bin/rsync -avc --delete /tmp/linuxaid-config /etc/puppetlabs/code/hiera-data
               resources:
                 {{- toYaml .Values.g10k.resources | nindent 16 }}
               volumeMounts:
