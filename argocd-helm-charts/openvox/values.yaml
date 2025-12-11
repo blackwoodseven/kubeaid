@@ -44,6 +44,7 @@ puppetserver:
           # ALLOWED_CLIENT=*.myinternal.domain
           if [[ -n "${ALLOWED_CLIENT}" ]]; then
             cat <<EOL > "/etc/puppetlabs/puppet/autosign.conf"
+          openvoxdb
           *.${ALLOWED_CLIENT}
           EOL
           fi
