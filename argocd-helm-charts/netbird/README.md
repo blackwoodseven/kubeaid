@@ -1,5 +1,7 @@
 # Netbird Installation
 
+## Installing Netbird Server
+
 This Helm chart is for self hosting [Netbird](https://netbird.io).
 
 This document outlines the steps to customize the Helm installation for Coturn and Netbird services with KeyCloak IdP.
@@ -7,22 +9,7 @@ This document outlines the steps to customize the Helm installation for Coturn a
 Refer the example [values.yaml](./examples/values.yaml) for additional configurations.
 You can simply copy-paste the values file in your kubeaid-config, and replace the necessary values to get Netbird working.
 
-## Modify Coturn Service Configuration
-
-This will enable peer discovery.
-
-```yaml
-coturn:
-  service:
-    type: NodePort
-    externalTrafficPolicy: Cluster
-```
-
-> NOTE: We need to manually add public IP as `externalIPs` for the both tcp and udp services.
-> Currently they're not tracked by ArgoCD, and we can't specify the same in the chart.
-> The template doesn't have that support, yet.
-
-## Set Up Ingress for Netbird Services
+### Set Up Ingress for Netbird Services
 
 This will use gRPC protocol.
 
@@ -47,7 +34,7 @@ netbird:
               pathType: ImplementationSpecific
 ```
 
-## Connect with peers
+## Setup Netbird Client
 
 Install netbird cli and connect to netbird vpn.
 
@@ -118,9 +105,9 @@ Forwarding rules: 0
 Peers count: 1/2 Connected
 ```
 
-## Troubleshooting
+### Troubleshooting
 
-### GET /api/users status 401
+#### GET /api/users status 401
 
 Netbird caches the Keycloak users locally. If it is not able to fetch the users from Keycloak, it throws an error with
 
@@ -137,7 +124,7 @@ unable to get keycloak token, statusCode 401
 
 Once this is correct, Netbird pod should be able to warm up the cache and fetch user IDs.
 
-## References and External Links
+### References and External Links
 
 - https://docs.netbird.io/about-netbird/how-netbird-works
 - https://docs.netbird.io/selfhosted/identity-providers#keycloak
