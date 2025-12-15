@@ -45,32 +45,46 @@ OPENDESK_VIDEO="jitsi"
 
 OPENDESK_XWIKI="xwiki"
 
-
+# Disable shell check in commands, we need word splitting for multiple helmfile selector flags
 echo "Generating core essential apps manifest..."
+
+# shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
-  $(generate_selector_flags "$CORE_APPS") > "${ESSENTIALS_DIR}/opendesk-essentials.yaml"
+  $(generate_selector_flags "$CORE_APPS") > "${ESSENTIALS_DIR}/opendesk-essentials.yaml"  
 
 echo "Generating nextcloud manifest..."
+
+# shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$OPENDESK_FILES") > "${OPENDESK_DIR}/nextcloud/nextcloud.yaml"
 
 echo "Generating matrix chat manifest..."
+
+# shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$OPENDESK_CHAT") > "${OPENDESK_DIR}/chat/chat.yaml"
 
 echo "Generating mail manifest..."
+
+# shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$OPENDESK_MAIL") > "${OPENDESK_DIR}/mail/mail.yaml"
 
 echo "Generating openproject manifest..."
+
+# shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$OPENDESK_PROJECTS") > "${OPENDESK_DIR}/openproject/openproject.yaml"
 
 echo "Generating xwiki manifest..."
+
+# shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$OPENDESK_XWIKI") > "${OPENDESK_DIR}/xwiki/xwiki.yaml"
 
 echo "Generating jitsi manifest..."
+
+# shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$OPENDESK_VIDEO") > "${OPENDESK_DIR}/jitsi/jitsi.yaml"
 
@@ -79,7 +93,8 @@ helmfile template -e default -n opendesk --state-values-file "../../default-valu
 # Fix hook annotations and ttlSecondsAfterFinished for both files
 fix_hooks_and_ttl() {
   local file=$1
-  sed -i \
+  echo "fixing $file"
+  sed -i '' \
     -e 's/helm\.sh\/hook: .*/"managed-by": "helmfile"/g' \
     -e 's/"helm\.sh\/hook": .*/"argocd.argoproj.io\/hook": "Sync"/g' \
     -e 's/"argocd.argoproj.io\/hook":.*/"managed-by": "helmfile"/g' \

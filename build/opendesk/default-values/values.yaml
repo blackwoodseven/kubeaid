@@ -4,7 +4,7 @@ customization:
       - "../../../../../value-files/values-openproject.yaml.gotmpl"
     postfix:
       - "../../../../../value-files/values-postfix.yaml.gotmpl"
-      
+
 persistence:
   storages:
     openproject:
