@@ -5,7 +5,7 @@ automation principles.
 
 Table of Contents
 =================
-
+* [KubeAid Overview](#KubeAid-Overview)
 * [Kubeaid feature goals](#Kubeaid-feature-goals)
 * [The Problem KubeAid Solves](#The-Problem-KubeAid-Solves)
 * [Setup of Kubernetes clusters](#Setup-of-Kubernetes-clusters)
@@ -15,10 +15,24 @@ Table of Contents
 * [Secrets](#Secrets)
 * [License](#License)
 * [Technical details on the features](#Technical-details-on-the-features)
-* [Documentation](#Documentation)
+
 
 -----------------
-KubeAid feature goals:
+## KubeAid Overview
+1. Purpose and Scope
+       KubeAid is a comprehensive Kubernetes platform management system that provides production-ready cluster deployment and operations using GitOps principles. It delivers a complete stack including infrastructure provisioning, monitoring, security, networking, and data persistence, with everything managed as code through ArgoCD.
+2. What is KubeAid
+      KubeAid is a GitOps-centric platform that transforms Kubernetes cluster management into a declarative, version-controlled process. It provides:
+
+- **Multi-cloud infrastructure provisioning** supporting Azure AKS (via Terraform/Terragrunt) and Hetzner (via Cluster API)
+- **100+ pre-configured Helm charts** in argocd-helm-charts/ with automated weekly updates
+- **Comprehensive monitoring** using kube-prometheus with Jsonnet-based generation
+- **Unified access management** through Teleport for Kubernetes, applications, and databases
+- **Automated operations** including chart updates, release management, and backup strategies.
+
+- The entire platform is managed through a single Git repository where configuration changes trigger automated deployments via ArgoCD.
+
+## KubeAid feature goals:
 
 - Setup of k8s clusters on physical servers (on-premise or at e.g. [Hetzner.com](https://hetzner.com)) and in cloud
   providers like Azure AKS, Amazon AWS or Google GCE
