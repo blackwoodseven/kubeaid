@@ -29,22 +29,13 @@ spec:
       secretAccessKey:
         name: keycloak-pgsql-backup-creds
         key: ACCESS_SECRET_KEY
-      {{- end }}
+    {{- end }}
 
     {{- else if eq $backups.provider "azure" }}
     azureCredentials:
       connectionString:
         name: keycloak-pgsql-backup-creds
         key: AZURE_CONNECTION_STRING
-      storageAccount:
-        name: keycloak-pgsql-backup-creds
-        key: AZURE_STORAGE_ACCOUNT
-      storageKey:
-        name: keycloak-pgsql-backup-creds
-        key: AZURE_STORAGE_KEY
-      storageSasToken:
-        name: keycloak-pgsql-backup-creds
-        key: AZURE_STORAGE_SAS_TOKEN
     {{- end }}
 
     wal:
