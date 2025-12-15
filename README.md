@@ -6,18 +6,16 @@ automation principles.
 Table of Contents
 =================
 
-* [Kubeaid and its feature goals](KUbeaid-and-its-feature-goals)
-* [The Problem KubeAid Solves](The-Problem-KubeAid-Solves)
-  * [Read more about this](Read-more-about-this) 
-* [Setup of Kubernetes cluster](Setup-of-Kubernetes-cluster)
-* [Installation](Installation)
+* [Kubeaid feature goals](#Kubeaid-feature-goals)
+* [The Problem KubeAid Solves](#The-Problem-KubeAid-Solves)
+* [Setup of Kubernetes clusters](#Setup-of-Kubernetes-clusters)
+* [Installation](#Installation)
   * [documentation](./docs/Readme.md) 
-* [Support](Support)
-* [Secrets](Secrets)
-* [License](License)
-* [Technical details on the features](Technical-details-on-the-features)
-* [Documentation](Documentation)
-    * [/docs](/docs)
+* [Support](#Support)
+* [Secrets](#Secrets)
+* [License](#License)
+* [Technical details on the features](#Technical-details-on-the-features)
+* [Documentation](#Documentation)
 
 -----------------
 KubeAid feature goals:
