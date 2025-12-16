@@ -24,7 +24,7 @@ Table of Contents
 2. What is KubeAid
       KubeAid is a GitOps-centric platform that transforms Kubernetes cluster management into a declarative, version-controlled process. It provides:
 
-- **Multi-cloud infrastructure provisioning** supporting Azure AKS (via Terraform/Terragrunt) and Hetzner (via Cluster API)
+- **Multi-cloud infrastructure provisioning** supporting azure, aws, hetzner, and bare metal using cluster api.
 - **100+ pre-configured Helm charts** in argocd-helm-charts/ with automated weekly updates
 - **Comprehensive monitoring** using kube-prometheus with Jsonnet-based generation
 - **Unified access management** through Teleport for Kubernetes, applications, and databases
