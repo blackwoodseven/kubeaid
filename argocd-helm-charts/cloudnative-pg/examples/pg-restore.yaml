@@ -1,0 +1,55 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  annotations:
+    argocd.argoproj.io/tracking-id: oncall:postgresql.cnpg.io/Cluster:obmondo/oncall-pgsql
+  name: oncall-pgsql
+  namespace: obmondo
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:15
+  storage:
+    size: 20Gi
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://kcm-oncall-postgres-backups
+      endpointURL: https://s3.bucket.com
+      s3Credentials:
+        accessKeyId:
+          key: ACCESS_KEY_ID
+          name: oncall-psql-backup-creds
+        secretAccessKey:
+          key: ACCESS_SECRET_KEY
+          name: oncall-psql-backup-creds
+      wal:
+        compression: gzip
+        encryption: AES256
+    retentionPolicy: 30d
+  bootstrap:
+    recovery:
+      source: oncall-pgsql
+      database: oncall
+      owner: oncall
+  externalClusters:
+    - name: oncall-pgsql
+      barmanObjectStore:
+        destinationPath: s3://kbm-oncall-postgres-backups
+        endpointURL: https://s3.bucket.com
+        s3Credentials:
+          accessKeyId:
+            name: oncall-psql-backup-creds
+            key: ACCESS_KEY_ID
+          secretAccessKey:
+            name: oncall-psql-backup-creds
+            key: ACCESS_SECRET_KEY
+        wal:
+          maxParallel: 8
+  instances: 2
+  resources:
+    limits:
+      cpu: '2'
+      memory: 800Mi
+    requests:
+      cpu: 100m
+      memory: 500Mi
+  storage:
+    size: 50Gi
