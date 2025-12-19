@@ -167,7 +167,7 @@ netbird:
 
   signal:
     image:
-      tag: 0.55.1
+      tag: 0.60.8
     service:
       annotations:
         traefik.ingress.kubernetes.io/service.serversscheme: h2c
@@ -186,7 +186,7 @@ netbird:
 
   relay:
     image:
-      tag: 0.55.1
+      tag: 0.60.8
     env:
       NB_LOG_LEVEL: info
       NB_LISTEN_ADDRESS: ":33080"
@@ -209,7 +209,7 @@ netbird:
   dashboard:
     enabled: true
     image:
-      tag: v2.17.0
+      tag: v2.23.0
     envFromSecret:
       AUTH_CLIENT_ID: netbird/idpClientID
       AUTH_AUDIENCE: netbird/idpClientID
