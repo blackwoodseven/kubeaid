@@ -37,9 +37,13 @@ fi
 # Generate by claude to make it better readable
 function ARGFAIL() {
   cat << 'EOF'
-Usage: ./helm-update.sh [OPTIONS]
+Usage: ./manage-helm-chart.sh.sh [OPTIONS]
 
 OPTIONS:
+  --add-helm-chart NAME REPO_URL CHART_VERSION
+                               Add a new Helm chart to the ArgoCD charts directory
+                               Requires: Name, Repository URL, Chart Version
+
   --update-helm-chart CHART    Update a specific Helm chart
                                Requires: Path or name of the chart
 
@@ -61,20 +65,23 @@ OPTIONS:
   -h, --help                   Display this help message
 
 EXAMPLES:
+  # Add a new Helm chart
+  ./manage-helm-chart.sh --add-helm-chart my-chart https://example.com/charts 1.2.3
+
   # Update a single chart
-  ./helm-update.sh --update-helm-chart traefik
+  ./manage-helm-chart.sh --update-helm-chart traefik
 
   # Update a specific chart to a specific version
-  ./helm-update.sh --update-helm-chart traefik --chart-version 25.0.0
+  ./manage-helm-chart.sh --update-helm-chart traefik --chart-version 25.0.0
 
   # Update all charts
-  ./helm-update.sh --update-all
+  ./manage-helm-chart.sh --update-all
 
   # Update all charts except specific ones
-  ./helm-update.sh --update-all --skip-charts 'aws-efs-csi-driver,capi-cluster,grafana-operator,strimzi-kafka-operator'
+  ./manage-helm-chart.sh --update-all --skip-charts 'aws-efs-csi-driver,capi-cluster,grafana-operator,strimzi-kafka-operator'
 
   # Run in CI/CD mode
-  ./helm-update.sh --update-all --actions
+  ./manage-helm-chart.sh --update-all --actions
 
 EOF
 }
@@ -86,11 +93,12 @@ declare SKIP_CHARTS=
 declare ARGOCD_CHART_PATH="argocd-helm-charts"
 declare HELM_VERSION_LAST_UPDATE_FILE="./.helm_version_last_update"
 declare CHART_VERSION=
+declare NEW_CHART=false
 
 # Arrays to track updates
-declare -a MINOR_UPDATES
-declare -a PATCH_UPDATES
-declare -a MAJOR_UPDATES
+declare -a MINOR_UPDATES=()
+declare -a PATCH_UPDATES=()
+declare -a MAJOR_UPDATES=()
 
 # Flags to track highest version bump needed
 HAS_MAJOR=false
@@ -106,6 +114,20 @@ while [[ $# -gt 0 ]]; do
   case "$arg" in
     --update-all)
       UPDATE_ALL=true
+      ;;
+    --add-helm-chart)
+      if [[ $# -lt 3 || "$1" =~ ^-- || "$2" =~ ^-- || "$3" =~ ^-- ]]; then
+        echo "Error: --add-helm-chart requires: <name> <repo-url> <chart-version>"
+        ARGFAIL
+        exit 1
+      fi
+
+      NEW_CHART=true
+      CHART_NAME=$1
+      CHART_URL=$2
+      CHART_VERSION=$3
+
+      shift 3
       ;;
     --update-helm-chart)
       if [[ $# -eq 0 || "$1" =~ ^-- ]]; then
@@ -163,6 +185,20 @@ if [ -n "$SKIP_CHARTS" ]; then
 else
   SKIP_HELM_CHARTS=()
 fi
+
+# Function to create new chart.yaml
+function create_new_chart() {
+  mkdir -p "$ARGOCD_CHART_PATH/$1"
+  cat > "$ARGOCD_CHART_PATH/$1/Chart.yaml" <<EOF
+apiVersion: v2
+name: $1
+version: 1.0.0
+dependencies:
+  - name: $1
+    version: $3
+    repository: $2
+EOF
+}
 
 # Function to determine update type
 function get_update_type() {
@@ -349,11 +385,9 @@ function update_helm_chart {
       HELM_CHART_DEP_CURRENT_VERSION="" # default is empty string, i.e, new chart is being added
 
       # If the dependency chart has already been added
-      if test -f "$HELM_CHART_DEP_CHART_YAML"; then
+      if ! $NEW_CHART; then
         HELM_CHART_DEP_CURRENT_VERSION=$(yq eval ".version" "$HELM_CHART_DEP_CHART_YAML")
       fi
-
-      
 
       CURRENT_DATE="$(date '+%Y-%m-%d')"
       HELM_LAST_UPDATE_DATE="$(get_repo_last_update_date "$HELM_CHART_NAME")"
@@ -420,34 +454,36 @@ function update_helm_chart {
         echo "Helm chart $HELM_CHART_NAME is cached and on latest version $HELM_CHART_CURRENT_VERSION, locally on the filesystem,"
       fi
 
-      # Incase of updates, i.e, chart is already added
-      if [[ "$HELM_CHART_DEP_CURRENT_VERSION" != "" ]]; then
-        local update_type
-        CURRENT_VERSION=$(get_current_kubeaid_version)
+      # Incase of updates, i.e, chart is already added  
+      local update_type update_line
+      CURRENT_VERSION=$(get_current_kubeaid_version)
+      if [ "$NEW_CHART" = true ]; then
+        update_type="major"
+        update_line="- Added new chart $HELM_CHART_NAME with version $CHART_VERSION"
+      else
         HELM_CHART_CURRENT_TAG_VERSION=$(git show "$CURRENT_VERSION:$HELM_CHART_YAML" | yq eval ".dependencies[$i].version")
         update_type=$(get_update_type "$HELM_CHART_CURRENT_TAG_VERSION" "$HELM_CHART_NEW_VERSION")
-
-        local update_line="- Updated $HELM_CHART_NAME from version $HELM_CHART_CURRENT_VERSION to $HELM_CHART_NEW_VERSION"
-
-        case $update_type in
-          major)
-            MAJOR_UPDATES+=("$update_line")
-            HAS_MAJOR=true
-            ;;
-          minor)
-            MINOR_UPDATES+=("$update_line")
-            if [ "$HAS_MAJOR" = false ]; then
-              HAS_MINOR=true
-            fi
-            ;;
-          patch)
-            PATCH_UPDATES+=("$update_line")
-            if [ "$HAS_MAJOR" = false ] && [ "$HAS_MINOR" = false ]; then
-              HAS_PATCH=true
-            fi
-            ;;
-        esac
+        update_line="- Updated $HELM_CHART_NAME from version $HELM_CHART_CURRENT_VERSION to $HELM_CHART_NEW_VERSION"
       fi
+
+      case $update_type in
+        major)
+          MAJOR_UPDATES+=("$update_line")
+          HAS_MAJOR=true
+          ;;
+        minor)
+          MINOR_UPDATES+=("$update_line")
+          if [ "$HAS_MAJOR" = false ]; then
+            HAS_MINOR=true
+          fi
+          ;;
+        patch)
+          PATCH_UPDATES+=("$update_line")
+          if [ "$HAS_MAJOR" = false ] && [ "$HAS_MINOR" = false ]; then
+            HAS_PATCH=true
+          fi
+          ;;
+      esac
       
     done
   fi
@@ -457,23 +493,22 @@ function main (){
   # Generate a unique branch name
   GIT_BRANCH_NAME="Helm_Update"_$(date +"%Y%m%d")_$(echo $RANDOM | base64)
   COMMIT_MSG_FILE=$(mktemp)
+  CURRENT_VERSION=$(get_current_kubeaid_version)
 
+  if [ "$ACTIONS" = false ]; then
+    git switch -c "$GIT_BRANCH_NAME" --track "$(git branch --show-current)"
+  fi
 
-  if [ -n "$UPDATE_HELM_CHART" ]; then
-    if [ "$ACTIONS" = false ]; then
-      git switch -c "$GIT_BRANCH_NAME" --track "$(git branch --show-current)"
-    fi
+  if $NEW_CHART; then
+    create_new_chart $CHART_NAME $CHART_URL $CHART_VERSION
+    update_helm_chart "$ARGOCD_CHART_PATH/$CHART_NAME" "$CHART_VERSION"
+  elif [ -n "$UPDATE_HELM_CHART" ]; then
     update_helm_chart "$ARGOCD_CHART_PATH/$UPDATE_HELM_CHART" "$CHART_VERSION"
   fi
 
   if "$UPDATE_ALL"; then
     # Determine KubeAid version bump
-    CURRENT_VERSION=$(get_current_kubeaid_version)
     echo "Current KubeAid version: $CURRENT_VERSION"
-
-    if [ "$ACTIONS" = false ]; then
-      git switch -c "$GIT_BRANCH_NAME" --track origin/master
-    fi
 
     while read -r HELM_CHART_NAME; do
       for SKIP_HELM_CHART in "${SKIP_HELM_CHARTS[@]}"; do
@@ -482,59 +517,62 @@ function main (){
           break
         fi
       done
-
-      update_helm_chart "$HELM_CHART_NAME" "$CHART_VERSION"
+      
+      update_helm_chart "$ARGOCD_CHART_PATH/$HELM_CHART_NAME" "$CHART_VERSION"
     done < <(find ./"$ARGOCD_CHART_PATH" -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | sort)
-
-    if [ "$HAS_MAJOR" = true ]; then
-        BUMP_TYPE="major"
-    elif [ "$HAS_MINOR" = true ]; then
-        BUMP_TYPE="minor"
-    elif [ "$HAS_PATCH" = true ]; then
-        BUMP_TYPE="patch"
-    else
-      rm -f "$COMMIT_MSG_FILE"
-    fi
-
-    NEW_VERSION=$(bump_version "$CURRENT_VERSION" "$BUMP_TYPE")
-    echo "New KubeAid version: v$NEW_VERSION"
-
-    # Generate commit message
     {
       echo "chore: update helm charts to v$NEW_VERSION"
       echo ""
-
-      if [ ${#MAJOR_UPDATES[@]} -gt 0 ]; then
-        echo "### Major Version Upgrades"
-        printf '%s\n' "${MAJOR_UPDATES[@]}"
-        echo ""
-      fi
-
-      if [ ${#MINOR_UPDATES[@]} -gt 0 ]; then
-        echo "### Minor Version Upgrades"
-        printf '%s\n' "${MINOR_UPDATES[@]}"
-        echo ""
-      fi
-
-      if [ ${#PATCH_UPDATES[@]} -gt 0 ]; then
-        echo "### Patch Version Upgrades"
-        printf '%s\n' "${PATCH_UPDATES[@]}"
-        echo ""
-      fi
     } > "$COMMIT_MSG_FILE"
 
-    # Update the version file
-    # go release script can update with the correct tag
-    echo "$NEW_VERSION" > VERSION
-    git add VERSION
+  fi
 
-    if [[ -n "$(git status --porcelain)" ]]; then
-      git add -A "$ARGOCD_CHART_PATH"
-      git commit -F "$COMMIT_MSG_FILE"
-    fi
-
+  if [ "$HAS_MAJOR" = true ]; then
+    BUMP_TYPE="major"
+  elif [ "$HAS_MINOR" = true ]; then
+    BUMP_TYPE="minor"
+  elif [ "$HAS_PATCH" = true ]; then
+    BUMP_TYPE="patch"
+  else
     rm -f "$COMMIT_MSG_FILE"
   fi
+
+  NEW_VERSION=$(bump_version "$CURRENT_VERSION" "$BUMP_TYPE")
+  echo "New KubeAid version: v$NEW_VERSION"
+
+  # Generate commit message
+  {
+
+    if [ ${#MAJOR_UPDATES[@]} -gt 0 ]; then
+      echo "### Major Version Upgrades"
+      printf '%s\n' "${MAJOR_UPDATES[@]}"
+      echo ""
+    fi
+
+    if [ ${#MINOR_UPDATES[@]} -gt 0 ]; then
+      echo "### Minor Version Upgrades"
+      printf '%s\n' "${MINOR_UPDATES[@]}"
+      echo ""
+    fi
+
+    if [ ${#PATCH_UPDATES[@]} -gt 0 ]; then
+      echo "### Patch Version Upgrades"
+      printf '%s\n' "${PATCH_UPDATES[@]}"
+      echo ""
+    fi
+  } >> "$COMMIT_MSG_FILE"
+
+  # Update the version file
+  # go release script can update with the correct tag
+  echo "$NEW_VERSION" > VERSION
+  git add VERSION
+
+  if [[ -n "$(git status --porcelain)" ]]; then
+    git add -A "$ARGOCD_CHART_PATH"
+    git commit -F "$COMMIT_MSG_FILE"
+  fi
+
+  rm -f "$COMMIT_MSG_FILE"
 
   find . -name '*.tgz' -delete
 }
