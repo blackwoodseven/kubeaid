@@ -18,6 +18,36 @@ For additional configuration options for social authentication using Python, ref
 
 After spinning up relate - you need to open a shell in the relate pod and run this to create your initial admin user:
 ```
-poetry run python manage.py createsuperuser --username=youradminuser
+uv run python manage.py createsuperuser --username=youradminuser
 ```
+
+## Backups and Recovery
+
+### PostgreSQL backups
+
+* PostgreSQL backups must be handled using **CloudNativePG (CNPG) backups**.
+* This is the **primary and supported backup mechanism** for the database at this time.
+* Follow on this https://github.com/Obmondo/KubeAid/blob/master/argocd-helm-charts/cloudnative-pg/readme.md#backup
+
+---
+
+#### Restore procedure
+
+* Restore using https://github.com/Obmondo/KubeAid/blob/master/argocd-helm-charts/cloudnative-pg/readme.md#recovery 
+* Additionally, You need to replicate The course repositories that located inside the **Relate pod** under:
+
+  ```
+  /var/www/relate/git-roots
+  ```
+
+1. Identify the **course identifier**.
+![alt text](image.png)
+2. Create a directory named after the course identifier.
+3. `cd` into that directory.
+4. Clone the corresponding course repository using the same private key added for the course:
+
+   ```bash
+   git clone <course-repo-url>
+   ```
+5. Retain only the `.git` directory and remove all other files from the working tree.
 
