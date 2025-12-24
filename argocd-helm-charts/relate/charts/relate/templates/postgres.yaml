@@ -96,9 +96,9 @@ spec:
           key: AZURE_STORAGE_SAS_TOKEN
       {{- end }}
       wal:
-        encryption: ""
+        encryption: {{ (((.Values.cnpg).backup).data).encryption }}
       data:
-        encryption: ""
+        encryption: {{ (((.Values.cnpg).backup).data).encryption }}
     retentionPolicy: "30d"
   {{ end  }}
 {{ end }}
