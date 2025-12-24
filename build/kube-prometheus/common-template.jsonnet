@@ -382,6 +382,18 @@ local kp =
           externalUrl: if std.objectHas(vars, 'prometheus_ingress_host') then (
             'https://' + vars.prometheus_ingress_host
           ) else '',
+          externalLabels: {
+            product: 'kubeaid',
+          } + if std.objectHas(vars, 'connect_obmondo') && vars.connect_obmondo then (
+            local parts = std.split(vars.certname, '.');
+            local is_valid_certname = std.length(parts) == 2 &&
+                                      std.length(parts[1]) >= 7 &&
+                                      std.length(parts[1]) <= 10;
+            assert is_valid_certname : 'certname must match pattern: <cluster-name>.<customerid>';
+            {
+              certname: vars.certname,
+            }
+          ) else {},
           replicas: if std.objectHas(vars.prometheus, 'replicas') then vars.prometheus.replicas else 1,
           resources: vars.prometheus_resources,
           retention: vars.prometheus.retention,
