@@ -81,12 +81,10 @@ podAndServiceMonitor:
 
 podAnnotations: {}
 
-podSecurityContext:
-  {}
+podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext:
-  {}
+securityContext: {}
   # capabilities:
   #   drop:
   #   - ALL
@@ -101,8 +99,7 @@ agent:
       operator: "Equal"
       value: "true"
       effect: "NoSchedule"
-  resources:
-    {}
+  resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
     # choice for the user. This also increases chances charts run on environments with little
     # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -125,6 +122,9 @@ agent:
             scrape_interval: 5s
             static_configs:
               - targets: ["0.0.0.0:8888"]
+            kubernetes_sd_configs:
+              - role: endpointslice
+                follow_redirects: true
 
     filelog/std:
       include: [/var/log/pods/*/*/*.log]
@@ -364,8 +364,7 @@ gateway:
   affinity: {}
   nodeSelector: {}
   tolerations: []
-  resources:
-    {}
+  resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
     # choice for the user. This also increases chances charts run on environments with little
     # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -418,8 +417,7 @@ gateway:
     # Most folks don't need prometheus receiver since default dashboards get data from kubeletstats receiver, so it's commented out by default
     prometheus:
       config:
-        scrape_configs:
-          []
+        scrape_configs: []
           # - job_name: "kubeApiServer"
           #   sample_limit: 10000
           #   # Default to scraping over https. If required, just disable this or change to `http`.
