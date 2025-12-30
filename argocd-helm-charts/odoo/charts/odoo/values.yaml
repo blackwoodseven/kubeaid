@@ -123,6 +123,9 @@ odooPassword: ""
 ## @param odooSkipInstall Skip Odoo installation wizard
 ##
 odooSkipInstall: false
+## @param odooSkipModuleUpdate skip Odoo module updates. 
+##
+odooSkipModuleUpdate: true
 ## @param odooDatabaseFilter Filter odoo database by using a regex
 ##
 odooDatabaseFilter: .*
