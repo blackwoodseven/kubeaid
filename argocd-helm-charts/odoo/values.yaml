@@ -1,13 +1,60 @@
 ---
-# we moved to bitnami legacy images so `allowInsecureImages` is enabled due to an image verification issue during chart deployment.
-# Refer to https://github.com/Obmondo/kubeaid/blob/fc2defaa25dc9c9f2da00db3ecf893277e0250f6/argocd-helm-charts/odoo/charts/odoo/charts/postgresql/charts/common/templates/_errors.tpl#L68
-# for context on this workaround and related error handling logic.
+# Default values for Odoo 19 setup
+# We use the official Odoo 19 image for latest features and compatibility
+
 global:
   security:
+    # Allow insecure images for bitnami legacy compatibility if needed
     allowInsecureImages: true
+
 odoo:
   postgresql:
     enabled: false
+
+  # Use official Odoo 19 image
+  image:
+    registry: docker.io
+    repository: odoo
+    tag: "19.0"
+
+  # Command to run Odoo with external database and auto-init
+  command:
+    - /bin/bash
+    - -c
+  args:
+    - |
+      DB_HOST="odoo-pgsql-rw"
+      DB_PORT="5432"
+      DB_USER="odoo"
+      DB_NAME="odoo"
+      DB_PASS="$(cat /opt/bitnami/odoo/secrets/password)"
+
+      # Wait for PostgreSQL
+      echo "Waiting for PostgreSQL..."
+      until PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "SELECT 1" > /dev/null 2>&1; do
+        sleep 5
+      done
+      echo "PostgreSQL is ready!"
+
+      # Check if database needs initialization
+      TABLE_COUNT=$(PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT count(*) FROM pg_tables WHERE schemaname = 'public'" 2>/dev/null | tr -d ' ' || echo "0")
+
+      if [ "$TABLE_COUNT" -lt "50" ]; then
+        echo "Initializing database (table count: $TABLE_COUNT)..."
+        /usr/bin/odoo --database="$DB_NAME" --db_host="$DB_HOST" --db_port="$DB_PORT" --db_user="$DB_USER" --db_password="$DB_PASS" --init=base --stop-after-init
+        echo "Database initialized!"
+      fi
+
+      # Start Odoo normally
+      exec /usr/bin/odoo --database="$DB_NAME" --db_host="$DB_HOST" --db_port="$DB_PORT" --db_user="$DB_USER" --db_password="$DB_PASS"
+
+  extraEnvVars:
+    - name: HOST
+      value: odoo-pgsql-rw
+    - name: USER
+      value: odoo
+    - name: PASSWORD_FILE
+      value: /opt/bitnami/odoo/secrets/password
 
   externalDatabase:
     host: odoo-pgsql-rw
@@ -26,6 +73,12 @@ odoo:
     enabled: true
     size: 8Gi
 
+  # Mount the PVC at /var/lib/odoo for official Odoo 19 image (not Bitnami)
+  # This is critical for persistent filestore (CSS/JS assets, uploaded files)
+  extraVolumeMounts:
+    - name: odoo-data
+      mountPath: /var/lib/odoo
+
   service:
     type: NodePort
     ports:
@@ -36,23 +89,16 @@ odoo:
   ingress:
     enabled: false
 
-  image:
-    registry: docker.io
-    repository: bitnamilegacy/odoo
-
-# tolerations:
-#   - key: "node-role.kubernetes.io/control-plane"
-#     operator: "Exists"
-#     effect: "NoSchedule"
-
+# PostgreSQL configuration using CNPG operator
 postgres:
   size: 4Gi
+  instance: 1
   recover: false
   pass: odoo-pgsql-app
   resources:
     limits:
       memory: 1000Mi
-      cpu: 500Mi
+      cpu: 500m
     requests:
       memory: 500Mi
       cpu: 250m
