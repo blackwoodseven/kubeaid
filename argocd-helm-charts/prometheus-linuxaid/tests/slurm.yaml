@@ -1,0 +1,29 @@
+---
+evaluation_interval: 1m
+
+rule_files:
+  - ../rules/slurm.yaml
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: obmondo_monitoring{certname="test.abc", alert_id="monitor::system::slurm::node_status"}
+        values: 1x1000
+      - series: slurm_node_status{node="test",partition="batch*",status="idle", certname="test.abc"}
+        values: 0x1000
+
+    alert_rule_test:
+      - alertname: monitor::system::slurm::node_status
+        eval_time: 15m
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              certname: test.abc
+              alert_id: monitor::system::slurm::node_status
+              status: idle
+              node: test
+              partition: "batch*"
+            exp_annotations:
+              summary: "Slurm node is down"
+              description: |
+                A slurm node **test** is down.
