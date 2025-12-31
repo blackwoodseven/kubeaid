@@ -1,0 +1,15 @@
+groups:
+  - name: monitor::system::slurm
+    rules:
+    - alert: monitor::system::slurm::node_status
+      expr: |
+        slurm_node_status == 0
+        and on(certname) obmondo_monitoring{alert_id="monitor::system::slurm::node_status"} > 0
+      for: 15m
+      labels:
+        severity: critical
+        alert_id: monitor::system::slurm::node_status
+      annotations:
+        summary: "Slurm node is down"
+        description: |
+          A slurm node **{{ .Labels.node }}** is down.

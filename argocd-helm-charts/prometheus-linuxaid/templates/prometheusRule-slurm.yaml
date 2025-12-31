@@ -1,0 +1,9 @@
+{{- if .Values.prometheusRule.slurm }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: slurm-rules
+  namespace: {{ template "prometheus-linuxaid.namespace" . }}
+spec:
+  {{- $.Files.Get "rules/slurm.yaml" | nindent 4 }}
+{{- end }}

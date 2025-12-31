@@ -72,6 +72,7 @@ prometheusRule:
   zfs: true
   smartmon: true
   gitlab_runner: true
+  slurm: true
 
 alertmanager:
   enabled: true
