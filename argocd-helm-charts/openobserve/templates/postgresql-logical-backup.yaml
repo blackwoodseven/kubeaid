@@ -15,7 +15,7 @@ spec:
         spec:
           containers:
             - name: logical-backup
-              image: ghcr.io/obmondo/postgres-logical-backup:v1.0.7
+              image: ghcr.io/obmondo/postgres-logical-backup:3.1.6
               imagePullPolicy: IfNotPresent
               env:
                 - name: POD_NAMESPACE
@@ -28,7 +28,7 @@ spec:
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.postgresqlBackup.pass }}
+                      name: {{ .Values.postgresqlBackup.secret }}
                       key: password
                 - name: PGPORT
                   value: "{{ .Values.postgresqlBackup.port | default 5432 }}"
@@ -52,7 +52,7 @@ spec:
                   valueFrom:
                     secretKeyRef:
                       key: LOGICAL_BACKUP_AZURE_STORAGE_ACCOUNT_KEY
-                      name: openobserve-pgsql-postgres-pod-env
+                      name: {{ .Values.postgresqlBackup.secret }}
                 - name: LOGICAL_BACKUP_S3_BUCKET
                   value: {{ (.Values.postgresqlBackup.logicalbackup).azurecontainer }}
                 - name: LOGICAL_BACKUP_S3_BUCKET_SCOPE_SUFFIX
