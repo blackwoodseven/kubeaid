@@ -422,8 +422,9 @@ local kp =
             remoteWrite+: [
               {
                 url: remoteWrite.url,
+                remoteTimeout: '60s',
                 queueConfig: {
-                  maxSamplesPerSend: 10000,
+                  maxSamplesPerSend: 500,
                 },
                 basicAuth: {
                   username: {

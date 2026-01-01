@@ -44,8 +44,7 @@ podSecurityContext:
   runAsGroup: 3000
   runAsNonRoot: true
 
-securityContext:
-  {}
+securityContext: {}
   # capabilities:
   #   drop:
   #   - ALL
@@ -58,7 +57,7 @@ replicaCount:
   querier: 1
   router: 1
   alertmanager: 1
-  alertquerier: 0
+  alertquerier: 1
   compactor: 1
   zplane: 0
   reportserver: 0
@@ -753,8 +752,7 @@ zplane:
   ingress: # if enabled is true then this is required
     enabled: false
     className: ""
-    annotations:
-      {}
+    annotations: {}
       # kubernetes.io/ingress.class: nginx
       # cert-manager.io/issuer: letsencrypt
       # kubernetes.io/tls-acme: true
@@ -763,8 +761,7 @@ zplane:
         paths:
           - path: /
             pathType: ImplementationSpecific
-    tls:
-      []
+    tls: []
       # - secretName: chart-example-tls
       #   hosts:
       #     - chart-example.local
@@ -776,6 +773,10 @@ zplane:
 #   https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.22/releases/cnpg-1.22.1.yaml
 postgres:
   enabled: true
+  externalSecret:
+    enabled: false
+    # name of the external secret
+    name: "super-pg-secret"
   pgadmin:
     enabled: false
     image:
@@ -791,6 +792,7 @@ postgres:
     PGADMIN_DEFAULT_EMAIL: hello@openobserve.ai
     PGADMIN_DEFAULT_PASSWORD: Batman123
   spec:
+    username: openobserve
     password: Batman123 # password # username is hardcoded to openobserve, db is hardcoded to app
     enableSuperuserAccess: true # if true then superuser access will be enabled. You can get the password from appropriate secret once the postgres is deployed
     instances: 2 # creates a primary and a replica. replica will become primary if the primary fails

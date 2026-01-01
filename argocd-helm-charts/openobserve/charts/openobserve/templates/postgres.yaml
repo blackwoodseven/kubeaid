@@ -8,7 +8,7 @@ spec:
   enableSuperuserAccess: true
   managed:
     roles:
-    - name: openobserve  # this should match the username in secret
+    - name: {{ .Values.postgres.spec.username | default "openobserve" }}  # this should match the username in secret
       ensure: present
       comment: OpenObserve and allies - OpenObserve, OpenOFGA, DexIDP
       login: true
@@ -18,7 +18,11 @@ spec:
         - pg_read_all_data
         - pg_write_all_data
       passwordSecret:
+        {{- if .Values.postgres.externalSecret.enabled }}
+        name: {{ .Values.postgres.externalSecret.name }}
+        {{- else }}
         name: {{ include "openobserve.fullname" . }}-openobservepguser
+        {{- end }}
   instances: {{ .Values.postgres.spec.instances}}
   storage: {{ .Values.postgres.spec.storage | toYaml | nindent 4 }}
   postgresql: {{ .Values.postgres.spec.postgresql | toYaml | nindent 4 }}
