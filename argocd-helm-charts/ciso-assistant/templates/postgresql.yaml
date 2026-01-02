@@ -2,20 +2,20 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   {{- if (.Values.postgres).recover }}
-  name: ciso-assitant-pgsql-recover
+  name: ciso-assistant-pgsql-recover
   {{- else }}
-  name: ciso-assitant-pgsql
+  name: ciso-assistant-pgsql
   {{- end }}
 spec:
   instances: {{ ((.Values.postgres).instance) | default 1 }}
   {{- if (.Values.postgres).recover }}
   bootstrap:
-    recovery: ciso-assitant-pgsql
+    recovery: ciso-assistant-pgsql
   {{- else }}
   bootstrap:
     initdb:
-      database: ciso-assitant
-      owner: ciso-assitant
+      database: ciso-assistant
+      owner: ciso-assistant
   {{- end }}
   resources:
     limits:
@@ -30,32 +30,32 @@ spec:
     {{- end }}
   {{- if (.Values.postgres).recover }}
   externalClusters:
-    name: ciso-assitant-pgsql
+    name: ciso-assistant-pgsql
     barmanObjectStore:
       destinationPath: {{ ((.Values.postgres).backup).destinationPath }}
       endpointURL: {{ ((.Values.postgres).backup).endpointURL }}
       {{- if eq ((.Values.postgres).backup).cloud "aws" }}
       s3Credentials:
         accessKeyId:
-          name: ciso-assitant-pgsql-backup-creds
+          name: ciso-assistant-pgsql-backup-creds
           key: ACCESS_KEY_ID
         secretAccessKey:
-          name: ciso-assitant-pgsql-backup-creds
+          name: ciso-assistant-pgsql-backup-creds
           key: ACCESS_SECRET_KEY
       {{- end }}
       {{- if eq ((.Values.postgres).backup).cloud "azure" }}
       azureCredentials:
         connectionString:
-          name: ciso-assitant-pgsql-backup-creds
+          name: ciso-assistant-pgsql-backup-creds
           key: AZURE_CONNECTION_STRING
         storageAccount:
-          name: ciso-assitant-pgsql-backup-creds
+          name: ciso-assistant-pgsql-backup-creds
           key: AZURE_STORAGE_ACCOUNT
         storageKey:
-          name: ciso-assitant-pgsql-backup-creds
+          name: ciso-assistant-pgsql-backup-creds
           key: AZURE_STORAGE_KEY
         storageSasToken:
-          name: ciso-assitant-pgsql-backup-creds
+          name: ciso-assistant-pgsql-backup-creds
           key: AZURE_STORAGE_SAS_TOKEN
       {{- end }}
         wal:
@@ -69,25 +69,25 @@ spec:
       {{- if eq ((.Values.postgres).backup).cloud "aws" }}
       s3Credentials:
         accessKeyId:
-          name: ciso-assitant-pgsql-backup-creds
+          name: ciso-assistant-pgsql-backup-creds
           key: ACCESS_KEY_ID
         secretAccessKey:
-          name: ciso-assitant-pgsql-backup-creds
+          name: ciso-assistant-pgsql-backup-creds
           key: ACCESS_SECRET_KEY
       {{- end }}
       {{- if eq ((.Values.postgres).backup).cloud "azure" }}
       azureCredentials:
         connectionString:
-          name: ciso-assitant-pgsql-backup-creds
+          name: ciso-assistant-pgsql-backup-creds
           key: AZURE_CONNECTION_STRING
         storageAccount:
-          name: ciso-assitant-pgsql-backup-creds
+          name: ciso-assistant-pgsql-backup-creds
           key: AZURE_STORAGE_ACCOUNT
         storageKey:
-          name: ciso-assitant-pgsql-backup-creds
+          name: ciso-assistant-pgsql-backup-creds
           key: AZURE_STORAGE_KEY
         storageSasToken:
-          name: ciso-assitant-pgsql-backup-creds
+          name: ciso-assistant-pgsql-backup-creds
           key: AZURE_STORAGE_SAS_TOKEN
       {{- end }}
       wal:
