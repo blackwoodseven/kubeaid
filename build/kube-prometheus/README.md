@@ -166,10 +166,13 @@ available in https://github.com/prometheus/alertmanager/blob/main/doc/alertmanag
 ```
 jsonnet -e '(import "mixin.libsonnet").prometheusAlerts' | gojsontoyaml > prometheus.yaml
 ```
-
 verify that new prometheus.yaml generated in the above step is valid
 ```
 promtool check rules build/kube-prometheus/mixins/${NEW_RULE}/prometheus.yaml
+```
+verify that new rules are working as intended
+```
+promtool test rules build/kube-prometheus/mixins/${NEW_RULE}/{TEST_FILE}.yaml
 ```
 
 this file is just for testing and verification, the actual rule is setup in kubeaid-config-{customerid} repo, which we generate using build.sh
