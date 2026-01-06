@@ -27,15 +27,35 @@ Copy the private key and create a secret named `opendesk-dkimpy-milter` from tha
 The build script needs one variable kubeaid-config repo path which contains the values file.
 Sample values [file](./examples/values.yaml)
 
-NOTE: path needs to be an absolute path which means you need to provide the entire path.
+NOTE: path needs to be an absolute path which means you need to provide the entire path. Ensure the values file is named as `values-opendesk.yaml`
 
 ```bash
-./build.sh $kubaid-config-path
+./build.sh $kubaid-config-values-file-directory-path
 ```
 
-The kubeaid-config repo path should be such that the opendesk.yaml file get added in opendesk app.
-For eg - the kubeaid-config repo path can be like `kubeaid-config/k8s/$clustername/opendesk` 
+For eg - the kubeaid-config values file directory path can be like `kubeaid-config/k8s/$clustername/argocd-apps` 
 
-Once the script runs it will generate a opendesk.yaml file inside the `$kubaid-config-path` provided which you can apply in your cluster.
+Once the script runs it will generate the following - 
+- All the core apps needed by opendesk apps will be generated in `kubeaid-config/k8s/$clustername/opendesk-essentials/opendesk-essentials.yaml`. This needs to be synced first.
+- Rest of the apps like `mail`, `chat` etc. will be generated in `kubeaid-config/k8s/$clustername/opendesk/mail/mail.yaml`, `kubeaid-config/k8s/$clustername/opendesk/chat/chat.yaml` respectively
 
-NOTE: you need to have `opendesk` namespace created in the cluster
+*Note* - Chat, webmail etc applications requires users of type `opendesk-user` to be created.
+
+More info on opendesk services can be found [here](./docs/opendesk-services-description.md)
+
+
+## Adding missing configuration using Custom Go Template Values Files
+
+Sometimes some value file configurations maybe missing for certain application charts, f.ex for openproject application, [tmpVolumesStorageClassName](https://github.com/opf/helm-charts/blob/22758c9363583a71a289b36a75c3b893f9a3e763/charts/openproject/values.yaml#L540) option wasn't in the helmfile app values files found in [./versions/v1.6.0/helmfile/apps/openproject/](./versions/v1.6.0/helmfile/apps/openproject/). So the following was done to add this configuration -
+- create a custom go template values file (`values-<app>.yaml`) in the `value-files` directory as done [here](./value-files/values-openproject.yaml.gotmpl), with the required configuration. 
+- add default values for the configuration in the [default values file](./default-values/values.yaml)
+- in the [default values file](./default-values/values.yaml) add the new custom go template values file in the helmfile app release as shown below
+
+```
+customization:
+  release:
+    <app>:
+      - "../../../../../value-files/values-<app>.yaml.gotmpl"
+```
+
+Follow the above to add missing configurations in the helmfile opendesk apps.

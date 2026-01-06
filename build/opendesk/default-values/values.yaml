@@ -1,0 +1,21 @@
+customization:
+  release:
+    openproject:
+      - "../../../../../value-files/values-openproject.yaml.gotmpl"
+    postfix:
+      - "../../../../../value-files/values-postfix.yaml.gotmpl"
+
+persistence:
+  storages:
+    openproject:
+      storageClassName: ""
+
+openproject:
+  tmpVolumesStorageClassName: "openebs-tmp-hostpath"
+
+debug:
+  enabled: true
+
+apps:
+  dkimpy:
+    enabled: true
