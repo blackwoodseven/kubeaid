@@ -353,7 +353,7 @@ function add_last_update_date() {
 }
 
 function update_helm_chart {
-  
+
   HELM_CHART_PATH="$1"
   HELM_CHART_YAML="$HELM_CHART_PATH/Chart.yaml"
   HELM_CHART_NEW_VERSION=$2
@@ -454,7 +454,7 @@ function update_helm_chart {
         echo "Helm chart $HELM_CHART_NAME is cached and on latest version $HELM_CHART_CURRENT_VERSION, locally on the filesystem,"
       fi
 
-      # Incase of updates, i.e, chart is already added  
+      # Incase of updates, i.e, chart is already added
       local update_type update_line
       CURRENT_VERSION=$(get_current_kubeaid_version)
       if [ "$NEW_CHART" = true ]; then
@@ -484,7 +484,7 @@ function update_helm_chart {
           fi
           ;;
       esac
-      
+
     done
   fi
 }
@@ -496,11 +496,11 @@ function main (){
   CURRENT_VERSION=$(get_current_kubeaid_version)
 
   if [ "$ACTIONS" = false ]; then
-    git switch -c "$GIT_BRANCH_NAME" --track "$(git branch --show-current)"
+    git switch -c "$GIT_BRANCH_NAME" --track origin/master
   fi
 
   if $NEW_CHART; then
-    create_new_chart $CHART_NAME $CHART_URL $CHART_VERSION
+    create_new_chart "$CHART_NAME $CHART_URL $CHART_VERSION"
     update_helm_chart "$ARGOCD_CHART_PATH/$CHART_NAME" "$CHART_VERSION"
   elif [ -n "$UPDATE_HELM_CHART" ]; then
     update_helm_chart "$ARGOCD_CHART_PATH/$UPDATE_HELM_CHART" "$CHART_VERSION"
@@ -517,14 +517,13 @@ function main (){
           break
         fi
       done
-      
+
       update_helm_chart "$ARGOCD_CHART_PATH/$HELM_CHART_NAME" "$CHART_VERSION"
     done < <(find ./"$ARGOCD_CHART_PATH" -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | sort)
     {
       echo "chore: update helm charts to v$NEW_VERSION"
       echo ""
     } > "$COMMIT_MSG_FILE"
-
   fi
 
   if [ "$HAS_MAJOR" = true ]; then
