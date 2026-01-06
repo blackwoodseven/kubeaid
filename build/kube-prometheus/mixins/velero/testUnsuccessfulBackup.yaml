@@ -1,0 +1,71 @@
+rule_files:
+  - prometheus.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'velero_backup_attempt_total{schedule="daily"}'
+        values: '1+0x20000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="daily", case="normal_fail"}'
+        values: '0+0x20000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="daily", case="monday_ok"}'
+        values: '302400+0x20000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="daily", case="monday_fail"}'
+        values: '0+0x20000'
+
+    alert_rule_test:
+      - eval_time: 30h
+        alertname: VeleroUnsuccessfulBackup
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              schedule: daily
+              case: normal_fail
+            exp_annotations:
+              summary: "Velero backup for schedule was unsuccessful."
+              description: "Velero backup was not successful for daily."
+          - exp_labels:
+              severity: warning
+              schedule: daily
+              case: monday_fail
+            exp_annotations:
+              summary: "Velero backup for schedule was unsuccessful."
+              description: "Velero backup was not successful for daily."
+
+      - eval_time: 108h
+        alertname: VeleroUnsuccessfulBackup
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              schedule: daily
+              case: monday_fail
+            exp_annotations:
+              summary: "Velero backup for schedule was unsuccessful."
+              description: "Velero backup was not successful for daily."
+          - exp_labels:
+              severity: warning
+              schedule: daily
+              case: normal_fail
+            exp_annotations:
+              summary: "Velero backup for schedule was unsuccessful."
+              description: "Velero backup was not successful for daily."
+
+  - interval: 1m
+    input_series:
+      - series: 'velero_backup_attempt_total{schedule="6hrly"}'
+        values: '1+0x20000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="6hrly"}'
+        values: '18000+0x20000'
+
+    alert_rule_test:
+      - eval_time: 12h
+        alertname: VeleroUnsuccessfulBackup
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              schedule: 6hrly
+            exp_annotations:
+              summary: "Velero backup for schedule was unsuccessful."
+              description: "Velero backup was not successful for 6hrly."
