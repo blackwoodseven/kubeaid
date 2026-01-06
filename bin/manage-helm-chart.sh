@@ -348,7 +348,7 @@ function add_last_update_date() {
     echo "$HELM_CHART_LINE" >> "$HELM_VERSION_LAST_UPDATE_FILE"
   else
     # Remove duplicate line if its present for any reason
-    sed -i "/$HELM_CHART_NAME/d; \$a $CURRENT_DATE $HELM_CHART_LINE/d" "$HELM_VERSION_LAST_UPDATE_FILE"
+    sed -i "/$HELM_CHART_NAME/d; \$a $HELM_CHART_LINE/d" "$HELM_VERSION_LAST_UPDATE_FILE"
   fi
 }
 
