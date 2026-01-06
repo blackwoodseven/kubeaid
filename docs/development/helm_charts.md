@@ -1,30 +1,12 @@
-# Adding new charts to argocd-helm-charts
-
-To add an upstream chart :
-
-- create a new folder under kubeaid/argocd-helm-charts/
-
-```bash
-  mkdir <chart name>
-```
-
-- Add a Chart.yaml inside the folder with version and repo URL of the upstream Helm chart.
-  It should be similar to the example argocd chart below.
-
-```yaml
-apiVersion: v1
-name: argo-cd
-version: 2.2.2
-dependencies:
-  - name: argo-cd
-    version: 3.29.5
-    repository: https://argoproj.github.io/argo-helm
-```
-
-Use [this script](../bin/helm-repo-update.sh)
-to get the upstream chart and dependencies
+# Adding/Updating new charts to argocd-helm-charts
 
 ## Usage
+
+### Add a new chart
+
+```sh
+./bin/helm-repo-update.sh --add-new-chart <chart-name> <chart-url> <version> 
+```
 
 ### Update a specific chart
 
