@@ -7,7 +7,7 @@ It provides a secure, scalable, and feature-rich solution for hosting container 
 At Obmondo, we rely on Harbor as the central registry for all our build artifacts, container images, and CI/CD operations. 
 Hosting our own registry enhances security, improves performance, and reduces reliance on third-party services.
 
-If you're new to KubeAid, check out our [README](../../README.md) and our [setup guide](../setup-guide.md) to get started.
+If you're new to KubeAid, check out our [README](../../README.md).
 
 
 ## Deploying Harbor with KubeAid
@@ -122,9 +122,4 @@ jobs:
     container:
       image: harbor.organization.com/organization/project-name:version
 ```
-
-## Let's work together
-
-TODO
-
 
