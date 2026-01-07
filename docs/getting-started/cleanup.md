@@ -22,7 +22,12 @@ This command will:
 - Delete the control plane
 - Remove cloud resources (for cloud providers)
 
-### Step 2: Delete the Management Cluster
+### Step 2: Delete the Management Cluster (ClusterAPI only)
+
+> **Note:** This step only applies to **ClusterAPI-based installations** (AWS, Azure, Hetzner). If you used **KubeOne** for a bare metal (SSH-only) cluster, skip this step - there is no management cluster.
+
+**What is the management cluster?**  
+ClusterAPI uses a temporary local Kubernetes cluster (running in Docker via K3D) to orchestrate the provisioning of your actual "main" cluster. This management cluster runs the ClusterAPI controllers that create and manage your cloud infrastructure.
 
 ```bash
 kubeaid-cli cluster delete management
@@ -30,9 +35,9 @@ kubeaid-cli cluster delete management
 
 This command removes the local management cluster used during bootstrapping.
 
-### Complete Cleanup Command
+### Complete Cleanup Command (ClusterAPI only)
 
-For a single command cleanup:
+For ClusterAPI-based installations, a single command cleanup:
 
 ```bash
 kubeaid-cli cluster delete main && kubeaid-cli cluster delete management
