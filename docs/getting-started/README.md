@@ -4,7 +4,28 @@ This guide walks you through the complete process of setting up and managing a K
 
 ## Overview
 
-KubeAid provides a streamlined, GitOps-based approach to Kubernetes cluster management. All clusters include:
+KubeAid is a **Kubernetes management suite** that helps you set up and operate Kubernetes clusters following **GitOps principles**.
+
+```mermaid
+flowchart TB
+    subgraph KubeAid["KubeAid Features"]
+        direction LR
+        subgraph Obs["Observability"]
+            KP["KubePrometheus<br/>+ Alerting"]
+        end
+        subgraph Git["GitOps"]
+            AG["ArgoCD +<br/>Sealed Secrets"]
+        end
+        subgraph Scale["Auto-scaling"]
+            AS["Scale to/from<br/>Zero"]
+        end
+        subgraph Mgmt["Cluster Management"]
+            CM["ClusterAPI +<br/>KubeOne"]
+        end
+    end
+```
+
+All KubeAid clusters include:
 
 - **Cilium CNI** - running in kube-proxyless mode  
 - **ArgoCD** - for GitOps-based deployments  
@@ -30,7 +51,7 @@ After installation, use these guides for ongoing cluster management:
 
 | Operation | Document | Description |
 |-----------|----------|-------------|
-| Take down | [Take Down](./take-down.md) | Delete and clean up cluster resources |
+| Cleanup | [Cleanup](./cleanup.md) | Delete and clean up cluster resources |
 
 ## Supported Providers
 
