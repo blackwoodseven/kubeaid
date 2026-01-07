@@ -30,8 +30,15 @@ The `azure` provider is used to provision a KubeAid managed Kubernetes cluster i
 - [Register an application (Service Principal) in Microsoft Entra ID](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app).
 
 - An OpenSSH type SSH keypair, whose private key you'll use to SSH into the VMs.
+  ```bash
+  ssh-keygen -t rsa -b 4096 -f azure-ssh-key
+  ```
 
-- A PEM type SSH keypair, which will be used for Azure Workload Identity setup.
+- An RSA key pair in PEM format, which will be used for Azure Workload Identity setup.
+  ```bash
+  openssl genrsa -out jwt-signing-key.pem 2048
+  openssl rsa -in jwt-signing-key.pem -pubout -out jwt-signing-pub.pem
+  ```
 
 ## Installation
 

@@ -57,11 +57,18 @@ For GitLab, you can create a Project Access Token (available in self-hosted and 
   
 - **System Requirements**: A Linux or MacOS computer with at least 16GB of RAM (8GB might work but may encounter Out of memory (OOM) issues).
   
-- **Service Principal**: Register an application (Service Principal) in Microsoft Entra ID.  
+- **Service Principal**: [Register an application (Service Principal) in Microsoft Entra ID](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app).  
   
 - **SSH Keypairs**:   
-  - An OpenSSH type SSH keypair (private key for SSH access to VMs)  
-  - A PEM type SSH keypair (for Azure Workload Identity setup)   
+  - An OpenSSH type SSH keypair (private key for SSH access to VMs). You can generate this using:
+    ```bash
+    ssh-keygen -t rsa -b 4096 -f azure-ssh-key
+    ```
+  - An RSA key pair in PEM format (required for Azure Workload Identity setup). You can generate this using:
+    ```bash
+    openssl genrsa -out jwt-signing-key.pem 2048
+    openssl rsa -in jwt-signing-key.pem -pubout -out jwt-signing-pub.pem
+    ```
   
 ### Bare Metal  
   
