@@ -52,6 +52,32 @@ The bootstrap process will:
 4. **Install core components** - Deploy Cilium, ArgoCD, Sealed Secrets, and KubePrometheus
 5. **Configure GitOps** - Set up ArgoCD to sync with your kubeaid-config repository
 
+#### Bootstrap Architecture (ClusterAPI)
+
+```mermaid
+flowchart TB
+    subgraph Local["Your Local Machine"]
+        subgraph MgmtCluster["Temp Management Cluster"]
+            CAPI["ClusterAPI<br/>Operator"]
+            Kubeadm["Kubeadm<br/>Bootstrap"]
+            InfraProv["Infrastructure<br/>Provider<br/>(AWS/Azure/Hetzner)"]
+        end
+    end
+    
+    subgraph MainCluster["Your Main Cluster"]
+        CP["Control Plane<br/>Nodes"]
+        W1["Worker<br/>Node 1"]
+        W2["Worker<br/>Node 2"]
+        WN["Worker<br/>Node N"]
+    end
+    
+    CAPI -->|Provisions| CP
+    Kubeadm -->|Configures| CP
+    InfraProv -->|Creates<br/>Infrastructure| CP
+```
+
+> **Note:** For KubeOne (SSH-only bare metal), there is no management cluster. KubeOne connects directly to your servers via SSH.
+
 ### Monitoring Progress
 
 - Logs are streamed to your terminal in real-time
