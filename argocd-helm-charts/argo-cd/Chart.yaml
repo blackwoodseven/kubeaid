@@ -1,11 +1,7 @@
 apiVersion: v1
 name: argo-cd
-version: 2.2.2
+version: 1.0.0
 dependencies:
   - name: argo-cd
-    # NOTE: DO NOT Upgrade the chart version
-    # 2.3v argocd failes with remote value files
-    # 3.35.4v helm chart fails also with bad path of the values files (this is the last release for 2.2.x argocd)
-    # please stick to 3.29.5, why ? cause its a tested and the last working helm chart version
-    version: "9.1.6"
+    version: "9.2.4"
     repository: https://argoproj.github.io/argo-helm

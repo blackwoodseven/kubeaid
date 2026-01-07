@@ -10,8 +10,8 @@ description: A Helm chart for deploying Pixelfed - a federated social media app 
 # Bug 2: Line 143 sets REDIS_HOST to port instead of host
 #   Original: REDIS_HOST: {{ .Values.externalValkey.port | quote }}
 #   Patched:  REDIS_HOST: {{ .Values.externalValkey.host | quote }}
-dependencies:
-  - name: pixelfed
-    version: 0.23.0
+# dependencies:
+#   - name: pixelfed
+#     version: 0.23.0
     # Manually patched from upstream https://github.com/small-hack/pixelfed-chart
     # Chart has template bugs that have been fixed locally

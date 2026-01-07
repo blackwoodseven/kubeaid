@@ -1,8 +1,8 @@
 apiVersion: v2
 name: opensearch
 type: application
-version: 1.2.3
+version: 1.0.0
 dependencies:
   - name: opensearch
-    version: 3.3.2
+    version: 3.4.0
     repository: https://opensearch-project.github.io/helm-charts
