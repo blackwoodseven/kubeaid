@@ -12,10 +12,12 @@ version: 0.13.4
 
 # In upstream @kayahk drafted a PR which solves a similar problem.
 # Ref: https://github.com/openobserve/openobserve-helm-chart/pull/143
-dependencies:
-  - name: openobserve
-    version: 0.14.78
-    # repository: https://charts.openobserve.ai/
-  - name: openobserve-collector
-    version: 0.3.22
-    # repository: https://charts.openobserve.ai/
+# NOTE: the above PR is merged, so someone has to verify this
+# before we enable the dependency
+# dependencies:
+#   - name: openobserve
+#     version: 0.14.78
+#     # repository: https://charts.openobserve.ai/
+#   - name: openobserve-collector
+#     version: 0.3.22
+#     # repository: https://charts.openobserve.ai/

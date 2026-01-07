@@ -2,9 +2,9 @@
 
 OpenCost and OpenCost UI
 
-![Version: 2.4.1](https://img.shields.io/badge/Version-2.4.1-informational?style=flat-square)
+![Version: 2.5.1](https://img.shields.io/badge/Version-2.5.1-informational?style=flat-square)
 ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
-![AppVersion: 1.118.0](https://img.shields.io/badge/AppVersion-1.118.0-informational?style=flat-square)
+![AppVersion: 1.119.1](https://img.shields.io/badge/AppVersion-1.119.1-informational?style=flat-square)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opencost)](https://artifacthub.io/packages/search?repo=opencost)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opencost-oci)](https://artifacthub.io/packages/search?repo=opencost-oci)
 
@@ -80,12 +80,12 @@ $ helm install opencost opencost/opencost
 | opencost.exporter.extraArgs | list | `[]` | List of extra arguments for the command, e.g.: log-format=json |
 | opencost.exporter.extraEnv | object | `{}` | Any extra environment variables you would like to pass on to the pod |
 | opencost.exporter.extraVolumeMounts | list | `[]` | A list of volume mounts to be added to the pod |
-| opencost.exporter.image | object | `{"fullImageName":null,"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"opencost/opencost","tag":"1.118.0@sha256:c1a08767fe3c3b2964a75885c145bae0cba32225c0b4c1e0382a77566aef93e9"}` | This overrides the above defaultClusterId. Ensure the ConfigMap exists and contains the required CLUSTER_ID key. clusterIdConfigmap: cluster-id-configmap |
+| opencost.exporter.image | object | `{"fullImageName":null,"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"opencost/opencost","tag":"1.119.1@sha256:43fbd73e2d13f79c07801511877b6c9d70896bc10e2cadcf6a04f4c5d37f6ed3"}` | This overrides the above defaultClusterId. Ensure the ConfigMap exists and contains the required CLUSTER_ID key. clusterIdConfigmap: cluster-id-configmap |
 | opencost.exporter.image.fullImageName | string | `nil` | Override the full image name for development purposes |
 | opencost.exporter.image.pullPolicy | string | `"IfNotPresent"` | Exporter container image pull policy |
 | opencost.exporter.image.registry | string | `"ghcr.io"` | Exporter container image registry |
 | opencost.exporter.image.repository | string | `"opencost/opencost"` | Exporter container image name |
-| opencost.exporter.image.tag | string | `"1.118.0@sha256:c1a08767fe3c3b2964a75885c145bae0cba32225c0b4c1e0382a77566aef93e9"` | Exporter container image tag |
+| opencost.exporter.image.tag | string | `"1.119.1@sha256:43fbd73e2d13f79c07801511877b6c9d70896bc10e2cadcf6a04f4c5d37f6ed3"` | Exporter container image tag |
 | opencost.exporter.livenessProbe.enabled | bool | `true` | Whether probe is enabled |
 | opencost.exporter.livenessProbe.failureThreshold | int | `3` | Number of failures for probe to be considered failed |
 | opencost.exporter.livenessProbe.initialDelaySeconds | int | `10` | Number of seconds before probe is initiated |
