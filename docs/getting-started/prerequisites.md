@@ -1,8 +1,59 @@
 # Prerequisites
 
-This guide outlines the prerequisites for setting up a KubeAid-managed Kubernetes cluster. These requirements are **common across all providers**-provider-specific prerequisites are noted in subsections.
+This guide helps you prepare everything needed to deploy a KubeAid-managed Kubernetes cluster. Whether you're setting up a production environment in the cloud or a local development cluster, start here.
 
 ---
+
+## Choose Your Deployment
+
+KubeAid supports two deployment paths. Choose based on your use case:
+
+| Deployment Type | Best For | What You Need |
+|-----------------|----------|---------------|
+| **Cloud / Distributed** | Production workloads, multi-node clusters | Cloud provider account (AWS, Azure, Hetzner) or bare metal servers |
+| **Local (K3D)** | Development, testing, learning KubeAid | Docker running on your local machine |
+
+> **New to KubeAid?** Start with a **Local K3D** deployment to explore the platform without incurring any cloud costs.
+
+---
+
+## System Requirements
+
+### Minimum Compute Requirements
+
+| Component | Local (K3D) | Cloud / Bare Metal (per node) |
+|-----------|-------------|-------------------------------|
+| **RAM** | 8GB (16GB recommended) | 16GB+ |
+| **CPU** | 4 cores | 4+ cores |
+| **Storage** | 50GB free disk space | 100GB+ |
+
+---
+
+## Supported Architectures
+
+KubeAid runs on the following CPU architectures:
+
+| Architecture | Also Known As | Examples |
+|--------------|---------------|----------|
+| **amd64** | x86_64 | Intel Core, AMD Ryzen, most cloud VMs |
+| **arm64** | aarch64 | Apple Silicon (M1/M2/M3/M4), Raspberry Pi 4+ |
+
+---
+
+## Supported Operating Systems
+
+### For Your Local Machine (running KubeAid CLI)
+
+- **Linux** - Ubuntu, Debian, Fedora, RHEL, etc.
+- **macOS** - Intel and Apple Silicon
+- **Windows** - Via WSL2 (Windows Subsystem for Linux)
+
+### For Cluster Nodes
+
+- **Linux only** - Ubuntu 22.04+ recommended
+
+---
+
 ## Common Dependencies  
   
 Before setting up any KubeAid cluster, ensure you have the following tools and resources ready:  
