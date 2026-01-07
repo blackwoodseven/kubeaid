@@ -13,5 +13,5 @@ description: A Helm chart for deploying Pixelfed - a federated social media app 
 # dependencies:
 #   - name: pixelfed
 #     version: 0.23.0
-    # Manually patched from upstream https://github.com/small-hack/pixelfed-chart
-    # Chart has template bugs that have been fixed locally
+# Manually patched from upstream https://github.com/small-hack/pixelfed-chart
+# Chart has template bugs that have been fixed locally
