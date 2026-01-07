@@ -315,7 +315,7 @@ function get_repo_last_update_date() {
 function get_helm_latest_version_from_cache() {
   # Note: we only need to check if chart is present or not, if someone add duplicate entry
   # it should not fail
-  _NEW_VERSION="$CURRENT_DATE $HELM_CHART_CURRENT_VERSION $HELM_CHART_NAME"
+  _NEW_VERSION="$CURRENT_DATE $HELM_CHART_CURRENT_VERSION $HELM_CHART_NAME$"
 
   # Check if we have an upstream chart already present or not
   # Note: cut is on purpose, since some chart might end up empty string in place of version
@@ -330,7 +330,7 @@ function get_helm_latest_version_from_cache() {
     else
       if [ -n "$HELM_REPOSITORY_URL" ]; then
         # If no version is found in the cache, ask the helm repo
-        HELM_CHART_NEW_VERSION=$(helm search repo --regexp "${HELM_CHART_NAME}/${HELM_CHART_NAME}[^-]" --version ">=$HELM_CHART_CURRENT_VERSION" --output yaml | yq eval '.[].version' -)
+        HELM_CHART_NEW_VERSION=$(helm search repo --regexp "${HELM_CHART_NAME}/${HELM_CHART_NAME}[^-]" --output yaml | yq eval '.[].version' -)
       else
         HELM_CHART_NEW_VERSION="$HELM_CHART_DEP_CURRENT_VERSION"
       fi
@@ -344,7 +344,7 @@ function get_helm_latest_version_from_cache() {
 function add_last_update_date() {
   HELM_CHART_LINE="$CURRENT_DATE $HELM_CHART_NEW_VERSION $HELM_CHART_NAME"
 
-  if [ "$(grep -c "$HELM_CHART_NAME" "$HELM_VERSION_LAST_UPDATE_FILE")" -eq 0 ]; then
+  if [ "$(grep -c "$HELM_CHART_NAME$" "$HELM_VERSION_LAST_UPDATE_FILE")" -eq 0 ]; then
     echo "$HELM_CHART_LINE" >> "$HELM_VERSION_LAST_UPDATE_FILE"
   else
     # Remove duplicate line if its present for any reason
@@ -453,9 +453,9 @@ function update_helm_chart {
         }
       else
         echo "Helm chart $HELM_CHART_NAME is cached and on latest version $HELM_CHART_CURRENT_VERSION, locally on the filesystem"
-        continue
       fi
 
+      UPDATE_TYPE=""
       # Check if the file is present in the old tag, this could be when a new helm chart was added.
       if git show "$CURRENT_VERSION:$HELM_CHART_YAML" >/dev/null 2>&1; then
         # Incase of updates, i.e, chart is already added
@@ -463,9 +463,9 @@ function update_helm_chart {
         HELM_CHART_CURRENT_TAG_VERSION=$(git show "$CURRENT_VERSION:$HELM_CHART_YAML" | yq eval ".dependencies[$i].version")
 
         # The older tag has no dependency, or less dependency then current chart.yaml
-        if [ "$HELM_CHART_CURRENT_TAG_VERSION" != "null" ]; then
+        if [ "$HELM_CHART_CURRENT_TAG_VERSION" != "null" ] && [ "$HELM_CHART_CURRENT_TAG_VERSION" != "$HELM_CHART_NEW_VERSION" ] ; then
           UPDATE_TYPE=$(get_update_type "$HELM_CHART_CURRENT_TAG_VERSION" "$HELM_CHART_NEW_VERSION")
-          UPDATE_LINE="Updated $HELM_CHART_NAME from version $HELM_CHART_CURRENT_VERSION to $HELM_CHART_NEW_VERSION"
+          UPDATE_LINE="Updated $HELM_CHART_NAME from version $HELM_CHART_CURRENT_TAG_VERSION to $HELM_CHART_NEW_VERSION"
         fi
       else
         continue
