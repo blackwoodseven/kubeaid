@@ -35,6 +35,22 @@ Replace `<provider>` with one of:
 
 The generated templates are saved in `outputs/configs/`.
 
+#### Generated Directory Structure
+
+After running the config generate command, your working directory will look like:
+
+```bash
+your-working-directory/
+├── outputs/
+│   ├── configs/
+│   │   ├── general.yaml      # Cluster configuration (edit this)
+│   │   └── secrets.yaml      # Credentials (edit this, store in password manager)
+│   ├── kubeconfigs/          # Generated after bootstrap
+│   │   └── main.yaml         # Kubeconfig for your cluster
+│   └── .log                  # Bootstrap logs
+└── ...
+```
+
 ## Step 2: Configure general.yaml
 
 The `general.yaml` file defines your cluster's infrastructure. Most fields are **common across all providers**.
