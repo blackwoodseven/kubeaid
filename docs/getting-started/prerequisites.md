@@ -83,6 +83,44 @@ You need to set up two Git repositories:
    **Important**: Never make changes on the master/main branch of your mirror of the KubeAid repository, as this branch is used to deliver updates. All customizations should happen in your `kubeaid-config` repository.
   
 2. **KubeAid Config Repository**: Fork the [KubeAid Config repository](https://github.com/Obmondo/kubeaid-config), which will contain your cluster-specific configurations.
+
+#### Repository Structure Overview
+
+```mermaid
+flowchart LR
+    subgraph KubeAid["KubeAid Repository (upstream)"]
+        direction TB
+        HelmCharts["argocd-helm-charts/"]
+        CertManager["cert-manager/"]
+        Templates["templates/<br/>ClusterIssuer, NetworkPolicies, etc."]
+        Traefik["traefik/ + many more..."]
+        KubePrometheus["kube-prometheus/<br/>jsonnet mixins"]
+        
+        HelmCharts --> CertManager
+        HelmCharts --> Traefik
+        CertManager --> Templates
+    end
+    
+    subgraph KubeAidConfig["KubeAid Config Repository (your fork)"]
+        direction TB
+        K8s["k8s/"]
+        Cluster1["&lt;cluster-name&gt;/"]
+        ArgoApps["argocd-apps/<br/>cert-manager.yaml, traefik.yaml"]
+        Values["*.values.yaml files"]
+        SealedSecrets["sealed-secrets/"]
+        Cluster2["&lt;another-cluster&gt;/<br/>(multi-tenancy)"]
+        
+        K8s --> Cluster1
+        K8s --> Cluster2
+        Cluster1 --> ArgoApps
+        Cluster1 --> Values
+        Cluster1 --> SealedSecrets
+    end
+    
+    ArgoApps -.->|references charts| HelmCharts
+```
+
+> **Key Concept:** The KubeAid repo contains Helm charts and templates. Your KubeAid Config repo contains values files and ArgoCD Application manifests that reference those charts.
   
 ### Git Provider Credentials  
   
