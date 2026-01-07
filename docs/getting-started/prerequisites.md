@@ -1,26 +1,27 @@
-# Prerequisites  
-  
-This guide outlines the prerequisites for setting up a KubeAid-managed Kubernetes cluster across different hosting environments.  
-  
+# Prerequisites
+
+This guide outlines the prerequisites for setting up a KubeAid-managed Kubernetes cluster. These requirements are **common across all providers**-provider-specific prerequisites are noted in subsections.
+
+---
 ## Common Dependencies  
   
 Before setting up any KubeAid cluster, ensure you have the following tools and resources ready:  
-  
+
 ### Required Software  
   
 The following packages must be installed on your local machine:  
   
-- `kubectl` - Kubernetes command-line tool  
-- `jq` - JSON processor  
-- `terragrunt` - Terraform wrapper  
-- `terraform` - Infrastructure as Code tool  
-- `bcrypt` - Password hashing utility  
-- `wireguard` - VPN software (optional, for private cluster access)  
-- `yq` - YAML processor (https://github.com/mikefarah/yq)
+- [`kubectl`](https://kubernetes.io/docs/tasks/tools/) - Kubernetes command-line tool  
+- [`jq`](https://jqlang.org/download/) - JSON processor  
+- [`terragrunt`](https://terragrunt.gruntwork.io/docs/getting-started/install/) - Terraform wrapper  
+- [`terraform`](https://developer.hashicorp.com/terraform/install) - Infrastructure as Code tool  
+- [`bcrypt`](https://github.com/bitnami/bcrypt-cli) - Password hashing utility  
+- [`wireguard`](https://www.wireguard.com/install/) - VPN software (optional, for private cluster access)  
+- [`yq`](https://github.com/mikefarah/yq) - YAML processor
   
 ### Docker  
   
-Have Docker running locally on your machine. Docker Desktop is recommended for both Linux and MacOS users.
+Ensure [Docker](https://docs.docker.com/get-docker/) is installed and running locally on your machine. Docker Desktop is recommended for Linux, macOS, and Windows users for ease of use.
   
 ### Git Repositories  
   
@@ -54,7 +55,7 @@ For GitLab, you can create a Project Access Token (available in self-hosted and 
   
 ### Azure  
   
-- **System Requirements**: A Linux or MacOS computer with at least 16GB of RAM (8GB might work but may encounter OOM issues).
+- **System Requirements**: A Linux or MacOS computer with at least 16GB of RAM (8GB might work but may encounter Out of memory (OOM) issues).
   
 - **Service Principal**: Register an application (Service Principal) in Microsoft Entra ID.  
   
@@ -88,6 +89,6 @@ For local testing with K3D, only the common dependencies are required. Note that
   
 ## Notes  
   
-- The cluster setup follows GitOps principles using ArgoCD, ensuring all changes are version-controlled through Git.  
-- KubeAid clusters are designed to be private by default, with optional Wireguard gateway for secure access.  
+- The cluster setup follows GitOps principles using ArgoCD, ensuring all changes are version-controlled through Git.
+- KubeAid clusters are designed to be private by default, with optional Wireguard gateway for secure access.
 - All providers use Cilium CNI running in kube-proxyless mode for networking.

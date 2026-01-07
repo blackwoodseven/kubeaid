@@ -1,29 +1,22 @@
-# Installation Guide
+# Installation
 
-This guide provides unified installation instructions for setting up a KubeAid-managed Kubernetes cluster across different hosting providers.
+This guide covers bootstrapping your KubeAid-managed Kubernetes cluster. The installation process is **the same for all providers**-the configuration files you prepared in the previous step contain all provider-specific details.
 
-## Overview
+## Before You Begin
 
-KubeAid provides a streamlined installation process using the `kubeaid-cli` tool. The general workflow is consistent across all providers:
+Ensure you have completed:
 
-1. Install the KubeAid CLI  
-2. Generate provider-specific configuration files  
-3. Edit configuration files with your requirements  
-4. Bootstrap the cluster  
-5. Access and verify the cluster  
+- [x] [Prerequisites](./prerequisites.md) - All required tools installed
+- [x] [Pre-Configuration](./pre-configuration.md) - `general.yaml` and `secrets.yaml` configured or,
 
-All KubeAid clusters include the following core components:
-
-- **Cilium CNI** - running in kube-proxyless mode  
-- **ArgoCD** - for GitOps-based deployments  
-- **Sealed Secrets** - for secure secret management  
-- **KubePrometheus** - for monitoring and alerting  
-- **ClusterAPI** - for cluster lifecycle management (providers with API access, e.g., AWS, Azure, Hetzner)  
-- **KubeOne** - for cluster initialization (SSH-only access platforms without API host management)  
+Make sure :
+- Docker is running locally
+- Your configuration files are in `outputs/configs/`
+- Your `secrets.yaml` is backed up in your password store
 
 ## Installing KubeAid CLI
 
-The KubeAid CLI is a unified tool for managing cluster setup across all providers. Install it on your local machine:
+If you haven't already installed the KubeAid CLI, run:
 
 ```bash
 KUBEAID_CLI_VERSION=$(curl -s "https://api.github.com/repos/Obmondo/kubeaid-cli/releases/latest" | jq -r .tag_name)
@@ -35,249 +28,160 @@ sudo mv kubeaid-cli-${KUBEAID_CLI_VERSION}-${OS}-${CPU_ARCHITECTURE} /usr/local/
 sudo chmod +x /usr/local/bin/kubeaid-cli
 ```
 
-## Step 1: Generate configuration files
+Verify the installation:
 
-Each provider requires two configuration files: `general.yaml` and `secrets.yaml`. Generate these using the `kubeaid-cli config generate` command with your provider type. See [Step 1 - Details](#step-1---provider-specific-details) below for provider-specific commands and requirements.
+```bash
+kubeaid-cli --version
+```
 
-The generated configuration templates will be saved in the `outputs/configs` directory.
+## Bootstrap the Cluster
 
-> **Important:** Keep your `secrets.yaml` safe in your password store (e.g., [pass](https://www.passwordstore.org/)) for easy recovery. The `general.yaml` will be version-controlled in your `kubeaid-config` Git repository.
-
-## Step 2: Edit configuration files
-
-Review and modify the generated `general.yaml` and `secrets.yaml` files according to your specific requirements. These files contain:
-
-- **`general.yaml`**: cluster specifications, node configurations, networking settings  
-- **`secrets.yaml`**: sensitive credentials for cloud providers and Git repositories  
-
-For detailed configuration options and examples for each provider, see the [Configuration Reference](../hosting/cloud-providers.md) documentation.  
-
-## Step 3: Bootstrap the cluster
-
-Run the bootstrap command to create your cluster:
+Run the bootstrap command:
 
 ```bash
 kubeaid-cli cluster bootstrap
 ```
 
+### What Happens During Bootstrap
+
 The bootstrap process will:
 
-- Stream logs to your terminal (also saved in `outputs/.log`)  
-- Create the necessary infrastructure  
-- Initialize the Kubernetes cluster  
-- Deploy ArgoCD and other core components  
-- Save the kubeconfig to `outputs/kubeconfigs/clusters/main.yaml`  
+1. **Create a local management cluster** - A temporary K3D cluster for orchestration
+2. **Provision infrastructure** - Create cloud resources (for cloud providers) or configure SSH access (for bare metal)
+3. **Initialize Kubernetes** - Deploy the control plane and worker nodes
+4. **Install core components** - Deploy Cilium, ArgoCD, Sealed Secrets, and KubePrometheus
+5. **Configure GitOps** - Set up ArgoCD to sync with your kubeaid-config repository
 
-## Step 4: Access the cluster
+### Monitoring Progress
 
-Once bootstrapped, access your cluster using `kubectl`:
+- Logs are streamed to your terminal in real-time
+- All logs are saved to `outputs/.log` for later review
+- The process typically takes 10-30 minutes (depending on provider and cluster size)
+
+### Bootstrap Output
+
+Upon successful completion, you'll see:
+
+```
+✓ Cluster bootstrap complete!
+  Kubeconfig saved to: outputs/kubeconfigs/clusters/main.yaml
+```
+
+## Access the Cluster
+
+Set your kubeconfig and verify access:
 
 ```bash
 export KUBECONFIG=./outputs/kubeconfigs/main.yaml
 kubectl cluster-info
 ```
 
-Explore your cluster by accessing the ArgoCD and Grafana dashboards.
+Expected output:
 
-## Step 1 - Provider-specific Details
+```
+Kubernetes control plane is running at https://<cluster-endpoint>:6443
+CoreDNS is running at https://<cluster-endpoint>:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+```
+
+### Verify Nodes
+
+```bash
+kubectl get nodes
+```
+
+All nodes should show `Ready` status.
+
+### Verify Core Components
+
+```bash
+# Check all pods are running
+kubectl get pods -A
+
+# Check ArgoCD applications
+kubectl get applications -n argocd
+```
+
+## Troubleshooting
+
+### Common Issues
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Bootstrap hangs | Network issues or resource constraints | Check logs in `outputs/.log` |
+| Management cluster fails to create | Docker not running | Start Docker and retry |
+| Cloud resources fail to provision | Invalid credentials | Verify `secrets.yaml` credentials |
+| SSH connection fails (bare metal) | SSH key issues | Verify SSH key permissions and host connectivity |
+| Nodes not joining | Network or firewall issues | Check security groups/firewall rules |
+
+### Viewing Logs
+
+```bash
+# View bootstrap logs
+cat outputs/.log
+
+# Follow logs in real-time (if bootstrap is running)
+tail -f outputs/.log
+```
+
+### Retry Bootstrap
+
+If bootstrap fails partway through, you can retry:
+
+```bash
+# Clean up partial state
+kubeaid-cli cluster delete management
+
+# Retry bootstrap
+kubeaid-cli cluster bootstrap
+```
+
+## Provider-Specific Notes
 
 ### AWS
 
-- **Generate configuration**
-
-  ```bash
-  kubeaid-cli config generate aws
-  ```
-
-- **Key features**
-  - Kube2IAM for dynamic IAM credentials to pods  
-  - Autoscalable node-groups with scale to/from 0 support  
-  - Labels and taints propagation  
-  - Disaster recovery using Velero  
-
-- **Cleanup**
-
-  ```bash
-  kubeaid-cli cluster delete main
-  kubeaid-cli cluster delete management
-  ```
+The bootstrap creates:
+- VPC with public/private subnets
+- NAT Gateway for private subnet egress
+- Security groups for control plane and workers
+- EC2 instances for nodes
+- Elastic Load Balancer for API server
 
 ### Azure
 
-- **Generate configuration**
+The bootstrap creates:
+- Resource group for all resources
+- Virtual network with subnets
+- Network security groups
+- Virtual machines for nodes
+- Azure Load Balancer for API server
 
-  ```bash
-  kubeaid-cli config generate azure
-  ```
+### Hetzner
 
-- **Key features**
-  - Azure Workload Identity integration  
-  - Autoscalable node-groups with scale to/from 0 support  
-  - CrossPlane for infrastructure management  
-  - Disaster recovery using Velero  
+#### HCloud
+- Creates cloud servers for control plane and workers
+- Sets up private network for inter-node communication
+- Configures load balancer for API server
 
-- **Cluster upgrades**
-
-  Azure supports seamless Kubernetes version upgrades:
-
-  ```bash
-  kubeaid-cli cluster upgrade --new-k8s-version v1.32.0
-  ```
-
-  You can also specify a new OS image offer using the `--new-image-offer` flag.
-
-- **Cleanup**
-
-  ```bash
-  kubeaid-cli cluster delete main
-  kubeaid-cli cluster delete management
-  ```
+#### Bare Metal
+- Connects to existing servers via SSH
+- Configures networking and disk layout
+- Does not create new infrastructure
 
 ### Bare Metal (SSH-only)
 
-- **Generate configuration**
+- Connects to your servers via SSH
+- Installs Kubernetes components directly
+- No cloud resources created
+- You manage the server lifecycle
 
-  ```bash
-  kubeaid-cli config generate bare-metal
-  ```
+### Local K3D
 
-- **Key features**
-  - Uses [Kubermatic KubeOne](https://github.com/kubermatic/kubeone) for cluster initialization (SSH-only access—no API host management)  
-  - Node-groups with labels and taints propagation  
-  - No autoscaling (manual scaling only)  
-  - Suitable for on-premise or self-managed servers where you control the machine lifecycle  
+- Creates a K3D cluster in Docker
+- For testing only-not for production
+- No cluster upgrades or disaster recovery support
 
-- **Cleanup**
+## Next Steps
 
-  ```bash
-  kubeaid-cli cluster delete main
-  kubeaid-cli cluster delete management
-  ```
+Once your cluster is up and running:
 
-### Hetzner HCloud
-
-- **Generate configuration**
-
-  ```bash
-  kubeaid-cli config generate hetzner hcloud
-  ```
-
-- **Key features**
-  - Autoscalable node-groups with scale to/from 0 support  
-  - Cost-effective cloud infrastructure  
-  - Full ClusterAPI integration  
-
-- **Cleanup**
-
-  ```bash
-  kubeaid-cli cluster delete main
-  kubeaid-cli cluster delete management
-  ```
-
-### Hetzner Bare Metal
-
-- **Generate configuration**
-
-  ```bash
-  kubeaid-cli config generate hetzner bare-metal
-  ```
-
-- **Key features**
-  - High-performance dedicated servers  
-  - Custom disk layout configuration  
-  - Software RAID (SWRAID) support  
-  - Node-groups with labels and taints propagation  
-
-- **Disk layout**
-
-  Hetzner Bare Metal servers use level 1 SWRAID across specified disks, with a 25GB Logical Volume Group (`vg0`) containing a 10GB root volume for the OS. Further disk layout can be customized using the `diskLayoutSetupCommands` option.
-
-- **Recommended disk allocation**
-  - HDDs/SSDs: allocate to Ceph for distributed storage  
-  - NVMes: allocate to ZPool (mirror mode) for Containerd, logs, and OpenEBS ZFS LocalPV  
-
-- **Cleanup**
-
-  ```bash
-  kubeaid-cli cluster delete main
-  kubeaid-cli cluster delete management
-  ```
-
-### Hetzner Hybrid
-
-- **Generate configuration**
-
-  ```bash
-  kubeaid-cli config generate hetzner hybrid
-  ```
-
-- **Key features**
-  - Control plane in HCloud  
-  - Worker nodes in HCloud or Bare Metal (or both)  
-  - Combines cloud flexibility with bare metal performance  
-  - HCloud node-groups support autoscaling  
-
-- **Cleanup**
-
-  ```bash
-  kubeaid-cli cluster delete main
-  kubeaid-cli cluster delete management
-  ```
-
-### Local K3D (testing only)
-
-- **Generate configuration**
-
-  ```bash
-  kubeaid-cli config generate local
-  ```
-
-- **Key features**
-  - Quick local testing environment  
-  - Runs on Docker using K3D  
-  - Note: no cluster upgrades or disaster recovery support  
-
-- **Cleanup**
-
-  ```bash
-  kubeaid-cli cluster delete management
-  ```
-
-## Post-installation
-
-### Accessing services
-
-After installation, you can access:
-
-- **ArgoCD** - for GitOps application management  
-- **Grafana** - for monitoring dashboards  
-- **Prometheus** - for metrics and alerting  
-
-### Secret management
-
-KubeAid uses Sealed Secrets for secure secret management. Secrets are encrypted locally and committed to your `kubeaid-config` repository under  
-`k8s/<cluster-name>/sealed-secrets/<namespace>/<name-of-secret>.json`.
-
-### Updates and maintenance
-
-To receive feature and security updates, you can either:
-
-- Grant write access to your repos to the GitHub user `obmondo-pushupdate-user` for automatic updates  
-- Manually pull updates using:
-
-  ```bash
-  git pull origin master
-  ```
-
-### Troubleshooting
-
-- **Logs location**: all bootstrap logs are saved in `outputs/.log`  
-- **Kubeconfig location**: `outputs/kubeconfigs/clusters/main.yaml`  
-- **Config files**: `outputs/configs/general.yaml` and `outputs/configs/secrets.yaml`  
-
-### Notes
-
-- All clusters follow GitOps principles with ArgoCD  
-- Changes should be made through Git, not directly in the cluster  
-- Never modify the `master`/`main` branch of your KubeAid repository mirror  
-- All customizations go in your `kubeaid-config` repository  
+1. **[Post-Configuration](./post-configuration.md)** - Access dashboards, verify setup, configure services
