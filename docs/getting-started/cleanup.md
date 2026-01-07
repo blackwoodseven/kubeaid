@@ -43,6 +43,32 @@ For ClusterAPI-based installations, a single command cleanup:
 kubeaid-cli cluster delete main && kubeaid-cli cluster delete management
 ```
 
+#### What Gets Deleted
+
+```mermaid
+flowchart TB
+    subgraph Step1["Step 1: kubeaid-cli cluster delete main"]
+        subgraph MainCluster["Your Main Cluster"]
+            CP["❌ Control Plane Nodes"]
+            Workers["❌ Worker Nodes"]
+            Cloud["❌ Cloud Resources"]
+            LB["❌ Load Balancers"]
+            Volumes["❌ Volumes"]
+            Network["❌ Network Resources"]
+        end
+    end
+    
+    Step1 --> Step2
+    
+    subgraph Step2["Step 2: kubeaid-cli cluster delete management<br/>(ClusterAPI only)"]
+        subgraph MgmtCluster["Local Management Cluster (K3D in Docker)"]
+            CAPI["❌ ClusterAPI Controllers"]
+            K3D["❌ K3D Container"]
+            State["❌ Local State"]
+        end
+    end
+```
+
 ## Provider-Specific Notes
 
 ### AWS
