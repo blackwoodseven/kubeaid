@@ -18,7 +18,8 @@ All KubeAid clusters include the following core components:
 - **ArgoCD** - for GitOps-based deployments  
 - **Sealed Secrets** - for secure secret management  
 - **KubePrometheus** - for monitoring and alerting  
-- **ClusterAPI** - for cluster lifecycle management (cloud providers)  
+- **ClusterAPI** - for cluster lifecycle management (providers with API access, e.g., AWS, Azure, Hetzner)  
+- **KubeOne** - for cluster initialization (SSH-only access platforms without API host management)  
 
 ## Installing KubeAid CLI
 
@@ -36,9 +37,11 @@ sudo chmod +x /usr/local/bin/kubeaid-cli
 
 ## Step 1: Generate configuration files
 
-Each provider requires two configuration files: `general.yaml` and `secrets.yaml`. Generate these using the `kubeaid-cli config generate` command with your provider type.
+Each provider requires two configuration files: `general.yaml` and `secrets.yaml`. Generate these using the `kubeaid-cli config generate` command with your provider type. See [Step 1 - Details](#step-1---provider-specific-details) below for provider-specific commands and requirements.
 
 The generated configuration templates will be saved in the `outputs/configs` directory.
+
+> **Important:** Keep your `secrets.yaml` safe in your password store (e.g., [pass](https://www.passwordstore.org/)) for easy recovery. The `general.yaml` will be version-controlled in your `kubeaid-config` Git repository.
 
 ## Step 2: Edit configuration files
 
@@ -46,6 +49,8 @@ Review and modify the generated `general.yaml` and `secrets.yaml` files accordin
 
 - **`general.yaml`**: cluster specifications, node configurations, networking settings  
 - **`secrets.yaml`**: sensitive credentials for cloud providers and Git repositories  
+
+For detailed configuration options and examples for each provider, see the [Configuration Reference](../hosting/cloud-providers.md) documentation.  
 
 ## Step 3: Bootstrap the cluster
 
@@ -74,7 +79,7 @@ kubectl cluster-info
 
 Explore your cluster by accessing the ArgoCD and Grafana dashboards.
 
-## Provider-specific instructions
+## Step 1 - Provider-specific Details
 
 ### AWS
 
@@ -128,7 +133,7 @@ Explore your cluster by accessing the ArgoCD and Grafana dashboards.
   kubeaid-cli cluster delete management
   ```
 
-### Bare Metal
+### Bare Metal (SSH-only)
 
 - **Generate configuration**
 
@@ -137,10 +142,10 @@ Explore your cluster by accessing the ArgoCD and Grafana dashboards.
   ```
 
 - **Key features**
-  - Uses Kubermatic KubeOne for cluster initialization  
+  - Uses [Kubermatic KubeOne](https://github.com/kubermatic/kubeone) for cluster initialization (SSH-only access—no API host management)  
   - Node-groups with labels and taints propagation  
   - No autoscaling (manual scaling only)  
-  - Suitable for on-premise or hosted bare metal servers  
+  - Suitable for on-premise or self-managed servers where you control the machine lifecycle  
 
 - **Cleanup**
 

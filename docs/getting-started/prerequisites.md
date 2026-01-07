@@ -26,7 +26,7 @@ Have Docker running locally on your machine. Docker Desktop is recommended for b
   
 You need to set up two Git repositories:  
   
-1. **KubeAid Repository**: Fork or mirror the [KubeAid repository](https://github.com/Obmondo/kubeaid) from Obmondo.   
+1. **KubeAid Repository**: Fork or mirror the [KubeAid repository](https://github.com/Obmondo/KubeAid) from Obmondo.   
      
    **Important**: Never make changes on the master/main branch of your mirror of the KubeAid repository, as this branch is used to deliver updates. All customizations should happen in your `kubeaid-config` repository.
   
@@ -64,7 +64,7 @@ For GitLab, you can create a Project Access Token (available in self-hosted and 
   
 ### Bare Metal  
   
-For general bare metal setups (non-Hetzner), only the common dependencies are required. The bare metal provider uses Kubermatic KubeOne under the hood as machine lifecycle management is not needed.   
+For general bare metal setups (non-Hetzner), only the common dependencies are required. The bare metal provider uses [Kubermatic KubeOne](https://github.com/kubermatic/kubeone) under the hood for SSH-only access platforms without API host management support.   
   
 ### Hetzner  
   

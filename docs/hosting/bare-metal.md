@@ -2,7 +2,7 @@
 
 The bare-metal provider provisions a KubeAid-managed Kubernetes cluster across your own Linux servers using **SSH-based access**. There is no cloud API host management—you manage the server lifecycle yourself.
 
-> Uses [Kubermatic KubeOne](https://github.com/kubermatic/kubeone) under the hood to initialize the cluster.
+> Uses [Kubermatic KubeOne](https://github.com/kubermatic/kubeone) under the hood for SSH-only access platforms without API host management support.
 
 ## Features
 

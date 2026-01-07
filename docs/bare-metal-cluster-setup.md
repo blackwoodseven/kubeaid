@@ -10,7 +10,7 @@ The `bare-metal` provider is used to provision a KubeAid managed Kubernetes clus
 
 - Monitoring, using [KubePrometheus](https://prometheus-operator.dev).
 
-> Since the lifecycle of those Linux machines need not to be managed, we use [Kubermatic KubeOne](https://github.com/kubermatic/kubeone) under the hood to initialize the Kubernetes cluster.
+> For SSH-only access platforms without API host management support, we use [Kubermatic KubeOne](https://github.com/kubermatic/kubeone) under the hood to initialize the Kubernetes cluster.
 
 ## Prerequisites
 
