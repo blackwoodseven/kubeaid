@@ -420,12 +420,20 @@ local kp =
         } + if std.objectHas(vars.prometheus, 'remoteWrite') then (
           {
             remoteWrite+: [
+              local defaults = {
+                maxSamplesPerSend: 500,
+              };
+
+              local qc =
+                if std.objectHas(remoteWrite, 'queueConfig') && remoteWrite.queueConfig != null
+                then remoteWrite.queueConfig
+                else {};
+
               {
                 url: remoteWrite.url,
-                remoteTimeout: '60s',
-                queueConfig: {
-                  maxSamplesPerSend: 500,
-                },
+                remoteTimeout: std.get(remoteWrite, 'remoteTimeout', '60s'),
+                queueConfig: defaults + qc,
+
                 basicAuth: {
                   username: {
                     name: remoteWrite.basicAuth.secret,
