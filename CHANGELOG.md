@@ -2,6 +2,121 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 22.0.0
+
+### Major Version Upgrades
+- 7668fab2c Updated traefik from version 37.4.0 to 38.0.1
+
+### Minor Version Upgrades
+- 7668fab2c Updated argo-cd from version 9.1.6 to 9.2.4
+- 7668fab2c Updated aws-ebs-csi-driver from version 2.53.0 to 2.54.1
+- 7668fab2c Updated aws-efs-csi-driver from version 3.2.6 to 3.3.0
+- 7668fab2c Updated hcloud-cloud-controller-manager from version 1.28.0 to 1.29.0
+- 7668fab2c Updated cloudnative-pg from version 0.26.1 to 0.27.0
+- 7668fab2c Updated cluster-autoscaler from version 9.53.0 to 9.54.0
+- 7668fab2c Updated gitlab-runner from version 0.83.3 to 0.84.1
+- 7668fab2c Updated ingress-nginx from version 4.12.2 to 4.14.1
+- 7668fab2c Updated metal3 from version 0.12.9 to 0.13.0
+- 7668fab2c Updated opencost from version 2.4.1 to 2.5.1
+- 7668fab2c Updated opensearch from version 3.3.2 to 3.4.0
+- 7668fab2c Updated opensearch-dashboards from version 3.3.0 to 3.4.0
+- 7668fab2c Updated opentelemetry-operator from version 0.99.2 to 0.102.0
+- 7668fab2c Updated opentelemetry-collector from version 0.140.1 to 0.142.2
+- 7668fab2c Updated postgres-operator from version 1.14.0 to 1.15.1
+- 7668fab2c Updated sealed-secrets from version 2.17.9 to 2.18.0
+- 7668fab2c Updated sonarqube from version 2025.5.0 to 2025.6.1
+- 7668fab2c Updated teleport-cluster from version 18.5.0 to 18.6.2
+- 7668fab2c Updated teleport-kube-agent from version 18.5.0 to 18.6.2
+- 7668fab2c Updated velero from version 11.2.0 to 11.3.2
+
+### Patch Version Upgrades
+- 7668fab2c Updated argocd-image-updater from version 1.0.1 to 1.0.4
+- 7668fab2c Updated cloud-provider-azure from version 1.34.2 to 1.34.3
+- 7668fab2c Updated cert-manager from version v1.19.1 to v1.19.2
+- 7668fab2c Updated cilium from version 1.18.4 to 1.18.5
+- 7668fab2c Updated erpnext from version 8.0.0 to 8.0.13
+- 7668fab2c Updated fluent-bit from version 0.54.0 to 0.54.1
+- 7668fab2c Updated graylog from version 3.0.8 to 3.0.10
+- 7668fab2c Updated harbor from version 1.18.0 to 1.18.1
+- 7668fab2c Updated keda from version 2.18.1 to 2.18.3
+- 7668fab2c Updated mariadb-operator from version 25.10.2 to 25.10.3
+- 7668fab2c Updated mattermost-team-edition from version 6.6.88 to 6.6.89
+- 7668fab2c Updated reloader from version 2.2.5 to 2.2.7
+- 7668fab2c Updated rook-ceph from version v1.18.4 to v1.18.8
+- 7668fab2c Updated seaweedfs from version 4.0.401 to 4.0.405
+- 7668fab2c Updated trust-manager from version v0.20.2 to v0.20.3
+- 7668fab2c Updated tigera-operator from version v3.31.2 to v3.31.3
+
+### Features
+- db517617d feat: add sealed-secrets support with cpng backup for openobserve
+- a0cc8dae3 feat: Update Odoo chart defaults for Odoo 19
+- 6f50ab527 feat: add product and certname labels to all alerts
+- 6afd6abbe feat(cnpg): adding the plugin-barman-cloud subchart
+- f3f1a2cbf feat: add Kyverno policies for Harbor proxy cache management
+- 2aeea136b feat(pixelfed): add KubeAid integration templates and default values
+- 13e0bfc81 feat(pixelfed): add Pixelfed helm chart with patched upstream v0.23.0
+
+### Bug Fixes
+- 7f14afc30 fix: release script can handle individual helm chart addition/updation commits as well and some sanity check
+- 3e97956bd fix: yamllint in pixelfed helm chart.yaml
+- 0f0c2d495 fix: handle the helm update script to match correct helm chart name in the cache file, grep was missing the end character
+- 4c117f8d7 fix: added correct support for new helm chart, update a specific helm chart and update all the helm chart
+- a9d30343a fix(rbac): add pods list permission for prometheus-k8s service account
+- 49b317c0d fix: removed the extra character that was getting added in the helm cache file
+- ffa99f599 fix: handle the duplicate entry in the .helm_version_last_update
+- 8677d592f fix: build script to generate proper helmfile template for each opendesk app
+- 348ee89b3 fix: lint fix
+- acfc1feb9 fix: helm repo update script bugs
+- fff49a79a fix: update the logical backup template to accommodate o2 changes
+- 156cc7c26 fix: increase the remote write timeout and decrease the max sample rate to reduce load on promtheus
+- da5dc6ab0 fix: add specific k8s service discovery with role endpointSlice
+- a3d7b47e9 fix: bitnami for openobserve
+- d655d862d fix: added all the netbird image tag to 60.8
+- 1d580713d fix: updated netbird image tag
+- 0937e7cf3 fix(qa/keycloakx): removing requirement of unnecessary azure credentials
+- 2b03ab03d fix: update the g10k cron configs to only use g10k and remove dependency from the rsync
+- 0f8bfb8ce fix: handle the empty securityContext in openvox
+- 43db942dc fix: converge g10k commands under single arg
+- 52a561699 fix: update g10k job to run it in /tmp directory and then rsync on the actual path
+- 026a4bb02 fix: added fsGroupChangePolicy on puppetserver deployment as well
+- a57a01339 fix: the updatestrategy, where it can end up with multiattach error
+- d6669112d fix: mount the eyaml on puppetserver
+- aa7f87ad2 fix: speed up volume mount on pvc which has more file, like g10k code
+
+### Configuration Changes
+- cf01cf32b chore: update helm charts to v21.1.0
+- ae53e55f6 chore: add keycloak user guide in netbird guide
+- 864d6ac55 chore: update netbird docs with client setup
+- 237c5057f chore(lint): yaml .gitea/workflows/helm-update.yaml
+
+### Other Changes
+- f32a607b7 Revert "fix(rbac): add pods list permission for prometheus-k8s service account"
+- 5eed0ccb5 docs: remove setup guide link and placeholder section as per review
+- d0386f9c4 add opendesk coturn helm chart
+- 8ec2e23c8 add flag to create and add new chart
+- 5807787f4 Doc: Cmd line to test Prometheus rules using promtool
+- 9f8c77279 Fix VeleroUnsuccessfulBackup falsely triggering on mondays and at random for 6hrly
+- 852966121 docs: add Harbor registry guide content
+- bed7feb9d docs: add guides structure and reorganize access token docs
+- bf441ce91 Added the alert for slurm node being down
+- 6fb32bb72 Added a backup and restore guide for Odoo
+- d068fe7a2 Consolidated cloud provider docs under hosting subsections
+- ae9028ef9 Fixed encyption value set up in relate helm chart
+- 85eff46e4 add restore and backup procedure for relate
+- d9851405f Added fileStore support in mattermost helm
+- 63c2ba0e5 Added relevant sections under development subsection
+- e1249b1b0 Restructured docs in the operations and monitoring sub folders
+- 26b02172f Retrigger CI
+- ed8814fd5 Fix: Hardcoded mariadb config to make imagePullSecrets optional for private registry
+- 2d3983a1b docs: update README as per review comments
+- d1342e3f7 docs: update README
+- ef339f0ea docs: update README
+- 4de528c05 docs: update README
+- 0fe244eeb Remove system namespace from prometheus scrape
+- c1ee6f88f Updated the autosign script logic
+- a23325126 doc(bare-metal): adding pre-requisites for each server
+- 7127e8a5b add skip module in deployment https://gitea.obmondo.com/EnableIT/a0hu8x41ng/issues/113:
+
 ## KubeAid Release Version 21.0.0
 
 ### Major Version Upgrades
