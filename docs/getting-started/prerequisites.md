@@ -87,28 +87,31 @@ You need to set up two Git repositories:
 #### Repository Structure Overview
 
 ```mermaid
+---
+title: KubeAid repository structure
+---
 flowchart LR
-    subgraph KubeAid["KubeAid Repository (upstream)"]
+    subgraph KubeAid["KubeAid Repository"]
         direction TB
         HelmCharts["argocd-helm-charts/"]
         CertManager["cert-manager/"]
-        Templates["templates/<br/>ClusterIssuer, NetworkPolicies, etc."]
-        Traefik["traefik/ + many more..."]
-        KubePrometheus["kube-prometheus/<br/>jsonnet mixins"]
+        Templates["templates/"]
+        Traefik["traefik/ + more..."]
+        KubePrometheus["kube-prometheus/"]
         
         HelmCharts --> CertManager
         HelmCharts --> Traefik
         CertManager --> Templates
     end
     
-    subgraph KubeAidConfig["KubeAid Config Repository (your fork)"]
+    subgraph KubeAidConfig["KubeAid Config Repository"]
         direction TB
         K8s["k8s/"]
-        Cluster1["&lt;cluster-name&gt;/"]
-        ArgoApps["argocd-apps/<br/>cert-manager.yaml, traefik.yaml"]
-        Values["*.values.yaml files"]
+        Cluster1["cluster-name/"]
+        ArgoApps["argocd-apps/"]
+        Values["*.values.yaml"]
         SealedSecrets["sealed-secrets/"]
-        Cluster2["&lt;another-cluster&gt;/<br/>(multi-tenancy)"]
+        Cluster2["another-cluster/"]
         
         K8s --> Cluster1
         K8s --> Cluster2
@@ -151,13 +154,14 @@ For GitLab, you can create a Project Access Token (available in self-hosted and 
 - **SSH Keypairs**:   
   - An OpenSSH type SSH keypair (private key for SSH access to VMs). You can generate this using:
     ```bash
-    ssh-keygen -t rsa -b 4096 -f azure-ssh-key
+    ssh-keygen -t ed25519 -f azure-ssh-key -C "azure-cluster-key"
     ```
-  - An RSA key pair in PEM format (required for Azure Workload Identity setup). You can generate this using:
+  - A key pair in PEM format (required for [Azure Workload Identity setup](https://learn.microsoft.com/en-us/azure/aks/workload-identity-deploy-cluster)). You can generate this using:
     ```bash
-    openssl genrsa -out jwt-signing-key.pem 2048
-    openssl rsa -in jwt-signing-key.pem -pubout -out jwt-signing-pub.pem
+    openssl genpkey -algorithm ed25519 -out jwt-signing-key.pem
+    openssl pkey -in jwt-signing-key.pem -pubout -out jwt-signing-pub.pem
     ```
+    > **Note:** ed25519 keys are shorter and more secure than RSA keys, though not quantum-safe. If RSA is preferred by your organization, use `ssh-keygen -t rsa -b 4096` and `openssl genrsa -out jwt-signing-key.pem 4096` instead.
   
 ### Bare Metal  
   
