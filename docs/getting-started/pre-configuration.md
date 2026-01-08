@@ -90,7 +90,7 @@ The `cloud` section differs by provider. Below are the key fields for each:
 ```yaml
 cloud:
   aws:
-    region: us-east-1
+    region: eu-central-1         # Frankfurt; change to your preferred region
     sshKeyName: kubeaid-demo    # Name of your AWS SSH keypair
     controlPlane:
       instanceType: t3.medium
@@ -109,7 +109,7 @@ cloud:
   azure:
     subscriptionId: <subscription-id>
     resourceGroup: my-cluster-rg
-    location: eastus
+    location: westeurope          # Amsterdam; change to your preferred region
     controlPlane:
       vmSize: Standard_D2s_v3
       replicas: 3
@@ -148,14 +148,16 @@ cloud:
     bareMetal:
       wipeDisks: false          # Set true to wipe existing RAID
       controlPlane:
-        serverIds: [123456, 123457, 123458]
+        serverIds: [123456, 123457, 123458]  # Must be unique within the cluster
       nodePools:
         - name: workers
-          serverIds: [234567, 234568]
+          serverIds: [234567, 234568]        # Must be unique within the cluster
           labels:
             node-type: worker
           taints: []
 ```
+
+> **Note:** Server IDs must be unique within a cluster. Each server can only belong to one node pool (either control plane or a worker pool).
 
 #### Hetzner Hybrid
 
@@ -198,6 +200,13 @@ cloud:
           node-type: worker
         taints: []
 ```
+
+> **Note:** The IP addresses shown above (e.g., `10.0.0.1`) are examples. You can use any valid private IP range (RFC 1918) such as:
+> - `10.0.0.0/8` (10.0.0.0 – 10.255.255.255)
+> - `172.16.0.0/12` (172.16.0.0 – 172.31.255.255)
+> - `192.168.0.0/16` (192.168.0.0 – 192.168.255.255)
+>
+> These addresses are for **internal cluster communication** and should not be publicly routable. The control plane addresses are used for the Kubernetes API server and etcd cluster, while worker addresses are for node-to-node and pod networking.
 
 #### Local K3D
 
@@ -275,6 +284,9 @@ Before proceeding, verify your configuration:
    ```bash
    ls -la outputs/configs/
    # Should show: general.yaml, secrets.yaml
+   # Expected owner: your current user (or root if running as root)
+   # Expected file mode: -rw------- (600) for secrets.yaml to protect credentials
+   #                     -rw-r--r-- (644) is acceptable for general.yaml
    ```
 
 2. **Validate YAML syntax:**
