@@ -1,28 +1,30 @@
 # Getting Started with KubeAid
 
-This guide walks you through the complete process of setting up and managing a KubeAid-managed Kubernetes cluster. The workflow is **provider-agnostic**-the steps are the same whether you're deploying on AWS, Azure, Hetzner, bare metal, or locally.
+This guide walks you through the complete process of setting up and managing a KubeAid-managed Kubernetes cluster. The workflow is **provider-agnostic** and the steps are the same whether you're deploying on AWS, Azure, Hetzner, bare metal, or locally.
 
 ## Overview
 
 KubeAid is a **Kubernetes management suite** that helps you set up and operate Kubernetes clusters following **GitOps principles**.
 
 ```mermaid
-flowchart TB
-    subgraph KubeAid["KubeAid Features"]
-        direction LR
-        subgraph Obs["Observability"]
-            KP["KubePrometheus<br/>+ Alerting"]
-        end
-        subgraph Git["GitOps"]
-            AG["ArgoCD +<br/>Sealed Secrets"]
-        end
-        subgraph Scale["Auto-scaling"]
-            AS["Scale to/from<br/>Zero"]
-        end
-        subgraph Mgmt["Cluster Management"]
-            CM["ClusterAPI +<br/>KubeOne"]
-        end
+---
+title: KubeAid features
+---
+flowchart LR
+    subgraph Obs["Observability"]
+        KP["KubePrometheus<br/>+ Alerting"]
     end
+    subgraph Git["GitOps"]
+        AG["ArgoCD +<br/>Sealed Secrets"]
+    end
+    subgraph Scale["Auto-scaling"]
+        AS["Scale to/from<br/>Zero"]
+    end
+    subgraph Mgmt["Cluster Management"]
+        CM["ClusterAPI +<br/>KubeOne"]
+    end
+    
+    Obs ~~~ Git ~~~ Scale ~~~ Mgmt
 ```
 
 All KubeAid clusters include:
@@ -51,7 +53,7 @@ After installation, use these guides for ongoing cluster management:
 
 | Operation | Document | Description |
 |-----------|----------|-------------|
-| Cleanup | [Cleanup](./cleanup.md) | Delete and clean up cluster resources |
+| Basic Operations | [Basic Operations](./basic-operations.md) | Basic operations including deletion and clean-up |
 
 ## Supported Providers
 
