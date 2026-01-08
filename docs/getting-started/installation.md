@@ -1,6 +1,6 @@
 # Installation
 
-This guide covers bootstrapping your KubeAid-managed Kubernetes cluster. The installation process is **the same for all providers**-the configuration files you prepared in the previous step contain all provider-specific details.
+This guide covers bootstrapping your KubeAid-managed Kubernetes cluster. The installation process is **the same for all providers** and the configuration files you prepared in the previous step contain all provider-specific details.
 
 ## Before You Begin
 
