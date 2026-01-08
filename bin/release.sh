@@ -12,12 +12,20 @@ NEW_TAG=$(cat VERSION)
 # Get the previous tag
 PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
+# Check if current branch is master
+CURRENT_BRANCH=$(git branch --show-current)
+
+if [[ "${CURRENT_BRANCH}" != "master" ]]; then
+  echo "Error: Not on master branch. Current branch: ${CURRENT_BRANCH}"
+  exit 1
+fi
+
 if [ -z "$PREVIOUS_TAG" ]; then
-    echo "No previous tag found, using all commits"
-    COMMIT_RANGE="HEAD"
+  echo "No previous tag found, using all commits"
+  COMMIT_RANGE="HEAD"
 else
-    echo "Generating release notes since $PREVIOUS_TAG..$NEW_TAG"
-    COMMIT_RANGE="$PREVIOUS_TAG..HEAD"
+  echo "Generating release notes since $PREVIOUS_TAG..$NEW_TAG"
+  COMMIT_RANGE="$PREVIOUS_TAG..HEAD"
 fi
 
 # Initialize arrays for categorization
@@ -25,41 +33,76 @@ declare -a FEATURES
 declare -a BUG_FIXES
 declare -a CONFIG_CHANGES
 declare -a OTHER_CHANGES
+declare -a NEW_CHARTS
+declare -a MAJOR_CHART_UPDATES
+declare -a MINOR_CHART_UPDATES
+declare -a PATCH_CHART_UPDATES
 
-get_updates() {
-  git log --format='%B' -n 1 "$short_hash" | sed -n "/### ${1} Version Upgrades/,/^$/p" | grep '^-' | sed "s/^- /- $short_hash /"
+MAJOR_CHART_UPDATES=()
+MINOR_CHART_UPDATES=()
+PATCH_CHART_UPDATES=()
+NEW_CHARTS=()
+
+sort_update_commits() {
+  local update_type="$1"      # Major, Minor, or Patch
+  local commit_hash="$short_hash"
+
+  # Capitalize the update type for the section header
+  local capitalized="${update_type^}"
+
+  # Create temporary array for new items
+  local temp_array=()
+
+  # Extract lines from the specific section and add to temp array
+  while IFS= read -r line; do
+    if [[ -n "$line" ]]; then
+      temp_array+=("- ${commit_hash} $line")
+    fi
+  done < <(git log --format=%B -n 1 "$commit_hash" | \
+    sed -n "/### ${capitalized} Version Upgrades/,/^$/p" | \
+    grep -E '^\s*Updated' | \
+    sed 's/^[[:space:]]*//')
+
+  # Append temp array to the target array using nameref
+  local -n target_array="${update_type^^}_CHART_UPDATES"
+  target_array+=("${temp_array[@]}")
 }
 
 # Process commits
 while IFS= read -r commit; do
-    # Get commit message (first line only)
-    message=$(git log --format=%s -n 1 "$commit")
-    short_hash=$(git log --format=%h -n 1 "$commit")
+  # Get commit message (first line only)
+  message=$(git log --format=%s -n 1 "$commit")
+  short_hash=$(git log --format=%h -n 1 "$commit")
+  formatted_message="- $short_hash $message"
 
-    # Skip merge commits
-    if [[ $message =~ ^Merge ]]; then
-      continue
-    fi
+  # Skip merge commits
+  if [[ $message =~ ^Merge ]]; then
+    continue
+  fi
 
-    # Skip chart update commits (they're handled separately)
-    if [[ $message =~ [Uu]pdate.*helm.*chart ]] || [[ $message =~ chore:.*helm.*chart ]]; then
-      MAJOR_CHART_UPDATES=$(get_updates 'Major' "$short_hash")
-      MINOR_CHART_UPDATES=$(get_updates 'Minor' "$short_hash")
-      PATCH_CHART_UPDATES=$(get_updates 'Patch' "$short_hash")
-    fi
-
-    formatted_message="- $short_hash $message"
-
-    # Categorize commits
-    if [[ $message =~ ^feat ]]; then
-        FEATURES+=("$formatted_message")
-    elif [[ $message =~ ^fix ]]; then
-        BUG_FIXES+=("$formatted_message")
-    elif [[ $message =~ ^chore ]]; then
-        CONFIG_CHANGES+=("$formatted_message")
-    else
-        OTHER_CHANGES+=("$formatted_message")
-    fi
+  # Skip chart update commits (they're handled separately)
+  # Categorize commits
+  if [[ $message =~ chore\(chart\):.*kubeaid.*charts ]]; then
+    sort_update_commits 'Major'
+    sort_update_commits 'Minor'
+    sort_update_commits 'Patch'
+  elif [[ $message =~ chore\(major\ update\): ]]; then
+    MAJOR_CHART_UPDATES+=("$formatted_message")
+  elif [[ $message =~ chore\(minor\ update\): ]]; then
+    MINOR_CHART_UPDATES+=("$formatted_message")
+  elif [[ $message =~ chore\(patch\ update\): ]]; then
+    PATCH_CHART_UPDATES+=("$formatted_message")
+  elif [[ $message =~ chore\(new\): ]]; then
+    NEW_CHARTS+=("$formatted_message")
+  elif [[ $message =~ ^feat ]]; then
+    FEATURES+=("$formatted_message")
+  elif [[ $message =~ ^fix ]]; then
+    BUG_FIXES+=("$formatted_message")
+  elif [[ $message =~ ^chore ]]; then
+    CONFIG_CHANGES+=("$formatted_message")
+  else
+    OTHER_CHANGES+=("$formatted_message")
+  fi
 done < <(git rev-list "$COMMIT_RANGE")
 
 function get_total_chart_updates() {
@@ -75,52 +118,58 @@ cat $CHANGELOG_FILE | tail -n +5 > $CHANGELOG_FILE.tmp
   printf '%s\n' "## KubeAid Release Version ${NEW_TAG}"
   echo ""
 
-   if [ -n "$MAJOR_CHART_UPDATES" ]; then
-     echo "### Major Version Upgrades"
-     printf '%s\n' "${MAJOR_CHART_UPDATES}"
-     echo ""
-   fi
+  if [ ${#NEW_CHARTS[@]} -gt 0 ]; then
+    echo "### New Charts Added"
+    printf '%s\n' "${NEW_CHARTS[@]}"
+    echo ""
+  fi
 
-   if [ -n "$MINOR_CHART_UPDATES" ]; then
-     echo "### Minor Version Upgrades"
-     printf '%s\n' "${MINOR_CHART_UPDATES}"
-     echo ""
-   fi
+  if [ ${#MAJOR_CHART_UPDATES[@]} -gt 0 ]; then
+    echo "### Major Version Upgrades"
+    printf '%s\n' "${MAJOR_CHART_UPDATES[@]}"
+    echo ""
+  fi
 
-   if [ -n "$PATCH_CHART_UPDATES" ]; then
-     echo "### Patch Version Upgrades"
-     printf '%s\n' "${PATCH_CHART_UPDATES}"
-     echo ""
-   fi
+  if [ ${#MINOR_CHART_UPDATES[@]} -gt 0 ]; then
+    echo "### Minor Version Upgrades"
+    printf '%s\n' "${MINOR_CHART_UPDATES[@]}"
+    echo ""
+  fi
 
-   if [ ${#FEATURES[@]} -gt 0 ]; then
-       echo "### Features"
-       printf '%s\n' "${FEATURES[@]}"
-       echo ""
-   fi
+  if [ ${#PATCH_CHART_UPDATES[@]} -gt 0 ]; then
+    echo "### Patch Version Upgrades"
+    printf '%s\n' "${PATCH_CHART_UPDATES[@]}"
+    echo ""
+  fi
 
-   if [ ${#BUG_FIXES[@]} -gt 0 ]; then
-       echo "### Bug Fixes"
-       printf '%s\n' "${BUG_FIXES[@]}"
-       echo ""
-   fi
+  if [ ${#FEATURES[@]} -gt 0 ]; then
+    echo "### Features"
+    printf '%s\n' "${FEATURES[@]}"
+    echo ""
+  fi
 
-   if [ ${#CONFIG_CHANGES[@]} -gt 0 ]; then
-       echo "### Configuration Changes"
-       printf '%s\n' "${CONFIG_CHANGES[@]}"
-       echo ""
-   fi
+  if [ ${#BUG_FIXES[@]} -gt 0 ]; then
+    echo "### Bug Fixes"
+    printf '%s\n' "${BUG_FIXES[@]}"
+    echo ""
+  fi
 
-   if [ ${#OTHER_CHANGES[@]} -gt 0 ]; then
-       echo "### Other Changes"
-       printf '%s\n' "${OTHER_CHANGES[@]}"
-       echo ""
-   fi
+  if [ ${#CONFIG_CHANGES[@]} -gt 0 ]; then
+    echo "### Configuration Changes"
+    printf '%s\n' "${CONFIG_CHANGES[@]}"
+    echo ""
+  fi
+
+  if [ ${#OTHER_CHANGES[@]} -gt 0 ]; then
+    echo "### Other Changes"
+    printf '%s\n' "${OTHER_CHANGES[@]}"
+    echo ""
+  fi
 
    # If no commits categorized, add a note
    total=$((TOTAL_CHART_UPDATES + ${#FEATURES[@]} + ${#BUG_FIXES[@]} + ${#CONFIG_CHANGES[@]} + ${#OTHER_CHANGES[@]}))
    if [ $total -eq 0 ]; then
-       echo "No changes in this release."
+    echo "No changes in this release."
    fi
 } > "$RELEASE_NOTES_FILE"
 
