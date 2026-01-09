@@ -20,18 +20,110 @@ If you haven't already installed the KubeAid CLI, run:
 
 ```bash
 KUBEAID_CLI_VERSION=$(curl -s "https://api.github.com/repos/Obmondo/kubeaid-cli/releases/latest" | jq -r .tag_name)
-OS=$([ "$(uname -s)" = "Linux" ] && echo "linux" || echo "darwin")
+OS=$([ "$(uname -s)" = "Linux" ] && echo "Linux" || echo "Darwin")
 CPU_ARCHITECTURE=$([ "$(uname -m)" = "x86_64" ] && echo "amd64" || echo "arm64")
 
-wget "https://github.com/Obmondo/kubeaid-cli/releases/download/${KUBEAID_CLI_VERSION}/kubeaid-cli-${KUBEAID_CLI_VERSION}-${OS}-${CPU_ARCHITECTURE}"
-sudo mv kubeaid-cli-${KUBEAID_CLI_VERSION}-${OS}-${CPU_ARCHITECTURE} /usr/local/bin/kubeaid-cli
+wget "https://github.com/Obmondo/kubeaid-cli/releases/download/${KUBEAID_CLI_VERSION}/kubeaid-cli_${OS}_${CPU_ARCHITECTURE}.tar.gz"
+tar -xzf kubeaid-cli_${OS}_${CPU_ARCHITECTURE}.tar.gz
+sudo mv kubeaid-cli /usr/local/bin/kubeaid-cli
 sudo chmod +x /usr/local/bin/kubeaid-cli
+rm kubeaid-cli_${OS}_${CPU_ARCHITECTURE}.tar.gz
 ```
+
+> **Note:** This script works on both Linux and macOS. For Linux users who prefer native package managers, see the [Native Package Installation](#native-package-installation) section below.
 
 Verify the installation:
 
 ```bash
 kubeaid-cli --version
+```
+
+### Manual Installation (tar.gz Packages)
+
+You can also manually download the appropriate tar.gz package for your platform from the [releases page](https://github.com/Obmondo/kubeaid-cli/releases).
+
+#### Available tar.gz Packages
+
+| Platform | Architecture | Package Name |
+|----------|--------------|--------------|
+| macOS | ARM64 (Apple Silicon) | `kubeaid-cli_Darwin_arm64.tar.gz` |
+| macOS | x86_64 (Intel) | `kubeaid-cli_Darwin_x86_64.tar.gz` |
+| Linux | ARM64 | `kubeaid-cli_Linux_arm64.tar.gz` |
+| Linux | x86_64 | `kubeaid-cli_Linux_x86_64.tar.gz` |
+
+#### Installation Steps
+
+1. **Download the appropriate package** for your platform:
+
+   ```bash
+   # Example for Linux x86_64
+   wget https://github.com/Obmondo/kubeaid-cli/releases/latest/download/kubeaid-cli_Linux_x86_64.tar.gz
+   ```
+
+2. **Extract the archive**:
+
+   ```bash
+   tar -xzf kubeaid-cli_<OS>_<ARCH>.tar.gz
+   ```
+
+3. **Move the binary to your PATH**:
+
+   ```bash
+   sudo mv kubeaid-cli /usr/local/bin/
+   sudo chmod +x /usr/local/bin/kubeaid-cli
+   ```
+
+4. **Verify the installation**:
+
+   ```bash
+   kubeaid-cli --version
+   ```
+
+### Native Package Installation
+
+Native packages are available for Linux distributions in both `amd64` and `arm64` architectures:
+
+| Format | Architecture | Package Name | Distribution |
+|--------|--------------|--------------|--------------|
+| `.deb` | amd64 | `kubeaid-cli_v<VERSION>_linux_amd64.deb` | Debian, Ubuntu |
+| `.deb` | arm64 | `kubeaid-cli_v<VERSION>_linux_arm64.deb` | Debian, Ubuntu |
+| `.rpm` | amd64 | `kubeaid-cli_v<VERSION>_linux_amd64.rpm` | RHEL, Fedora, CentOS |
+| `.rpm` | arm64 | `kubeaid-cli_v<VERSION>_linux_arm64.rpm` | RHEL, Fedora, CentOS |
+| `.apk` | amd64 | `kubeaid-cli_v<VERSION>_linux_amd64.apk` | Alpine Linux |
+| `.apk` | arm64 | `kubeaid-cli_v<VERSION>_linux_arm64.apk` | Alpine Linux |
+| `.pkg.tar.zst` | amd64 | `kubeaid-cli_v<VERSION>_linux_amd64.pkg.tar.zst` | Arch Linux |
+| `.pkg.tar.zst` | arm64 | `kubeaid-cli_v<VERSION>_linux_arm64.pkg.tar.zst` | Arch Linux |
+
+> **Note:** Replace `<VERSION>` with the actual version number (e.g., `v0.17.1`).
+
+#### Installation Examples
+
+**Debian/Ubuntu:**
+
+```bash
+KUBEAID_CLI_VERSION=$(curl -s "https://api.github.com/repos/Obmondo/kubeaid-cli/releases/latest" | jq -r .tag_name)
+CPU_ARCHITECTURE=$([ "$(uname -m)" = "x86_64" ] && echo "amd64" || echo "arm64")
+wget "https://github.com/Obmondo/kubeaid-cli/releases/download/${KUBEAID_CLI_VERSION}/kubeaid-cli_${KUBEAID_CLI_VERSION}_linux_${CPU_ARCHITECTURE}.deb"
+sudo dpkg -i kubeaid-cli_${KUBEAID_CLI_VERSION}_linux_${CPU_ARCHITECTURE}.deb
+```
+
+**RHEL/Fedora/CentOS:**
+
+```bash
+KUBEAID_CLI_VERSION=$(curl -s "https://api.github.com/repos/Obmondo/kubeaid-cli/releases/latest" | jq -r .tag_name)
+CPU_ARCHITECTURE=$([ "$(uname -m)" = "x86_64" ] && echo "amd64" || echo "arm64")
+wget "https://github.com/Obmondo/kubeaid-cli/releases/download/${KUBEAID_CLI_VERSION}/kubeaid-cli_${KUBEAID_CLI_VERSION}_linux_${CPU_ARCHITECTURE}.rpm"
+sudo rpm -i kubeaid-cli_${KUBEAID_CLI_VERSION}_linux_${CPU_ARCHITECTURE}.rpm
+```
+
+### Verifying Checksums
+
+Each release includes a checksums file (`kubeaid-cli_<VERSION>_checksums.txt`) for verifying download integrity:
+
+```bash
+KUBEAID_CLI_VERSION=$(curl -s "https://api.github.com/repos/Obmondo/kubeaid-cli/releases/latest" | jq -r .tag_name)
+wget "https://github.com/Obmondo/kubeaid-cli/releases/download/${KUBEAID_CLI_VERSION}/kubeaid-cli_${KUBEAID_CLI_VERSION#v}_checksums.txt"
+sha256sum -c kubeaid-cli_${KUBEAID_CLI_VERSION#v}_checksums.txt --ignore-missing
 ```
 
 ## Bootstrap the Cluster
