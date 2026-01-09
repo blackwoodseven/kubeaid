@@ -2,6 +2,8 @@
 
 This guide covers the essential KubeAid CLI commands for managing your Kubernetes cluster. All operations are **provider-agnostic** and work the same way regardless of your deployment platform.
 
+> **Note:** All `kubeaid-cli` commands are run on your **local machine** (the same machine where you installed the CLI during the [installation step](./installation.md)). The CLI connects to your cluster remotely via kubeconfig or SSH.
+
 ## KubeAid CLI Command Reference
 
 Here's a quick reference of the most common `kubeaid-cli` commands:
@@ -15,6 +17,8 @@ Here's a quick reference of the most common `kubeaid-cli` commands:
 | `kubeaid-cli cluster upgrade --new-k8s-version <version>` | Upgrade Kubernetes version |
 | `kubeaid-cli --version` | Show CLI version |
 | `kubeaid-cli --help` | Show help and available commands |
+
+> **Note:** KubeAid CLI does not have start/stop/pause/enable/disable commands. Cluster lifecycle is managed through `bootstrap`, `upgrade`, and `delete` operations. For workload management, use standard `kubectl` commands.
 
 ---
 
@@ -47,6 +51,14 @@ All applications should show `Healthy` and `Synced` status.
 
 ## Cluster Upgrade
 
+### Before Upgrading
+
+1. **Backup important data** - Export any critical secrets or configurations
+2. **Review changelogs** - Check for breaking changes in the new Kubernetes version
+3. **Test in staging** - If possible, test the upgrade on a non-production cluster first
+
+### Upgrade Command
+
 To upgrade the Kubernetes version of your cluster:
 
 ```bash
@@ -54,12 +66,6 @@ kubeaid-cli cluster upgrade --new-k8s-version v1.32.0
 ```
 
 > **Note:** Replace `v1.32.0` with your target Kubernetes version. Always review the [Kubernetes changelog](https://kubernetes.io/releases/) before upgrading.
-
-### Before Upgrading
-
-1. **Backup important data** - Export any critical secrets or configurations
-2. **Review changelogs** - Check for breaking changes in the new Kubernetes version
-3. **Test in staging** - If possible, test the upgrade on a non-production cluster first
 
 ---
 
@@ -70,7 +76,7 @@ This section covers how to delete and clean up your KubeAid-managed Kubernetes c
 ### Before You Begin
 
 > **Warning:** Cluster deletion is **irreversible**. Ensure you have:
-> - Backed up any important data
+> - Backed up any important data (especially `general.yaml` if you want to recreate the cluster later)
 > - Exported any sealed secrets you want to preserve
 > - Saved your `secrets.yaml` in your password store
 
@@ -113,28 +119,28 @@ kubeaid-cli cluster delete main && kubeaid-cli cluster delete management
 title: What Gets Deleted
 ---
 flowchart TB
-    Start["Step 1: kubeaid-cli cluster delete main"]
+    Start["Step 1:<br/>kubeaid-cli cluster delete main"]
     
     Start --> MainCluster
     
     subgraph MainCluster["Your Main Cluster"]
         direction TB
-        CP["❌ Control Plane Nodes"]
-        Workers["❌ Worker Nodes"]
-        Cloud["❌ Cloud Resources"]
-        LB["❌ Load Balancers"]
+        CP["❌ Control Plane<br/>Nodes"]
+        Workers["❌ Worker<br/>Nodes"]
+        Cloud["❌ Cloud<br/>Resources"]
+        LB["❌ Load<br/>Balancers"]
         Volumes["❌ Volumes"]
-        Network["❌ Network Resources"]
+        Network["❌ Network<br/>Resources"]
     end
     
-    MainCluster --> Next["Step 2: kubeaid-cli cluster delete management<br/>(ClusterAPI only)"]
+    MainCluster --> Next["Step 2:<br/>kubeaid-cli cluster delete management<br/>(ClusterAPI only)"]
     
     Next --> MgmtCluster
     
     subgraph MgmtCluster["Local Management Cluster"]
         direction TB
-        CAPI["❌ ClusterAPI Controllers"]
-        K3D["❌ K3D Container (in Docker)"]
+        CAPI["❌ ClusterAPI<br/>Controllers"]
+        K3D["❌ K3D Container<br/>(in Docker)"]
         State["❌ Local State"]
     end
 ```
@@ -148,6 +154,9 @@ After cluster deletion, perform these additional cleanup steps to ensure no reso
 ### Clean Up Local Files
 
 ```bash
+# If you need to recreate this cluster at a later time, save general.yaml before deleting
+# cp outputs/configs/general.yaml /path/to/safe/location/
+
 # Remove generated outputs (keep if you want to inspect logs)
 rm -rf outputs/
 
@@ -234,7 +243,7 @@ k3d cluster list
 
 To create a new cluster with the same configuration:
 
-1. Ensure your `general.yaml` is saved (in your kubeaid-config repo)
+1. Retrieve your `general.yaml` (which you saved in your kubeaid-config repo during [pre-configuration](./pre-configuration.md), right?)
 2. Retrieve your `secrets.yaml` from your password store
 3. Follow the [Pre-Configuration](./pre-configuration.md) and [Installation](./installation.md) guides
 
