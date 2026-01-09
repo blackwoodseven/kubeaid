@@ -78,11 +78,13 @@ For experienced users, here's the minimal workflow:
 ```bash
 # 1. Install the CLI
 KUBEAID_CLI_VERSION=$(curl -s "https://api.github.com/repos/Obmondo/kubeaid-cli/releases/latest" | jq -r .tag_name)
-OS=$([ "$(uname -s)" = "Linux" ] && echo "linux" || echo "darwin")
+OS=$([ "$(uname -s)" = "Linux" ] && echo "Linux" || echo "Darwin")
 CPU_ARCHITECTURE=$([ "$(uname -m)" = "x86_64" ] && echo "amd64" || echo "arm64")
-wget "https://github.com/Obmondo/kubeaid-cli/releases/download/${KUBEAID_CLI_VERSION}/kubeaid-cli-${KUBEAID_CLI_VERSION}-${OS}-${CPU_ARCHITECTURE}"
-sudo mv kubeaid-cli-${KUBEAID_CLI_VERSION}-${OS}-${CPU_ARCHITECTURE} /usr/local/bin/kubeaid-cli
+wget "https://github.com/Obmondo/kubeaid-cli/releases/download/${KUBEAID_CLI_VERSION}/kubeaid-cli_${OS}_${CPU_ARCHITECTURE}.tar.gz"
+tar -xzf kubeaid-cli_${OS}_${CPU_ARCHITECTURE}.tar.gz
+sudo mv kubeaid-cli /usr/local/bin/kubeaid-cli
 sudo chmod +x /usr/local/bin/kubeaid-cli
+rm kubeaid-cli_${OS}_${CPU_ARCHITECTURE}.tar.gz
 
 # 2. Generate config (replace <provider> with: aws, azure, hetzner hcloud, hetzner bare-metal, hetzner hybrid, bare-metal, local)
 kubeaid-cli config generate <provider>
