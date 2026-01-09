@@ -11,6 +11,8 @@ KubeAid uses two configuration files:
 | `general.yaml` | Cluster specs, node configs, networking settings | Version-controlled in `kubeaid-config` repo |
 | `secrets.yaml` | Credentials for cloud providers and Git | **Store in password manager** (e.g., [pass](https://www.passwordstore.org/)) |
 
+> **Tip:** If you want to be able to recreate this cluster setup after it has been deleted, you must save `general.yaml` to your kubeaid-config repository.
+
 > **Important:** Always save your `secrets.yaml` in a secure password store for easy recovery. Never commit secrets to Git.
 
 ## Step 1: Generate Configuration Files
