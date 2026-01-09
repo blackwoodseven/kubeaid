@@ -17,7 +17,7 @@ Quite often its very difficult to find enough who can to do this work, and espec
 building a replica of what you are building to solve 1. This is even WHY Kubernetes was started, to help enable
 collaboration between companies on a shared goal.
 
-**KubeAid** is being developed by [Obmondo.com](https://obmondo.com) - where we build the solutions our customers need, and
+**KubeAid** is being developed by [Obmondo](https://obmondo.com) - where we build the solutions our customers need, and
 share the work with everyone, via this project. We feel this is the only way, We ever have a chance of actually
 delivering the features that every operations team should have - without needing to have a subject matter expert at hand
 for everything.
@@ -27,6 +27,6 @@ normally available - and we can offer them a job where they get time to work on 
 much higher degree - because we focus on one thing - furthering this project and delivering value to the customers that
 sponsor it, via their subscriptions and development tasks they ask of us.
 
-[Obmondo.com](https://obmondo.com) offers low cost subscriptions, where we monitor your clusters and handle your alerts
+[Obmondo](https://obmondo.com) offers low cost subscriptions, where we monitor your clusters and handle your alerts
 24/7/365 - enabling teams to not have to worry about who is on vacation, or sick - as we are there to back them up if
 they need it.

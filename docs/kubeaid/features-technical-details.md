@@ -40,7 +40,7 @@ scripts first to try and avoid it), or scaling up instead.
 ### Regular application updates with security and bug fixes, ready to be issued to your cluster(s) at will
 
 We update this repository with updated versions of the applications, and improvements - which if you have a subscription
-with https://Obmondo.com you will get automaticly, or you can just git pull, to get.
+with [Obmondo](https://obmondo.com) you will get automaticly, or you can just git pull, to get.
 
 Once your copy of this repo is updated, argocd will notice and register which applications have updates waiting, and you
 can go view exact diff this update will cause on your cluster (app diff) or just sync it into production.

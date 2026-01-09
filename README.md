@@ -91,7 +91,7 @@ For hosting-specific reference and operations guides, see the [documentation](./
 ## Support
 
 Besides the community support, the primary developers of this project offers support via services on
-[Obmondo.com](https://obmondo.com) - where you can opt to have us observe your world - and react to your alerts, and/or
+[Obmondo](https://obmondo.com) - where you can opt to have us observe your world - and react to your alerts, and/or
 help you with developing new features or other tasks on clusters, setup using this project.
 
 There are ZERO vendor lockin - so any subscription you sign - can be cancelled at any time - you only pay for 1 month at
