@@ -26,24 +26,37 @@
    a. clone the kubeaid git repo from obmondo
    b. Create a fresh git repo (for better naming, we usually call it kubeaid-config)
 
-## Installations
+## Installation
 
-- [AWS Cluster Setup](./aws-cluster-setup.md)
+For complete installation instructions, see the **[Getting Started Guide](./getting-started/README.md)** which includes:
 
-- [Azure AKS Cluster Setup](./azure-cluster-setup.md)
+- Prerequisites
+- Pre-configuration
+- Installation (supports AWS, Azure, Hetzner, Bare Metal, and Local K3D)
+- Post-configuration
+- Basic Operations (including cleanup)
 
-- **Hetzner:**
-  * [Hetzner Bare Metal](./hetzner-setup/bare-metal-cluster-setup.md)
-  * [Hetzner HCloud](./hetzner-setup/hcloud-cluster-setup.md)
-  * [Hetzner Hybrid](./hetzner-setup/hybrid-cluster-setup.md)
+## Hosting Reference
 
-- [Bare Metal Cluster Setup](./bare-metal-cluster-setup.md)
+For hosting-specific details and considerations, see:
 
-- [Local K3D Cluster Setup](./local-k3d-cluster-setup.md) - No cluster upgrades and disaster recovery support, only for testing purposes.
+- [Cloud Providers](./hosting/cloud-providers.md) (AWS, Azure, Hetzner HCloud)
+- [Bare Metal](./hosting/bare-metal.md)
+- [Single Host K8s](./hosting/single-host-k8s.md)
+- [Hybrid Setup](./hosting/hybrid-setup.md)
 
-* Helm
+## Operations
 
-  * [Update Helm chart](./update_helm_chart.md)
+- [Backup & Restore](./operations/backup-restore.md)
+- [Node Reboot](./operations/node-reboot.md)
+- [AWS Private Link Setup](./operations/aws-private-link-setup.md)
+- [Monitoring](./operations/monitoring/)
+  - [Pod Autoscaling](./operations/monitoring/pod-autoscaling.md)
+  - [Prometheus Namespaces](./operations/monitoring/prometheus-namespaces.md)
+
+## Development
+
+- [Update ArgoCD Apps](./update_kubeaid_argocd_apps.md)
 
 ## Support
 

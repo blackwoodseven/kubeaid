@@ -10,7 +10,7 @@ Table of Contents
 * [The Problem KubeAid Solves](#The-Problem-KubeAid-Solves)
 * [Setup of Kubernetes clusters](#Setup-of-Kubernetes-clusters)
 * [Installation](#Installation)
-  * [documentation](./docs/Readme.md) 
+  * [documentation](./docs/README.md) 
 * [Support](#Support)
 * [Secrets](#Secrets)
 * [License](#License)
@@ -80,8 +80,13 @@ All customizations happens in your `kubeaid-config` repo.
 
 ## Installation
 
-For detailed installation steps and cluster setup guides, please refer to our 
-**[documentation](./docs/Readme.md)**
+For complete installation instructions, see the **[Getting Started Guide](./docs/getting-started/README.md)** which includes:
+
+- Prerequisites and pre-configuration
+- Installation (supports AWS, Azure, Hetzner, Bare Metal, and Local K3D)
+- Post-configuration and basic operations
+
+For hosting-specific reference and operations guides, see the [documentation](./docs/README.md).
 
 ## Support
 
