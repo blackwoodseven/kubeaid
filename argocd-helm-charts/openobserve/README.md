@@ -51,8 +51,8 @@ spec:
           refreshTokens:
             validIfNotUsedFor: 30m
         staticClients:
-          - id: openobserve
-            name: openobserve
+          - id: internalclient
+            name: internalclient
             secret: {{ index . "O2_DEX_CLIENT_SECRET" }}
             redirectURIs:
               - https://openobserve.your-cluster-ingress.com/config/redirect
@@ -128,3 +128,18 @@ kubectl create secret generic openobserve-credentials \
 
 *All commands assume you have `kubectl`, `kubeseal` installed.
 Ensure you've access to the `system` namespace where the sealed-secrets controller runs.*
+
+## Troubleshooting
+
+### User deletion
+
+If a user logged in with `user` role, we need to remove the user, update the dex config to enable viewer role for new users.
+However, in order to do that, the added user needs to be removed, and then add back via login.
+But the UI doesn't give any option to delete the user account. Hence, we need to do that via curl request.
+
+```sh
+curl -X 'DELETE' \
+  'https:///openobserve.your-cluster-ingress.com/api/default/users/<user-email-to-remove>' \
+  -u '<root-user-email>:<root-user-password>' \
+  -H 'accept: application/json'
+```
