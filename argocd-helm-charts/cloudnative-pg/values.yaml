@@ -5,3 +5,10 @@ cloudnative-pg:
 
   monitoring:
     podMonitorEnabled: true
+
+plugin-barman-cloud:
+  certificate:
+    # The default renewal time of 360h throws an alert from cert-manager
+    # because Let's Encrypt certificates have the renewal period at 30d or 720h.
+    # The alert fires if a certificate has less than 21d left before it is expired.
+    renewBefore: 720h
