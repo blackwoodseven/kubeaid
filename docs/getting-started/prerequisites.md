@@ -66,7 +66,7 @@ The following packages must be installed on your local machine:
 - [`jq`](https://jqlang.org/download/) - JSON processor  
 - [`terragrunt`](https://terragrunt.gruntwork.io/docs/getting-started/install/) - Terraform wrapper  
 - [`terraform`](https://developer.hashicorp.com/terraform/install) - Infrastructure as Code tool  
-- [`bcrypt`](https://github.com/bitnami/bcrypt-cli) - Password hashing utility  
+- [`bcrypt`](https://www.npmjs.com/package/bcrypt) - Password hashing utility  
 - [`wireguard`](https://www.wireguard.com/install/) - VPN software (optional, for private cluster access)  
 - [`yq`](https://github.com/mikefarah/yq) - YAML processor
   
@@ -161,7 +161,8 @@ For GitLab, you can create a Project Access Token (available in self-hosted and 
     openssl genpkey -algorithm ed25519 -out jwt-signing-key.pem
     openssl pkey -in jwt-signing-key.pem -pubout -out jwt-signing-pub.pem
     ```
-    > **Note:** ed25519 keys are shorter and more secure than RSA keys, though not quantum-safe. If RSA is preferred by your organization, use `ssh-keygen -t rsa -b 4096` and `openssl genrsa -out jwt-signing-key.pem 4096` instead.
+
+  > **Note:** ed25519 keys are shorter and more secure than RSA keys, though not quantum-safe. If RSA is preferred by you or your organization, use `ssh-keygen -t rsa -b 4096` and `openssl genrsa -out jwt-signing-key.pem 4096` instead.
   
 ### Bare Metal  
   
