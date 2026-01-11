@@ -37,6 +37,7 @@ Guides for ongoing cluster management:
 | [Backup & Restore](./operations/backup-restore.md) | Disaster recovery procedures |
 | [Node Reboot](./operations/node-reboot.md) | Safe node maintenance |
 | [AWS Private Link Setup](./operations/aws-private-link-setup.md) | Cross-account connectivity |
+| [Operations Tips](./operations/operations-tips.md) | Legacy operational procedures and debugging |
 
 #### Monitoring
 
@@ -67,6 +68,9 @@ Guides for ongoing cluster management:
 |-------|-------------|
 | [Why KubeAid](./kubeaid/why-kubeaid.md) | The problem KubeAid solves |
 | [Features Technical Details](./kubeaid/features-technical-details.md) | In-depth feature documentation |
+| [Helm Umbrella Pattern](./kubeaid/helm-umbrella-pattern.md) | How KubeAid manages applications |
+| [Prometheus Configuration](./kubeaid/prometheus-configuration.md) | Configuring monitoring with kube-prometheus |
+| [GitOps Drift Detection](./kubeaid/gitops-drift-detection.md) | ArgoCD sync status and alerting |
 
 ## Support
 
