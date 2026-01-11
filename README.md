@@ -8,6 +8,7 @@ Table of Contents
 * [KubeAid Overview](#KubeAid-Overview)
 * [Kubeaid feature goals](#Kubeaid-feature-goals)
 * [The Problem KubeAid Solves](#The-Problem-KubeAid-Solves)
+* [KubeAid Architecture Overview](#KubeAid-Architecture-Overview)
 * [Setup of Kubernetes clusters](#Setup-of-Kubernetes-clusters)
 * [Installation](#Installation)
   * [documentation](./docs/README.md) 
@@ -15,6 +16,7 @@ Table of Contents
 * [Secrets](#Secrets)
 * [License](#License)
 * [Technical details on the features](#Technical-details-on-the-features)
+* [Documentation](#Documentation)
 
 
 -----------------
@@ -66,6 +68,56 @@ world and increase the velocity of the team.
 Combined with the services provided by [Obmondo](https://obmondo.com) - the makers of KubeAid, your teams no longer need subject matter experts for every piece of the stack, and can instead focus on what matters most: helping application teams succeed in production.
 
 [Read more about this](./docs/kubeaid/why-kubeaid.md)
+
+## KubeAid Architecture Overview
+
+KubeAid follows a GitOps-driven, automated approach to provision and manage production-ready Kubernetes clusters. The diagram below explains the high-level flow:
+
+```mermaid
+---
+title: KubeAid Architecture
+---
+flowchart TB
+    subgraph GitRepo["Git Repository"]
+        direction TB
+        modules["KubeAid Modules"]
+        yaml["YAML Configs"]
+        helm["Helm Charts"]
+    end
+
+    subgraph ArgoCD["ArgoCD"]
+        direction TB
+        watch["Watches Git for changes"]
+        apply["Applies configs to cluster"]
+    end
+
+    subgraph Automation["KubeAid Automation Layer"]
+        direction TB
+        bootstrap["Cluster bootstrap & lifecycle management"]
+        addons["Add-ons installation<br/>(Ingress, Certs, Monitoring, etc.)"]
+        defaults["Secure defaults & best practices"]
+        upgrades["Automated upgrades and recovery"]
+    end
+
+    subgraph K8sCluster["KubeAid Kubernetes Cluster"]
+        direction TB
+        networking["Networking (CNI, Ingress)"]
+        storage["Storage (CSI, PVCs)"]
+        certs["Certificates (StepCA/Cert-Manager)"]
+        monitoring["Monitoring (Prometheus, Grafana)"]
+        logging["Logging & Alerting"]
+        workloads["Application Workloads"]
+    end
+
+    GitRepo -->|"GitOps Sync"| ArgoCD
+    ArgoCD -->|"Deploys / Updates"| Automation
+    Automation -->|"Provisions / Manages"| K8sCluster
+
+    style GitRepo fill:#4a90a4,stroke:#2d5a6b,color:#fff
+    style ArgoCD fill:#e8833a,stroke:#b35c1e,color:#fff
+    style Automation fill:#6b8e23,stroke:#4a6319,color:#fff
+    style K8sCluster fill:#7b68ee,stroke:#5a4bb8,color:#fff
+```
 
 ## Setup of Kubernetes clusters
 
