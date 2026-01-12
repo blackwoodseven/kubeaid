@@ -15,7 +15,7 @@ Even with Kubernetes there is a lot of work to be done to pick the right solutio
 world, to increase the velocity of every operations team, so they can focus on bullet 2. — All the while everyone gets to enjoy a
 highly available and secure operations setup.
 
-Quite often its very difficult to find enough people who can do this work — especially since EVERY other company is
+Quite often it is very difficult to find enough people who can do this work — especially since EVERY other company is
 building a replica of what you are building to solve bullet 1. This is exactly WHY Kubernetes was started, to help enable
 collaboration between teams across companies on a shared goal.
 
