@@ -1,14 +1,17 @@
-# Welcome to k8sops
+# KubeAid Operations Tips
 
-This repository (https://gitlab.com/Obmondo/k8sops) implements a solution to run any Kubernetes cluster, using gitops
-principles and allowing for customization, in a separate repository.
+> **Note:** This document contains legacy operational procedures. Some information may be outdated.
+> Please refer to the [Getting Started Guide](../getting-started/README.md) for current installation instructions.
+
+This repository (https://github.com/Obmondo/KubeAid) implements a solution to run any Kubernetes cluster, using GitOps
+principles and allowing for customisation, in a separate repository.
 
 This way you can always pull the latest commits, and get security updates, fixes, new features etc., while still being
 able to do your own adjustments.
 
 This is copyright EnableIT ApS (of Denmark) and released under GPL 3 license of fsf.org.
 
-[Obmondo.com](https://obmondo.com) offers subscriptions, where we manage your Kubernetes cluster, using this code, and
+[Obmondo](https://obmondo.com) offers subscriptions, where we manage your Kubernetes cluster, using this code, and
 react to incidents 24/7/365 if this should be of interest.
 
 In this way, we typically help out smaller setups, where there is only 1 or 2 operations people, and hence 24/7

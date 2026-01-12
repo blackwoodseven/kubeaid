@@ -85,8 +85,15 @@ Provisions a KubeAid-managed Kubernetes cluster in Azure with:
 
 - Linux or MacOS with at least 16GB RAM (8GB may cause OOM issues)
 - [Register a Service Principal in Microsoft Entra ID](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app)
-- OpenSSH keypair for VM access
-- PEM keypair for Azure Workload Identity
+- OpenSSH keypair for VM access:
+  ```bash
+  ssh-keygen -t rsa -b 4096 -f azure-ssh-key
+  ```
+- RSA key pair in PEM format for Azure Workload Identity:
+  ```bash
+  openssl genrsa -out jwt-signing-key.pem 2048
+  openssl rsa -in jwt-signing-key.pem -pubout -out jwt-signing-pub.pem
+  ```
 
 ### Azure Setup
 
