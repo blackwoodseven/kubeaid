@@ -1,0 +1,77 @@
+{{- if and ((.Values.global).netpol).enabled ((.Values.global).relate).netpol }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: relate-networkpolicy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: cilium-networkpolicy
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: relate
+
+# ========
+# INGRESS
+# ========
+
+  ingress:
+    # Traefik → relate (port 8000) and nginx sidecar (port 8001)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Values.global.netpol.traefik.namespace | default "traefik" }}
+            {{- range $k, $v := (.Values.global.netpol.traefik.labels | default dict) }}
+            {{ $k }}: {{ $v }}
+            {{- end }}
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+            - port: "8001"
+              protocol: TCP
+
+# =========
+# EGRESS
+# =========
+
+  egress:
+    # DNS (required before every toFQDNs rule)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: "*"
+
+    {{- if ((.Values.global).postgresql).netpol }}
+    # PostgreSQL cluster (same namespace only)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            cnpg.io/cluster: {{ .Values.global.postgresql.instanceName }}-pgsql
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    {{- end }}
+
+    {{- $fqdns := concat (((.Values.global).relate).egressFQDNs | default list) (((.Values.global).relate).extraEgressFQDNs | default list) }}
+    {{- if $fqdns }}
+    # External FQDNs (pypi, git remotes, keycloak, etc.)
+    - toFQDNs:
+        {{- range $fqdns }}
+        - matchName: {{ . | quote }}
+        {{- end }}
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    {{- end }}
+
+{{- end }}

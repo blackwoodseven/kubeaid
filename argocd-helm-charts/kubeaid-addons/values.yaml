@@ -275,6 +275,20 @@ global:
     # -- Git hosts allowed for Argo CD repo access over HTTPS/SSH (egress toFQDNs).
     gitFQDNs: []
 
+  # relate
+  # CiliumNetworkPolicy for the Relate application pod.
+  # Requires global.netpol.enabled: true.
+  relate:
+    # -- Enable CiliumNetworkPolicy for the Relate app pod.
+    netpol: false
+
+    # -- Base set of external FQDNs allowed on port 443. Set defaults here in the chart values.
+    egressFQDNs: []
+
+    # -- Additional FQDNs appended to egressFQDNs at render time. Set environment-specific
+    # hosts here in the private kubeaid-config values without repeating the defaults.
+    extraEgressFQDNs: []
+
   graylog:
     # -- Enable CiliumNetworkPolicy for Graylog.
     netpol: false
