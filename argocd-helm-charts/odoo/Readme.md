@@ -148,3 +148,153 @@ psql -h localhost -U odoo -d odoo -f odoo-backup.sql
 - The password is stored in the `odoo-pgsql-app` secret in the same namespace.   
 
 PostgreSQL restore time depends on size so it varies a lot
+
+## Recovery / Troubleshooting
+
+### CSS/JS Asset Loading Failures (500 Errors, Broken Styling)
+
+After volume changes, migrations, or pod restarts, Odoo may show:
+- 500 errors when loading CSS/JS files
+- Website with broken styling (no CSS)
+- Blank pages or partial content
+- Browser console errors: `Failed to load resource: 500`
+
+#### Understanding the Problem
+
+Odoo stores static assets in a **filestore** directory. The database maintains references to these assets.
+When the volume mount path changes or the filestore is empty but the database has stale references, assets fail to load.
+
+**Common Causes:**
+| Cause | Description |
+|-------|-------------|
+| **Volume Path Mismatch** | PVC mounted at different path than Odoo expects |
+| **Empty/New Volume** | Database has asset references, but volume is empty |
+| **Helm Chart Path Difference** | Bitnami uses `/bitnami/odoo`, official Odoo uses `/var/lib/odoo` |
+| **Volume Migration** | Assets lost when switching between storage solutions |
+
+#### Debugging Steps
+
+1. **Check browser console** (`F12` → Network tab) for failed CSS/JS requests
+
+2. **Check pod logs for file errors:**
+   ```bash
+   kubectl logs <odoo-pod> -n <namespace> | grep -i "file\|asset\|error"
+   ```
+
+3. **Verify mount paths inside the container:**
+   ```bash
+   kubectl exec -it <odoo-pod> -n <namespace> -- /bin/bash
+   ls -la /var/lib/odoo/filestore/
+   ls -la /bitnami/odoo/
+   ```
+
+4. **Check database asset references:**
+   ```bash
+   kubectl exec -it <postgres-pod> -n <namespace> -- psql -U odoo -d odoo
+   SELECT name, store_fname FROM ir_attachment WHERE store_fname IS NOT NULL LIMIT 10;
+   ```
+
+#### Resolution
+
+**Option 1: Fix Volume Mount Path**
+
+If using official Odoo images with Bitnami Helm chart, add to your values.yaml:
+
+```yaml
+extraVolumeMounts:
+  - name: odoo-data
+    mountPath: /var/lib/odoo      # Official Odoo path
+    subPath: odoo-data
+
+extraVolumes:
+  - name: odoo-data
+    persistentVolumeClaim:
+      claimName: odoo-data-pvc
+```
+
+**Option 2: Regenerate Assets**
+
+```bash
+kubectl exec <odoo-pod> -n <namespace> -- odoo -d <database> --update=base --stop-after-init
+```
+
+**Option 3: Clear Stale Asset References**
+
+If volume is empty but database has stale references:
+
+```sql
+-- Connect to PostgreSQL and clear attachment table
+TRUNCATE ir_attachment CASCADE;
+```
+
+Then restart the pod to trigger reinitialization.
+
+**Option 4: Restore from Backup**
+
+```bash
+# Copy filestore backup to pod
+kubectl cp ./filestore-backup/ <namespace>/<pod-name>:/var/lib/odoo/filestore/
+
+# Fix permissions
+kubectl exec <pod-name> -n <namespace> -- chown -R odoo:odoo /var/lib/odoo/filestore/
+```
+
+#### Post-Fix: Clear Browser Cache
+
+After fixing, users MUST clear browser cache:
+- **Hard Refresh:** `Ctrl+Shift+R` (Windows/Linux) or `Cmd+Shift+R` (Mac)
+- **Full Clear:** Browser Settings → Clear browsing data → Cached images and files
+
+#### Timeout Issues During Module Installation
+
+If modules take too long to install, increase time limits:
+
+```yaml
+command:
+  - odoo
+  - --limit-time-real=1200
+  - --limit-time-cpu=1200
+  - --workers=3
+```
+
+### Volume Attachment Failures (ContainerCreating)
+
+If Odoo pods are stuck in `ContainerCreating`:
+
+1. **Check events:**
+   ```bash
+   kubectl describe pod <odoo-pod> -n <namespace>
+   ```
+
+2. **Look for volume errors:**
+   - `FailedAttachVolume` - Volume attachment timeout
+   - `Maximum number of volumes reached` - Hetzner CSI 16-volume limit
+   - `Multi-Attach error` - Volume already attached elsewhere
+
+3. **Check volume attachments per node:**
+   ```bash
+   for node in $(kubectl get nodes -o jsonpath='{.items[*].metadata.name}'); do
+     count=$(kubectl get volumeattachments -o json | jq -r ".items[] | select(.spec.nodeName==\"$node\") | .metadata.name" | wc -l)
+     echo "$node: $count volumes attached"
+   done
+   ```
+
+See the [Obmondo Wiki - Volume Attachment Issues](https://gitea.obmondo.com/EnableIT/wiki/src/branch/master/procedures/alerts/KubeVolumeAttachmentFailed.md) for detailed resolution strategies.
+
+### Database Connection Errors After Restore
+
+After restoring from backup, you may see authentication errors where Odoo cannot connect to PostgreSQL.
+
+**Cause:** Database password in Odoo config differs from the secret.
+
+**Solution:** Update password in both config files to match the secret:
+
+```bash
+# Get password from secret
+kubectl get secret odoo-pgsql-app -n <namespace> -o jsonpath="{.data.password}" | base64 -d
+
+# Exec into Odoo pod and update both config files
+kubectl exec -it <odoo-pod> -n <namespace> -- /bin/bash
+vi /opt/bitnami/odoo/conf/odoo.conf
+vi /bitnami/odoo/conf/odoo.conf
+```
