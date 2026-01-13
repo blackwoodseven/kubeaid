@@ -5,25 +5,92 @@ rule_files:
   - ../rules/slurm.yaml
 
 tests:
+  #
+  # 1. Slurm job_failed alert
+  #
   - interval: 1m
     input_series:
-      - series: obmondo_monitoring{certname="test.abc", alert_id="monitor::system::slurm::node_status"}
-        values: 1x1000
-      - series: slurm_node_status{node="test",partition="batch*",status="idle", certname="test.abc"}
-        values: 0x1000
+      - series: obmondo_monitoring{certname="test.abc", alert_id="monitor::system::slurm::job_failed"}
+        values: 1x200
+      - series: slurm_job_failed{certname="test.abc"}
+        values: 1x200
 
     alert_rule_test:
-      - alertname: monitor::system::slurm::node_status
+      - alertname: monitor::system::slurm::job_failed
+        eval_time: 10m
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              certname: test.abc
+              alert_id: monitor::system::slurm::job_failed
+            exp_annotations:
+              summary: "Slurm job failure detected on host **test.abc**"
+              description: "One or more Slurm jobs have failed on **test.abc**."
+
+  #
+  # 2. Slurm nodes_down alert
+  #
+  - interval: 1m
+    input_series:
+      - series: obmondo_monitoring{certname="test.abc", alert_id="monitor::system::slurm::nodes_down"}
+        values: 1x200
+      - series: slurm_nodes_down{certname="test.abc"}
+        values: 2x200
+
+    alert_rule_test:
+      - alertname: monitor::system::slurm::nodes_down
         eval_time: 15m
         exp_alerts:
           - exp_labels:
               severity: critical
               certname: test.abc
-              alert_id: monitor::system::slurm::node_status
-              status: idle
-              node: test
-              partition: "batch*"
+              alert_id: monitor::system::slurm::nodes_down
             exp_annotations:
-              summary: "Slurm node is down"
-              description: |
-                A slurm node **test** is down.
+              summary: "Slurm nodes are down for **test.abc**"
+              description: "One or more Slurm nodes are reported as down on **test.abc**."
+
+  #
+  # 3. Slurm jobs_pending alert (pending > 1 hour)
+  #
+  - interval: 1m
+    input_series:
+      - series: obmondo_monitoring{certname="test.abc", alert_id="monitor::system::slurm::jobs_pending"}
+        values: 1x200
+      - series: slurm_jobs_pending{certname="test.abc"}
+        values: 3x200
+
+    alert_rule_test:
+      - alertname: monitor::system::slurm::jobs_pending
+        eval_time: 1h
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              certname: test.abc
+              alert_id: monitor::system::slurm::jobs_pending
+            exp_annotations:
+              summary: "Slurm jobs pending for more than 1 hour on host **test.abc**"
+              description: "One or more Slurm jobs have been in the PENDING state for more than **1 hour** on **test.abc**."
+
+  #
+  # 4. Slurm node drain / draining alert
+  #
+  - interval: 1m
+    input_series:
+      - series: obmondo_monitoring{certname="test.abc", alert_id="monitor::system::slurm::node_drain"}
+        values: 1x200
+      - series: slurm_node_drain{certname="test.abc"}
+        values: 1x200
+      - series: slurm_node_draining{certname="test.abc"}
+        values: 0x200
+
+    alert_rule_test:
+      - alertname: monitor::system::slurm::node_drain
+        eval_time: 10m
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              certname: test.abc
+              alert_id: monitor::system::slurm::node_drain
+            exp_annotations:
+              summary: "Slurm node in DRAIN/DRAINING state on host **test.abc**"
+              description: "One or more Slurm nodes are in **DRAIN** or **DRAINING** state on **test.abc** for more than 10 minutes."

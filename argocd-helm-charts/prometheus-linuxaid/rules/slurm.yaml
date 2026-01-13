@@ -1,15 +1,50 @@
 groups:
   - name: monitor::system::slurm
     rules:
-    - alert: monitor::system::slurm::node_status
+    - alert: monitor::system::slurm::job_failed
       expr: |
-        slurm_node_status == 0
-        and on(certname) obmondo_monitoring{alert_id="monitor::system::slurm::node_status"} > 0
+        slurm_job_failed > 0
+        and on(certname) obmondo_monitoring{alert_id="monitor::system::slurm::job_failed"} > 0
+      for: 10m
+      labels:
+        severity: warning
+        alert_id: monitor::system::slurm::job_failed
+      annotations:
+        summary: "Slurm job failure detected on host **{{ .Labels.certname }}**"
+        description: "One or more Slurm jobs have failed on **{{ .Labels.certname }}**."
+
+    - alert: monitor::system::slurm::nodes_down
+      expr: |
+        slurm_nodes_down > 0
+        and on(certname) obmondo_monitoring{alert_id="monitor::system::slurm::nodes_down"} > 0
       for: 15m
       labels:
         severity: critical
-        alert_id: monitor::system::slurm::node_status
+        alert_id: monitor::system::slurm::nodes_down
       annotations:
-        summary: "Slurm node is down"
-        description: |
-          A slurm node **{{ .Labels.node }}** is down.
+        summary: "Slurm nodes are down for **{{ .Labels.certname }}**"
+        description: "One or more Slurm nodes are reported as down on **{{ .Labels.certname }}**."
+
+    - alert: monitor::system::slurm::jobs_pending
+      expr: |
+        slurm_jobs_pending > 0
+        and on(certname) obmondo_monitoring{alert_id="monitor::system::slurm::jobs_pending"} > 0
+      for: 1h
+      labels:
+        severity: warning
+        alert_id: monitor::system::slurm::jobs_pending
+      annotations:
+        summary: "Slurm jobs pending for more than 1 hour on host **{{ .Labels.certname }}**"
+        description: "One or more Slurm jobs have been in the PENDING state for more than **1 hour** on **{{ .Labels.certname }}**."
+
+    - alert: monitor::system::slurm::node_drain
+      expr: |
+        (slurm_node_drain > 0 or slurm_node_draining > 0)
+        and on(certname) obmondo_monitoring{alert_id="monitor::system::slurm::node_drain"} > 0
+      for: 10m
+      labels:
+        severity: warning
+        alert_id: monitor::system::slurm::node_drain
+      annotations:
+        summary: "Slurm node in DRAIN/DRAINING state on host **{{ .Labels.certname }}**"
+        description: "One or more Slurm nodes are in **DRAIN** or **DRAINING** state on **{{ .Labels.certname }}** for more than 10 minutes."
