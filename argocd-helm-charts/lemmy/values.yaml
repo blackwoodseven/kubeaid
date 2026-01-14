@@ -1,0 +1,46 @@
+# Wrapper values for Lemmy (integrating CNPG)
+
+# Configuration for the upstream 'lemmy' chart dependency
+lemmy:
+  serverName: "localhost"
+
+  admin:
+    username: lemmy
+    email: lemmy@example.com
+    # generated on first install or set via existingSecret name in production
+
+  ingress:
+    enabled: false
+
+  postgresql:
+    enabled: false  # Disable bundled postgres
+    host: lemmy-pgsql-rw
+    auth:
+      username: lemmy
+      database: lemmy
+      # password: set in production values
+
+  pictrs:
+    persistence:
+      enabled: true
+      size: 10Gi
+      accessMode: ReadWriteOnce
+    storage:
+      method: filesystem
+
+# Configuration for our custom CloudNative-PG template
+postgresql:
+  instance: 1
+  size: 10Gi
+  storageClass: rook-ceph-block
+  recover: false
+  bootstrap:
+    initdb:
+      database: lemmy
+      owner: lemmy
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      memory: 256Mi
+      cpu: 100m
