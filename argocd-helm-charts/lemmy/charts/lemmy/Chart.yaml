@@ -1,0 +1,15 @@
+apiVersion: v2
+appVersion: 0.19.15
+dependencies:
+- condition: postgresql.enabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: ^12.5
+description: A link aggregator and forum for the fediverse
+icon: https://join-lemmy.org/static/assets/images/lemmy.svg
+maintainers:
+- email: ace@haxalot.com
+  name: Alexander Olofsson
+name: lemmy
+type: application
+version: 0.6.10
