@@ -15,7 +15,8 @@ ESSENTIALS_DIR="$TARGET_DIR/../opendesk-essentials"
 mkdir -p "$OPENDESK_DIR"/{chat,mail,nextcloud,openproject,xwiki,jitsi}
 mkdir -p "$ESSENTIALS_DIR"
 
-cd "versions/v1.6.0"
+# Change to the appropriate version directory
+cd "versions/v1.11.2"
 
 generate_selector_flags() {
     local apps_list="$1"
@@ -94,7 +95,7 @@ helmfile template -e default -n opendesk --state-values-file "../../default-valu
 fix_hooks_and_ttl() {
   local file=$1
   echo "fixing $file"
-  sed -i '' \
+  sed -i \
     -e 's/helm\.sh\/hook: .*/"managed-by": "helmfile"/g' \
     -e 's/"helm\.sh\/hook": .*/"argocd.argoproj.io\/hook": "Sync"/g' \
     -e 's/"argocd.argoproj.io\/hook":.*/"managed-by": "helmfile"/g' \

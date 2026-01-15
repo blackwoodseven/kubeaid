@@ -9,6 +9,7 @@ ignore: |-2
   .git/**
   terraform/**/.terraform
   terragrunt/**/.terragrunt-cache
+  build/opendesk/versions/**
 
 rules:
   line-length: disable
