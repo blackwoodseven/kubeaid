@@ -1,0 +1,28 @@
+annotations:
+  artifacthub.io/changes: |
+    - Bump tag to 110.4.19mariabionic-ls22
+  artifacthub.io/images: |
+    - name: mariadb
+      image: ghcr.io/linuxserver/mariadb:110.4.19mariabionic-ls22
+apiVersion: v2
+appVersion: 110.4.19
+dependencies:
+- name: common
+  repository: https://nicholaswilde.github.io/helm-charts/
+  version: ~0.1.8
+description: The open source relational database
+home: https://github.com/nicholaswilde/helm-charts/tree/main/charts/mariadb
+icon: https://github.com/linuxserver/docker-templates/raw/master/linuxserver.io/img/mariadb-icon.png
+keywords:
+- db
+- database
+- mariadb
+maintainers:
+- email: ncwilde43@gmail.com
+  name: nicholaswilde
+name: mariadb
+sources:
+- https://mariadb.org/
+- https://github.com/linuxserver/docker-mariadb
+type: application
+version: 1.0.3

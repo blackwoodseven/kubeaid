@@ -1,0 +1,6 @@
+dependencies:
+- name: friendica
+  repository: https://nicholaswilde.github.io/helm-charts/
+  version: 1.0.0
+digest: sha256:d1a61dadb94a675127b75fa3e220ff13abcc03734dbaa2cacda00dc48a16ecb8
+generated: "2026-01-15T17:40:03.047243403+05:30"
