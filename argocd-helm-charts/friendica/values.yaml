@@ -1,0 +1,81 @@
+# Default values for friendica wrapper chart
+# This file contains the default configuration for the friendica helm chart
+
+friendica:
+  # Use the latest stable Docker image
+  image:
+    repository: friendica
+    pullPolicy: IfNotPresent
+    tag: "2024.12"
+
+  # Environment variables for Friendica
+  # See: https://hub.docker.com/_/friendica
+  env: {}
+  # TZ: "Europe/Copenhagen"
+  # FRIENDICA_URL: "https://friendica.example.com"
+  # FRIENDICA_ADMIN_MAIL: "admin@example.com"
+  # MYSQL_HOST: "friendica-mariadb"
+  # MYSQL_USER: "friendica"
+  # MYSQL_DATABASE: "friendica"
+  # MYSQL_PASSWORD: (from secret)
+
+  # Service configuration
+  service:
+    port:
+      port: 80
+
+  # Ingress configuration
+  ingress:
+    enabled: false
+    # annotations:
+    #   kubernetes.io/ingress.class: nginx
+    #   cert-manager.io/cluster-issuer: letsencrypt-prod
+    # hosts:
+    #   - host: friendica.example.com
+    #     paths:
+    #       - path: /
+    #         pathType: Prefix
+    # tls:
+    #   - secretName: friendica-tls
+    #     hosts:
+    #       - friendica.example.com
+
+  # Persistence configuration
+  persistence:
+    config:
+      enabled: false
+      # storageClass: ""
+      # size: 10Gi
+      mountPath: /var/www/html
+
+  # Disable bundled mariadb - use external database via operator
+  mariadb:
+    enabled: false
+
+# External MariaDB Operator configuration
+# Creates a MariaDB CR using k8s.mariadb.com/v1alpha1
+externalMariadb:
+  enabled: true
+  database: friendica
+  username: friendica
+
+  rootPasswordSecretKeyRef:
+    name: ""  # defaults to {{ .Release.Name }}-mariadb-root
+    key: password
+    generate: false
+
+  passwordSecretKeyRef:
+    name: ""  # defaults to {{ .Release.Name }}-mariadb-user
+    key: password
+    generate: false
+
+  storage:
+    size: 10Gi
+    storageClassName: ""
+    resizeInUseVolumes: true
+    waitForVolumeResize: true
+
+  image: "mariadb:11.6.2-noble"
+  imagePullPolicy: IfNotPresent
+
+  resources: {}

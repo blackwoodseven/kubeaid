@@ -1,0 +1,9 @@
+dependencies:
+- name: common
+  repository: https://nicholaswilde.github.io/helm-charts/
+  version: 0.1.9
+- name: mariadb
+  repository: https://nicholaswilde.github.io/helm-charts/
+  version: 1.0.3
+digest: sha256:8fd48dff24cc88d17e015cfafdc740e423f7c2e10e571a357d4b0360df6c1509
+generated: "2021-06-05T07:25:24.984411256Z"

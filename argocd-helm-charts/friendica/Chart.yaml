@@ -1,0 +1,7 @@
+apiVersion: v2
+name: friendica
+version: 1.0.0
+dependencies:
+  - name: friendica
+    version: 1.0.0
+    repository: https://nicholaswilde.github.io/helm-charts/
