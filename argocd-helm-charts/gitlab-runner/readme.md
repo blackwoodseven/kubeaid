@@ -27,18 +27,18 @@ Once merged, create the kubeconfig with the script below and it should then be s
 ```bash
 #!/bin/bash
 
-set -eou pipefail
+set -euo pipefail
 
 CLUSTERNAME=$1
 SERVICEACCOUNT=$2
 NAMESPACE=$3
 CONFIG="/tmp/$CLUSTERNAME.config"
 
-kubectl get secret $(kubectl get serviceaccount $SERVICEACCOUNT -n $NAMESPACE -o yaml | yq eval '.secrets.[].name' -) -n $NAMESPACE -o yaml | yq eval '.data."ca.crt"' - | base64 --decode > /tmp/k8s-$CLUSTERNAME.ca.crt
+kubectl get secret $(kubectl get serviceaccount $SERVICEACCOUNT -n $NAMESPACE -o json | jq -r '.secrets[0].name' ) -n $NAMESPACE -o  json | jq -r '.data["ca.crt"]' | base64 --decode > /tmp/k8s-$CLUSTERNAME.ca.crt
 
 kubectl config --kubeconfig $CONFIG set-cluster $CLUSTERNAME --embed-certs=true --server="https://kubernetes.default.svc" --certificate-authority=/tmp/k8s-$CLUSTERNAME.ca.crt
 
-kubectl config --kubeconfig $CONFIG set-credentials $SERVICEACCOUNT --token=$(kubectl get secret $(kubectl get serviceaccount $SERVICEACCOUNT -n $NAMESPACE -o yaml | yq eval '.secrets.[].name' -) -n $NAMESPACE -o yaml | yq eval '.data."token"' - | base64 --decode)
+kubectl config --kubeconfig $CONFIG set-credentials $SERVICEACCOUNT --token=$(kubectl get secret $(kubectl get serviceaccount $SERVICEACCOUNT -n $NAMESPACE -o json | jq -r '.secrets[0].name') -n $NAMESPACE -o json | jq -r '.data.token'  | base64 --decode)
 
 kubectl config --kubeconfig $CONFIG set-context $CLUSTERNAME --cluster=$CLUSTERNAME --user=$SERVICEACCOUNT
 
