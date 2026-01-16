@@ -162,6 +162,7 @@ local default_vars = {
     zfs: false,
     opensearch: false,
     'cert-manager': true,
+    'hpa-maxed-out': true,
     'kubernetes-version-info': true,
     // Enable this when we move metrics generation into obmondo-k8s-agent
     // gitea/EnableIT/internal/issues/21
@@ -207,6 +208,11 @@ local mixins = remove_nulls([
   addMixin(
     'velero',
     (import 'mixins/velero/mixin.libsonnet'),
+    vars,
+  ),
+  addMixin(
+    'hpa-maxed-out',
+    (import 'mixins/hpa-maxed-out/mixin.libsonnet'),
     vars,
   ),
   addMixin(
@@ -908,43 +914,55 @@ local kp =
 // remove our filtering.
 { 'kubernetes-prometheusRule': kp.kubernetesControlPlane.prometheusRule {
   spec+: {
-    groups: std.filter((
-              function(o)
-                std.objectHas(o, 'rules') && o.name != 'kubernetes-system-apiserver' && o.name != 'kubernetes-resources'
-            ), kp.kubernetesControlPlane.prometheusRule.spec.groups)
-            +
-            [{
-              name: 'kubernetes-system-apiserver',
-              rules:
-                std.filter(
-                  (
-                    function(o)
-                      std.objectHas(o, 'alert') &&
-                      o.alert != 'KubeClientCertificateExpiration'
-                  ),
-                  std.filter((
-                    function(o)
-                      std.objectHas(o, 'rules') && o.name == 'kubernetes-system-apiserver'
-                  ), kp.kubernetesControlPlane.prometheusRule.spec.groups)[0].rules
+    groups: std.map(
+      (
+        function(group)
+          if group.name == 'kubernetes-apps' then
+            group {
+              rules: std.filter(
+                (
+                  function(rule)
+                    !std.objectHas(rule, 'alert') || rule.alert != 'KubeHpaMaxedOut'
                 ),
-            }]
-            +
-            [{
-              name: 'kubernetes-resources',
-              rules:
-                std.filter(
-                  (
-                    function(o)
-                      std.objectHas(o, 'alert') &&
-                      !std.member(o.alert, 'KubeCPUOvercommit') &&
-                      !std.member(o.alert, 'KubeMemoryOvercommit')
-                  ),
-                  std.filter((
-                    function(o)
-                      std.objectHas(o, 'rules') && o.name == 'kubernetes-resources'
-                  ), kp.kubernetesControlPlane.prometheusRule.spec.groups)[0].rules
+                group.rules
+              )
+              +
+              std.filter(
+                (
+                  function(mixin)
+                    mixin._config.name == 'hpa-maxed-out'
                 ),
-            }],
+                mixins
+              )[0].prometheusRules.spec.groups[0].rules,
+            }
+          else if group.name == 'kubernetes-system-apiserver' then
+            group {
+              rules: std.filter(
+                (
+                  function(o)
+                    std.objectHas(o, 'alert') &&
+                    o.alert != 'KubeClientCertificateExpiration'
+                ),
+                group.rules
+              ),
+            }
+          else if group.name == 'kubernetes-resources' then
+            group {
+              rules: std.filter(
+                (
+                  function(o)
+                    std.objectHas(o, 'alert') &&
+                    !std.member(o.alert, 'KubeCPUOvercommit') &&
+                    !std.member(o.alert, 'KubeMemoryOvercommit')
+                ),
+                group.rules
+              ),
+            }
+          else
+            group
+      ),
+      kp.kubernetesControlPlane.prometheusRule.spec.groups
+    ),
   },
 } } +
 { ['node-exporter-' + name]: kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
