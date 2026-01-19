@@ -357,7 +357,7 @@ function update_helm_chart {
 
   HELM_CHART_PATH="$1"
   HELM_CHART_YAML="$HELM_CHART_PATH/Chart.yaml"
-  HELM_CHART_NEW_VERSION=$2
+  HELM_CHART_NEW_VERSION="${2:-}"
 
   # Exit if no chart.yaml is present
   if ! test -f "$HELM_CHART_YAML"; then
@@ -417,7 +417,7 @@ function update_helm_chart {
       # Compare the version of upstream chart and our local chart
       # if there is difference, run helm dep up or else skip
       if [ "$HELM_CHART_NEW_VERSION" != "$HELM_CHART_DEP_CURRENT_VERSION" ]; then
-        echo "Helming $HELM_CHART_NAME on version $HELM_CHART_NEW_VERSION"
+        echo "Helming $HELM_CHART_NAME on version $HELM_CHART_CURRENT_VERSION"
 
         # Update the chart.yaml file
         yq eval -i ".dependencies[$i].version = \"$HELM_CHART_NEW_VERSION\"" "$HELM_CHART_YAML"
@@ -425,12 +425,16 @@ function update_helm_chart {
         # Go to helm chart, 1st layer
         helm dependencies update "$HELM_CHART_PATH" >/dev/null 2>&1 || {
           echo "Failed to update dependencies for $HELM_CHART_NAME"
+
+          # revert the chart.yaml, since helm dep failed
+          yq eval -i ".dependencies[$i].version = \"$HELM_CHART_CURRENT_VERSION\"" "$HELM_CHART_YAML"
+
           continue
         }
 
         # Deleting old helm before untar
         rm -rf "${HELM_CHART_DEP_PATH:?}/${HELM_CHART_NAME}" || {
-          echo "Failed to update dependencies for $HELM_CHART_NAME. Skipping."
+          echo "Failed to remove the $HELM_CHART_NAME tar. Skipping."
           continue
         }
 
@@ -465,7 +469,11 @@ function update_helm_chart {
         # The older tag has no dependency, or less dependency then current chart.yaml
         if [ "$HELM_CHART_CURRENT_TAG_VERSION" != "null" ] && [ "$HELM_CHART_CURRENT_TAG_VERSION" != "$HELM_CHART_NEW_VERSION" ] ; then
           UPDATE_TYPE=$(get_update_type "$HELM_CHART_CURRENT_TAG_VERSION" "$HELM_CHART_NEW_VERSION")
-          UPDATE_LINE="Updated $HELM_CHART_NAME from version $HELM_CHART_CURRENT_TAG_VERSION to $HELM_CHART_NEW_VERSION"
+          if [ -z "$HELM_CHART_CURRENT_TAG_VERSION" ]; then
+            UPDATE_LINE="Updated $HELM_CHART_NAME from version <empty string> to $HELM_CHART_NEW_VERSION"
+          else
+            UPDATE_LINE="Updated $HELM_CHART_NAME from version $HELM_CHART_CURRENT_TAG_VERSION to $HELM_CHART_NEW_VERSION"
+          fi
         fi
       else
         continue
@@ -495,6 +503,7 @@ function update_helm_chart {
 }
 
 function main (){
+
   # Generate a unique branch name
   GIT_BRANCH_NAME="Helm_Update"_$(date +"%Y%m%d")_$(echo $RANDOM | base64)
   COMMIT_MSG_FILE=$(mktemp)
@@ -531,6 +540,9 @@ function main (){
     # Determine KubeAid version bump
     echo "Current KubeAid version: $CURRENT_VERSION"
 
+    echo "Removing all the existing helm repo"
+    helm repo list | awk 'NR>1 {print $1}' | xargs -I {} helm repo remove {}
+
     while read -r HELM_CHART_NAME; do
       for SKIP_HELM_CHART in "${SKIP_HELM_CHARTS[@]}"; do
         if [ "$HELM_CHART_NAME" == "$SKIP_HELM_CHART" ]; then
@@ -539,7 +551,7 @@ function main (){
         fi
       done
 
-      update_helm_chart "$ARGOCD_CHART_PATH/$HELM_CHART_NAME" "$CHART_VERSION"
+      update_helm_chart "$ARGOCD_CHART_PATH/$HELM_CHART_NAME"
     done < <(find ./"$ARGOCD_CHART_PATH" -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | sort)
 
     if [ "$HAS_MAJOR" = true ]; then
