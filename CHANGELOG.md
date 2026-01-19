@@ -2,6 +2,95 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 23.0.0
+
+### New Charts Added
+- 07c0076c9 chore(new): Added new helm chart castopod 1.12.10
+- 7aa0b82db chore(new): Added new helm chart lemmy 0.6.10
+
+### Major Version Upgrades
+- 2ffbe15ad Updated snapshot-controller from version 4.2.0 to 5.0.1
+
+### Minor Version Upgrades
+- 2ffbe15ad Updated opentelemetry-collector from version 0.142.2 to 0.143.0
+- 2ffbe15ad Updated redis-operator from version 0.22.2 to 0.23.0
+- 2ffbe15ad Updated strimzi-kafka-operator from version 0.49.1 to 0.50.0
+- 2ffbe15ad Updated traefik-forward-auth from version <empty string> to 0.3.10
+
+### Patch Version Upgrades
+- 2ffbe15ad Updated mariadb-operator from version 25.10.3 to 25.10.4
+- 2ffbe15ad Updated mattermost-team-edition from version 6.6.89 to 6.6.90
+- 2ffbe15ad Updated opencost from version 2.5.1 to 2.5.3
+- 2ffbe15ad Updated rook-ceph-cluster from version v1.18.8 to v1.18.9
+- 2ffbe15ad Updated seaweedfs from version 4.0.405 to 4.0.407
+- 2ffbe15ad Updated teleport-kube-agent from version 18.6.2 to 18.6.3
+- 2ffbe15ad Updated traefik from version 38.0.1 to 38.0.2
+
+### Features
+- ae840535f feat(friendica): Add Friendica helm chart v1.0.0 with latest image
+- ccc1439c3 feat: add opendesk version 1.11.2
+- 1e4e48ccb feat: Add Lemmy helm chart with CNPG support
+- 9bf1626b7 feat: Add Funkwhale helm chart with CNPG and Redis operator support
+- 9d1f63d49 feat:- Add alerts for slurmjob, slurm node failure and pending jobs for long time
+
+### Bug Fixes
+- 7eebee3bd fix: handled more edge cases in kubeaid helm chart script
+- a8414980b fix links for backup and recovery docs
+- b831e921f fix: opendesk build script and ignore opendesk helmfiles yamllint
+- 13aa5cbff fix(odoo): disable bundled postgresql subchart to prevent unwanted StatefulSet
+- 818e06d43 fixed readme links and addressed comments
+- fd83b372c fix lint
+
+### Configuration Changes
+- ee2d1630d chore: update global group interval for alertmanager alerts
+- 4f627942d chore: add o2 troubleshooting guide
+- de464eee7 chore: add flexible configuration of queue config for prometheus
+
+### Other Changes
+- f3d261369 doc: fix kube config secret generation in gitea/gitlab runner
+- 4a3bbcd3c Removed the grafana ingressroute since we will now use ingress directly and updated the grafana root_url
+- 0170069ee Upgraded odoo logical backup image
+- f5e75d0d6 added the postgresql-logical-backup for mastodon , pixelfed , peertube , erpnext
+- 13bb2c6d0 docs(odoo): Add Recovery/Troubleshooting section to Readme
+- 1a836bcff doc: remove extra space between ordered list item in docs/development/ci-cd-setup.md
+- 82fbfa4bb update kube prometheus doc with link to example yaml for enabling admin api for prometheus
+- 0841e1bcb trivial grammatical fix
+- b041a8cba Addressed comments for why kubeaid section
+- ae6106e66 Added air gapped writeup
+- 61998dd48 renamed operations tips file
+- 9cd6140fe Add prometheus config
+- 8c14301bb Added helm umbrella patterns
+- 49f6b4d11 Add gitops drift detection
+- d7edbb8d4 update technical features doc addressing comments
+- c03522df3 Added mermaid diagram for kubeaid
+- 03240878a Updated refs to Obmondo, camelCase for KubeAid, restructure docs
+- 0f5e8b811 Removed redundant docs and blog posts
+- 60bdd2b03 Updated package URLs, refs to files, moved aws private link setup to ops
+- 6ba14b56b Fix renewal period for barman self signed certs
+- be4018c4e Add ed25519 vs rsa key note
+- fb578745b Fix mermaid diag, add what commands exit for kubeaid
+- 1a9607701 Add tip for saving general yaml file
+- ae017da51 Install with tar gz and update installation script with ref to new naming convention
+- 0c1aa334a Update installation script with ref to new naming convention
+- ae97afa75 Adjust Odoo pgsql logical backup template for the newer image
+- a9779af06 Changed cleanup file name to basic-operations
+- 9e330b73b Worked upon changes requested - prerequisites doc
+- 1f2e5acc9 Worked upon changes requested - preconfiguration doc
+- 37cdc1ea8 Worked upon changes requested - installation doc
+- cbd6fec12 Worked on changes requested
+- 00734ca37 Added mermaid diag for what gets deleted with the cluster delete commands
+- 542bff199 Added mermaid diag for repo structure overview
+- aee150af8 Added mermaid diag for post config dir structure
+- b70b32d61 Added mermaid diag for bootstrap architecture
+- 003c02b1b Added mermaid diag for kubeaid features
+- f4e9db764 Added explanation as notes in cluster deletion
+- 1130e463f Updated the pre-requisite section with deployment architecture and sys requirements
+- 4a91f5937 Added ssh key generation instructions, link to appropriate URL
+- 84cbfcaf1 Restructure docs getting started and provider-agnostic docs
+- 9e9fe3567 Updated refs according to review comments
+- 7ab0946e6 Added installation instructions for all hosting providers
+- d7d9e9c13 Added pre-requisites doc
+
 ## KubeAid Release Version 22.0.0
 
 ### Major Version Upgrades
