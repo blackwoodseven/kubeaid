@@ -4,5 +4,4 @@ version: 1.0.0
 dependencies:
   - name: traefik-forward-auth
     repository: https://mesosphere.github.io/charts/staging
-    version: ""
-    #repository: "oci://ghcr.io/Obmondo"
+    version: 0.3.10

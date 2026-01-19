@@ -2,7 +2,7 @@
 
 OpenCost and OpenCost UI
 
-![Version: 2.5.1](https://img.shields.io/badge/Version-2.5.1-informational?style=flat-square)
+![Version: 2.5.3](https://img.shields.io/badge/Version-2.5.3-informational?style=flat-square)
 ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 ![AppVersion: 1.119.1](https://img.shields.io/badge/AppVersion-1.119.1-informational?style=flat-square)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opencost)](https://artifacthub.io/packages/search?repo=opencost)
@@ -209,6 +209,10 @@ $ helm install opencost opencost/opencost
 | opencost.ui.livenessProbe.initialDelaySeconds | int | `30` | Number of seconds before probe is initiated |
 | opencost.ui.livenessProbe.path | string | `"/healthz"` | Probe path |
 | opencost.ui.livenessProbe.periodSeconds | int | `10` | Probe frequency in seconds |
+| opencost.ui.nginx | object | `{"proxyConnectTimeout":180,"proxyReadTimeout":180,"proxySendTimeout":180}` | Nginx proxy timeout settings (in seconds) |
+| opencost.ui.nginx.proxyConnectTimeout | int | `180` | Timeout for establishing a connection with the proxied server |
+| opencost.ui.nginx.proxyReadTimeout | int | `180` | Timeout for reading a response from the proxied server |
+| opencost.ui.nginx.proxySendTimeout | int | `180` | Timeout for transmitting a request to the proxied server |
 | opencost.ui.readinessProbe.enabled | bool | `true` | Whether probe is enabled |
 | opencost.ui.readinessProbe.failureThreshold | int | `3` | Number of failures for probe to be considered failed |
 | opencost.ui.readinessProbe.initialDelaySeconds | int | `30` | Number of seconds before probe is initiated |
