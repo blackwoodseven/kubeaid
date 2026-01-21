@@ -1,0 +1,254 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "calcom.fullname" . }}
+  labels:
+    {{- include "calcom.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "calcom.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "calcom.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- $secretRef  := .Values.secretRef -}}
+            {{- range tuple "DATABASE_URL" "NEXT_PUBLIC_WEBAPP_URL" "NEXTAUTH_SECRET" "CALENDSO_ENCRYPTION_KEY" }}
+            - name: {{ . }}
+              valueFrom:
+                secretKeyRef:
+                  key: {{ . }}
+                  name: {{ $secretRef }}
+            {{- end}}
+            - name: DATABASE_DIRECT_URL
+              valueFrom:
+                secretKeyRef:
+                  key: DATABASE_URL
+                  name: {{ .Values.secretRef }}
+            {{- range tuple
+              "AB_TEST_BUCKET_PROBABILITY"
+              "ALLOWED_HOSTNAMES"
+              "API_KEY_PREFIX"
+              "APP_ROUTER_APPS_CATEGORIES_CATEGORY_ENABLED"
+              "APP_ROUTER_APPS_CATEGORIES_ENABLED"
+              "APP_ROUTER_APPS_ENABLED"
+              "APP_ROUTER_APPS_INSTALLED_CATEGORY_ENABLED"
+              "APP_ROUTER_APPS_SLUG_ENABLED"
+              "APP_ROUTER_APPS_SLUG_SETUP_ENABLED"
+              "APP_ROUTER_BOOKINGS_STATUS_ENABLED"
+              "APP_ROUTER_EVENT_TYPES_ENABLED"
+              "APP_ROUTER_GETTING_STARTED_STEP_ENABLED"
+              "APP_ROUTER_SETTINGS_ADMIN_ENABLED"
+              "APP_ROUTER_SETTINGS_TEAMS_ENABLED"
+              "APP_ROUTER_TEAMS_ENABLED"
+              "APP_ROUTER_VIDEO_ENABLED"
+              "APP_ROUTER_WORKFLOWS_ENABLED"
+              "AUTH_BEARER_TOKEN_CLOUDFLARE"
+              "AUTH_BEARER_TOKEN_VERCEL"
+              "AVATARAPI_PASSWORD"
+              "AVATARAPI_USERNAME"
+              "BASECAMP3_CLIENT_ID"
+              "BASECAMP3_CLIENT_SECRET"
+              "BASECAMP3_USER_AGENT"
+              "CALCOM_APP_CREDENTIAL_ENCRYPTION_KEY"
+              "CALCOM_CREDENTIAL_SYNC_ENDPOINT"
+              "CALCOM_CREDENTIAL_SYNC_HEADER_NAME"
+              "CALCOM_CREDENTIAL_SYNC_SECRET"
+              "CALCOM_LICENSE_KEY"
+              "CALCOM_TELEMETRY_DISABLED"
+              "CAL_SIGNATURE_TOKEN"
+              "CLOSECOM_API_KEY"
+              "CLOUDFLARE_DNS"
+              "CLOUDFLARE_TURNSTILE_SECRET"
+              "CLOUDFLARE_VERCEL_CNAME"
+              "CLOUDFLARE_ZONE_ID"
+              "CRON_API_KEY"
+              "CRON_ENABLE_APP_SYNC"
+              "CSP_POLICY"
+              "DAILY_API_KEY"
+              "DAILY_MEETING_ENDED_WEBHOOK_SECRET"
+              "DAILY_SCALE_PLAN"
+              "DAILY_WEBHOOK_SECRET"
+              "E2E_TEST_APPLE_CALENDAR_EMAIL"
+              "E2E_TEST_APPLE_CALENDAR_PASSWORD"
+              "E2E_TEST_CALCOM_GCAL_KEYS"
+              "E2E_TEST_CALCOM_QA_EMAIL"
+              "E2E_TEST_CALCOM_QA_GCAL_CREDENTIALS"
+              "E2E_TEST_CALCOM_QA_PASSWORD"
+              "E2E_TEST_MAILHOG_ENABLED"
+              "E2E_TEST_OIDC_CLIENT_ID"
+              "E2E_TEST_OIDC_CLIENT_SECRET"
+              "E2E_TEST_OIDC_PROVIDER_DOMAIN"
+              "E2E_TEST_OIDC_USER_EMAIL"
+              "E2E_TEST_OIDC_USER_PASSWORD"
+              "E2E_TEST_SAML_ADMIN_EMAIL"
+              "E2E_TEST_SAML_ADMIN_PASSWORD"
+              "EDGE_CONFIG"
+              "EMAIL_FROM"
+              "EMAIL_FROM_NAME"
+              "EMAIL_SERVER_HOST"
+              "EMAIL_SERVER_PASSWORD"
+              "EMAIL_SERVER_PORT"
+              "EMAIL_SERVER_USER"
+              "FORMBRICKS_FEEDBACK_SURVEY_ID"
+              "GIPHY_API_KEY"
+              "GOOGLE_API_CREDENTIALS"
+              "GOOGLE_LOGIN_ENABLED"
+              "HUBSPOT_CLIENT_ID"
+              "HUBSPOT_CLIENT_SECRET"
+              "INSIGHTS_DATABASE_URL"
+              "INTERCOM_SECRET"
+              "LARK_OPEN_APP_ID"
+              "LARK_OPEN_APP_SECRET"
+              "LARK_OPEN_VERIFICATION_TOKEN"
+              "LOCAL_TESTING_DOMAIN_VERCEL"
+              "MS_GRAPH_CLIENT_ID"
+              "MS_GRAPH_CLIENT_SECRET"
+              "NEXTAUTH_COOKIE_DOMAIN"
+              "NEXTAUTH_URL"
+              "NEXT_PUBLIC_API_V2_URL"
+              "NEXT_PUBLIC_APP_NAME"
+              "NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL"
+              "NEXT_PUBLIC_BOOKER_NUMBER_OF_DAYS_TO_LOAD"
+              "NEXT_PUBLIC_CLOUDFLARE_SITEKEY"
+              "NEXT_PUBLIC_COMPANY_NAME"
+              "NEXT_PUBLIC_CONSOLE_URL"
+              "NEXT_PUBLIC_DISABLE_SIGNUP"
+              "NEXT_PUBLIC_EMBED_LIB_URL"
+              "NEXT_PUBLIC_FORMBRICKS_ENVIRONMENT_ID"
+              "NEXT_PUBLIC_FORMBRICKS_HOST_URL"
+              "NEXT_PUBLIC_FRESHCHAT_HOST"
+              "NEXT_PUBLIC_FRESHCHAT_TOKEN"
+              "NEXT_PUBLIC_HELPSCOUT_KEY"
+              "NEXT_PUBLIC_HOSTED_CAL_FEATURES"
+              "NEXT_PUBLIC_INTERCOM_APP_ID"
+              "NEXT_PUBLIC_IS_E2E"
+              "NEXT_PUBLIC_IS_PREMIUM_NEW_PLAN"
+              "NEXT_PUBLIC_MINUTES_TO_BOOK"
+              "NEXT_PUBLIC_SENDER_ID"
+              "NEXT_PUBLIC_SENDGRID_SENDER_NAME"
+              "NEXT_PUBLIC_SENTRY_DSN"
+              "NEXT_PUBLIC_STRIPE_PREMIUM_NEW_PLAN_PRICE"
+              "NEXT_PUBLIC_STRIPE_PREMIUM_PLAN_PRICE"
+              "NEXT_PUBLIC_STRIPE_PRO_PLAN_PRICE"
+              "NEXT_PUBLIC_STRIPE_PUBLIC_KEY"
+              "NEXT_PUBLIC_SUPPORT_MAIL_ADDRESS"
+              "NEXT_PUBLIC_TEAM_IMPERSONATION"
+              "NEXT_PUBLIC_WEBSITE_URL"
+              "NEXT_PUBLIC_ZENDESK_KEY"
+              "ORGANIZATIONS_AUTOLINK"
+              "ORGANIZATIONS_ENABLED"
+              "PAYMENT_FEE_FIXED"
+              "PAYMENT_FEE_PERCENTAGE"
+              "PGSSLMODE"
+              "PRISMA_GENERATE_DATAPROXY"
+              "PROJECT_ID_VERCEL"
+              "RESEND_API_KEY"
+              "RESERVED_SUBDOMAINS"
+              "RETELL_AI_KEY"
+              "REVERT_API_KEY"
+              "REVERT_API_URL"
+              "REVERT_PUBLIC_TOKEN"
+              "SALESFORCE_CONSUMER_KEY"
+              "SALESFORCE_CONSUMER_SECRET"
+              "SAML_ADMINS"
+              "SAML_CLIENT_SECRET_VERIFIER"
+              "SAML_DATABASE_URL"
+              "SENDGRID_API_KEY"
+              "SENDGRID_EMAIL"
+              "SENDGRID_SYNC_API_KEY"
+              "SEND_FEEDBACK_EMAIL"
+              "SENTRY_DISABLE_SERVER_WEBPACK_PLUGIN"
+              "SLACK_CLIENT_ID"
+              "SLACK_CLIENT_SECRET"
+              "SLACK_SIGNING_SECRET"
+              "STRIPE_CLIENT_ID"
+              "STRIPE_ORG_MONTHLY_PRICE_ID"
+              "STRIPE_PRIVATE_KEY"
+              "STRIPE_TEAM_MONTHLY_PRICE_ID"
+              "STRIPE_WEBHOOK_SECRET"
+              "STRIPE_WEBHOOK_SECRET_APPS"
+              "TANDEM_BASE_URL"
+              "TANDEM_CLIENT_ID"
+              "TANDEM_CLIENT_SECRET"
+              "TASKER_ENABLE_EMAILS"
+              "TASKER_ENABLE_WEBHOOKS"
+              "TEAM_ID_VERCEL"
+              "TWILIO_MESSAGING_SID"
+              "TWILIO_PHONE_NUMBER"
+              "TWILIO_SID"
+              "TWILIO_TOKEN"
+              "TWILIO_VERIFY_SID"
+              "TWILIO_WHATSAPP_PHONE_NUMBER"
+              "UNKEY_ROOT_KEY"
+              "VITAL_API_KEY"
+              "VITAL_DEVELOPMENT_MODE"
+              "VITAL_REGION"
+              "VITAL_WEBHOOK_SECRET"
+              "ZAPIER_INVITE_LINK"
+              "ZOHOCRM_CLIENT_ID"
+              "ZOHOCRM_CLIENT_SECRET"
+              "ZOOM_CLIENT_ID"
+              "ZOOM_CLIENT_SECRET"
+            }}
+            - name: {{ . }}
+              valueFrom:
+                secretKeyRef:
+                  key: {{ . }}
+                  name: {{ $secretRef }}
+                  optional: true
+            {{- end}}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            failureThreshold: 60
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
