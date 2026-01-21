@@ -61,18 +61,6 @@ spec:
               protocol: TCP
 
     # Allow direct access to Kubernetes API server (critical for initdb)
-    # Using toServices for reliable API access (toFQDNs can have DNS timing issues)
-    - toServices:
-        - k8sService:
-            serviceName: kubernetes
-            namespace: default
-      toPorts:
-        - ports:
-            - port: "443"  # Kubernetes API server (HTTPS)
-              protocol: TCP
-
-    # Additional fallback: Allow egress to kube-apiserver entity
-    # Some Cilium configurations require this entity-based rule for reliable API access
     - toEntities:
         - kube-apiserver
       toPorts:
