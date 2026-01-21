@@ -32,45 +32,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{/* Pre-compute a few env values (do this before `env:` to keep YAML valid). */}}
-          {{ $dbHost := default (printf "calcom-pgsql-rw.%s" .Release.Namespace) .Values.databaseHost }}
-          {{ $dbPort := default "5432" .Values.databasePort }}
-          {{ $allowedHostnames := "" }}
-          {{ if .Values.allowedHostnames }}
-            {{ $allowedHostnames = .Values.allowedHostnames }}
-          {{ else if and .Values.ingress.enabled (gt (len .Values.ingress.hosts) 0) }}
-            {{ $hosts := list }}
-            {{ range .Values.ingress.hosts }}
-              {{ $hosts = append $hosts .host }}
-            {{ end }}
-            {{ $allowedHostnames = (join "," $hosts) }}
-          {{ end }}
-          {{ $apiV2Url := "" }}
-          {{ if .Values.publicApiV2Url }}
-            {{ $apiV2Url = .Values.publicApiV2Url }}
-          {{ else if and .Values.ingress.enabled (gt (len .Values.ingress.hosts) 0) }}
-            {{ $scheme := "http" }}
-            {{ if .Values.ingress.tls }}
-              {{ $scheme = "https" }}
-            {{ end }}
-            {{ $apiV2Url = (printf "%s://%s/api/v2" $scheme ((index .Values.ingress.hosts 0).host)) }}
-          {{ end }}
           env:
-            # Provide explicit DB host/port for Cal.com entrypoint scripts (wait-for-it),
-            # while still using DATABASE_URL for Prisma/app config.
-            - name: DATABASE_HOST
-              value: {{ $dbHost | quote }}
-            - name: DATABASE_PORT
-              value: {{ $dbPort | quote }}
-
-            # Prevent hostname mismatch warnings by setting allowed hostnames.
-            - name: ALLOWED_HOSTNAMES
-              value: {{ $allowedHostnames | quote }}
-
-            # Cal.com warns when NEXT_PUBLIC_API_V2_URL is not set.
-            - name: NEXT_PUBLIC_API_V2_URL
-              value: {{ $apiV2Url | quote }}
-
             {{- $secretRef  := .Values.secretRef -}}
             {{- range tuple "DATABASE_URL" "NEXT_PUBLIC_WEBAPP_URL" "NEXTAUTH_SECRET" "CALENDSO_ENCRYPTION_KEY" }}
             - name: {{ . }}
@@ -86,6 +48,7 @@ spec:
                   name: {{ .Values.secretRef }}
             {{- range tuple
               "AB_TEST_BUCKET_PROBABILITY"
+              "ALLOWED_HOSTNAMES"
               "API_KEY_PREFIX"
               "APP_ROUTER_APPS_CATEGORIES_CATEGORY_ENABLED"
               "APP_ROUTER_APPS_CATEGORIES_ENABLED"
@@ -164,6 +127,7 @@ spec:
               "MS_GRAPH_CLIENT_SECRET"
               "NEXTAUTH_COOKIE_DOMAIN"
               "NEXTAUTH_URL"
+              "NEXT_PUBLIC_API_V2_URL"
               "NEXT_PUBLIC_APP_NAME"
               "NEXT_PUBLIC_AVAILABILITY_SCHEDULE_INTERVAL"
               "NEXT_PUBLIC_BOOKER_NUMBER_OF_DAYS_TO_LOAD"
