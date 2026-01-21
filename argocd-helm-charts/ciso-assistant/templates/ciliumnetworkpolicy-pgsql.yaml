@@ -1,0 +1,107 @@
+{{- if .Values.networkPolicy.enabled }}
+{{/* Use helpers for cluster selector and port */}}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "ciso-assistant.fullname" . }}-pgsql
+  namespace: {{ .Release.Namespace }}
+spec:
+  # Target: PostgreSQL pods managed by CloudNativePG
+  endpointSelector:
+    matchLabels:
+      {{- include "ciso-assistant.pgClusterSelectorLabels" . | nindent 6 }}
+
+  ingress:
+    # Allow ONLY backend pods to connect to PostgreSQL (same namespace)
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            {{- include "ciso-assistant.selectorLabels" (dict "context" . "component" "backend") | nindent 12 }}
+      toPorts:
+        - ports:
+            - port: "{{ include "ciso-assistant.pgSqlPort" . }}"  # PostgreSQL database connection (application queries)
+              protocol: TCP
+
+    # Allow CloudNativePG operator (namespace-based)
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: cloudnative-pg
+      toPorts:
+        - ports:
+            - port: "8000"  # PostgreSQL instance manager status/control endpoint
+              protocol: TCP
+            - port: "9187"  # PostgreSQL metrics exporter (Prometheus metrics)
+              protocol: TCP
+            - port: "{{ include "ciso-assistant.pgSqlPort" . }}"  # PostgreSQL database connection (operator management)
+              protocol: TCP
+
+    # Allow intra-cluster Postgres traffic (replication, failover)
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            cnpg.io/cluster: {{ if (.Values.postgres).recover }}ciso-assistant-pgsql-recover{{ else }}ciso-assistant-pgsql{{ end }}
+      toPorts:
+        - ports:
+            - port: "8000"  # PostgreSQL instance manager (cluster coordination)
+              protocol: TCP
+            - port: "{{ include "ciso-assistant.pgSqlPort" . }}"  # PostgreSQL streaming replication (replica sync)
+              protocol: TCP
+
+  egress:
+    # Allow DNS resolution (required for kubelet and all service discovery)
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"  # DNS queries (UDP)
+              protocol: UDP
+            - port: "53"  # DNS queries (TCP)
+              protocol: TCP
+
+    # Allow direct access to Kubernetes API server (critical for initdb)
+    # Using toServices for reliable API access (toFQDNs can have DNS timing issues)
+    - toServices:
+        - k8sService:
+            serviceName: kubernetes
+            namespace: default
+      toPorts:
+        - ports:
+            - port: "443"  # Kubernetes API server (HTTPS)
+              protocol: TCP
+
+    # Additional fallback: Allow egress to kube-apiserver entity
+    # Some Cilium configurations require this entity-based rule for reliable API access
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "6443"
+              protocol: TCP
+
+    # Allow egress to Kubernetes services via FQDNs (scoped)
+    # - Same namespace services: *.{{ .Release.Namespace }}.svc.cluster.local
+    # - CNPG operator services: *.cloudnative-pg.svc.cluster.local
+    - toFQDNs:
+        - matchPattern: "*.{{ .Release.Namespace }}.svc.cluster.local"
+        - matchPattern: "*.cloudnative-pg.svc.cluster.local"
+      toPorts:
+        - ports:
+            - port: "53"    # DNS over UDP (service discovery)
+              protocol: UDP
+            - port: "443"   # Kubernetes APIs and webhooks (HTTPS)
+              protocol: TCP
+            - port: "8000"  # PostgreSQL instance manager status/control
+              protocol: TCP
+            - port: "8080"  # CNPG operator metrics/health
+              protocol: TCP
+            - port: "9090"  # barman-cloud WAL archiving/backups
+              protocol: TCP
+            - port: "9443"  # CNPG webhook server (mutating/validating)
+              protocol: TCP
+            - port: "5432"  # PostgreSQL database/replication
+              protocol: TCP
+{{- end }}

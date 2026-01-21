@@ -23,20 +23,20 @@ spec:
                       apiVersion: v1
                       fieldPath: metadata.namespace
                 - name: PGHOST
-                  value: {{ .Values.postgres.host | default "ciso-assitant-pgsql-rw" }}
+                  value: {{ .Values.postgres.host | default "ciso-assistant-pgsql-rw" }}
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: ciso-assitant-pgsql-app
+                      name: ciso-assistant-pgsql-app
                       key: password
                 - name: PGPORT
                   value: "{{ .Values.postgres.port | default 5432 }}"
                 - name: PGUSER
-                  value: {{ .Values.postgres.user | default "ciso-assitant" }}
+                  value: {{ .Values.postgres.user | default "ciso-assistant" }}
                 - name: PGDATABASE
                   value: {{ .Values.postgres.db | default "registry" }}
                 - name: CLUSTER_NAME_LABEL
-                  value: {{ (.Values.postgres.logicalbackup).pgOperatorClusterName | default "ciso-assitant-pgsql" }}
+                  value: {{ (.Values.postgres.logicalbackup).pgOperatorClusterName | default "ciso-assistant-pgsql" }}
               {{- if eq .Values.postgres.logicalbackup.provider "az" }}
                 - name: LOGICAL_BACKUP_PROVIDER
                   value: "az"
@@ -48,7 +48,7 @@ spec:
                   valueFrom:
                     secretKeyRef:
                       key: LOGICAL_BACKUP_AZURE_STORAGE_ACCOUNT_KEY
-                      name: ciso-assitant-pgsql-postgres-pod-env
+                      name: ciso-assistant-pgsql-postgres-pod-env
                 - name: LOGICAL_BACKUP_S3_BUCKET
                   value: {{ (.Values.postgres.logicalbackup).azurecontainer }}
                 - name: LOGICAL_BACKUP_S3_BUCKET_SCOPE_SUFFIX
@@ -61,12 +61,12 @@ spec:
                   valueFrom:
                     secretKeyRef:
                       key: AWS_ACCESS_KEY_ID
-                      name: ciso-assitant-pgsql-postgres-pod-env
+                      name: ciso-assistant-pgsql-postgres-pod-env
                 - name: AWS_SECRET_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
                       key: AWS_SECRET_ACCESS_KEY
-                      name: ciso-assitant-pgsql-postgres-pod-env
+                      name: ciso-assistant-pgsql-postgres-pod-env
                 - name: LOGICAL_BACKUP_S3_ENDPOINT
                   value: {{ (.Values.postgres.logicalbackup).s3endpoint }}
                 - name: LOGICAL_BACKUP_PROVIDER

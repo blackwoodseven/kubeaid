@@ -1,0 +1,33 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "ciso-assistant.fullname" . }}-backend
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- include "ciso-assistant.selectorLabels" (dict "context" . "component" "backend") | nindent 6 }}
+
+  ingress:
+    # Allow traffic only from frontend pods (same namespace)
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            {{- include "ciso-assistant.selectorLabels" (dict "context" . "component" "frontend") | nindent 12 }}
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+
+  egress:
+    # Allow backend to connect to PostgreSQL pods (same namespace)
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            {{- include "ciso-assistant.pgClusterSelectorLabels" . | nindent 12 }}
+      toPorts:
+        - ports:
+            - port: "{{ include "ciso-assistant.pgSqlPort" . }}"
+              protocol: TCP
+{{- end }}

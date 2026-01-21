@@ -1,0 +1,24 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "ciso-assistant.fullname" . }}-dns-egress
+  namespace: {{ .Release.Namespace }}
+spec:
+  # Apply to all ciso-assistant pods (frontend and backend)
+  endpointSelector:
+    matchLabels:
+      {{- include "ciso-assistant.selectorLabels" (dict "context" .) | nindent 6 }}
+
+  egress:
+    # Allow DNS queries to kube-dns pods
+    - toEndpoints:
+        - matchLabels:
+            {{- include "ciso-assistant.kubeDnsSelectorLabels" . | nindent 12 }}
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+{{- end }}

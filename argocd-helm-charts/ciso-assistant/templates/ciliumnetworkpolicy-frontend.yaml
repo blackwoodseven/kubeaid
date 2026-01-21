@@ -1,0 +1,33 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "ciso-assistant.fullname" . }}-frontend
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- include "ciso-assistant.selectorLabels" (dict "context" . "component" "frontend") | nindent 6 }}
+
+  ingress:
+    # Allow traffic only from Traefik ingress controller
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: traefik
+      toPorts:
+        - ports:
+            - port: "3000"  # Frontend HTTP server
+              protocol: TCP
+
+  egress:
+    # Allow frontend to call backend API (same namespace)
+    # Frontend sends to service:80, but policy enforces at pod level (container port 8000)
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            {{- include "ciso-assistant.selectorLabels" (dict "context" . "component" "backend") | nindent 12 }}
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+{{- end }}
