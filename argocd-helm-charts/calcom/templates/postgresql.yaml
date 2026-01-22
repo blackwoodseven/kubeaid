@@ -1,0 +1,39 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  {{- if .Values.postgresql.recover }}
+  name: calcom-pgsql-recover
+  {{- else }}
+  name: calcom-pgsql
+  {{- end }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  instances: {{ .Values.postgresql.instance | default 1 }}
+  {{- if .Values.postgresql.recover }}
+  bootstrap:
+    recovery:
+      source: calcom-pgsql
+      database: {{ .Values.postgresql.bootstrap.initdb.database | default "calcom" }}
+      owner: {{ .Values.postgresql.bootstrap.initdb.owner | default "calcom" }}
+      secret: 
+        name: calcom-pgsql-app
+  {{- else }}
+  bootstrap:
+    initdb:
+      database: {{ .Values.postgresql.bootstrap.initdb.database | default "calcom" }}
+      owner: {{ .Values.postgresql.bootstrap.initdb.owner | default "calcom" }}
+  {{- end }}
+  resources:
+    limits:
+      memory: {{ .Values.postgresql.resources.limits.memory | default "800Mi" }}
+      cpu: {{ .Values.postgresql.resources.limits.cpu | default "500m" }}
+    requests:
+      memory: {{ .Values.postgresql.resources.requests.memory | default "500Mi" }}
+      cpu: {{ .Values.postgresql.resources.requests.cpu | default "100m" }}
+  storage:
+    size: {{ .Values.postgresql.size | default "10Gi" }}
+    {{- if .Values.postgresql.storageClass }}
+    storageClass: {{ .Values.postgresql.storageClass }}
+    {{- end }}
+{{- end }}
