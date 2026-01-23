@@ -3,10 +3,6 @@ apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: HetznerBareMetalMachineTemplate
 metadata:
   name: {{ .Values.global.clusterName }}-control-plane
-  annotations:
-    # Use fixed node names for bare metal servers, since there are storage integrations that allow
-    # you to use the storage of the bare metal servers and that work with fixed node names.
-    capi.syself.com/constant-bare-metal-hostname: "true"
 spec:
   template:
     {{/* Currently, Cluster API Provider Hetzner (CAPH) doesn't support having the metadata field
@@ -79,10 +75,6 @@ apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: HetznerBareMetalMachineTemplate
 metadata:
   name: {{ printf "%s-%s" $.Values.global.clusterName $nodeGroup.name }}
-  annotations:
-    # Use fixed node names for bare metal servers, since there are storage integrations that allow
-    # you to use the storage of the bare metal servers and that work with fixed node names.
-    capi.syself.com/constant-bare-metal-hostname: "true"
 spec:
   template:
     {{/* Currently, Cluster API Provider Hetzner (CAPH) doesn't support having the metadata field
