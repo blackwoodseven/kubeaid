@@ -470,6 +470,109 @@ Steps:
 8) Sync the Keycloak statefulset from ArgoCD UI and wait for a while for the migrations to be completed.
 9) Your keycloak instance will be migrated to the new pgsql db and should become healthy in a while.
 
+## Adding a Webhook Event Plugin to Keycloak to Stream Login and Other Events
+
+This guide explains how to extend Keycloak with a webhook plugin to stream login and authentication events to a remote HTTP endpoint.
+
+---
+
+### 1) Choose the webhook plugin
+
+We will use the following open-source Keycloak webhook plugin to stream events:
+
+[https://github.com/vymalo/keycloak-webhook](https://github.com/vymalo/keycloak-webhook)
+
+---
+
+### 2) Download the webhook plugin using an init container
+
+Add an init container in `values.yaml` to download the Keycloak webhook plugin JAR files and place them in a shared directory before Keycloak starts.
+You may update the version to the latest released version if needed.
+
+```
+  extraInitContainers: |
+    - name: download-webhook-plugin
+      image: curlimages/curl:8.5.0
+      command:
+        - sh
+        - -c
+        - |
+          set -e
+          mkdir -p /providers
+          VERSION=0.10.0-rc.1
+          curl -L -o /providers/keycloak-webhook-core.jar \
+            https://github.com/vymalo/keycloak-webhook/releases/download/v${VERSION}/keycloak-webhook-provider-core-${VERSION}-all.jar
+          curl -L -o /providers/keycloak-webhook-http.jar \
+            https://github.com/vymalo/keycloak-webhook/releases/download/v${VERSION}/keycloak-webhook-provider-http-${VERSION}-all.jar
+      volumeMounts:
+        - name: providers
+          mountPath: /providers
+```
+
+---
+
+### 3) Mount the plugin directory into Keycloak
+
+Add an `emptyDir` volume and mount it into Keycloak’s `providers` directory so the webhook plugin JARs downloaded in Step 2 are available at runtime.
+
+```
+  extraVolumes: |
+    - name: providers
+      emptyDir: {}
+
+  extraVolumeMounts: |
+    - name: providers
+      mountPath: /opt/keycloak/providers
+```
+
+---
+
+### 4) Configure webhook environment variables
+
+Add the required environment variables so the webhook plugin knows where to send events and which events to emit.
+
+**Important notes:**
+
+* If these variables are missing, the event listener cannot be added in the Keycloak UI and will fail with an error.
+* Ensure `extraEnv` does **not overwrite existing environment variables** when syncing via ArgoCD.
+
+```
+  extraEnv: |
+    - name: WEBHOOK_HTTP_BASE_PATH
+      value: "http://webhook-test:9000"
+    - name: WEBHOOK_EVENTS_TAKEN
+      value: "LOGIN,LOGIN_ERROR"
+```
+
+---
+
+### 5) Enable events in Keycloak
+
+1. Log in to the **Keycloak Admin Console**
+2. Select the correct **realm**
+   ⚠️ Do **not** use the `master` realm
+3. Navigate to **Realm Settings → Events**
+4. Under **Event Listeners**:
+
+   * Add **`webhook-http`**
+5. Click **Save**
+
+---
+
+### 6) Deploy a test webhook receiver
+
+Create a lightweight test pod that listens on port `9000` and logs all incoming requests. This is used to verify that Keycloak is successfully sending webhook events.
+
+```
+kubectl run webhook-test \
+  --image=busybox \
+  --restart=Never \
+  -- sh -c "while true; do nc -l -p 9000 -v; done"
+kubectl expose pod webhook-test --port=9000
+```
+###  7) Only basic auth is supported for now in headers
+
+
 ## Good "Reads"
 
 * <https://medium.com/keycloak/github-as-identity-provider-in-keyclaok-dca95a9d80ca>
