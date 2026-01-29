@@ -1,0 +1,20 @@
+{
+  "identities": [
+    {
+      "name": "<user-name>",
+      "credentials": [
+        {
+          "accessKey": "",
+          "secretKey": ""
+        }
+      ],
+      "actions": [
+        "Write:<bucket-name>",
+        "Read:<bucket-name>",
+        "List:<bucket-name>",
+        "Tagging:<bucket-name>",
+        "Admin:<bucket-name>"
+      ]
+    }
+  ]
+}
