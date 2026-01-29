@@ -16,7 +16,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: logical-backup
-              image: ghcr.io/obmondo/postgres-logical-backup:3.1.6
+              image: ghcr.io/obmondo/postgres-logical-backup:3.1.7
               imagePullPolicy: IfNotPresent
               resources:
                 requests:
@@ -30,32 +30,32 @@ spec:
                     fieldRef:
                       fieldPath: metadata.namespace
                 - name: PGHOST
-                  value: {{ .Values.postgres.host | default "odoo-pgsql-rw" | quote }}
+                  value: {{ .Values.postgres.host | default "peertube-pgsql-rw" | quote }}
                 - name: PGPORT
                   value: {{ .Values.postgres.port | default 5432 | quote }}
                 - name: PGUSER
-                  value: {{ .Values.postgres.user | default "odoo" | quote }}
+                  value: {{ .Values.postgres.user | default "peertube" | quote }}
                 - name: PGDATABASE
-                  value: {{ .Values.postgres.db | default "odoo" | quote }}
+                  value: {{ .Values.postgres.db | default "peertube" | quote }}
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: odoo-pgsql-app
+                      name: peertube-pgsql-app
                       key: password
                 - name: CLUSTER_NAME_LABEL
-                  value: {{ (.Values.postgres.logicalbackup).pgOperatorClusterName | default "odoo-pgsql" | quote }}
+                  value: {{ (.Values.postgres.logicalbackup).pgOperatorClusterName | default "peertube-pgsql" | quote }}
             {{- if eq (.Values.postgres.logicalbackup).provider "s3" }}
                 - name: LOGICAL_BACKUP_PROVIDER
                   value: "s3"
                 - name: AWS_ACCESS_KEY_ID
                   valueFrom:
                     secretKeyRef:
-                      name: {{ (.Values.postgres.logicalbackup).secretName | default "odoo-pgsql-postgres-pod-env" | quote }}
+                      name: {{ (.Values.postgres.logicalbackup).secretName | default "peertube-pgsql-postgres-pod-env" | quote }}
                       key: AWS_ACCESS_KEY_ID
                 - name: AWS_SECRET_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
-                      name: {{ (.Values.postgres.logicalbackup).secretName | default "odoo-pgsql-postgres-pod-env" | quote }}
+                      name: {{ (.Values.postgres.logicalbackup).secretName | default "peertube-pgsql-postgres-pod-env" | quote }}
                       key: AWS_SECRET_ACCESS_KEY
                 - name: LOGICAL_BACKUP_S3_ENDPOINT
                   value: {{ (.Values.postgres.logicalbackup).s3endpoint | quote }}
@@ -79,7 +79,7 @@ spec:
                   valueFrom:
                     secretKeyRef:
                       key: LOGICAL_BACKUP_AZURE_STORAGE_ACCOUNT_KEY
-                      name: odoo-pgsql-postgres-pod-env
+                      name: peertube-pgsql-postgres-pod-env
                 - name: LOGICAL_BACKUP_S3_BUCKET
                   value: {{ (.Values.postgres.logicalbackup).azurecontainer }}
                 - name: LOGICAL_BACKUP_S3_BUCKET_SCOPE_SUFFIX
@@ -87,7 +87,7 @@ spec:
 
             {{- end }}
                 - name: PG_VERSION
-                  value: {{ (.Values.postgres.logicalbackup).pgversion | default 17 | quote }}
+                  value: {{ (.Values.postgres.logicalbackup).pgversion | default 18 | quote }}
                 - name: POSTGRES_OPERATOR
                   value: {{ (.Values.postgres.logicalbackup).postgresOperator | default "cnpg" | quote }}
                 - name: USE_PG_DUMP
