@@ -1,0 +1,11 @@
+apiVersion: v1
+name: garage
+description: Garage S3
+version: 0.0.1
+# Manually copied from here
+# since they dont have the helm uploaded to a repo
+# git clone https://git.deuxfleurs.fr/Deuxfleurs/garage
+# dependencies:
+#   - name: seaweedfs
+#     version: 4.0.401
+#     repository: https://seaweedfs.github.io/seaweedfs/helm
