@@ -111,26 +111,56 @@ bootstrap:
 
 ### Recovery from S3 bucket or Azure blob storage
 
-In case your entire cloudnativePG cluster resource is deleted
-which means your in-cluster backup is also deleted - then don't
-worry you can still recover your data from S3 bucket or Azure blob
-storage given your backups are also happening there.
-You can do that by adding the below in your cloudnative cluster resource `spec` section
+# Disaster Recovery: Restoring from S3 Object Store
 
-Note: when you are creating a new cluster resource remember to change
-the name of the cluster - since it can't be the same as of older one
+If your entire CloudNativePG cluster resource or namespace is deleted, you can recover your data from the external S3 bucket (or Azure Blob storage). 
 
-#### From S3
+## ⚠️ Critical Pre-checks
+
+* **Postgres Version:** The `imageName` in your recovery manifest **must** match the major version of the backup (e.g., if the backup is from PG 15, you cannot use a PG 16+ image).
+* **Initial Bootstrap Only:** Recovery configuration must be present in the **very first** `kubectl apply`. You cannot spin up a fresh DB and enable recovery later.
+* **Unique Server Name:** You must change the `metadata.name` of the cluster or use a new `backup.barmanObjectStore.serverName`. If the folder already exists in S3, the operator will fail with an "Expected empty archive" error.
+
+---
+
+## Recovery Steps
+
+1.  **Prepare the Manifest:** Do not sync from ArgoCD initially if it contains a "fresh" DB config. Prepare a manifest following the example below, ensuring the `database` and `owner` names match what was in the original DB.
+2.  **Manual Apply:** Apply the recovery manifest using `kubectl apply -f recovery-cluster.yaml`.
+3.  **Monitor Progress:** A "full-recovery" pod will spin up. Monitor the logs to see the download progress:
+    ```bash
+    kubectl logs -f <cluster-name>-1-full-recovery
+    ```
+4.  **Finalize Sync:** Once the recovery pod completes and the standard Postgres pods are in a `Ready` state, you can sync your application in ArgoCD to match the new state.
+
+---
+
+## Recovery Manifest Example (S3)
 
 ```yaml
-bootstrap:
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: oncall-pgsql-v2  # Use a new name for the restored cluster
+spec:
+  # 1. Image version MUST match the backup version
+  imageName: ghcr.io/cloudnative-pg/postgresql:15 
+
+  instances: 2
+
+  bootstrap:
     recovery:
-      source: your-original-cluster-name
+      # 2. Points to the 'name' defined in externalClusters below
+      source: oncall-pgsql-old
+      # 3. Must match the owner/db name within the restored data
+      database: oncall 
+      owner: oncall
+
   externalClusters:
-    - name: your-original-cluster-name
+    - name: oncall-pgsql-old
       barmanObjectStore:
-        destinationPath: your s3 backup path
-        endpointURL: your s3 endpoint
+        destinationPath: s3://your-backup-bucket-name
+        endpointURL: [https://s3.your-provider.com](https://s3.your-provider.com)
         s3Credentials:
           accessKeyId:
             name: backup-creds
@@ -140,9 +170,22 @@ bootstrap:
             key: ACCESS_SECRET_KEY
         wal:
           maxParallel: 8
-```
 
-#### From azure blob storage
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://your-backup-bucket-name
+      endpointURL: [https://s3.your-provider.com](https://s3.your-provider.com)
+      # 4. Use a NEW serverName to avoid "Expected empty archive" errors
+      serverName: oncall-pgsql-v2 
+      s3Credentials:
+        accessKeyId:
+          name: backup-creds
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: backup-creds
+          key: ACCESS_SECRET_KEY
+```
+# Recovery From azure blob storage
 
 ```yaml
 bootstrap:
@@ -229,3 +272,4 @@ DB_PORT=5432 \
 ## Docs and External References
 
 - https://www.enterprisedb.com/blog/current-state-major-postgresql-upgrades-cloudnativepg-kubernetes
+- https://cloudnative-pg.io/documentation/1.20/recovery
