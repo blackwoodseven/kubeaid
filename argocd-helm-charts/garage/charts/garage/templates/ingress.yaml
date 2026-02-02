@@ -1,7 +1,7 @@
 {{- if .Values.ingress.s3.api.enabled -}}
 {{- $fullName := include "garage.fullname" . -}}
-{{- $svcPort := .Values.service.s3.api.port -}}
-{{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+{{- $svcPort := .Values.service.ports.s3Api -}}
+{{- if and .Values.ingress.s3.api.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.s3.api.annotations "kubernetes.io/ingress.class") }}
   {{- $_ := set .Values.ingress.s3.api.annotations "kubernetes.io/ingress.class" .Values.ingress.s3.api.className}}
   {{- end }}
@@ -65,7 +65,7 @@ spec:
 ---
 {{- if .Values.ingress.s3.web.enabled -}}
 {{- $fullName := include "garage.fullname" . -}}
-{{- $svcPort := .Values.service.s3.web.port -}}
+{{- $svcPort := .Values.service.ports.s3Web -}}
 {{- if and .Values.ingress.s3.web.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.s3.web.annotations "kubernetes.io/ingress.class") }}
   {{- $_ := set .Values.ingress.s3.web.annotations "kubernetes.io/ingress.class" .Values.ingress.s3.web.className}}
