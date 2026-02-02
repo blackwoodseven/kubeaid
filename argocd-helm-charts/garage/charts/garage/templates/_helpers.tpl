@@ -24,10 +24,14 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
-Create the name of the rpc secret
+Create the name of the secret
 */}}
-{{- define "garage.rpcSecretName" -}}
-{{- .Values.garage.existingRpcSecret | default (printf "%s-rpc-secret" (include "garage.fullname" .)) -}}
+{{- define "garage.secretName" -}}
+{{- if .Values.garage.secret.name -}}
+{{- .Values.garage.secret.name -}}
+{{- else -}}
+{{- printf "%s-secret" (include "garage.fullname" .) -}}
+{{- end -}}
 {{- end }}
 
 {{/*
@@ -41,14 +45,13 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "garage.labels" -}}
-helm.sh/chart: {{ include "garage.chart" . }}
 {{ include "garage.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- with .Values.commonLabels }}
-{{- toYaml . | nindent 0 }}
+{{ with .Values.commonLabels }}
+{{- toYaml . }}
 {{- end }}
 {{- end }}
 
@@ -58,6 +61,30 @@ Selector labels
 {{- define "garage.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "garage.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: garage
+{{- end }}
+
+{{/*
+WebUI Selector labels
+*/}}
+{{- define "garage.webui.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "garage.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: webui
+{{- end }}
+
+{{/*
+WebUI labels
+*/}}
+{{- define "garage.webui.labels" -}}
+{{ include "garage.webui.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{ with .Values.commonLabels }}
+{{- toYaml . }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -68,6 +95,75 @@ Create the name of the service account to use
 {{- default (include "garage.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Garage configuration file content
+*/}}
+{{- define "garage.config.content" -}}
+{{- if .Values.garage.garageTomlString }}
+{{- tpl (index (index .Values.garage) "garageTomlString") $ }}
+{{- else }}
+metadata_dir = "/mnt/meta"
+data_dir = "/mnt/data"
+
+db_engine = "{{ .Values.garage.dbEngine }}"
+
+block_size = {{ .Values.garage.blockSize }}
+
+replication_factor = {{ .Values.garage.replicationFactor }}
+consistency_mode = "{{ .Values.garage.consistencyMode }}"
+
+compression_level = {{ .Values.garage.compressionLevel }}
+
+{{- if .Values.garage.metadataAutoSnapshotInterval }}
+metadata_auto_snapshot_interval = {{ .Values.garage.metadataAutoSnapshotInterval | quote }}
+{{- end }}
+
+rpc_bind_addr = "{{ .Values.garage.rpc.bindAddr }}"
+
+bootstrap_peers = {{ .Values.garage.bootstrapPeers }}
+
+[kubernetes_discovery]
+namespace = "{{ .Release.Namespace }}"
+service_name = "{{ include "garage.fullname" . }}"
+skip_crd = {{ .Values.garage.kubernetesSkipCrd }}
+
+[s3_api]
+s3_region = "{{ .Values.garage.s3.api.region }}"
+api_bind_addr = "[::]:3900"
+root_domain = "{{ .Values.garage.s3.api.rootDomain }}"
+
+[s3_web]
+bind_addr = "[::]:3902"
+root_domain = "{{ .Values.garage.s3.web.rootDomain }}"
+index = "{{ .Values.garage.s3.web.index }}"
+add_host_to_metrics = true
+
+[admin]
+api_bind_addr = "[::]:3903"
+{{- if .Values.monitoring.tracing.sink }}
+trace_sink = "{{ .Values.monitoring.tracing.sink }}"
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Garage secret data content
+*/}}
+{{- define "garage.secret.content" -}}
+rpcSecret: {{ .Values.garage.secret.rpcSecret | default (include "jupyterhub.randHex" 64) | b64enc | quote }}
+adminToken: {{ .Values.garage.secret.adminToken | default (include "jupyterhub.randHex" 64) | b64enc | quote }}
+
+{{- if (and (.Values.webui.enabled) (.Values.webui.auth.enabled)) }}
+{{- if not .Values.webui.auth.existingSecret }}
+{{- if .Values.webui.auth.userPassHash }}
+webuiAuthUserPass: {{ .Values.webui.auth.userPassHash | b64enc | quote }}
+{{- else }}
+{{- fail "webui.auth.userPassHash is required when auth is enabled. Generate it with: htpasswd -nbBC 10 'username' 'password'" }}
+{{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 
