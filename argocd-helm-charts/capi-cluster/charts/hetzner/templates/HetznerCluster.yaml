@@ -21,7 +21,7 @@ spec:
   {{- end }}
 
   hcloudNetwork:
-    enabled: false
+    enabled: {{ .Values.hcloud.disablePublicIPs }}
     networkZone: {{ .Values.hcloud.zone }}
 
 {{- end }}
