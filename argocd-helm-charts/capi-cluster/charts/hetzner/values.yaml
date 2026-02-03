@@ -2,6 +2,7 @@ cloudCredentialsSecretName: cloud-credentials
 
 hcloud:
   zone: eu-central
+  disablePublicIPs: false
   imageName: ubuntu-24.04
   sshHKeyPairName: kubeaid
 
