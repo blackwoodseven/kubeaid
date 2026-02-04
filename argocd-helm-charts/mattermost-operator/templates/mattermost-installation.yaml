@@ -47,10 +47,13 @@ spec:
     external:
       secret: {{ .Values.mattermost.database.external.secret | default "db-credentials" }}
   fileStore:
-    local:
-      enabled: {{ .Values.mattermost.fileStore.local.enabled | default false }}
-      storageSize: {{ .Values.mattermost.fileStore.local.storageSize | default "10Gi" }}
+  {{- if .Values.mattermost.fileStore.external.enabled }}
     external:
       url: {{ .Values.mattermost.fileStore.external.url | default "s3.obmondo.com" }}
       bucket: {{ .Values.mattermost.fileStore.external.bucket | default "kbm-postgres-backups" }}
       secret: {{ .Values.mattermost.fileStore.external.secret | default "mattermost-pgsql-filestore-creds" }}
+  {{- else }}
+    local:
+      enabled: {{ .Values.mattermost.fileStore.local.enabled | default true }}
+      storageSize: {{ .Values.mattermost.fileStore.local.storageSize | default "10Gi" }}
+  {{- end }}
