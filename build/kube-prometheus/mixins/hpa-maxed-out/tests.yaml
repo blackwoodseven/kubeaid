@@ -1,0 +1,80 @@
+rule_files:
+  - prometheus.yaml
+
+tests:
+  # ───────────────────────────────────────────────
+  # (1) HPA with min=1, max=1, current=1
+  #     -> Alert should NOT fire (min == max, intentionally fixed size)
+  # ───────────────────────────────────────────────
+  - interval: 5m
+    input_series:
+      - series: 'kube_horizontalpodautoscaler_status_current_replicas{horizontalpodautoscaler="bus-calculator", namespace="bus-calculator", job="kube-state-metrics"}'
+        values: '1+0x4'
+      - series: 'kube_horizontalpodautoscaler_spec_max_replicas{horizontalpodautoscaler="bus-calculator", namespace="bus-calculator", job="kube-state-metrics"}'
+        values: '1+0x4'
+      - series: 'kube_horizontalpodautoscaler_spec_min_replicas{horizontalpodautoscaler="bus-calculator", namespace="bus-calculator", job="kube-state-metrics"}'
+        values: '1+0x4'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: KubeHpaMaxedOut
+        exp_alerts: []   # No alert should fire when min == max
+
+  # ───────────────────────────────────────────────
+  # (2) HPA with min=1, max=5, current=5
+  #     -> Alert SHOULD fire (maxed out due to load, not config)
+  # ───────────────────────────────────────────────
+  - interval: 5m
+    input_series:
+      - series: 'kube_horizontalpodautoscaler_status_current_replicas{horizontalpodautoscaler="test-app", namespace="test", job="kube-state-metrics"}'
+        values: '5+0x4'
+      - series: 'kube_horizontalpodautoscaler_spec_max_replicas{horizontalpodautoscaler="test-app", namespace="test", job="kube-state-metrics"}'
+        values: '5+0x4'
+      - series: 'kube_horizontalpodautoscaler_spec_min_replicas{horizontalpodautoscaler="test-app", namespace="test", job="kube-state-metrics"}'
+        values: '1+0x4'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: KubeHpaMaxedOut
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              horizontalpodautoscaler: test-app
+              namespace: test
+              job: kube-state-metrics
+            exp_annotations:
+              summary: "HPA is running at max replicas."
+              description: "HPA test/test-app has been running at max replicas for longer than 15 minutes on cluster ."
+              runbook_url: "https://runbooks.prometheus-operator.dev/runbooks/kubernetes/kubehpamaxedout"
+
+  # ───────────────────────────────────────────────
+  # (3) HPA with min=2, max=2, current=2
+  #     -> Alert should NOT fire (min == max, intentionally fixed size)
+  # ───────────────────────────────────────────────
+  - interval: 5m
+    input_series:
+      - series: 'kube_horizontalpodautoscaler_status_current_replicas{horizontalpodautoscaler="fixed-size-app", namespace="test", job="kube-state-metrics"}'
+        values: '2+0x4'
+      - series: 'kube_horizontalpodautoscaler_spec_max_replicas{horizontalpodautoscaler="fixed-size-app", namespace="test", job="kube-state-metrics"}'
+        values: '2+0x4'
+      - series: 'kube_horizontalpodautoscaler_spec_min_replicas{horizontalpodautoscaler="fixed-size-app", namespace="test", job="kube-state-metrics"}'
+        values: '2+0x4'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: KubeHpaMaxedOut
+        exp_alerts: []   # No alert should fire when min == max
+
+  # ───────────────────────────────────────────────
+  # (4) HPA with min=1, max=10, current=3
+  #     -> Alert should NOT fire (not at max)
+  # ───────────────────────────────────────────────
+  - interval: 5m
+    input_series:
+      - series: 'kube_horizontalpodautoscaler_status_current_replicas{horizontalpodautoscaler="scaling-app", namespace="test", job="kube-state-metrics"}'
+        values: '3+0x4'
+      - series: 'kube_horizontalpodautoscaler_spec_max_replicas{horizontalpodautoscaler="scaling-app", namespace="test", job="kube-state-metrics"}'
+        values: '10+0x4'
+      - series: 'kube_horizontalpodautoscaler_spec_min_replicas{horizontalpodautoscaler="scaling-app", namespace="test", job="kube-state-metrics"}'
+        values: '1+0x4'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: KubeHpaMaxedOut
+        exp_alerts: []   # No alert should fire when not at max
