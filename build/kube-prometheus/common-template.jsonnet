@@ -295,11 +295,16 @@ local scrape_namespaces = std.uniq(std.sort(std.flattenArrays(
     vars.prometheus_scrape_namespaces,
   ] + [
     ['argocd'],
-    ['sealed-secrets'],
     ['cert-manager'],
     ['traefik'],
     ['monitoring'],
   ] + (
+    if std.objectHas(vars.addMixins, 'sealedsecrets') && vars.addMixins.sealedsecrets then
+      [
+        ['sealed-secrets'],
+      ]
+    else []
+  ) + (
     if std.objectHas(vars, 'connect_obmondo') && vars.connect_obmondo then
       [
         ['obmondo'],
