@@ -62,6 +62,11 @@ The values file supports many customization options (e.g., scaling,
 resources, storage, secrets).
 Update them as needed, then re-sync in ArgoCD to apply changes.
 
+## Manually Restore User or Admin Password
+
+For step-by-step instructions, refer to this guide:
+[https://cloudpepper.io/docs/odoo-management/recover-odoo-admin-password/](https://cloudpepper.io/docs/odoo-management/recover-odoo-admin-password/)
+
 ## Backup and Restore
 
 An Odoo deployment uses two different storage layers to persist its data:
