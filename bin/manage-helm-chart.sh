@@ -329,8 +329,10 @@ function get_helm_latest_version_from_cache() {
       HELM_CHART_NEW_VERSION=$HELM_CHART_CURRENT_VERSION
     else
       if [ -n "$HELM_REPOSITORY_URL" ]; then
-        # If no version is found in the cache, ask the helm repo
-        HELM_CHART_NEW_VERSION=$(helm search repo --regexp "${HELM_CHART_NAME}/${HELM_CHART_NAME}[^-]" --output yaml | yq eval '.[].version' -)
+        # FIX: Use standard search and filter strictly with yq for exact name match
+        # This avoids regex issues and correctly distinguishes 'traefik/traefik' from 'traefik/traefikee'
+        SEARCH_QUERY="${HELM_CHART_NAME}/${HELM_CHART_NAME}"
+        HELM_CHART_NEW_VERSION=$(helm search repo "$SEARCH_QUERY" --output yaml | yq eval ".[] | select(.name == \"$SEARCH_QUERY\") | .version" -)
       else
         HELM_CHART_NEW_VERSION="$HELM_CHART_DEP_CURRENT_VERSION"
       fi
