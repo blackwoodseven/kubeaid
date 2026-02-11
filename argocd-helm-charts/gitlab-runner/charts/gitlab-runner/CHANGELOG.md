@@ -1,3 +1,19 @@
+## v0.85.0 (2026-01-15)
+
+### New features
+
+- Update GitLab Runner version to v18.8.0
+
+### Other changes
+
+- Add PodMonitor support for metrics collection during shutdown [!533](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/533)
+
+## v0.84.2 (2026-01-09)
+
+### New features
+
+- Update GitLab Runner version to v18.7.2
+
 ## v0.84.1 (2025-12-23)
 
 ### New features

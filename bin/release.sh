@@ -7,7 +7,7 @@ set -e
 CHANGELOG_FILE="CHANGELOG.md"
 RELEASE_NOTES_FILE=".release-notes.md"
 # Run this when the helm chart update PR is merged into master
-NEW_TAG=$(cat VERSION)
+NEW_TAG=${1:-$(cat VERSION)}
 
 # Get the previous tag
 PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
@@ -189,7 +189,7 @@ rm -fr $CHANGELOG_FILE.tmp
 
 if [[ -n "$(git status --porcelain)" ]]; then
   git add -A "$CHANGELOG_FILE" "$RELEASE_NOTES_FILE"
-  git commit -m "chore(doc): Update changelog"
+  git commit -m "chore(release): update CHANGELOG and Release Notes for Kubeaid ${NEW_TAG}"
 fi
 
 git tag -a "$NEW_TAG" -m "Kubeaid Release $NEW_TAG"

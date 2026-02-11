@@ -21,9 +21,10 @@ service:
   #   LoadBalancer: This was what was originally set for this chart in the
   #                 upstream of this fork, but with no details
   type: ClusterIP
-  # -- I don't actually know what this is 🤔 open a PR if you know
-  #    was originally "Local"
-  externalTrafficPolicy: ""
+  # -- determines how external traffic is routed to services. Options:
+  #   Cluster: mask client source IP
+  #   Local: preserve client source IP (requires service type of NodePort or LoadBalancer)
+  externalTrafficPolicy: "Cluster"
 
 image:
   # -- container registry and repo for coturn docker image
@@ -147,11 +148,23 @@ coturn:
   # --  hostname for the coturn server realm
   realm: "turn.example.com"
 
+  # -- Extra environment variables to pass to the Coturn container
+  # example:
+  #   - name: STATIC_AUTH_SECRET_VAL_OPT
+  #     value: supersecretpassword123abcyes
+  extraEnvVars: []
+
   auth:
     # -- username for the main user of the turn server
     username: "coturn"
     # -- password for the main user of the turn server
     password: ""
+    # -- 'Static' authentication secret value (a string) for TURN REST API only.
+    # If not set, then the turn server
+    # will try to use the 'dynamic' value in the turn_secret table
+    # in the user database (if present). The database-stored  value can be changed on-the-fly
+    # by a separate program, so this is why that mode is considered 'dynamic'.
+    staticAuthSecret: ""
     # -- existing secret with keys username/password for coturn
     existingSecret: ""
     secretKeys:
@@ -159,6 +172,8 @@ coturn:
       username: username
       # -- key in existing secret for turn server user's password
       password: password
+      # -- key in existing secret for coturn static-auth-secret
+      staticAuthSecret: ""
 
   # -- coturn's listening IP address
   listeningIP: "0.0.0.0"

@@ -2,9 +2,9 @@
 
 OpenCost and OpenCost UI
 
-![Version: 2.5.3](https://img.shields.io/badge/Version-2.5.3-informational?style=flat-square)
+![Version: 2.5.8](https://img.shields.io/badge/Version-2.5.8-informational?style=flat-square)
 ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
-![AppVersion: 1.119.1](https://img.shields.io/badge/AppVersion-1.119.1-informational?style=flat-square)
+![AppVersion: 1.119.2](https://img.shields.io/badge/AppVersion-1.119.2-informational?style=flat-square)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opencost)](https://artifacthub.io/packages/search?repo=opencost)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opencost-oci)](https://artifacthub.io/packages/search?repo=opencost-oci)
 
@@ -57,6 +57,13 @@ $ helm install opencost opencost/opencost
 | opencost.customPricing.createConfigmap | bool | `true` | Configures the pricing model provided in the values file. |
 | opencost.customPricing.enabled | bool | `false` | Enables custom pricing configuration |
 | opencost.customPricing.provider | string | `"custom"` | Sets the provider type for the custom pricing file. |
+| opencost.exporter.apiHttpRoute | object | `{"annotations":{},"enabled":false,"hostnames":[],"labels":{},"parentRefs":[{"name":"","namespace":"","sectionName":""}],"rules":[{"backendRefs":[{"name":"","port":9003}],"matches":[{"path":{"type":"PathPrefix","value":"/"}}]}]}` | HTTPRoute for OpenCost API (Gateway API) |
+| opencost.exporter.apiHttpRoute.annotations | object | `{}` | Annotations for HTTPRoute resource |
+| opencost.exporter.apiHttpRoute.enabled | bool | `false` | Enable HTTPRoute resource |
+| opencost.exporter.apiHttpRoute.hostnames | list | `[]` | Hostnames for the HTTPRoute |
+| opencost.exporter.apiHttpRoute.labels | object | `{}` | Labels for HTTPRoute resource |
+| opencost.exporter.apiHttpRoute.parentRefs | list | See [values.yaml](values.yaml) | Gateway API parent references |
+| opencost.exporter.apiHttpRoute.rules | list | See [values.yaml](values.yaml) | HTTPRoute rules |
 | opencost.exporter.apiIngress.annotations | object | `{}` | Annotations for Ingress resource |
 | opencost.exporter.apiIngress.enabled | bool | `false` | Ingress for OpenCost API |
 | opencost.exporter.apiIngress.hosts | list | See [values.yaml](values.yaml) | A list of host rules used to configure the Ingress |
@@ -80,12 +87,12 @@ $ helm install opencost opencost/opencost
 | opencost.exporter.extraArgs | list | `[]` | List of extra arguments for the command, e.g.: log-format=json |
 | opencost.exporter.extraEnv | object | `{}` | Any extra environment variables you would like to pass on to the pod |
 | opencost.exporter.extraVolumeMounts | list | `[]` | A list of volume mounts to be added to the pod |
-| opencost.exporter.image | object | `{"fullImageName":null,"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"opencost/opencost","tag":"1.119.1@sha256:43fbd73e2d13f79c07801511877b6c9d70896bc10e2cadcf6a04f4c5d37f6ed3"}` | This overrides the above defaultClusterId. Ensure the ConfigMap exists and contains the required CLUSTER_ID key. clusterIdConfigmap: cluster-id-configmap |
+| opencost.exporter.image | object | `{"fullImageName":null,"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"opencost/opencost","tag":"1.119.2@sha256:4b8de6e029b9dc1f7e68bdf1cf02fca7649614c23812e51a63820f113ca97b89"}` | This overrides the above defaultClusterId. Ensure the ConfigMap exists and contains the required CLUSTER_ID key. clusterIdConfigmap: cluster-id-configmap |
 | opencost.exporter.image.fullImageName | string | `nil` | Override the full image name for development purposes |
 | opencost.exporter.image.pullPolicy | string | `"IfNotPresent"` | Exporter container image pull policy |
 | opencost.exporter.image.registry | string | `"ghcr.io"` | Exporter container image registry |
 | opencost.exporter.image.repository | string | `"opencost/opencost"` | Exporter container image name |
-| opencost.exporter.image.tag | string | `"1.119.1@sha256:43fbd73e2d13f79c07801511877b6c9d70896bc10e2cadcf6a04f4c5d37f6ed3"` | Exporter container image tag |
+| opencost.exporter.image.tag | string | `"1.119.2@sha256:4b8de6e029b9dc1f7e68bdf1cf02fca7649614c23812e51a63820f113ca97b89"` | Exporter container image tag |
 | opencost.exporter.livenessProbe.enabled | bool | `true` | Whether probe is enabled |
 | opencost.exporter.livenessProbe.failureThreshold | int | `3` | Number of failures for probe to be considered failed |
 | opencost.exporter.livenessProbe.initialDelaySeconds | int | `10` | Number of seconds before probe is initiated |
@@ -113,8 +120,15 @@ $ helm install opencost opencost/opencost
 | opencost.exporter.startupProbe.path | string | `"/healthz"` | Probe path |
 | opencost.exporter.startupProbe.periodSeconds | int | `5` | Probe frequency in seconds |
 | opencost.extraContainers | list | `[]` | extra sidecars to add to the pod.  Useful for things like oauth-proxy for the UI |
-| opencost.mcp | object | `{"enabled":true,"ingress":{"annotations":{},"enabled":false,"hosts":[{"host":"example.local","paths":[{"path":"/","pathType":"Prefix"}]}],"ingressClassName":"","tls":[]},"port":8081}` | MCP (Model Context Protocol) Server Configuration The MCP server provides AI agents with access to cost allocation and asset data |
+| opencost.mcp | object | `{"enabled":true,"httpRoute":{"annotations":{},"enabled":false,"hostnames":[],"labels":{},"parentRefs":[{"name":"","namespace":"","sectionName":""}],"rules":[{"backendRefs":[{"name":"","port":8081}],"matches":[{"path":{"type":"PathPrefix","value":"/"}}]}]},"ingress":{"annotations":{},"enabled":false,"hosts":[{"host":"example.local","paths":[{"path":"/","pathType":"Prefix"}]}],"ingressClassName":"","tls":[]},"port":8081}` | MCP (Model Context Protocol) Server Configuration The MCP server provides AI agents with access to cost allocation and asset data |
 | opencost.mcp.enabled | bool | `true` | Enable MCP server for AI agent integration (default: true) Set to false to disable MCP server completely |
+| opencost.mcp.httpRoute | object | `{"annotations":{},"enabled":false,"hostnames":[],"labels":{},"parentRefs":[{"name":"","namespace":"","sectionName":""}],"rules":[{"backendRefs":[{"name":"","port":8081}],"matches":[{"path":{"type":"PathPrefix","value":"/"}}]}]}` | HTTPRoute for MCP server (Gateway API) |
+| opencost.mcp.httpRoute.annotations | object | `{}` | Annotations for HTTPRoute resource |
+| opencost.mcp.httpRoute.enabled | bool | `false` | Enable HTTPRoute resource |
+| opencost.mcp.httpRoute.hostnames | list | `[]` | Hostnames for the HTTPRoute |
+| opencost.mcp.httpRoute.labels | object | `{}` | Labels for HTTPRoute resource |
+| opencost.mcp.httpRoute.parentRefs | list | See [values.yaml](values.yaml) | Gateway API parent references |
+| opencost.mcp.httpRoute.rules | list | See [values.yaml](values.yaml) | HTTPRoute rules |
 | opencost.mcp.ingress.annotations | object | `{}` | Annotations for Ingress resource |
 | opencost.mcp.ingress.enabled | bool | `false` | Ingress for MCP server |
 | opencost.mcp.ingress.hosts | list | See [values.yaml](values.yaml) | A list of host rules used to configure the Ingress |
@@ -193,6 +207,13 @@ $ helm install opencost opencost/opencost
 | opencost.ui.enabled | bool | `true` | Enable OpenCost UI |
 | opencost.ui.extraEnv | list | `[]` | A list of environment variables to be added to the pod |
 | opencost.ui.extraVolumeMounts | list | `[]` | A list of volume mounts to be added to the pod |
+| opencost.ui.httpRoute | object | `{"annotations":{},"enabled":false,"hostnames":[],"labels":{},"parentRefs":[{"name":"","namespace":"","sectionName":""}],"rules":[{"backendRefs":[{"name":"","port":9090}],"matches":[{"path":{"type":"PathPrefix","value":"/"}}]}]}` | HTTPRoute for OpenCost UI (Gateway API) |
+| opencost.ui.httpRoute.annotations | object | `{}` | Annotations for HTTPRoute resource |
+| opencost.ui.httpRoute.enabled | bool | `false` | Enable HTTPRoute resource |
+| opencost.ui.httpRoute.hostnames | list | `[]` | Hostnames for the HTTPRoute |
+| opencost.ui.httpRoute.labels | object | `{}` | Labels for HTTPRoute resource |
+| opencost.ui.httpRoute.parentRefs | list | See [values.yaml](values.yaml) | Gateway API parent references |
+| opencost.ui.httpRoute.rules | list | See [values.yaml](values.yaml) | HTTPRoute rules |
 | opencost.ui.image.fullImageName | string | `nil` | Override the full image name for development purposes |
 | opencost.ui.image.pullPolicy | string | `"IfNotPresent"` | UI container image pull policy |
 | opencost.ui.image.registry | string | `"ghcr.io"` | UI container image registry |

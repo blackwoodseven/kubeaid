@@ -162,6 +162,23 @@ global:
   # -- Environment variables to pass to all deployed Deployments
   env: []
 
+  # -- Extra volumes to add to all deployed Deployments and StatefulSets
+  extraVolumes: []
+  # Example of adding a custom CA bundle from a ConfigMap:
+  # - name: my-root-ca
+  #   configMap:
+  #     name: my-trustbundle
+  #     items:
+  #       - key: bundle.pem
+  #         path: ca-certificates.crt
+
+
+  # -- Extra volume mounts to add to all deployed Deployments and StatefulSets
+  extraVolumeMounts: []
+  # Example of adding a custom CA bundle mount:
+  # - name: my-root-ca
+  #   mountPath: /etc/ssl/certs
+
   # -- Annotations for the all deployed Certificates
   certificateAnnotations: {}
 
@@ -220,6 +237,9 @@ configs:
     #   issuer: https://login.microsoftonline.com/TENANT_ID/v2.0
     #   clientID: aaaabbbbccccddddeee
     #   clientSecret: $oidc.azuread.clientSecret
+    #   # Optional: set to true to use Azure Workload Identity instead of clientSecret
+    #   azure:
+    #     useWorkloadIdentity: false
 
     # Some OIDC providers require a separate clientID for different callback URLs.
     # For example, if configuring Argo CD with self-hosted Dex, you will need a separate client ID
@@ -1433,8 +1453,8 @@ redis:
     # -- Redis repository
     repository: ecr-public.aws.com/docker/library/redis
     # -- Redis tag
-    ## Do not upgrade to >= 7.4.0, otherwise you are no longer using an open source version of Redis
-    tag: 8.2.2-alpine
+    ## Do not use 7.4.0 <= v < 8.0.0, otherwise you are no longer using an open source version of Redis
+    tag: 8.2.3-alpine
     # -- Redis image pull policy
     # @default -- `""` (defaults to global.image.imagePullPolicy)
     imagePullPolicy: ""
@@ -1450,7 +1470,7 @@ redis:
       # -- Repository to use for the redis-exporter
       repository: ghcr.io/oliver006/redis_exporter
       # -- Tag to use for the redis-exporter
-      tag: v1.80.1
+      tag: v1.80.2
       # -- Image pull policy for the redis-exporter
       # @default -- `""` (defaults to global.image.imagePullPolicy)
       imagePullPolicy: ""
@@ -1730,7 +1750,7 @@ redis-ha:
     repository: ecr-public.aws.com/docker/library/redis
     # -- Redis tag
     ## Do not upgrade to >= 7.4.0, otherwise you are no longer using an open source version of Redis
-    tag: 8.2.2-alpine
+    tag: 8.2.3-alpine
   ## Prometheus redis-exporter sidecar
   exporter:
     # -- Enable Prometheus redis-exporter sidecar
