@@ -588,11 +588,16 @@ tls:
   # ```code
   # $ kubectl create secret generic my-root-ca --from-file=ca.pem=/path/to/root-ca.pem
   # ```
-  #
-  # <Admonition type="warning" title="Root CA filename">
-  #   The key containing the root CA in the secret must be `ca.pem`.
+  # <Admonition type="danger">
+  # The Teleport distroless container trusts by default CAs from the `ca-certificates` package (Mozilla PKI).
+  # When `existingCASecretName` is set, Teleport only trusts the CA bundle from the secret.
+  # If you need Teleport to interact with other systems (e.g. AWS, GitHub, ...), the secret must contain their CA.
+  # Else, Teleport will fail to establish TLS connections with external services.
   # </Admonition>
   existingCASecretName: ""
+  # tls.existingCASecretKeyName(string) -- determines which key in the CA secret
+  # will be used as a trusted CA bundle file.
+  existingCASecretKeyName: "ca.pem"
 
 # updater -- controls whether the Kube Agent Updater should be deployed alongside
 # the `teleport-kube-agent`. The updater fetches the target version, validates the

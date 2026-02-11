@@ -2,11 +2,11 @@ image:
   baseRepo: mcr.microsoft.com
   azuredisk:
     repository: /oss/v2/kubernetes-csi/azuredisk-csi
-    tag: v1.33.7
+    tag: v1.34.1
     pullPolicy: IfNotPresent
   csiProvisioner:
     repository: /oss/v2/kubernetes-csi/csi-provisioner
-    tag: v6.0.0
+    tag: v6.1.0
     pullPolicy: IfNotPresent
   csiAttacher:
     repository: /oss/v2/kubernetes-csi/csi-attacher
@@ -39,6 +39,27 @@ controller:
   name: csi-azuredisk-controller
   cloudConfigSecretName: azure-cloud-provider
   cloudConfigSecretNamespace: kube-system
+  # featureGates allows you to enable or disable specific kubernetes features for different CSI components.
+  # Enabling or disabling certain features may affect the behavior or capabilities of the driver.
+  # # Example valid values:
+  # featureGates:
+  #   csiProvisioner: 
+  #     - Topology=true                # Enables topology-aware volume provisioning
+  #     - HonorPVReclaimPolicy=true    # Honors the reclaim policy set on PersistentVolumes
+  #     - VolumeAttributesClass=true   # Enables support for VolumeAttributesClass
+  #   csiResizer:
+  #     - RecoverVolumeExpansionFailure=true  # Enables recovery from volume expansion failures
+  #     - VolumeAttributesClass=true          # Enables support for VolumeAttributesClass
+  featureGates:
+    csiProvisioner:
+      - Topology=true
+      - HonorPVReclaimPolicy=true
+      - VolumeAttributesClass=true
+    csiResizer:
+      - RecoverVolumeExpansionFailure=true
+      - VolumeAttributesClass=true
+
+  VMSSDetachTimeoutInSeconds: 20
   allowEmptyCloudConfig: false
   enableTrafficManager: false
   trafficManagerPort: 7788

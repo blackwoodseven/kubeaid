@@ -13,11 +13,6 @@
       "type": ["boolean", "null"],
       "description": "No effect - reserved for use in sub-charting"
     },
-    "a1CompatibilityDaemonSet": {
-      "type": "boolean",
-      "description": "Enable compatibility for the A1 instance family via use of an AL2-based image in a separate DaemonSet",
-      "default": false
-    },
     "additionalDaemonSets": {
       "type": ["object", "null"],
       "additionalProperties": false,
@@ -520,17 +515,6 @@
                         "key": "eks.amazonaws.com/compute-type",
                         "operator": "NotIn",
                         "values": ["fargate", "auto", "hybrid"]
-                      },
-                      {
-                        "key": "node.kubernetes.io/instance-type",
-                        "operator": "NotIn",
-                        "values": [
-                          "a1.medium",
-                          "a1.large",
-                          "a1.xlarge",
-                          "a1.2xlarge",
-                          "a1.4xlarge"
-                        ]
                       }
                     ]
                   }
@@ -1141,35 +1125,7 @@
             },
             "livenessProbe": {
               "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "exec": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "command": {
-                      "type": "array",
-                      "default": [
-                        "/csi-node-driver-registrar",
-                        "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)",
-                        "--mode=kubelet-registration-probe"
-                      ]
-                    }
-                  }
-                },
-                "initialDelaySeconds": {
-                  "type": "integer",
-                  "default": 30
-                },
-                "periodSeconds": {
-                  "type": "integer",
-                  "default": 90
-                },
-                "timeoutSeconds": {
-                  "type": "integer",
-                  "default": 15
-                }
-              }
+              "additionalProperties": true
             }
           }
         },
