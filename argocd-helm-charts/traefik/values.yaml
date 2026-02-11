@@ -14,24 +14,12 @@ traefik:
     enabled: true
     maxUnavailable: 1
   # NOTE: this is to disable the anonymous usage reporting - https://doc.traefik.io/traefik/contributing/data-collection/
-  globalArguments: []
   deployment:
     replicas: 2
     revisionHistoryLimit: 0
   logs:
     access:
       enabled: true
-  ports:
-    web:
-      redirections:
-        entryPoint:
-          to: websecure
-          scheme: https
-          permanent: true
-    websecure:
-      tls:
-        enabled: true
-
   additionalArguments:
     - "--entrypoints.web.proxyprotocol=true"
     - "--entrypoints.web.proxyprotocol.insecure=true"
