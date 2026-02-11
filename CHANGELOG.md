@@ -2,6 +2,48 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 24.0.0
+
+### New Charts Added
+- ecc532894 chore(new): Added new helm chart garage 0.2.1
+- 81d5d6027 chore(new): Added new helm chart calcom 0.8.6
+
+### Features
+- a2905d029 feat: add support for HPA maxed out alerts and update prometheus rule filtering
+- 2fc829267 feat(capi-cluster/hetzner): allow disabling public IPs for HCloud instances
+- 6652e112b feat: added garage helm chart manually from a git clone
+- edd6c8f96 feat: add ingress-only cilium netpols for ciso-assistant frontend and backend
+- 9f657aa9a feat: added release doc
+
+### Bug Fixes
+- 5263a98d0 fix in the hardcoded namespace
+- c84ab227f fix: typo in doc and renamed the readme files
+- bc7f0acb7 fix(ci): add credentials for pulling private ci image
+- 92a54328b fix(capi-cluster/hetzner): applying constant-hostnames annotation to the Cluster resource
+- 77a96ab15 fix the logs/errors of the pod
+
+### Configuration Changes
+- ffb9ddd25 chore: add kubeaid agent helm chart
+
+### Other Changes
+- 8405e64b4 upgrade traefik chart and fix update script
+- 3d8507cef remove traefik and fix argocd from helm cache
+- b3ae470c9 Upgrade helm charts
+- b098899e1 add docs for mac os release
+- 3aa581ed1 add doc for odoo user password reset
+- 822aaa882 Upgraded postgres logical backup to latest in Odoo
+- 7e86090d2 add if else block to the fileStore for mattermost
+- 5657137bc Update procedure to restore cloudnative DB
+- ae947a8b0 add documentation for Keycloak webhook event integration
+- aa16d067c Tested and Updated mastodon, pixelfed, peertube pgsql cronjob template
+- e40bf3152 Added s3 config secret management tips in seaweedfs docs
+- 6b5cc48c8 Remove pinned version of autoscaler
+- 051a6a6dc docs: Add comprehensive KubeAid cluster design guide
+- 3fc8869b8 Revert "fix the logs/errors of the pod"
+- ce1d3e7fc remove: redundant toServices rule for Kubernetes API
+- 70287ea43 Fix HPA template to use autoscaling/v2 API instead of deprecated v2beta1
+- 8184cde87 Adding Cal.com Helm Chart
+
 ## KubeAid Release Version 23.0.0
 
 ### New Charts Added
