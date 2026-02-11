@@ -11,7 +11,7 @@ Table of Contents
 * [KubeAid Architecture Overview](#KubeAid-Architecture-Overview)
 * [Setup of Kubernetes clusters](#Setup-of-Kubernetes-clusters)
 * [Installation](#Installation)
-  * [documentation](./docs/README.md) 
+  * [documentation](./docs/README.md)
 * [Support](#Support)
 * [Secrets](#Secrets)
 * [License](#License)
@@ -142,7 +142,7 @@ For complete installation instructions, see the **[Getting Started Guide](./docs
 - Installation (supports AWS, Azure, Hetzner HCloud, Hetzner Bare Metal, and Local K3D)
 - Post-configuration and basic operations
 
-For hosting-specific reference and operations guides, see the [documentation](./docs/).
+For hosting-specific reference and operations guides, see the [documentation](./docs/README.md).
 
 ## Support
 
@@ -172,16 +172,16 @@ project, namely to allow everyone to work on a level playing ground.
 
 Read about the current status of all features of KubeAid from these links:
 
-- [GitOps setup and change detection](./docs/kubeaid/features-technical-details.md#gitops-setup-and-change-detection)  
-- [Auto-scaling for all cloud Kubernetes clusters and easy scaling for physical servers](./docs/kubeaid/features-technical-details.md#auto-scaling-for-all-cloud-kubernetes-clusters-and-easy-scaling-for-physical-servers)  
-- [Manage an ever-growing list of Open Source Kubernetes applications](./docs/kubeaid/features-technical-details.md#manage-an-ever-growing-list-of-open-source-kubernetes-applications-see-argocd-helm-charts-folder-for-a-list)  
-- [Build advanced, customised Prometheus monitoring using just a per-cluster config file](./docs/kubeaid/features-technical-details.md#build-advanced-customised-prometheus-monitoring-using-just-a-per-cluster-config-file)  
-- [Regular application updates with security and bug fixes, ready to be issued to your cluster(s) at will](./docs/kubeaid/features-technical-details.md#regular-application-updates-with-security-and-bug-fixes-ready-to-be-issued-to-your-clusters-at-will)  
-- [Air-gapped operation of your clusters, to ensure operational stability](./docs/kubeaid/features-technical-details.md#air-gapped-operation-of-your-clusters-to-ensure-operational-stability)  
-- [Cluster security](./docs/kubeaid/features-technical-details.md#cluster-security)  
-- [Backup, recovery and live-migration of applications or entire clusters](./docs/kubeaid/features-technical-details.md#backup-recovery-and-live-migration-of-applications-or-entire-clusters)  
-- [Major cluster upgrades, via a shadow Kubernetes setup utilising the recovery and live-migration features](./docs/kubeaid/features-technical-details.md#major-cluster-upgrades-via-a-shadow-kubernetes-setup-utilising-the-recovery-and-live-migration-features)  
-- [Supply chain attack protection and discovery - and security scans of all software used in cluster](./docs/kubeaid/features-technical-details.md#supply-chain-attack-protection-and-discovery---and-security-scans-of-all-software-used-in-cluster)  
+- [GitOps setup and change detection](./docs/kubeaid/features-technical-details.md#gitops-setup-and-change-detection)
+- [Auto-scaling for all cloud Kubernetes clusters and easy scaling for physical servers](./docs/kubeaid/features-technical-details.md#auto-scaling-for-all-cloud-kubernetes-clusters-and-easy-scaling-for-physical-servers)
+- [Manage an ever-growing list of Open Source Kubernetes applications](./docs/kubeaid/features-technical-details.md#manage-an-ever-growing-list-of-open-source-kubernetes-applications-see-argocd-helm-charts-folder-for-a-list)
+- [Build advanced, customised Prometheus monitoring using just a per-cluster config file](./docs/kubeaid/features-technical-details.md#build-advanced-customised-prometheus-monitoring-using-just-a-per-cluster-config-file)
+- [Regular application updates with security and bug fixes, ready to be issued to your cluster(s) at will](./docs/kubeaid/features-technical-details.md#regular-application-updates-with-security-and-bug-fixes-ready-to-be-issued-to-your-clusters-at-will)
+- [Air-gapped operation of your clusters, to ensure operational stability](./docs/kubeaid/features-technical-details.md#air-gapped-operation-of-your-clusters-to-ensure-operational-stability)
+- [Cluster security](./docs/kubeaid/features-technical-details.md#cluster-security)
+- [Backup, recovery and live-migration of applications or entire clusters](./docs/kubeaid/features-technical-details.md#backup-recovery-and-live-migration-of-applications-or-entire-clusters)
+- [Major cluster upgrades, via a shadow Kubernetes setup utilising the recovery and live-migration features](./docs/kubeaid/features-technical-details.md#major-cluster-upgrades-via-a-shadow-kubernetes-setup-utilising-the-recovery-and-live-migration-features)
+- [Supply chain attack protection and discovery - and security scans of all software used in cluster](./docs/kubeaid/features-technical-details.md#supply-chain-attack-protection-and-discovery---and-security-scans-of-all-software-used-in-cluster)
 
 ## Documentation
 
