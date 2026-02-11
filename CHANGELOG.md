@@ -2,6 +2,14 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 24.0.1
+
+### Bug Fixes
+- 67d95252d fix: lets take tag from positional args, if none given, pick from the VERSION file
+
+### Other Changes
+- 1e9260f30 remove deprecated traefik values
+
 ## KubeAid Release Version 24.0.0
 
 ### New Charts Added
