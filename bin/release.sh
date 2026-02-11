@@ -189,7 +189,7 @@ rm -fr $CHANGELOG_FILE.tmp
 
 if [[ -n "$(git status --porcelain)" ]]; then
   git add -A "$CHANGELOG_FILE" "$RELEASE_NOTES_FILE"
-  git commit -m "chore(doc): Update changelog"
+  git commit -m "chore(release): update CHANGELOG and Release Notes for Kubeaid ${NEW_TAG}"
 fi
 
 git tag -a "$NEW_TAG" -m "Kubeaid Release $NEW_TAG"
