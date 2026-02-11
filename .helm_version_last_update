@@ -1,6 +1,7 @@
 2025-12-06 28.2.10 odoo
 2026-01-19 7.14.0 kubernetes-dashboard
-2026-01-19 2.9.0 zfs-localpv2026-02-11 9.4.1 argo-cd
+2026-01-19 2.9.0 zfs-localpv
+2026-02-11 9.4.1 argo-cd
 2026-02-11 1.1.0 argocd-image-updater
 2026-02-11 2.55.1 aws-ebs-csi-driver
 2026-02-11 3.4.0 aws-efs-csi-driver
@@ -87,8 +88,6 @@
 2026-02-11 18.6.8 teleport-cluster
 2026-02-11 18.6.8 teleport-kube-agent
 2026-02-11 v3.31.3 tigera-operator
-2026-02-11 39.0.0
-4.2.6 traefik
 2026-02-11 0.3.10 traefik-forward-auth
 2026-02-11 11.3.2 velero
 2026-02-11 6.0.0 whoami
