@@ -4,7 +4,8 @@ customization:
       - "../../../../../value-files/values-openproject.yaml.gotmpl"
     postfix:
       - "../../../../../value-files/values-postfix.yaml.gotmpl"
-
+    jitsi:
+      - "../../../../../value-files/values-jitsi.yaml.gotmpl" 
 persistence:
   storages:
     openproject:
@@ -19,3 +20,8 @@ debug:
 apps:
   dkimpy:
     enabled: true
+jitsi:
+  jibri:
+    enabled: true
+  jvb:
+    stunServers: 'meet-jit-si-turnrelay.jitsi.net:443'
