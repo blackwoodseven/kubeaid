@@ -16,7 +16,7 @@ mkdir -p "$OPENDESK_DIR"/{chat,mail,nextcloud,openproject,xwiki,jitsi}
 mkdir -p "$ESSENTIALS_DIR"
 
 # Change to the appropriate version directory
-cd "versions/v1.11.2"
+cd "versions/v1.11.4"
 
 generate_selector_flags() {
     local apps_list="$1"
