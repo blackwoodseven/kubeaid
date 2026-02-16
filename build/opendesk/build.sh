@@ -7,6 +7,60 @@ if [[ -z "$1" ]]; then
   exit 1
 fi
 
+RUN_ONLY="all"
+
+# Allowed app names
+VALID_APPS=("essentials" "mail" "chat" "jitsi" "nextcloud" "openproject" "xwiki")
+
+if [[ -n "${2:-}" ]]; then
+  if [[ "${2}" =~ ^--only-(.+)$ ]]; then
+    REQUESTED="${BASH_REMATCH[1]}"
+
+    if [[ " ${VALID_APPS[*]} " =~ " ${REQUESTED} " ]]; then
+      RUN_ONLY="$REQUESTED"
+    else
+      echo "Invalid option: ${2}"
+      exit 1
+    fi
+  else
+    echo "Invalid option format: ${2}"
+    exit 1
+  fi
+fi
+
+echo "Running: $RUN_ONLY"
+
+
+if [[ "$1" == "--help" ]]; then
+  cat <<EOF
+Usage:
+  $0 <target-directory> [OPTIONS]
+
+Description:
+  Generates Opendesk manifests using helmfile.
+
+Arguments:
+  <target-directory>   Absolute path to kubeaid-config values directory.
+
+Options:
+  (no option)              Generate all Opendesk manifests (default)
+
+  --all                    Generate all Opendesk manifests
+  --only-essentials        Generate only core essential apps
+  --only-nextcloud         Generate only Nextcloud related apps
+  --only-mail              Generate only mail apps
+  --only-chat              Generate only chat apps
+  --only-openproject       Generate only OpenProject apps
+  --only-xwiki             Generate only XWiki apps
+  --only-jitsi             Generate only Jitsi apps
+
+  --help                   Show this help message and exit
+
+
+EOF
+  exit 0
+fi
+
 TARGET_DIR="$1"
 VALUES_FILE="$TARGET_DIR/values-opendesk.yaml"
 OPENDESK_DIR="$TARGET_DIR/../opendesk"
@@ -46,50 +100,61 @@ OPENDESK_VIDEO="jitsi"
 
 OPENDESK_XWIKI="xwiki"
 
+if [[ "$RUN_ONLY" == "all" || "$RUN_ONLY" == "essentials" ]]; then
 # Disable shell check in commands, we need word splitting for multiple helmfile selector flags
 echo "Generating core essential apps manifest..."
 
 # shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$CORE_APPS") > "${ESSENTIALS_DIR}/opendesk-essentials.yaml"  
-
+fi
+if [[ "$RUN_ONLY" == "all" || "$RUN_ONLY" == "nextcloud" ]]; then
 echo "Generating nextcloud manifest..."
 
 # shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$OPENDESK_FILES") > "${OPENDESK_DIR}/nextcloud/nextcloud.yaml"
-
+fi
+if [[ "$RUN_ONLY" == "all" || "$RUN_ONLY" == "chat" ]]; then
 echo "Generating matrix chat manifest..."
 
 # shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$OPENDESK_CHAT") > "${OPENDESK_DIR}/chat/chat.yaml"
 
+fi
+if [[ "$RUN_ONLY" == "all" || "$RUN_ONLY" == "mail" ]]; then
 echo "Generating mail manifest..."
 
 # shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$OPENDESK_MAIL") > "${OPENDESK_DIR}/mail/mail.yaml"
-
+fi
+if [[ "$RUN_ONLY" == "all" || "$RUN_ONLY" == "openproject" ]]; then
 echo "Generating openproject manifest..."
+
 
 # shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$OPENDESK_PROJECTS") > "${OPENDESK_DIR}/openproject/openproject.yaml"
 
+fi
+if [[ "$RUN_ONLY" == "all" || "$RUN_ONLY" == "xwiki" ]]; then
 echo "Generating xwiki manifest..."
 
 # shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$OPENDESK_XWIKI") > "${OPENDESK_DIR}/xwiki/xwiki.yaml"
 
+fi
+if [[ "$RUN_ONLY" == "all" || "$RUN_ONLY" == "jitsi" ]]; then
 echo "Generating jitsi manifest..."
 
 # shellcheck disable=SC2046
 helmfile template -e default -n opendesk --state-values-file "../../default-values/values.yaml" --state-values-file "${VALUES_FILE}" \
   $(generate_selector_flags "$OPENDESK_VIDEO") > "${OPENDESK_DIR}/jitsi/jitsi.yaml"
 
-
+fi
 
 # Fix hook annotations and ttlSecondsAfterFinished for both files
 fix_hooks_and_ttl() {
