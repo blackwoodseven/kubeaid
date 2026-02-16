@@ -657,6 +657,7 @@ local kp =
       grafana+: {
         plugins: vars.grafana_plugins,
         resources: vars.grafana_resources,
+        datasources+: if std.objectHas(vars, 'grafana_datasources') then vars.grafana_datasources else [],
         dashboards+: {
           [mixin.name + '-' + dashboard]: mixin.grafanaDashboards[dashboard]
           for mixin in mixins
