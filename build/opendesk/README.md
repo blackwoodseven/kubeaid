@@ -370,3 +370,76 @@ To add a new Opendesk release to the build system to Kubeaid:
 5. Ensure the directory name matches the release version exactly (e.g., `v1.11.4`).
 
 After adding the new version, update `build.sh` to reference the new version directory before generating manifests.
+
+## Backup and restore using Velero
+
+Ensure all the [required volumes](https://docs.opendesk.eu/operations/data-storage) are backed up by adding the below annotations in your kubeaid-config values file.
+
+```yaml
+annotations:
+  servicesExternalMinio:
+    pod:
+      backup.velero.io/backup-volumes: "data"
+  servicesExternalPostgresql:
+    pod:
+      backup.velero.io/backup-volumes: "data"
+  servicesExternalMariadb:
+    pod:
+      backup.velero.io/backup-volumes: "data"
+  openxchangeDovecot:
+    pod:
+      backup.velero.io/backup-volumes: "srv-mail,var-lib-dovecot"
+  xwiki:
+    common:
+      backup.velero.io/backup-volumes: "xwiki-data"
+  elementSynapse:
+    pod:
+      backup.velero.io/backup-volumes: "media"
+  nubusLdapNotifier:
+    pod:
+      backup.velero.io/backup-volumes: "shared-data,shared-run"
+  nubusLdapServer:
+    pod:
+      backup.velero.io/backup-volumes: "shared-data,shared-run"
+  nubusUdmListener:
+    pod:
+      backup.velero.io/backup-volumes: "data"
+  nubusProvisioning:
+    pod:
+      backup.velero.io/backup-volumes: "nats-data"
+  servicesExternalPostfix:
+    pod:
+      backup.velero.io/backup-volumes: "spool-postfix"
+  openxchangePostfix:
+    pod:
+      backup.velero.io/backup-volumes: "spool-postfix"
+  elementMatrixNeodatefixBot:
+    pod:
+      backup.velero.io/backup-volumes: "data"
+  nubusOxConnector:
+    pod:
+      backup.velero.io/backup-volumes: "ox-connector-appcenter,ox-connector-ox-contexts"
+```
+
+*Note*: Adding `backup.velero.io/backup-volumes` annotation is currently not supported by opendesk for the below volumes:
+- nats-data volume(v1.6.0, v1.11.4):
+   - In the generated `opendesk-essentials.yaml`, add the below annotation in `ums-provisioning-nats` statefulSet under `.spec.template.metadata.annotations`
+
+   ```yaml
+      backup.velero.io/backup-volumes: "nats-data"
+   ```
+- xwiki-data volume(v1.6.0, v1.11.4):
+   - In the generated `xwiki.yaml`, add the below annotation in `xwiki` statefulSet under `.spec.template.metadata.annotations`
+
+   ```yaml
+      backup.velero.io/backup-volumes: "xwiki-data"
+   ```
+
+- spool-postfix volume(v1.6.0):
+   - In the generated `mail.yaml`, add the below annotation in `postfix` statefulSet under `.spec.template.metadata.annotations`
+
+   ```yaml
+      backup.velero.io/backup-volumes: "spool-postfix"
+   ```
+
+Velero backup and restore commands can be found [here](../../argocd-helm-charts/velero/README.md)
