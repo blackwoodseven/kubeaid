@@ -2,7 +2,7 @@ groups:
   - name: monitor::system::puppet::last_run
     rules:
     - alert: monitor::system::puppet::last_run
-      expr: time() - puppet_report{environment="master", host!~".+.niwyocdmk2"} >= 86400 * 1
+      expr: time() - puppet_report{environment=~"v?[0-9]+_[0-9]+_[0-9]+",host!~".+.niwyocdmk2"} >= 86400 * 1
       for: 24h
       labels:
         alert_id: 'monitor::system::puppet::last_run'
