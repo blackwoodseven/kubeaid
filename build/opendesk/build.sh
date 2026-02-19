@@ -16,7 +16,7 @@ if [[ -n "${2:-}" ]]; then
   if [[ "${2}" =~ ^--only-(.+)$ ]]; then
     REQUESTED="${BASH_REMATCH[1]}"
 
-    if [[ " ${VALID_APPS[*]} " =~ " ${REQUESTED} " ]]; then
+    if [[ " ${VALID_APPS[*]} " =~ ${REQUESTED} ]]; then
       RUN_ONLY="$REQUESTED"
     else
       echo "Invalid option: ${2}"

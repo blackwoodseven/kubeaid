@@ -5,7 +5,7 @@ customization:
     postfix:
       - "../../../../../value-files/values-postfix.yaml.gotmpl"
     jitsi:
-      - "../../../../../value-files/values-jitsi.yaml.gotmpl" 
+      - "../../../../../value-files/values-jitsi.yaml.gotmpl"
 persistence:
   storages:
     openproject:

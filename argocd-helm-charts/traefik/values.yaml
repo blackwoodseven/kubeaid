@@ -20,6 +20,20 @@ traefik:
   logs:
     access:
       enabled: true
+
+  ports:
+    web:
+      http:
+        redirections:
+          entryPoint:
+            to: websecure
+            scheme: https
+            permanent: true
+    websecure:
+      http:
+        tls:
+          enabled: true
+
   additionalArguments:
     - "--entrypoints.web.proxyprotocol=true"
     - "--entrypoints.web.proxyprotocol.insecure=true"
