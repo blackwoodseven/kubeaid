@@ -66,8 +66,6 @@ puppetserver:
           cat <<EOL > "/etc/puppetlabs/puppet/prometheus.yaml"
           ---
           textfile_directory: /etc/puppetlabs/code/prometheus-dropzone
-          environments:
-            - master
           stale_time: 30
           EOL
 
