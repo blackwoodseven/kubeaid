@@ -17,7 +17,12 @@ fail=0
 
 # ── 1. collect all field names accessed via vars.field or vars['field'] ──────
 
-accessed=$(grep -oP "(?<![a-zA-Z_])vars\.\K[a-zA-Z_][a-zA-Z0-9_-]*|(?<![a-zA-Z_])vars\['\K[a-zA-Z0-9_-]+" "$TEMPLATE" | sort -u)
+accessed=$(
+  {
+    grep -oE '(^|[^a-zA-Z_])vars\.[a-zA-Z_][a-zA-Z0-9_-]*' "$TEMPLATE" | sed 's/.*vars\.//' || true
+    grep -oE "(^|[^a-zA-Z_])vars\['[a-zA-Z0-9_-]+" "$TEMPLATE" | sed "s/.*vars\['//" || true
+  } | sort -u
+)
 
 # ── 2. collect fields defined in default_vars ─────────────────────────────────
 # Get all field names that have a default — jsonnet evaluates the file and jq lists the keys
@@ -25,7 +30,12 @@ defaults=$(jsonnet "${SCRIPT_DIR}/../lib/default_vars.libsonnet" | jq -r 'keys[]
 
 # ── 3. collect fields that are guarded at the access site ─────────────────────
 # A field is "guarded" if it appears in a std.get or std.objectHas call on vars
-guarded=$(grep -oP "std\.get\(vars,\s*'\K[a-zA-Z0-9_-]+|std\.objectHas\(vars,\s*'\K[a-zA-Z0-9_-]+" "$TEMPLATE" | sort -u)
+guarded=$(
+  {
+    grep -oE "std\.get\(vars,[[:space:]]*'[a-zA-Z0-9_-]+" "$TEMPLATE" | sed "s/.*'//" || true
+    grep -oE "std\.objectHas\(vars,[[:space:]]*'[a-zA-Z0-9_-]+" "$TEMPLATE" | sed "s/.*'//" || true
+  } | sort -u
+)
 
 # ── 4. fields checked in validate.libsonnet ────────────────────────────────────
 # These may be accessed directly (no std.get/default) because validate.libsonnet
@@ -35,7 +45,7 @@ VALIDATE_LIB="${SCRIPT_DIR}/../lib/validate.libsonnet"
 validator_required=()
 while IFS= read -r field; do
   validator_required+=("$field")
-done < <(grep -oP "vars,\s*'\K[a-zA-Z0-9_-]+" "$VALIDATE_LIB" | sort -u)
+done < <(grep -oE "vars,[[:space:]]*'[a-zA-Z0-9_-]+" "$VALIDATE_LIB" | sed "s/.*'//" | sort -u)
 
 # ── 5. report any accessed field that is neither defaulted nor guarded ─────────
 
