@@ -2,6 +2,69 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 26.1.0\n
+### Minor Version Upgrades
+- 038393263 Updated plugin-barman-cloud from version 0.5.0 to 0.6.0
+
+- 038393263 Updated opentelemetry-collector from version 0.148.0 to 0.150.0
+
+- 038393263 Updated seaweedfs from version 4.19.0 to 4.20.0
+
+### Patch Version Upgrades
+- 038393263 Updated cloud-provider-azure from version 1.35.1 to 1.35.3
+
+- 038393263 Updated cert-manager from version v1.20.1 to v1.20.2
+
+- 038393263 Updated erpnext from version 8.0.40 to 8.0.43
+
+- 038393263 Updated garage from version 0.4.1 to 0.4.2
+
+- 038393263 Updated gitea from version 12.5.0 to 12.5.1
+
+- 038393263 Updated hcloud-csi from version 2.20.0 to 2.20.1
+
+- 038393263 Updated mattermost-operator from version 1.0.4 to 1.0.5
+
+- 038393263 Updated opentelemetry-operator from version 0.109.0 to 0.109.2
+
+- 038393263 Updated reloader from version 2.2.9 to 2.2.11
+
+- 038393263 Updated rook-ceph from version v1.19.3 to v1.19.4
+
+- 038393263 Updated rook-ceph-cluster from version v1.19.3 to v1.19.4
+
+- 038393263 Updated sealed-secrets from version 2.18.4 to 2.18.5
+
+- 038393263 Updated tigera-operator from version v3.31.4 to v3.31.5
+
+### Bug Fixes
+- 8dfed4a53 fix: Fix busybox error in kubeaid cli remove the flag -P and used grep -E with sed
+
+- d41d6f117 fix(docs): consolidate release docs and remove outdated release-procedure.md
+
+- 20f8d4ebe fix: image tag for vuls exporter
+
+### Other Changes
+- 213dc7fe0 add support for dynamic update of default_vars.jsonnet
+
+- 2f4779fdb Fix kyvernos CRDs not rendering because of behaviour mismatch between argo and k8s
+
+- 56d44968e Fix argocd unable to sync because of invalid manifest
+
+- cfe67a3cd Fix: lint libsonnet files and use -prune instead of -not -path
+
+- 470acaab0 Fix: indentation and import order make jsonnetfmt fail
+
+- 61e0d6708 Update vuls-exporter tag from 1.1.0 to 1.2.0.
+
+- d19c5a43e Add cert-manager Issuer for snapshot-controller
+
+- 5d93e9f99 Fix Cal.com Helm chart issues discovered during KubeAid deployment
+
+- a3fa2610c disable ceph monitoring rules coming from ceph helm chart
+
+- ef1932583 Fix: lint-jsonnetfmt passing with format errors
+
 ## KubeAid Release Version 26.0.0\n
 ### Major Version Upgrades
 - 5cb76745a Updated aws-efs-csi-driver from version 3.4.1 to 4.0.0
