@@ -17,17 +17,17 @@
                 (
                   (time() - velero_backup_last_successful_timestamp{schedule=~".*6hrly.*"} > (60 * 60 * 6))
                   and on(schedule) (velero_backup_attempt_total{schedule=~".*6hrly.*"} > 0)
-                  and on() (hour() >= 6 and hour() <= 18)
+                  and on() hour() >= 6
                 )
                 or
-                ((time() - velero_backup_last_successful_timestamp{schedule=~".*daily.*"}) + on (schedule) group_left () velero_backup_attempt_total > (60 * 60 * 24) and on () day_of_week() != 0 and on () day_of_week() != 1)
+                ((time() - velero_backup_last_successful_timestamp{schedule=~".*daily.*"}) + on (schedule) group_left () velero_backup_attempt_total > (60 * 60 * 24) and on () day_of_week() != 0)
                 or
-                ((time() - velero_backup_last_successful_timestamp{schedule=~".*daily.*"}) + on (schedule) group_left () velero_backup_attempt_total > (60 * 60 * 48) and on () day_of_week() == 1)
+                ((time() - velero_backup_last_successful_timestamp{schedule=~".*daily.*"}) + on (schedule) group_left () velero_backup_attempt_total > (60 * 60 * 48) and on () day_of_week() == 0)
                 or
                 ((time() - velero_backup_last_successful_timestamp{schedule=~".*weekly.*"}) + on(schedule) group_left velero_backup_attempt_total > (60 * 60 * 24 * 7))
               )
             ||| % $._config,
-            'for': '30m',
+            'for': '60m',
             labels: {
               severity: 'warning',
               schedule: '{{ $labels.schedule }}',
