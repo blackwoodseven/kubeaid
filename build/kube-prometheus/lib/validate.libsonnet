@@ -65,6 +65,19 @@ function(vars)
           std.type(vars.prometheus_scrape_default_namespaces) == 'array',
           'prometheus_scrape_default_namespaces must be an array',
         ),
+
+      if std.objectHas(vars, 'etcd_metrics') then
+        check(
+          std.type(vars.etcd_metrics) == 'object',
+          'etcd_metrics must be an object',
+        ),
+
+      if std.objectHas(vars, 'etcd_metrics') && std.objectHas(vars.etcd_metrics, 'endpoints') then
+        check(
+          std.type(vars.etcd_metrics.endpoints) == 'array',
+          'etcd_metrics.endpoints must be an array',
+        ),
+
     ]
   );
 

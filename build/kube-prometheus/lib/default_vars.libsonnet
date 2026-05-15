@@ -71,6 +71,17 @@
     },
     retention: '30d',
   },
+  etcd_metrics: {
+    namespace: 'kube-system',
+    serviceName: 'etcd',
+    port: 2381,
+    scheme: 'http',
+    path: '/metrics',
+    interval: '30s',
+    serviceMonitorNamespace: 'monitoring',
+    addressType: 'IPv4',
+    endpoints: [],
+  },
   grafana_ingress_annotations: {
     'cert-manager.io/cluster-issuer': 'letsencrypt',
   },
