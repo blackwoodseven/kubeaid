@@ -3,77 +3,81 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: {{ .Values.global.netpol.releaseName }}-networkpolicy
+  name: {{ .Values.global.netpol.releaseName | default .Release.Name }}-networkpolicy
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/component: cilium-networkpolicy
-
 spec:
   endpointSelector:
     matchLabels:
-{{- with .Values.global.harbor.endpointSelectorLabels }}
-{{- range $key, $value := . }}
+      {{- if .Values.global.harbor.endpointSelectorLabels }}
+      {{- range $key, $value := .Values.global.harbor.endpointSelectorLabels }}
       {{ $key }}: {{ $value | quote }}
-{{- end }}
-{{- end }}
-
+      {{- end }}
+      {{- else }}
+      app.kubernetes.io/instance: harbor
+      {{- end }}
   ingress:
-    # Traefik -> Harbor
+    # Allow same namespace traffic
     - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ .Values.global.netpol.traefik.namespace | quote }}
-{{- with .Values.global.netpol.traefik.labels }}
-{{- range $key, $value := . }}
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace | quote }}
+    # traefik -> harbor
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Values.global.netpol.traefik.namespace | default "traefik" | quote }}
+            {{- if .Values.global.netpol.traefik.labels }}
+            {{- range $key, $value := .Values.global.netpol.traefik.labels }}
             {{ $key }}: {{ $value | quote }}
-{{- end }}
-{{- end }}
+            {{- end }}
+            {{- else }}
+            app.kubernetes.io/name: traefik
+            {{- end }}
       toPorts:
         - ports:
             - port: "80"
+              protocol: TCP
             - port: "8080"
+              protocol: TCP
             - port: "5000"
-
-    # Harbor <-> Harbor
+              protocol: TCP
+    # harbor <-> harbor (Internal)
     - fromEndpoints:
         - matchLabels:
-{{- with .Values.global.harbor.endpointSelectorLabels }}
-{{- range $key, $value := . }}
+            {{- if .Values.global.harbor.endpointSelectorLabels }}
+            {{- range $key, $value := .Values.global.harbor.endpointSelectorLabels }}
             {{ $key }}: {{ $value | quote }}
-{{- end }}
-{{- end }}
-
+            {{- end }}
+            {{- else }}
+            app.kubernetes.io/instance: harbor
+            {{- end }}
   egress:
-    # Harbor <-> Harbor
+    # harbor <-> harbor (Internal)
     - toEndpoints:
         - matchLabels:
-{{- with .Values.global.harbor.endpointSelectorLabels }}
-{{- range $key, $value := . }}
+            {{- if .Values.global.harbor.endpointSelectorLabels }}
+            {{- range $key, $value := .Values.global.harbor.endpointSelectorLabels }}
             {{ $key }}: {{ $value | quote }}
-{{- end }}
-{{- end }}
-
+            {{- end }}
+            {{- else }}
+            app.kubernetes.io/instance: harbor
+            {{- end }}
     # Harbor -> Redis
     - toEndpoints:
         - matchLabels:
-{{- with .Values.global.harbor.redis.selectorLabels }}
-{{- range $key, $value := . }}
-            {{ $key }}: {{ $value | quote }}
-{{- end }}
-{{- end }}
+            app: harbor-redis
       toPorts:
         - ports:
             - port: "6379"
               protocol: TCP
-
-    # Harbor -> PostgreSQL
+    # Harbor -> pgsql
     - toEndpoints:
         - matchLabels:
-            cnpg.io/cluster: {{ .Values.global.postgresql.instanceName | default "postgresql" }}-pgsql
+            cnpg.io/cluster: harbor-pgsql
       toPorts:
         - ports:
             - port: "5432"
               protocol: TCP
-
     # Harbor -> kube-apiserver
     - toEntities:
         - kube-apiserver
@@ -83,16 +87,11 @@ spec:
               protocol: TCP
             - port: "6443"
               protocol: TCP
-
     # Harbor -> DNS
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: {{ .Values.global.harbor.dns.namespace | quote }}
-{{- with .Values.global.harbor.dns.labels }}
-{{- range $key, $value := . }}
-            {{ $key }}: {{ $value | quote }}
-{{- end }}
-{{- end }}
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
       toPorts:
         - ports:
             - port: "53"
@@ -100,17 +99,15 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
-
-{{- if .Values.global.harbor.egressFQDNs }}
-    # Harbor -> External registries
+    # FQDNs
     - toFQDNs:
-{{- range .Values.global.harbor.egressFQDNs }}
-        - matchName: {{ . | quote }}
-{{- end }}
+        - matchName: "github.com"
+        - matchName: "ghcr.io"
+        - matchName: "registry-1.docker.io"
+        - matchName: "auth.docker.io"
+        - matchName: "production.cloudflare.docker.com"
       toPorts:
         - ports:
             - port: "443"
               protocol: TCP
-{{- end }}
-
 {{- end }}
