@@ -2,6 +2,31 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.1.0
+
+### Minor Version Upgrades
+
+- 4c6bf2831 Updated argocd-image-updater from version 1.1.5 to 1.2.1
+- 4c6bf2831 Updated aws-ebs-csi-driver from version 2.59.0 to 2.60.0
+- 4c6bf2831 Updated aws-efs-csi-driver from version 4.1.0 to 4.2.0
+- 4c6bf2831 Updated cloud-provider-azure from version 1.35.3 to 1.36.0
+- 4c6bf2831 Updated cluster-api-operator from version 0.26.0 to 0.27.0
+- 4c6bf2831 Updated gitea from version 12.5.3 to 12.6.0
+- 4c6bf2831 Updated hcloud-csi from version 2.20.2 to 2.21.0
+- 4c6bf2831 Updated seaweedfs from version 4.23.0 to 4.26.0
+
+### Patch Version Upgrades
+
+- 4c6bf2831 Updated argo-cd from version 9.5.13 to 9.5.14
+- 4c6bf2831 Updated cilium from version 1.19.3 to 1.19.4
+- 4c6bf2831 Updated cloudnative-pg from version 0.28.0 to 0.28.2
+- 4c6bf2831 Updated erpnext from version 8.0.47 to 8.0.51
+- 4c6bf2831 Updated gitlab-runner from version 0.88.2 to 0.88.3
+- 4c6bf2831 Updated graylog from version 3.0.19 to 3.0.20
+- 4c6bf2831 Updated kyverno from version 3.8.0 to 3.8.1
+- 4c6bf2831 Updated prometheus-smartctl-exporter from version 0.16.0 to 0.16.1
+
+No changes in this release.
 ## KubeAid Release Version 29.0.9
 
 ### Configuration Changes
