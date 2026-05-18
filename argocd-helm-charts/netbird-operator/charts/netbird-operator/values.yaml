@@ -30,7 +30,7 @@ webhook:
       #   operator: NotIn
       #   values:
       #   - foo
-   
+
    # Failure Policy for webhook
   failurePolicy: Fail
 
@@ -41,9 +41,9 @@ operator:
   # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
   image:
     # Set operator image registry
-    registry: docker.io
+    registry: ghcr.io
     # Set operator image repository
-    repository: netbirdio/kubernetes-operator
+    repository: netbirdio/netbird-operator
     # This sets the pull policy for images.
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
@@ -133,6 +133,7 @@ operator:
 
   affinity: {}
 
+# DEPRECATED: Use NetworkRouters and NetworkResources instead.
 ingress:
   # Enable ingress capabilities to expose services
   enabled: false
@@ -140,49 +141,6 @@ ingress:
   namespacedNetworks: false
   # Allow creating policies through Service annotations
   allowAutomaticPolicyCreation: false
-  kubernetesAPI: # DEPRECATED: Use netbirdio/netbird-operator-configs Chart instead
-    enabled: false
-    groups: []
-    # - group1
-    # - group2
-    policies: []
-    # - default
-  router: # DEPRECATED: Use netbirdio/netbird-operator-configs Chart instead
-    # Deploy routing peer(s)
-    enabled: false
-    # replicas: 3
-    # resources:
-    #   requests:
-    #     cpu: 100m
-    #     memory: 100Mi
-    #   limits:
-    #     cpu: 100m
-    #     memory: 100Mi
-    # labels: {}
-    # annotations: {}
-    # nodeSelector: {}
-    # tolerations: []
-    # Only needed if namespacedNetworks is set to true
-    namespaces: {}
-      # default:
-        # replicas: 3
-        # resources:
-        #   requests:
-        #     cpu: 100m
-        #     memory: 100Mi
-        #   limits:
-        #     cpu: 100m
-        #     memory: 100Mi
-        # labels: {}
-        # annotations: {}
-        # nodeSelector: {}
-        # tolerations: []
-  # NetBird Policies for use with exposed services
-  policies: {} # DEPRECATED: Use netbirdio/netbird-operator-configs Chart instead
-    # default:
-    #   name: Kubernetes Default Policy
-    #   sourceGroups:
-    #   - All
 
 cluster:
   # Cluster DNS name (used for webhooks certificates and for network resource DNS names)
@@ -190,14 +148,15 @@ cluster:
   # Cluster name (used for generating network and network resource names in NetBird)
   name: kubernetes
 
-netbirdAPI: {}
-  # NetBird Service Account Token
-  # key: "nbp_m0LM9ZZvDUzFO0pY50iChDOTxJgKFM3DIqmZ"
-  #keyFromSecret:
-  #  name: "Secret name"
-  #  key: "NB_API_KEY"
-  
-#routingClientImage: "netbirdio/netbird:latest"  
+netbirdAPI:
+  keyFromSecret:
+    name: "netbird-mgmt-api-key"
+    key: "NB_API_KEY"
+
+#routingClientImage: "netbirdio/netbird:latest"
+
+gatewayAPI:
+  enabled: false
 
 general:
   # General labels, applied to all created K8s resources

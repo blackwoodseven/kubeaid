@@ -61,7 +61,6 @@
 2026-05-11 3.13.0 metrics-server
 2026-05-11 0.13.0 community-operator
 2026-05-11 1.9.0 netbird
-2026-05-11 0.2.2 kubernetes-operator
 2026-05-11 1.16.5 oncall
 2026-05-11 2.5.14 opencost
 2026-05-11 3.6.0 opensearch
@@ -97,3 +96,4 @@
 2026-05-11 v0.10.0 version-checker
 2026-05-11 6.0.0 whoami
 2026-05-11 2.9.1 zfs-localpv
+2026-05-18 0.4.1 netbird-operator
