@@ -1,6 +1,6 @@
 dependencies:
-- name: kubernetes-operator
-  repository: https://netbirdio.github.io/kubernetes-operator
-  version: 0.2.2
-digest: sha256:2cefbb6db829806e64f5cf5cae6e6f8007380e10e50b148d2a8f47d0b635875b
-generated: "2026-03-02T12:35:42.729037336+05:30"
+- name: netbird-operator
+  repository: oci://ghcr.io/netbirdio/helm-charts
+  version: 0.4.1
+digest: sha256:9005fc3ddc68e007b71eb577e12ad5e880f66b1035e18850d50699fc438822e8
+generated: "2026-05-18T14:35:33.441392491+05:30"

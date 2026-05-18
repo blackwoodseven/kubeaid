@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "kubernetes-operator.fullname" . }}
+  name: {{ include "netbird-operator.fullname" . }}
   labels:
     app.kubernetes.io/component: operator
-    {{- include "kubernetes-operator.labels" . | nindent 4 }}
+    {{- include "netbird-operator.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.operator.replicaCount }}
   selector:
     matchLabels:
-      {{- include "kubernetes-operator.selectorLabels" . | nindent 6 }}
+      {{- include "netbird-operator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.operator.podAnnotations }}
@@ -18,7 +18,7 @@ spec:
       {{- end }}
       labels:
         app.kubernetes.io/component: operator
-        {{- include "kubernetes-operator.labels" . | nindent 8 }}
+        {{- include "netbird-operator.labels" . | nindent 8 }}
         {{- with .Values.operator.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -27,7 +27,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "kubernetes-operator.serviceAccountName" . }}
+      serviceAccountName: {{ include "netbird-operator.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.operator.podSecurityContext | nindent 8 }}
       containers:
@@ -36,8 +36,6 @@ spec:
             {{- toYaml .Values.operator.securityContext | nindent 12 }}
           image: "{{ .Values.operator.image.registry }}/{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
-          command:
-          - /manager
           args:
           {{- if .Values.operator.metrics.enabled }}
           - --metrics-bind-address=:{{ .Values.operator.metrics.port}}
@@ -45,6 +43,10 @@ spec:
           - --leader-elect
           - --health-probe-bind-address=:{{ .Values.operator.livenessProbe.port }}
           - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+          - --runtime-namespace=$(POD_NAMESPACE)
+          {{- if .Values.gatewayAPI.enabled }}
+          - --gateway-api-enabled=true
+          {{- end }}
           {{- if .Values.managementURL }}
           - --netbird-management-url={{.Values.managementURL}}
           {{- end }}
@@ -57,7 +59,7 @@ spec:
           {{- if .Values.cluster.dns }}
           - --cluster-dns={{.Values.cluster.dns}}
           {{- end }}
-          {{- if or .Values.netbirdAPI.key .Values.netbirdAPI.keyFromSecret }}
+          {{- if .Values.netbirdAPI.keyFromSecret }}
           - --netbird-api-key=$(NB_API_KEY)
           {{- end }}
           {{- if .Values.ingress.allowAutomaticPolicyCreation }}
@@ -87,8 +89,12 @@ spec:
             periodSeconds: {{ .Values.operator.livenessProbe.periodSeconds }}
             successThreshold: {{ .Values.operator.livenessProbe.successThreshold }}
             timeoutSeconds: {{ .Values.operator.livenessProbe.timeoutSeconds }}
-          {{- if or .Values.netbirdAPI.key .Values.netbirdAPI.keyFromSecret }}
           env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          {{- if .Values.netbirdAPI.keyFromSecret }}
             - name: NB_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -96,7 +102,7 @@ spec:
                   name: {{ .Values.netbirdAPI.keyFromSecret.name }}
                   key: {{ .Values.netbirdAPI.keyFromSecret.key }}
                   {{- else }}
-                  name: {{ include "kubernetes-operator.fullname" . }}
+                  name: {{ include "netbird-operator.fullname" . }}
                   key: NB_API_KEY
                   {{- end }}
           {{- end }}
@@ -123,7 +129,7 @@ spec:
       - name: webhook-certs
         secret:
           defaultMode: 420
-          secretName: {{ template "kubernetes-operator.webhookCertSecret" . }}
+          secretName: {{ template "netbird-operator.webhookCertSecret" . }}
       {{- with .Values.operator.volumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
