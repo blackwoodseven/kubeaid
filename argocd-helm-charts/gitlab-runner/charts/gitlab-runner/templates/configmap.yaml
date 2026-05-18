@@ -17,7 +17,8 @@ data:
     mkdir -p ${CONFIG_PATH_FOR_INIT}
     cp /configmaps/config.toml ${CONFIG_PATH_FOR_INIT}
 
-    {{- if eq (include "gitlab-runner.isSessionServerAllowed" . ) "true" }}
+    {{- if .Values.runners.configOverride }}
+    {{- else if eq (include "gitlab-runner.isSessionServerAllowed" . ) "true" }}
     quit() {
       kill -TERM "$child"
     }
@@ -64,10 +65,15 @@ data:
       export CI_SERVER_TOKEN=$(cat /secrets/runner-token)
     fi
 
-    # Register the runner
+    {{- if .Values.runners.configOverride }}
+    if ! /entrypoint verify --url=; then
+      exit 1
+    fi
+    {{- else }}
     if ! sh /configmaps/register-the-runner; then
       exit 1
     fi
+    {{- end }}
 
     # Run pre-entrypoint-script
     if ! bash /configmaps/pre-entrypoint-script; then
@@ -81,6 +87,10 @@ data:
     {{- end }}
       --working-directory=/home/gitlab-runner
 
+  {{- if .Values.runners.configOverride }}
+
+  config.toml: {{ tpl .Values.runners.configOverride $ | toYaml | indent 2 }}
+  {{- else }}
   config.toml: |
     shutdown_timeout = {{ .Values.shutdown_timeout }}
     concurrent = {{ .Values.concurrent }}
@@ -108,6 +118,9 @@ data:
   {{ if .Values.runners.config }}
   config.template.toml: {{ tpl .Values.runners.config $ | toYaml | indent 2 }}
   {{ end }}
+  {{- end }}
+
+  {{- if not .Values.runners.configOverride }}
 
   register-the-runner: |
     #!/bin/sh
@@ -162,6 +175,7 @@ data:
 
       sleep 5
     done
+  {{- end }}
 
   check-live: |
     #!/bin/bash
@@ -188,7 +202,7 @@ data:
 
     grep -qE "is (alive|valid)" <<<"${verify_output}"
 
-  {{- if eq (include "gitlab-runner.isSessionServerAllowed" . ) "true" }}
+  {{- if and (not .Values.runners.configOverride) (eq (include "gitlab-runner.isSessionServerAllowed" . ) "true") }}
   set-session-server-address: |
     #!/bin/bash
 

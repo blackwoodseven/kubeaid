@@ -1,6 +1,6 @@
 dependencies:
 - name: prometheus-smartctl-exporter
   repository: https://prometheus-community.github.io/helm-charts
-  version: 0.16.0
-digest: sha256:106ce14f257e531db7f8f72edbf6b78a13caf19b24349041dca0a39090e5032b
-generated: "2025-10-10T15:58:32.527243+05:30"
+  version: 0.16.1
+digest: sha256:bd7ff96c0dca089187c93f90caaef5bb5c4c96284fb07207afc2daadc4b42799
+generated: "2026-05-18T16:42:48.362454969+05:30"

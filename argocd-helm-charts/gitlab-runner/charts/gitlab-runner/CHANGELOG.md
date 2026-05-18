@@ -1,3 +1,14 @@
+## v0.88.3 (2026-05-12)
+
+### New features
+
+- Update GitLab Runner version to v18.11.3
+- Back port !544 to 0-88-stable [!547](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/547)
+
+### Other changes
+
+- Add runners.configOverride mode to skip registration [!544](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/544)
+
 ## v0.88.2 (2026-05-03)
 
 ### New features
