@@ -2,6 +2,16 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.0.9
+
+### Configuration Changes
+
+- 7d6834816 chore(netbird-operator): update kubeaid wrapper to upstream v0.4.1
+
+### Other Changes
+
+- 2c48fcfbe change in cilium harbor netpolicy
+
 ## KubeAid Release Version 29.0.8
 
 ### Features
