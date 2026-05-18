@@ -896,7 +896,29 @@ local kp =
     ),
   },
 } } +
-{ ['node-exporter-' + name]: kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
+{ ['node-exporter-' + name]: if name == 'prometheusRule' && vars.platform == 'aks' then
+  kp.nodeExporter[name] {
+    spec+: {
+      groups: std.map(
+        (
+          function(group)
+            if group.name == 'node-exporter' then
+              group {
+                rules: std.filter(
+                  function(rule)
+                    !std.objectHas(rule, 'alert') ||
+                    !std.member(['NodeCPUHighUsage', 'NodeSystemSaturation', 'NodeMemoryMajorPagesFaults'], rule.alert),
+                  group.rules
+                ),
+              }
+            else
+              group
+        ),
+        super.groups
+      ),
+    },
+  }
+else kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
 { ['prometheus-' + name]: kp.prometheus[name] for name in std.objectFields(kp.prometheus) } +
 { ['argocd-application-prometheus-rules' + name]: kp.argocdApplications[name] for name in std.objectFields(kp.argocdApplications) } +
 (
