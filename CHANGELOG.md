@@ -2,6 +2,12 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.1.1
+
+### Other Changes
+
+- 9e7d65edb exclude noisy alerts NodeCPUHighUsage, NodeSystemSaturation, and NodeMemoryMajorPagesFaults on aks clusters
+
 ## KubeAid Release Version 29.1.0
 
 ### Minor Version Upgrades
