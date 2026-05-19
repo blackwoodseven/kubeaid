@@ -19,8 +19,8 @@ spec:
         # This covers both "backup is old" and "no backup exists" cases
         - alert: CNPGClusterNoRecentBackup
           annotations:
-            summary: 'CNPG cluster has no successful backup in the last {{ index .Values "cloudnative-pg" "monitoring" "prometheusRule" "backupMaxAgeSeconds" | float64 | duration }}.'
-            description: 'CloudNativePG cluster {{ "{{" }} $labels.cluster {{ "}}" }} in namespace {{ "{{" }} $labels.namespace {{ "}}" }} has not had a successful backup in more than {{ index .Values "cloudnative-pg" "monitoring" "prometheusRule" "backupMaxAgeSeconds" |  float64 | duration }} . This could mean backups are failing or not configured.'
+            summary: 'CNPG cluster has no successful backup in the last {{ index .Values "cloudnative-pg" "monitoring" "prometheusRule" "backupMaxAgeSeconds" }} seconds.'
+            description: 'CloudNativePG cluster {{ "{{" }} $labels.cluster {{ "}}" }} in namespace {{ "{{" }} $labels.namespace {{ "}}" }} has not had a successful backup in more than {{ index .Values "cloudnative-pg" "monitoring" "prometheusRule" "backupMaxAgeSeconds" }} seconds. This could mean backups are failing or not configured.'
           expr: |-
             (
               (time() - barman_cloud_cloudnative_pg_io_last_available_backup_timestamp) > {{ index .Values "cloudnative-pg" "monitoring" "prometheusRule" "backupMaxAgeSeconds" }}
@@ -36,15 +36,15 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
 
-        # Alert when WAL archiving is stale (no archive in configured time)
-        # Uses: cnpg_pg_stat_archiver_seconds_since_last_archival
+        # Alert when WAL archiving is stale (WAL content in ready state for more than 15 minutes)
+        # Uses: cnpg_collector_pg_wal_archive_status
         - alert: CNPGClusterWALArchivingStale
           annotations:
             summary: CNPG WAL archiving is stale.
-            description: 'CloudNativePG instance {{ "{{" }} $labels.pod {{ "}}" }} in namespace {{ "{{" }} $labels.namespace {{ "}}" }} has not archived a WAL segment in more than {{ index .Values "cloudnative-pg" "monitoring" "prometheusRule" "walArchiveMaxAgeSeconds" | float64 | duration }}. This may indicate issues with continuous backup/WAL shipping.'
+            description: 'CloudNativePG instance {{ "{{" }} $labels.pod {{ "}}" }} in namespace {{ "{{" }} $labels.namespace {{ "}}" }} has not archived a WAL segment in more than {{ index .Values "cloudnative-pg" "monitoring" "prometheusRule" "walArchiveMaxAgeSeconds" }} seconds. This may indicate issues with continuous backup/WAL shipping.'
           expr: |-
-            cnpg_pg_stat_archiver_seconds_since_last_archival > {{ index .Values "cloudnative-pg" "monitoring" "prometheusRule" "walArchiveMaxAgeSeconds" }}
-          for: 5m
+            cnpg_collector_pg_wal_archive_status{value="ready"} > 0
+          for: 15m
           labels:
             severity: warning
             {{- with (index .Values "cloudnative-pg" "monitoring" "prometheusRule" "alertLabels") }}
@@ -71,7 +71,7 @@ spec:
         - alert: CNPGClusterLowRecoverability
           annotations:
             summary: CNPG cluster has limited point-in-time recovery window.
-            description: 'CloudNativePG instance {{ "{{" }} $labels.pod {{ "}}" }} in namespace {{ "{{" }} $labels.namespace {{ "}}" }} can only recover data from {{ "{{" }} $value | humanizeTimestamp {{ "}}" }}. The recovery window is older than {{ index .Values "cloudnative-pg" "monitoring" "prometheusRule" "firstRecoverabilityPointMaxAgeSeconds" | float64 | duration }}.'
+            description: 'CloudNativePG instance {{ "{{" }} $labels.pod {{ "}}" }} in namespace {{ "{{" }} $labels.namespace {{ "}}" }} can only recover data from {{ "{{" }} $value | humanizeTimestamp {{ "}}" }}. The recovery window is older than {{ index .Values "cloudnative-pg" "monitoring" "prometheusRule" "firstRecoverabilityPointMaxAgeSeconds" }} seconds.'
           expr: |-
             (time() - barman_cloud_cloudnative_pg_io_first_recoverability_point) > {{ index .Values "cloudnative-pg" "monitoring" "prometheusRule" "firstRecoverabilityPointMaxAgeSeconds" }}
           for: 30m
