@@ -17,13 +17,13 @@ function(vars)
 
       check(
         std.objectHas(vars, 'platform'),
-        'platform is required (one of: kops, kubeadm, gke, eks)',
+        'platform is required (one of: kops, kubeadm, gke, eks, aks)',
       ),
 
       if std.objectHas(vars, 'platform') then
         check(
           std.member(['kops', 'kubeadm', 'gke', 'eks', 'aks'], vars.platform),
-          'platform must be one of: kops, kubeadm, gke, eks (got: "%s")' % vars.platform,
+          'platform must be one of: kops, kubeadm, gke, eks, aks (got: "%s")' % vars.platform,
         ),
 
       // ── grafana_keycloak_enable: true requires related fields ─────────
