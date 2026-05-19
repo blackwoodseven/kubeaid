@@ -8,6 +8,8 @@ metadata:
   name: {{ $bareMetalHost.serverID | quote }}
   labels:
     role: {{ $.Values.global.clusterName }}-control-plane
+    host: {{ $bareMetalHost.serverID | quote }}
+    private-ip: {{ $bareMetalHost.privateIP | quote }}
   {{- if $.Values.bareMetal.wipeDisks }}
   annotations:
     capi.syself.com/wipe-disk: all
@@ -37,6 +39,7 @@ metadata:
   labels:
     role: {{ printf "%s-%s" $.Values.global.clusterName $nodeGroup.name }}
     host: {{ $bareMetalHost.serverID | quote }}
+    private-ip: {{ $bareMetalHost.privateIP | quote }}
   {{- if $.Values.bareMetal.wipeDisks }}
   annotations:
     capi.syself.com/wipe-disk: all
