@@ -1,32 +1,37 @@
+{{- if .Values.agent.enabled }}
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
+{{- $agentLabels := include "openobserve-collector.labels" . | fromYaml | default (dict) }}
+{{- $agentLabels = mergeOverwrite $agentLabels (.Values.agent.labels | default (dict)) }}
 metadata:
   name: {{ include "openobserve-collector.fullname" . }}-agent
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    {{- include "openobserve-collector.labels" . | nindent 4 }}
+    {{- toYaml $agentLabels | nindent 4 }}
 spec:
   mode: daemonset # "daemonset", "deployment" (default), "statefulset"
   serviceAccount: {{ include "openobserve-collector.serviceAccountName" . }}
   image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+  {{- with .Values.image.imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.agent.podAnnotations }}
+  podAnnotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   env:
     - name: K8S_NODE_NAME
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-    - name: OPENOBSERVE_AUTH_TOKEN  
-      valueFrom:  
-        secretKeyRef:  
-          name: {{ if .Values.externalSecret.enabled }}{{ .Values.externalSecret.name }}{{ else }}{{ include "openobserve-collector.fullname" . }}{{ end }}  
-          key: OPENOBSERVE_AUTH_TOKEN  
-    - name: OPENOBSERVE__K8S_EVENTS_AUTH_TOKEN  
-      valueFrom:  
-        secretKeyRef:  
-          name: {{ if .Values.externalSecret.enabled }}{{ .Values.externalSecret.name }}{{ else }}{{ include "openobserve-collector.fullname" . }}{{ end }}  
-          key: OPENOBSERVE__K8S_EVENTS_AUTH_TOKEN  
+    - name: K8S_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
   {{- with .Values.agent.tolerations }}
   tolerations:
-    {{- toYaml . | nindent 8 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   volumes:
     - name: hostfs
@@ -48,22 +53,26 @@ spec:
     - name: varlibdockercontainers
       readOnly: true
       mountPath: /var/lib/docker/containers
-  resources: {{ .Values.gateway.resources | toYaml | nindent 4 }}
+  {{- with .Values.agent.resources }}
+  resources:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   config:
     receivers:
-{{ toYaml .Values.agent.receivers | indent 6 }}
+      {{- toYaml .Values.agent.receivers | nindent 6 }}
     connectors:
-{{ toYaml .Values.agent.connectors | indent 6 }}
+      {{- toYaml .Values.agent.connectors | nindent 6 }}
     processors:
       attributes:
         actions:
           - key: k8s_cluster
             action: insert
             value: {{ .Values.k8sCluster | quote }}
-{{ toYaml .Values.agent.processors | indent 6 }}
+      {{- toYaml .Values.agent.processors | nindent 6 }}
     extensions:
-{{ toYaml .Values.agent.extensions | indent 6 }}
+      {{- toYaml .Values.agent.extensions | nindent 6 }}
     exporters:
-{{ toYaml .Values.exporters | indent 6 }}
+      {{- toYaml .Values.exporters | nindent 6 }}
     service:
-{{ toYaml .Values.agent.service | indent 6 }}
+      {{- toYaml .Values.agent.service | nindent 6 }}
+{{- end }}
