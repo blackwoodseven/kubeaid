@@ -60,6 +60,14 @@ global:
       namespace: traefik
       labels: {}
 
+  # tlsChains
+  # Generic cert-manager TLS chains using a selfSigned CA.
+  # Requires cert-manager installed in the cluster.
+  tlsChains: []
+  # - name: opensearch
+  #   namespace: graylog
+  #   serviceName: opensearch-cluster-master
+
   mongodb:
     enabled: true
     netpol: false
