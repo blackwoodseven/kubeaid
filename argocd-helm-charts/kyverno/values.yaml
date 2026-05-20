@@ -1,5 +1,56 @@
 harborProxyCache:
   enabled: false
 
-pullThroughCache:
-  enabled: false
+resourceQuotaLimitRangeGenerator:
+  enabled: true
+
+  defaults:
+    resourceQuota:
+      pods: "100"
+
+      cpu:
+        request: "100"
+        limit: "200"
+
+      memory:
+        request: 200Gi
+        limit: 400Gi
+
+      storage:
+        persistentVolumeClaims:
+        request:
+
+      ephemeralStorage:
+        request:
+        limit:
+
+    limitRange:
+      container:
+        cpu:
+          defaultRequest: 100m
+          default: 200m
+          max: "2"
+
+        memory:
+          defaultRequest: 128Mi
+          default: 256Mi
+          max: 4Gi
+
+      pod:
+        cpu:
+          max: "8"
+
+        memory:
+          max: 16Gi
+
+      pvc:
+        storage:
+          max: 100Gi
+
+  overrides:
+    rook-ceph:
+      limitRange:
+        container:
+          cpu:
+            default: 500m
+>>>>>>> f57c214fa (feat(kyverno): adding ClusterPolicy for generating LimitRange and ResourceQuota per namespace)

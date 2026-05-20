@@ -1,0 +1,200 @@
+{{- if .Values.resourceQuotaLimitRangeGenerator.enabled }}
+
+{{- $defaults := .Values.resourceQuotaLimitRangeGenerator.defaults }}
+{{- $overrides := .Values.resourceQuotaLimitRangeGenerator.overrides }}
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: resourcequota-limitrange-generator
+spec:
+  rules:
+    # When several users or teams share a cluster with a fixed number of nodes, there is a concern
+    # that one team could use more than its fair share of resources.
+    #
+    # Resource quotas are a tool for administrators to address this concern.
+    #
+    # A resource quota, defined by a ResourceQuota object, provides constraints that limit
+    # aggregate resource consumption per namespace. A ResourceQuota can also limit the quantity of
+    # objects that can be created in a namespace by API kind, as well as the total amount of
+    # infrastructure resources that may be consumed by API objects found in that namespace.
+
+    # ──────────────────────
+    # Default ResourceQuota
+    # ──────────────────────
+    - name: generate-resourcequota-default
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+      {{- if $overrides }}
+      exclude:
+        any:
+          {{- range $namespace, $override := $overrides }}
+          {{- if $override.resourceQuota }}
+          - resources:
+              names:
+                - {{ $namespace | quote }}
+          {{- end }}
+          {{- end }}
+      {{- end }}
+      generate:
+        generateExisting: true
+        synchronize: true
+        apiVersion: v1
+        kind: ResourceQuota
+        name: default
+        namespace: "{{`{{request.object.metadata.name}}`}}"
+        data:
+          spec:
+            hard:
+              pods: {{ $defaults.resourceQuota.pods | quote }}
+              requests.cpu: {{ $defaults.resourceQuota.cpu.request | quote }}
+              limits.cpu: {{ $defaults.resourceQuota.cpu.limit | quote }}
+              requests.memory: {{ $defaults.resourceQuota.memory.request | quote }}
+              limits.memory: {{ $defaults.resourceQuota.memory.limit | quote }}
+              persistentvolumeclaims: {{ $defaults.resourceQuota.storage.persistentVolumeClaims | quote }}
+              requests.storage: {{ $defaults.resourceQuota.storage.request | quote }}
+              requests.ephemeral-storage: {{ $defaults.resourceQuota.ephemeralStorage.request | quote }}
+              limits.ephemeral-storage: {{ $defaults.resourceQuota.ephemeralStorage.limit | quote }}
+
+    # ──────────────────────────────────
+    # Per-namespace ResourceQuota overrides
+    # ──────────────────────────────────
+    {{- range $namespace, $override := $overrides }}
+    {{- if $override.resourceQuota }}
+    - name: generate-resourcequota-{{ $namespace }}
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+              names:
+                - {{ $namespace | quote }}
+      generate:
+        generateExisting: true
+        synchronize: true
+        apiVersion: v1
+        kind: ResourceQuota
+        name: default
+        namespace: "{{`{{request.object.metadata.name}}`}}"
+        data:
+          spec:
+            hard:
+              pods: {{ (($override.resourceQuota).pods) | default $defaults.resourceQuota.pods | quote }}
+              requests.cpu: {{ ((($override.resourceQuota).cpu).request) | default $defaults.resourceQuota.cpu.request | quote }}
+              limits.cpu: {{ ((($override.resourceQuota).cpu).limit) | default $defaults.resourceQuota.cpu.limit | quote }}
+              requests.memory: {{ ((($override.resourceQuota).memory).request) | default $defaults.resourceQuota.memory.request | quote }}
+              limits.memory: {{ ((($override.resourceQuota).memory).limit) | default $defaults.resourceQuota.memory.limit | quote }}
+              persistentvolumeclaims: {{ ((($override.resourceQuota).storage).persistentVolumeClaims) | default $defaults.resourceQuota.storage.persistentVolumeClaims | quote }}
+              requests.storage: {{ ((($override.resourceQuota).storage).request) | default $defaults.resourceQuota.storage.request | quote }}
+              requests.ephemeral-storage: {{ ((($override.resourceQuota).ephemeralStorage).request) | default $defaults.resourceQuota.ephemeralStorage.request | quote }}
+              limits.ephemeral-storage: {{ ((($override.resourceQuota).ephemeralStorage).limit) | default $defaults.resourceQuota.ephemeralStorage.limit | quote }}
+    {{- end }}
+    {{- end }}
+
+    # By default, containers run with unbounded compute resources on a Kubernetes cluster. Using
+    # Kubernetes resource quotas, administrators (also termed cluster operators) can restrict
+    # consumption and creation of cluster resources (such as CPU time, memory, and persistent
+    # storage) within a specified namespace. Within a namespace, a Pod can consume as much CPU and
+    # memory as is allowed by the ResourceQuotas that apply to that namespace. As a cluster
+    # operator, or as a namespace-level administrator, you might also be concerned about making
+    # sure that a single object cannot monopolize all available resources within a namespace.
+    #
+    # A LimitRange is a policy to constrain the resource allocations (limits and requests) that you
+    # can specify for each applicable object kind (such as Pod or PersistentVolumeClaim) in a
+    # namespace.
+
+    # ───────────────────
+    # Default LimitRange
+    # ───────────────────
+    - name: generate-limitrange-default
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+      {{- if $overrides }}
+      exclude:
+        any:
+          {{- range $namespace, $override := $overrides }}
+          {{- if $override.limitRange }}
+          - resources:
+              names:
+                - {{ $namespace | quote }}
+          {{- end }}
+          {{- end }}
+      {{- end }}
+      generate:
+        generateExisting: true
+        synchronize: true
+        apiVersion: v1
+        kind: LimitRange
+        name: default
+        namespace: "{{`{{request.object.metadata.name}}`}}"
+        data:
+          spec:
+            limits:
+              - type: Container
+                defaultRequest:
+                  cpu: {{ $defaults.limitRange.container.cpu.defaultRequest | quote }}
+                  memory: {{ $defaults.limitRange.container.memory.defaultRequest | quote }}
+                default:
+                  cpu: {{ $defaults.limitRange.container.cpu.default | quote }}
+                  memory: {{ $defaults.limitRange.container.memory.default | quote }}
+                max:
+                  cpu: {{ $defaults.limitRange.container.cpu.max | quote }}
+                  memory: {{ $defaults.limitRange.container.memory.max | quote }}
+              - type: Pod
+                max:
+                  cpu: {{ $defaults.limitRange.pod.cpu.max | quote }}
+                  memory: {{ $defaults.limitRange.pod.memory.max | quote }}
+              - type: PersistentVolumeClaim
+                max:
+                  storage: {{ $defaults.limitRange.pvc.storage.max | quote }}
+
+    # ─────────────────────────────────
+    # Per-namespace LimitRange overrides
+    # ─────────────────────────────────
+    {{- range $namespace, $override := $overrides }}
+    {{- if $override.limitRange }}
+    - name: generate-limitrange-{{ $namespace }}
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+              names:
+                - {{ $namespace | quote }}
+      generate:
+        generateExisting: true
+        synchronize: true
+        apiVersion: v1
+        kind: LimitRange
+        name: default
+        namespace: "{{`{{request.object.metadata.name}}`}}"
+        data:
+          spec:
+            limits:
+              - type: Container
+                defaultRequest:
+                  cpu: {{ (((($override.limitRange).container).cpu).defaultRequest) | default $defaults.limitRange.container.cpu.defaultRequest | quote }}
+                  memory: {{ (((($override.limitRange).container).memory).defaultRequest) | default $defaults.limitRange.container.memory.defaultRequest | quote }}
+                default:
+                  cpu: {{ (((($override.limitRange).container).cpu).default) | default $defaults.limitRange.container.cpu.default | quote }}
+                  memory: {{ (((($override.limitRange).container).memory).default) | default $defaults.limitRange.container.memory.default | quote }}
+                max:
+                  cpu: {{ (((($override.limitRange).container).cpu).max) | default $defaults.limitRange.container.cpu.max | quote }}
+                  memory: {{ (((($override.limitRange).container).memory).max) | default $defaults.limitRange.container.memory.max | quote }}
+              - type: Pod
+                max:
+                  cpu: {{ (((($override.limitRange).pod).cpu).max) | default $defaults.limitRange.pod.cpu.max | quote }}
+                  memory: {{ (((($override.limitRange).pod).memory).max) | default $defaults.limitRange.pod.memory.max | quote }}
+              - type: PersistentVolumeClaim
+                max:
+                  storage: {{ (((($override.limitRange).pvc).storage).max) | default $defaults.limitRange.pvc.storage.max | quote }}
+    {{- end }}
+    {{- end }}
+
+{{- end }}
