@@ -37,6 +37,9 @@ local default_kubeaid_apps_vars = std.parseYaml(importstr 'lib/default_kubeaid_a
 
 local vars = default_vars + ext_vars + default_kubeaid_apps_vars;
 
+local etcdMetrics = vars.etcd_metrics;
+local etcdMetricsResources = (import 'lib/etcd-metrics.libsonnet')(etcdMetrics);
+
 local _validationErrors = validate(vars);
 assert std.length(_validationErrors) == 0 :
        '\n\nVars validation failed:\n' + std.join('\n', ['  - ' + e for e in _validationErrors]) + '\n';
@@ -841,6 +844,13 @@ local kp =
 { ['kube-state-metrics-' + name]: if name == 'deployment' then kp.kubeStateMetrics[name] {
   spec+: { template+: { spec+: { containers: std.map(function(c) if c.name == 'kube-state-metrics' then c { args+: ['--metric-labels-allowlist=nodes=[beta.kubernetes.io/instance-type,kubernetes.io/hostname]'] } else c, super.containers) } } },
 } else kp.kubeStateMetrics[name] for name in std.objectFields(kp.kubeStateMetrics) } +
+(
+  if vars.platform == 'kubeadm' then {
+    'etcd-service': etcdMetricsResources.service,
+    'etcd-endpointSlice': etcdMetricsResources.endpointSlice,
+    'etcd-serviceMonitor': etcdMetricsResources.serviceMonitor,
+  } else {}
+) +
 { ['kubernetes-' + name]: kp.kubernetesControlPlane[name] for name in std.objectFields(kp.kubernetesControlPlane) } +
 // Ordering matters! This next absurd object **has** to come after the inclusion
 // of `kubernetesControlPlane` above -- otherwise we'll overwrite the object and
