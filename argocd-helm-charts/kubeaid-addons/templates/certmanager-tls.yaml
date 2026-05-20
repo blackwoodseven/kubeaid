@@ -1,0 +1,65 @@
+{{- range ((.Values.global).tlsChains) }}
+{{- $ns := .namespace | default $.Release.Namespace }}
+{{- $caSecretName := .caSecretName | default (printf "%s-ca-tls" .name) }}
+{{- $leafSecretName := .leafSecretName | default (printf "%s-tls" .name) }}
+{{- $allDNS := list }}
+{{- $names := .dnsNames }}
+{{- if kindIs "string" $names }}
+  {{- $names = list $names }}
+{{- end }}
+{{- range $names }}
+  {{- $allDNS = concat $allDNS (list
+    (printf "%s.%s.svc.cluster.local" . $ns)
+    (printf "%s-headless.%s.svc.cluster.local" . $ns)
+    .
+    (printf "%s.%s" . $ns)
+    (printf "%s.%s.svc" . $ns)
+  ) }}
+{{- end }}
+{{- $allDNS = $allDNS | uniq }}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ .name }}-selfsigned
+  namespace: {{ $ns }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .name }}-ca
+  namespace: {{ $ns }}
+spec:
+  isCA: true
+  commonName: {{ .name }}-ca
+  secretName: {{ $caSecretName }}
+  duration: 87600h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: {{ .name }}-selfsigned
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $leafSecretName }}
+  namespace: {{ $ns }}
+spec:
+  secretName: {{ $leafSecretName }}
+  duration: 8760h
+  renewBefore: 720h
+  dnsNames:
+    {{- range $allDNS }}
+    - {{ . }}
+    {{- end }}
+  issuerRef:
+    name: {{ .name }}-selfsigned
+    kind: Issuer
+    group: cert-manager.io
+{{- end }}

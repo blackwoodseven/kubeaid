@@ -302,3 +302,15 @@ global:
   sonarqube:
     # -- Enable SonarQube network policies
     netpol: false
+
+  # tlsChains
+  # Generic cert-manager TLS chains using a selfSigned CA.
+  # Each entry creates: selfSigned Issuer + CA Certificate + CA-backed Issuer + leaf Certificate.
+  # dnsNames is the service name — auto-generates 5 standard K8s DNS SANs.
+  # namespace defaults to the Helm release namespace if omitted.
+  # Requires cert-manager installed in the cluster.
+  tlsChains: []
+  # - name: opensearch              # base name for all resources
+  #   dnsNames: opensearch-cluster-master  # auto-generates standard K8s DNS SANs
+  #   caSecretName: ""              # optional — defaults to <name>-ca-tls
+  #   leafSecretName: ""            # optional — defaults to <name>-tls
