@@ -17,6 +17,7 @@
   ) }}
 {{- end }}
 {{- $allDNS = $allDNS | uniq }}
+{{- $commonName := printf "%s.%s.svc.cluster.local" (first $names) $ns }}
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
@@ -52,6 +53,7 @@ metadata:
   namespace: {{ $ns }}
 spec:
   secretName: {{ $leafSecretName }}
+  commonName: {{ $commonName }}
   duration: 8760h
   renewBefore: 720h
   dnsNames:
