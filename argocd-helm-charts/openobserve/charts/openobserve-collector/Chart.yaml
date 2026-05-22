@@ -1,5 +1,10 @@
 apiVersion: v2
-appVersion: 0.113.0
+appVersion: 0.137.0
+dependencies:
+- condition: kube-state-metrics.enabled
+  name: kube-state-metrics
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 5.*
 description: An opinionated installation of OTEL Collector for OpenObserve
 maintainers:
 - email: hello@openobserve.ai
@@ -7,4 +12,4 @@ maintainers:
   url: https://openobserve.ai
 name: openobserve-collector
 type: application
-version: 0.3.22
+version: 0.4.4
