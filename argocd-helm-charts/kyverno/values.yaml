@@ -53,4 +53,3 @@ resourceQuotaLimitRangeGenerator:
         container:
           cpu:
             default: 500m
->>>>>>> f57c214fa (feat(kyverno): adding ClusterPolicy for generating LimitRange and ResourceQuota per namespace)
