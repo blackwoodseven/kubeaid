@@ -1,0 +1,193 @@
+openobserve:
+  externalSecret:
+    enabled: true
+    name: openobserve-credentials
+
+  router:
+    config:
+      ZO_META_CONNECTION_POOL_MIN_SIZE: "0"
+      ZO_META_CONNECTION_POOL_MAX_SIZE: "0"
+      ZO_ACTIX_REQ_TIMEOUT: "120"
+    extraEnv: []
+  config:
+    RUST_LOG: "error"
+    RUST_BACKTRACE: "full"
+    ZO_S3_PROVIDER: "azure" # Valid values are s3, azure, minio, gcs
+    ZO_LOCAL_MODE_STORAGE: "s3"
+    ZO_S3_BUCKET_NAME: "openobserve"
+    ZO_ACTIX_REQ_TIMEOUT: "120"
+
+  resources:
+    ingester:
+      requests:
+        cpu: 50m
+        memory: 3Gi
+
+  ingester:
+    persistence:
+      size: 100Gi
+
+  replicaCount:
+    ingester: 2
+
+  postgres:
+    spec:
+      username: openobserve
+      storage:
+        size: 40Gi
+    externalSecret:
+      enabled: true
+      name: openobserve-pg-credentials
+
+  ingress:
+    enabled: true
+    className: traefik-private
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      cert-manager.io/issuer: null # This is necessary, without which the certs won't be issued
+      kubernetes.io/ingress.class: traefik-private
+    hosts:
+      - host: openobserve.qa.htz1.domain.eu
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls:
+      - secretName: openobserve-shared-tls
+        hosts:
+          - openobserve.qa.htz1.domain.eu
+  enterprise:
+    enabled: true
+    openfga:
+      enabled: true
+    dex:
+      enabled: true
+      config:
+        issuer: https://dex.qa.htz1.domain.eu/dex
+        staticClients:
+          - id: internalclient
+            redirectURIs:
+              - https://openobserve.qa.htz1.domain.eu/config/redirect
+            name: internalclient
+            secretEnv: O2_DEX_CLIENT_SECRET
+        oauth2:
+          responseTypes:
+            - code
+          skipApprovalScreen: true
+        connectors:
+          - type: oidc
+            id: openobserve
+            name: openobserve
+            config:
+              issuer: https://keycloak.qa.htz1.domain.eu/auth/realms/domain
+              clientID: openobserve
+              clientSecret: $KEYCLOAK_CLIENT_SECRET
+              redirectURI: https://dex.qa.htz1.domain.eu/dex/callback
+              insecureEnableGroups: true
+              scopes: ["profile", "email", "groups", "roles", "offline_access"]
+              getUserInfo: true
+              claimMapping:
+                email: email
+                name: name
+                groups: role
+      parameters:
+        O2_CALLBACK_URL: https://openobserve.qa.htz1.domain.eu/web/cb
+        O2_DEX_SCOPES: openid profile email groups offline_access
+        O2_DEX_GROUP_ATTRIBUTE: ou
+        O2_DEX_DEFAULT_ORG: default
+        O2_DEX_DEFAULT_ROLE: viewer
+        O2_DEX_ROLE_ATTRIBUTE: groups
+        O2_DEX_NATIVE_LOGIN_ENABLED: "true"
+        O2_DEX_LDAP_GROUP_ATTRIBUTE: "ou"
+        O2_DEX_LDAP_ROLE_ATTRIBUTE: "cn"
+
+      ingress:
+        className: "traefik-private"
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt
+          cert-manager.io/issuer: null # This is necessary, without which the certs won't be issued
+          kubernetes.io/ingress.class: traefik-private
+        hosts:
+          - host: dex.qa.htz1.domain.eu
+            paths:
+              - path: /
+                pathType: ImplementationSpecific
+        tls:
+          - secretName: openobserve-dex-shared-tls
+            hosts:
+              - dex.qa.htz1.domain.eu
+
+openobserve-collector:
+  externalSecret:
+    enabled: true
+    name: openobserve-credentials
+
+  autoinstrumentation:
+    enabled: false
+
+  exporters:
+    otlphttp/openobserve:
+      endpoint: https://openobserve.qa.htz1.domain.eu/api/default
+      headers:
+        Authorization: Basic cm9vdEBhZG1pbi5jb206cmxERmZqQjROYmNjcEF4UQ==
+        organization: default
+        stream-name: default
+    otlphttp/openobserve_k8s_events:
+      endpoint: https://openobserve.qa.htz1.domain.eu/api/default
+      headers:
+        Authorization: Basic cm9vdEBhZG1pbi5jb206cmxERmZqQjROYmNjcEF4UQ==
+        organization: default
+        stream-name: default
+  agentCollector:
+    extraReceivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    extraPipelines:
+      metrics:
+        receivers:
+          - otlp
+          - kubeletstats
+        processors:
+          - batch
+          - attributes
+          - k8sattributes
+        exporters:
+          - otlphttp/openobserve
+opentelemetry-operator:
+  enabled: true
+  manager:
+    collectorImage:
+      repository: otel/opentelemetry-collector-k8s
+
+global:
+  postgresql:
+    enabled: false
+    instanceName: openobserve
+    logicalbackup:
+      image:
+        repository: ghcr.io/obmondo/postgres-logical-backup
+        tag: 3.1.8
+      enabled: true
+      provider: az
+      pgversion: 17
+      storeageaccount: openobserveqa
+      azurecontainer: openobserve
+      host: openobserve-postgres-rw
+      secretName: openobserve-pg-credentials
+      user: openobserve
+      db: openobserve
+      pgOperatorClusterName: openobserve-pgsql
+    monitoring:
+      enablePodMonitor: false
+    backup:
+      destinationPath: ""
+  blackbox:
+    enabled: true
+    probes:
+      - module: http_2xx
+        interval: 30m
+        urls:
+          - https://openobserve.qa.htz1.domain.eu
