@@ -16,6 +16,10 @@ spec:
         metadata:
           labels:
             app: {{ .Values.global.postgresql.instanceName }}-logical-backup
+          {{- with (((.Values.global).postgresql).logicalbackup).podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
         spec:
           containers:
             - name: logical-backup
@@ -63,6 +67,7 @@ spec:
               {{- else if eq (((.Values.global).postgresql).logicalbackup).provider "s3" }}
                 - name: LOGICAL_BACKUP_PROVIDER
                   value: "s3"
+                {{- if not (((.Values.global).postgresql).logicalbackup).enableKube2IAMIntegration }}
                 - name: AWS_ACCESS_KEY_ID
                   valueFrom:
                     secretKeyRef:
@@ -73,6 +78,7 @@ spec:
                     secretKeyRef:
                       key: AWS_SECRET_ACCESS_KEY
                       name: {{ ((.Values.global).postgresql).instanceName }}-postgres-pod-env
+                {{- end }}
                 - name: LOGICAL_BACKUP_S3_ENDPOINT
                   value: {{ (((.Values.global).postgresql).logicalbackup).s3endpoint | quote }}
                 - name: LOGICAL_BACKUP_S3_BUCKET_SCOPE_SUFFIX
