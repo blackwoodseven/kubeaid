@@ -2,6 +2,64 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.2.0
+
+### Minor Version Upgrades
+
+- 417d7965d Updated crossplane from version 2.2.1 to 2.3.1
+- 417d7965d Updated gitlab-runner from version 0.88.3 to 0.89.0
+- 417d7965d Updated haproxy from version 1.28.1 to 1.29.0
+- 417d7965d Updated localpv-provisioner from version 4.4.0 to 4.5.0
+- 417d7965d Updated openobserve from version 0.1.0 to 0.80.3
+- 417d7965d Updated opentelemetry-operator from version 0.112.1 to 0.113.1
+- 417d7965d Updated opentelemetry-collector from version 0.153.0 to 0.156.2
+- 417d7965d Updated seaweedfs from version 4.26.0 to 4.28.0
+- 417d7965d Updated sonarqube from version 2026.2.1 to 2026.3.0
+- 417d7965d Updated teleport-cluster from version 18.7.6 to 18.8.2
+- 417d7965d Updated teleport-kube-agent from version 18.7.6 to 18.8.2
+- 417d7965d Updated traefik from version 40.0.1 to 40.2.0
+- 417d7965d Updated zfs-localpv from version 2.9.1 to 2.10.0
+- 40bbce688 chore(minor update): Updated openobserve from version 0.1.0 to 0.80.3
+
+### Patch Version Upgrades
+
+- 417d7965d Updated argo-cd from version 9.5.14 to 9.5.15
+- 417d7965d Updated argocd-image-updater from version 1.2.1 to 1.2.2
+- 417d7965d Updated aws-ebs-csi-driver from version 2.60.0 to 2.60.1
+- 417d7965d Updated hcloud-cloud-controller-manager from version 1.31.0 to 1.31.1
+- 417d7965d Updated erpnext from version 8.0.51 to 8.0.53
+- 417d7965d Updated fluent-bit from version 0.57.3 to 0.57.6
+- 417d7965d Updated graylog from version 3.0.20 to 3.0.21
+- 417d7965d Updated hcloud-csi from version 2.21.0 to 2.21.1
+- 417d7965d Updated kubescape-operator from version 1.40.1 to 1.40.2
+- 417d7965d Updated opencost from version 2.5.14 to 2.5.20
+- 417d7965d Updated peertube from version 1.7.2 to 1.7.4
+- 417d7965d Updated sealed-secrets from version 2.18.5 to 2.18.6
+
+### Features
+
+- ee7cefdfd feat(kyverno): adding ClusterPolicy for generating LimitRange and ResourceQuota per namespace
+- c8f12d921 feat(kubeaid-addons): add cert-manager selfSigned TLS chain template
+- 810077dcc feat: add etcd metrics endpoint
+- 46fb7c81a feat(capi-cluster/hetzner): specifying private IP for a HBMS based worker node using the node-ip kubelet flag
+- 28703046f feat(capi-cluster/hetzner): private-ip label attached to each HetznerBareMetalHost
+
+### Bug Fixes
+
+- 09870fd79 fix(graylog): use bitnamilegacy/mongodb to avoid deleted Docker Hub tags
+- f0247251f fix(kubeaid-addons): add commonName to leaf cert in certmanager-tls template
+- 6560534be fix(kyverno): harbor-proxy-cache policy template : variable declaration inside if block
+
+### Configuration Changes
+
+- 839bc2932 chore: removing duplicate replace-container-image-registries Kyverno policy directory
+
+### Other Changes
+
+- bf8e18754 remove alert NodeDiskIOSaturation for aks clusters
+- 490925631 add support for kube2iam roles in postgres logical backups
+- 322eb0e34 Improved CNPGClusterWALArchivingStale alert expression to prevent false positive alerts
+
 ## KubeAid Release Version 29.1.1
 
 ### Other Changes
