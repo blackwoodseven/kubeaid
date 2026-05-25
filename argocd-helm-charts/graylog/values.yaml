@@ -52,6 +52,11 @@ graylog:
   mongodb:
     community:
       install: false
+    # bitnami/mongodb tags older than ~6 months are removed from Docker Hub.
+    # Use bitnamilegacy mirror which preserves old tags indefinitely.
+    image:
+      repository: bitnamilegacy/mongodb
+      pullPolicy: IfNotPresent
 
 global:
   netpol:
