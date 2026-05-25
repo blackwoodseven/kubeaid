@@ -24,9 +24,38 @@ plugins:
       readOnlyRootFilesystem: true
       runAsNonRoot: true
       runAsUser: 1000
+    # -- List of plugins to download, independent of `plugins.configs`.
+    # When specified, these plugins are downloaded regardless of what's in configs,
+    # which enables using `plugins.existingSecret` for credentials while still
+    # downloading plugin binaries. This list also drives which `<plugin>_config.json`
+    # subPaths the Deployment mounts, so each listed plugin MUST have a matching
+    # config source -- either a `plugins.configs.<plugin>` entry (when
+    # `plugins.existingSecret` is empty) or a `<plugin>_config.json` key in the
+    # Secret referenced by `plugins.existingSecret`. Missing entries cause Pod
+    # startup failures because the mounted subPath will not exist. When
+    # `plugins.existingSecret` is empty, the chart validates this at
+    # template-render time and fails with an actionable error; the check is
+    # skipped when `plugins.existingSecret` is set because the contents of an
+    # externally-managed Secret cannot be introspected from Helm.
+    # Example: ["datadog", "mongodb"]
+    # If empty, falls back to downloading plugins based on keys in configs (legacy behavior).
+    plugins: []
   folder: /opt/opencost/plugin
   # leave this commented to always download most recent version of plugins
   # version: <INSERT_SPECIFIC_PLUGINS_VERSION>
+  # -- Use an existing Secret for plugin configuration instead of generating
+  # one from `plugins.configs`. The referenced Secret MUST contain a
+  # `<plugin>_config.json` key for every entry in `plugins.install.plugins`
+  # (and for every plugin whose configs key would otherwise drive the
+  # install/mount list) -- the Deployment mounts those files via subPath and
+  # missing keys cause Pod startup failures. This is useful when using
+  # ExternalSecrets, Vault, or other secret-management tools so that plugin
+  # credentials do not have to be committed via `plugins.configs`. Mutually
+  # exclusive with `plugins.configs`: when `existingSecret` is set, the chart
+  # does not render a generated Secret and any `plugins.configs` entries would
+  # be silently ignored, so the chart will `fail` template rendering in that
+  # case.
+  existingSecret: ""
   configs:
     # datadog: |
     #   {
@@ -171,7 +200,23 @@ opencost:
   #           "client_x509_cert_url": "my-x509-cert-url"
   #         }
   #       }
-  #     ]
+  #     ],
+  #     "oci": {
+  #       "usageApi": [
+  #         {
+  #           "tenancyID": "ocid1.tenancy.oc1..my-tenancy-ocid",
+  #           "region": "us-ashburn-1",
+  #           "authorizer": {
+  #             "authorizerType": "OCIRawConfigProvider",
+  #             "tenancyID": "ocid1.tenancy.oc1..my-tenancy-ocid",
+  #             "userID": "ocid1.user.oc1..my-user-ocid",
+  #             "region": "us-ashburn-1",
+  #             "fingerprint": "xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx",
+  #             "privateKey": "REPLACE_WITH_YOUR_OCI_KEY_FILE_CONTENTS"
+  #           }
+  #         }
+  #       ]
+  #     }
   #   }
 
   # -- MCP (Model Context Protocol) Server Configuration
@@ -248,7 +293,7 @@ opencost:
       # -- Exporter container image name
       repository: opencost/opencost
       # -- Exporter container image tag
-      tag: "1.120.0@sha256:c4fbe5f8fad2bc54872350460e705bf9ab43c90efa784a0cdf3a2a39a66b3b82"
+      tag: "1.120.2@sha256:5f37f689557dbb6737a9182b70625bba55bbba843a2caaba5a79746945a56cc6"
       # -- Exporter container image pull policy
       pullPolicy: IfNotPresent
       # -- Override the full image name for development purposes
@@ -585,7 +630,7 @@ opencost:
       repository: opencost/opencost-ui
       # -- UI container image tag
       # @default -- `""` (use appVersion in Chart.yaml)
-      tag: "1.120.0@sha256:2a2ed5d423402b1d3f104398971191618a91bfc293f53c704606bbbd39b2652c"
+      tag: "1.120.2@sha256:3e7fc176315a25e7acca47b670fa78b2620480981e8d34c2e8f64ca6371c8bcc"
       # -- UI container image pull policy
       pullPolicy: IfNotPresent
       # -- Override the full image name for development purposes
@@ -694,8 +739,8 @@ opencost:
       # -- Redirect ingress to an extraPort defined on the service such as oauth-proxy
       targetPort: http-ui
       # targetPort: oauth-proxy
-      # -- Ingress TLS configuration
-      tls: []
+      # -- Route TLS configuration as a map (e.g. with `termination` and `insecureEdgeTerminationPolicy` fields)
+      tls: {}
         # insecureEdgeTerminationPolicy: Redirect
         # termination: edge
     # -- HTTPRoute for OpenCost UI (Gateway API)

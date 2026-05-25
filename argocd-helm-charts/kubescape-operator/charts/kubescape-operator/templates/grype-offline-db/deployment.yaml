@@ -30,6 +30,7 @@ spec:
         {{- with .Values.grypeOfflineDB.podLabels }}{{- toYaml . | nindent 8 }}{{- end }}
         kubescape.io/tier: "core"
     spec:
+      serviceAccountName: {{ .Values.grypeOfflineDB.name }}
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -53,6 +54,18 @@ spec:
           ports:
           - containerPort: 8080
             protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /databases/v6/latest.json
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /databases/v6/latest.json
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 3
           resources:
 {{ toYaml .Values.grypeOfflineDB.resources | indent 12 }}
       nodeSelector:

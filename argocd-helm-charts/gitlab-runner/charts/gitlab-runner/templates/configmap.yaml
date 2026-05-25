@@ -8,6 +8,9 @@ metadata:
     chart: {{ include "gitlab-runner.chart" . }}
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+    {{- if .Values.configMapLabels }}
+    {{- tpl (toYaml .Values.configMapLabels) . | nindent 4 }}
+    {{- end }}
 data:
   entrypoint: |
     #!/bin/bash
@@ -34,6 +37,7 @@ data:
     wait "$child"
     {{- end }}
 
+    {{- if not .Values.runners.cache.disableGlobalCredentialsExport }}
     # Set up environment variables for cache
     if [[ -f /secrets/accesskey && -f /secrets/secretkey ]]; then
       export CACHE_S3_ACCESS_KEY=$(cat /secrets/accesskey)
@@ -56,6 +60,7 @@ data:
       export CACHE_AZURE_ACCOUNT_NAME=$(cat /secrets/azure-account-name)
       export CACHE_AZURE_ACCOUNT_KEY=$(cat /secrets/azure-account-key)
     fi
+    {{- end }}
 
     if [[ -f /secrets/runner-registration-token ]]; then
       export REGISTRATION_TOKEN=$(cat /secrets/runner-registration-token)
@@ -220,18 +225,19 @@ data:
 
       has_address=false
       while [ "${has_address}" = false ]; do
-        SERVICEIP=$(curl —-silent \
+        svc_json="$(curl —-silent \
           --cacert ${CACERT} \
           --header "${header}" \
-          -X GET ${SERVICEURL} 2>/dev/null \
-          | grep '"ip":' | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | head -1)
+          -X GET ${SERVICEURL} 2>/dev/null)"
+
+        SERVICEIP="$(printf '%s' "${svc_json}" \
+          | sed -nE 's/.*"ip"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' \
+          | head -n 1)"
 
         # for aws, the hostname is available but not the external IP
-        SERVICEHOSTNAME=$(curl —-silent \
-          --cacert ${CACERT} \
-          --header "${header}" \
-          -X GET ${SERVICEURL} 2>/dev/null \
-          | grep '"hostname":' | cut -d ":" -f2 | xargs)
+        SERVICEHOSTNAME="$(printf '%s' "${svc_json}" \
+          | sed -nE 's/.*"hostname"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' \
+          | head -n 1)"
 
         ADDRESS="${SERVICEHOSTNAME:-$SERVICEIP}"
 
