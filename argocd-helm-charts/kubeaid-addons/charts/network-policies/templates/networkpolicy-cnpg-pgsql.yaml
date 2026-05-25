@@ -118,10 +118,11 @@ spec:
             - port: "8000"
               protocol: TCP
 
-    {{- if .Values.global.postgresql.monitoring.prometheus.enabled }}
-    # Prometheus scraping
+    {{- if (((.Values.global.postgresql).monitoring).prometheus).enabled }}
+    # Prometheus scraping (cross-namespace from monitoring ns)
     - fromEndpoints:
         - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Values.global.postgresql.monitoring.prometheus.namespace | quote }}
             {{- range $key, $value := .Values.global.postgresql.monitoring.prometheus.labels }}
             {{ $key }}: {{ $value }}
             {{- end }}
