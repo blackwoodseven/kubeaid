@@ -2,9 +2,9 @@
 
 OpenCost and OpenCost UI
 
-![Version: 2.5.14](https://img.shields.io/badge/Version-2.5.14-informational?style=flat-square)
+![Version: 2.5.20](https://img.shields.io/badge/Version-2.5.20-informational?style=flat-square)
 ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
-![AppVersion: 1.120.0](https://img.shields.io/badge/AppVersion-1.120.0-informational?style=flat-square)
+![AppVersion: 1.120.2](https://img.shields.io/badge/AppVersion-1.120.2-informational?style=flat-square)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opencost)](https://artifacthub.io/packages/search?repo=opencost)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opencost-oci)](https://artifacthub.io/packages/search?repo=opencost-oci)
 
@@ -92,12 +92,12 @@ $ helm install opencost opencost/opencost
 | opencost.exporter.extraArgs | list | `[]` | List of extra arguments for the command, e.g.: log-format=json |
 | opencost.exporter.extraEnv | object | `{}` | Any extra environment variables you would like to pass on to the pod |
 | opencost.exporter.extraVolumeMounts | list | `[]` | A list of volume mounts to be added to the pod |
-| opencost.exporter.image | object | `{"fullImageName":null,"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"opencost/opencost","tag":"1.120.0@sha256:c4fbe5f8fad2bc54872350460e705bf9ab43c90efa784a0cdf3a2a39a66b3b82"}` | This overrides the above defaultClusterId. Ensure the ConfigMap exists and contains the required CLUSTER_ID key. clusterIdConfigmap: cluster-id-configmap |
+| opencost.exporter.image | object | `{"fullImageName":null,"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"opencost/opencost","tag":"1.120.2@sha256:5f37f689557dbb6737a9182b70625bba55bbba843a2caaba5a79746945a56cc6"}` | This overrides the above defaultClusterId. Ensure the ConfigMap exists and contains the required CLUSTER_ID key. clusterIdConfigmap: cluster-id-configmap |
 | opencost.exporter.image.fullImageName | string | `nil` | Override the full image name for development purposes |
 | opencost.exporter.image.pullPolicy | string | `"IfNotPresent"` | Exporter container image pull policy |
 | opencost.exporter.image.registry | string | `"ghcr.io"` | Exporter container image registry |
 | opencost.exporter.image.repository | string | `"opencost/opencost"` | Exporter container image name |
-| opencost.exporter.image.tag | string | `"1.120.0@sha256:c4fbe5f8fad2bc54872350460e705bf9ab43c90efa784a0cdf3a2a39a66b3b82"` | Exporter container image tag |
+| opencost.exporter.image.tag | string | `"1.120.2@sha256:5f37f689557dbb6737a9182b70625bba55bbba843a2caaba5a79746945a56cc6"` | Exporter container image tag |
 | opencost.exporter.livenessProbe.enabled | bool | `true` | Whether probe is enabled |
 | opencost.exporter.livenessProbe.failureThreshold | int | `3` | Number of failures for probe to be considered failed |
 | opencost.exporter.livenessProbe.initialDelaySeconds | int | `10` | Number of seconds before probe is initiated |
@@ -251,7 +251,7 @@ $ helm install opencost opencost/opencost
 | opencost.ui.route.host | string | `"example.local"` |  |
 | opencost.ui.route.path | string | `nil` |  |
 | opencost.ui.route.targetPort | string | `"http-ui"` | Redirect ingress to an extraPort defined on the service such as oauth-proxy |
-| opencost.ui.route.tls | list | `[]` | Ingress TLS configuration |
+| opencost.ui.route.tls | object | `{}` | Route TLS configuration as a map (e.g. with `termination` and `insecureEdgeTerminationPolicy` fields) |
 | opencost.ui.securityContext | object | `{}` | The security options the container should be run with |
 | opencost.ui.uiPath | string | `"/"` |  |
 | opencost.ui.uiPort | int | `9090` |  |
@@ -271,9 +271,11 @@ $ helm install opencost opencost/opencost
 | pdb.minAvailable | string | `nil` | Minimum number of pods that must be available after the eviction |
 | plugins.configs | string | `nil` |  |
 | plugins.enabled | bool | `false` |  |
+| plugins.existingSecret | string | `""` | Use an existing Secret for plugin configuration instead of generating one from `plugins.configs`. The referenced Secret MUST contain a `<plugin>_config.json` key for every entry in `plugins.install.plugins` (and for every plugin whose configs key would otherwise drive the install/mount list) -- the Deployment mounts those files via subPath and missing keys cause Pod startup failures. This is useful when using ExternalSecrets, Vault, or other secret-management tools so that plugin credentials do not have to be committed via `plugins.configs`. Mutually exclusive with `plugins.configs`: when `existingSecret` is set, the chart does not render a generated Secret and any `plugins.configs` entries would be silently ignored, so the chart will `fail` template rendering in that case. |
 | plugins.folder | string | `"/opt/opencost/plugin"` |  |
 | plugins.install.enabled | bool | `true` |  |
 | plugins.install.fullImageName | string | `"curlimages/curl:latest"` |  |
+| plugins.install.plugins | list | `[]` | List of plugins to download, independent of `plugins.configs`. When specified, these plugins are downloaded regardless of what's in configs, which enables using `plugins.existingSecret` for credentials while still downloading plugin binaries. This list also drives which `<plugin>_config.json` subPaths the Deployment mounts, so each listed plugin MUST have a matching config source -- either a `plugins.configs.<plugin>` entry (when `plugins.existingSecret` is empty) or a `<plugin>_config.json` key in the Secret referenced by `plugins.existingSecret`. Missing entries cause Pod startup failures because the mounted subPath will not exist. When `plugins.existingSecret` is empty, the chart validates this at template-render time and fails with an actionable error; the check is skipped when `plugins.existingSecret` is set because the contents of an externally-managed Secret cannot be introspected from Helm. Example: ["datadog", "mongodb"] If empty, falls back to downloading plugins based on keys in configs (legacy behavior). |
 | plugins.install.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | plugins.install.securityContext.capabilities.drop[0] | string | `"ALL"` |  |
 | plugins.install.securityContext.readOnlyRootFilesystem | bool | `true` |  |
