@@ -526,7 +526,15 @@ local kp =
       },
       blackboxExporter+: {
         resources: vars.blackbox_exporter_resources,
-        modules+: vars.blackbox_exporter_modules,
+        modules+: vars.blackbox_exporter_modules + {
+          [name]: utils.blackboxOauthModule(
+            tokenUrl=vars.blackbox_exporter_oauth_modules[name].tokenUrl,
+            clientId=vars.blackbox_exporter_oauth_modules[name].clientId,
+            mountPath='/etc/blackbox_exporter/' + vars.blackbox_exporter_oauth_modules[name].secretName,
+            scopes=std.get(vars.blackbox_exporter_oauth_modules[name], 'scopes', ['openid']),
+          )
+          for name in std.objectFields(vars.blackbox_exporter_oauth_modules)
+        },
       },
       // This is ONLY supported in release-0.11+ and main
       kubeStateMetrics+: {
@@ -819,6 +827,30 @@ local kp =
           ),
         },
       } else {}
+  ) + (
+    local oauthSecretNames = std.set([
+      vars.blackbox_exporter_oauth_modules[m].secretName
+      for m in std.objectFields(vars.blackbox_exporter_oauth_modules)
+    ]);
+    if vars['blackbox-exporter'] && std.length(oauthSecretNames) > 0 then {
+      blackboxExporter+: {
+        deployment+: {
+          spec+: {
+            template+: {
+              spec+: {
+                volumes+: [{ name: s, secret: { secretName: s } } for s in oauthSecretNames],
+                containers: [
+                  if c.name == 'blackbox-exporter' then c {
+                    volumeMounts+: [{ name: s, mountPath: '/etc/blackbox_exporter/' + s, readOnly: true } for s in oauthSecretNames],
+                  } else c
+                  for c in super.containers
+                ],
+              },
+            },
+          },
+        },
+      },
+    } else {}
   );
 
 {
@@ -944,7 +976,7 @@ else kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
 // Rendering prometheusRules object. This is an object compatible with prometheus-operator CRD definition for prometheusRule
 { [o._config.name + '-prometheus-rules']: o.prometheusRules for o in std.filter((function(o) o.prometheusRules != null), mixins) } +
 (if std.objectHas(vars, 'prometheus_ingress_host') then {
-   'blackbox-probe-prometheus': blackboxProbe({ name: 'prometheus', host: vars.prometheus_ingress_host }),
+   'blackbox-probe-prometheus': blackboxProbe({ name: 'prometheus', host: vars.prometheus_ingress_host, module: vars.prometheus_probe_module }),
  } else {}) +
 (if std.objectHas(vars, 'grafana_ingress_host') then {
    'blackbox-probe-grafana': blackboxProbe({ name: 'grafana', host: vars.grafana_ingress_host }),

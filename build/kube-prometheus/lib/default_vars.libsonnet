@@ -55,6 +55,8 @@
     requests: { cpu: '10m', memory: '20Mi' },
   },
   blackbox_exporter_modules: {},
+  blackbox_exporter_oauth_modules: {},
+  prometheus_probe_module: 'http_2xx',
 
   grafana_keycloak_enable: false,
   grafana_root_url: '',
