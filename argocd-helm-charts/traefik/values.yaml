@@ -13,6 +13,12 @@ traefik:
   podDisruptionBudget:
     enabled: true
     maxUnavailable: 1
+  # DaemonSet + hostPort: delete old pod before starting new (see charts/traefik/EXAMPLES.md).
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   # NOTE: this is to disable the anonymous usage reporting - https://doc.traefik.io/traefik/contributing/data-collection/
   deployment:
     replicas: 2
