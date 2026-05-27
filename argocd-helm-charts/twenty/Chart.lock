@@ -1,0 +1,9 @@
+dependencies:
+- name: twenty
+  repository: file://charts/twenty
+  version: 0.1.0
+- name: kubeaid-addons
+  repository: file://../kubeaid-addons
+  version: 0.1.0
+digest: sha256:8031ca66f932158d93f40191bfbbb8f3ead6c3542ac3ff07e1cc23ec9b78279d
+generated: "2026-05-26T15:18:05.686606575+05:30"
