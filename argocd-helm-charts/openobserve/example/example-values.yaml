@@ -12,7 +12,7 @@ openobserve:
   config:
     RUST_LOG: "error"
     RUST_BACKTRACE: "full"
-    ZO_S3_PROVIDER: "azure" # Valid values are s3, azure, minio, gcs
+    ZO_S3_PROVIDER: "azure"  # Valid values are s3, azure, minio, gcs
     ZO_LOCAL_MODE_STORAGE: "s3"
     ZO_S3_BUCKET_NAME: "openobserve"
     ZO_ACTIX_REQ_TIMEOUT: "120"
@@ -44,7 +44,7 @@ openobserve:
     className: traefik-private
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt
-      cert-manager.io/issuer: null # This is necessary, without which the certs won't be issued
+      cert-manager.io/issuer: null  # This is necessary, without which the certs won't be issued
       kubernetes.io/ingress.class: traefik-private
     hosts:
       - host: openobserve.qa.htz1.domain.eu
@@ -104,7 +104,7 @@ openobserve:
         className: "traefik-private"
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt
-          cert-manager.io/issuer: null # This is necessary, without which the certs won't be issued
+          cert-manager.io/issuer: null  # This is necessary, without which the certs won't be issued
           kubernetes.io/ingress.class: traefik-private
         hosts:
           - host: dex.qa.htz1.domain.eu
