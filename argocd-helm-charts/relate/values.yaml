@@ -1,13 +1,46 @@
 global:
   netpol:
     enabled: false
+    releaseName: relate
+    traefik:
+      namespace: traefik
+      labels:
+        "k8s:app.kubernetes.io/name": traefik
+        "k8s:app.kubernetes.io/instance": traefik
+    prometheus:
+      namespace: monitoring
+      labels:
+        "k8s:app.kubernetes.io/name": prometheus
+
   relate:
     netpol: false
+    egressFQDNs:
+      - pypi.org
+      - github.com
+    extraEgressFQDNs: []
 
   postgresql:
+    netpol: false
+    # cloudnative-pg operator selector — standard across all clusters
+    cnpg:
+      enabled: true
+      labels:
+        k8s:io.kubernetes.pod.namespace: cloudnative-pg
+        k8s:app.kubernetes.io/name: cloudnative-pg
+    # relate app pod is always the only PostgreSQL client
+    clients:
+      - labels:
+          app.kubernetes.io/name: relate
     enabled: true
     monitoring:
       enablePodMonitor: true
+      # Allows Prometheus to scrape CNPG metrics exposed on port 9187 (postgres_exporter).
+      # Without this the CNPG network policy blocks Prometheus scrape requests.
+      prometheus:
+        enabled: true
+        labels:
+          k8s:io.kubernetes.pod.namespace: monitoring
+          k8s:app.kubernetes.io/name: prometheus
 
     instanceName: relate
     instances: 1
