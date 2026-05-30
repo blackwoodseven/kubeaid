@@ -917,7 +917,7 @@ local kp =
                 rules: std.filter(
                   function(rule)
                     !std.objectHas(rule, 'alert') ||
-                    !std.member(['NodeCPUHighUsage', 'NodeSystemSaturation', 'NodeMemoryMajorPagesFaults'], rule.alert),
+                    !std.member(['NodeCPUHighUsage', 'NodeSystemSaturation', 'NodeMemoryMajorPagesFaults', 'NodeDiskIOSaturation'], rule.alert),
                   group.rules
                 ),
               }

@@ -1,3 +1,24 @@
+## v0.89.0 (2026-05-23)
+
+### New features
+
+- Update GitLab Runner version to v19.0.0
+- Support Labels on configMap [!534](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/534) (Thorsten Banhart @banhartt)
+
+### Bug fixes
+
+- Fix trailing comma in session server address extraction [!535](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/535)
+- Drop chart version from PodMonitor/ServiceMonitor selectors [!548](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/548)
+
+### Maintenance
+
+- Whitelist CI_PROJECT_DIR for git safe.directory in release beta [!549](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/549)
+- Add option to disable global cache credentials export [!545](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/545)
+
+### Other changes
+
+- Add runners.configOverride mode to skip registration [!544](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/544)
+
 ## v0.88.3 (2026-05-12)
 
 ### New features

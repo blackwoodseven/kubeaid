@@ -23,9 +23,15 @@ additionalAnnotations: {}
 additionalLabels: {}
 
 # Certificate handling for the admission webhook and storage mTLS endpoints.
-# Use `template` for the fastest Helm installs, and `hook` for ArgoCD/GitOps-safe runtime cert generation.
+# - `template`     : certs rendered at helm install/upgrade time via Sprig `genSignedCert`. Fastest install, but certs rotate on every `helm upgrade` unless the CA Secret is preserved.
+# - `initContainer`: certs generated at runtime by init containers on the consuming pod. GitOps/ArgoCD-safe (no Helm hooks), idempotent across pod restarts, and the CA is reused from a Secret once created.
 certificates:
   strategy: template
+  certgen:
+    image:
+      repository: quay.io/kubescape/kubectl
+      tag: "1.36.1"
+      pullPolicy: IfNotPresent
 
 # global logger name and level
 # the logger level and name are mapped to environment variables in each component
@@ -275,7 +281,7 @@ kubescape:
   image:
     # -- source code: https://github.com/kubescape/kubescape/tree/master/httphandler (public repo)
     repository: quay.io/kubescape/kubescape
-    tag: v4.0.6
+    tag: v4.0.8
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -337,7 +343,7 @@ operator:
   image:
     # -- source code: https://github.com/kubescape/operator
     repository: quay.io/kubescape/operator
-    tag: v0.2.141
+    tag: v0.2.142
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -368,22 +374,8 @@ operator:
       targetPort: 8443
       annotations: {}
     patch:
-      image:
-        registry: ghcr.io
-        repository: jkroepke/kube-webhook-certgen
-        tag: 1.8.1
-        sha: ""
-        pullPolicy: IfNotPresent
-      resources: {}
-      priorityClassName: ""
-      ttlSecondsAfterFinished: 60
-      annotations: {}
-      #   argocd.argoproj.io/hook: PreSync
-      #   argocd.argoproj.io/hook-delete-policy: HookSucceeded
-      podAnnotations: {}
-      nodeSelector: {}
-      affinity: {}
-      tolerations: []
+      retries: 60
+      retryIntervalSeconds: 5
 
   podAnnotations: {}
   podLabels: {}
@@ -426,7 +418,7 @@ kubevuln:
   image:
     # -- source code: https://github.com/kubescape/kubevuln
     repository: quay.io/kubescape/kubevuln
-    tag: v0.3.137
+    tag: v0.3.142
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -506,20 +498,8 @@ storage:
     enabled: true
     certificateValidityInDays: 730 # NOTE: only in effect when certificates.strategy is "template"
     certgen:
-      image:
-        registry: ghcr.io
-        repository: jkroepke/kube-webhook-certgen
-        tag: 1.8.1
-        sha: ""
-        pullPolicy: IfNotPresent
-      resources: {}
-      priorityClassName: ""
-      ttlSecondsAfterFinished: 60
-      annotations: {}
-      podAnnotations: {}
-      nodeSelector: {}
-      affinity: {}
-      tolerations: []
+      retries: 60
+      retryIntervalSeconds: 5
   serverPort: 8443
   service:
     type: ClusterIP
@@ -598,7 +578,7 @@ nodeAgent:
   image:
     # -- source code: https://github.com/kubescape/node-agent
     repository: quay.io/kubescape/node-agent
-    tag: v0.3.111
+    tag: v0.3.119
     pullPolicy: IfNotPresent
 
   config:
@@ -895,7 +875,7 @@ synchronizer:
   image:
     # -- source code: https://github.com/kubescape/synchronizer
     repository: quay.io/kubescape/synchronizer
-    tag: v0.0.141
+    tag: v0.0.147
     pullPolicy: IfNotPresent
   nodeSelector:
     kubernetes.io/os: linux
@@ -959,6 +939,11 @@ grypeOfflineDB:
 
   name: grype-offline-db
 
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  # -- Cron schedule for the grype-offline-db rollout CronJob
+  schedule: "5 0 * * *"
+
   image:
     repository: quay.io/kubescape/grype-offline-db
     tag: "" # use v6-latest for weekly updates, it will overwrite the sha if specified
@@ -979,44 +964,22 @@ grypeOfflineDB:
       cpu: 150m
       memory: 200Mi
 
-# +++++++++++++++++++++++++++++ Discovery ++++++++++++++++++++++++++++++++++++++++++++++++
-
-# service discovery job for discovering backend server URLs
-serviceDiscovery:
-  name: service-discovery
-
-  metrics: ""
-  services: ""
-
-  urlDiscovery:
-    name: url-discovery
-    image:
-      repository: quay.io/kubescape/http-request
-      tag: v0.2.19
-      pullPolicy: IfNotPresent
-
-    # Skip SSL certificate verification
-    insecureSkipTLSVerify: false
-
-  configMapUpdate:
-    name: update-configmap
+  rollout:
     image:
       repository: quay.io/kubescape/kubectl
-      tag: 1.30.3
+      tag: 1.36.1
       pullPolicy: IfNotPresent
-
-  nodeSelector:
-    kubernetes.io/os: linux
-
-  podAnnotations: {}
-  podLabels: {}
-  resources:
-    requests:
-      cpu: 10m
-      memory: 10Mi
-    limits:
-      cpu: 100m
-      memory: 50Mi
+    nodeSelector:
+      kubernetes.io/os: linux
+    podAnnotations: {}
+    podLabels: {}
+    resources:
+      requests:
+        cpu: 10m
+        memory: 10Mi
+      limits:
+        cpu: 100m
+        memory: 50Mi
 
 # +++++++++++++++++++++++++++++ Prometheus exporter ++++++++++++++++++++++++++++++++++++++++++++++++
 
