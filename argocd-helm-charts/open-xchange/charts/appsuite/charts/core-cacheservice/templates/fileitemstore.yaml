@@ -1,0 +1,42 @@
+{{- if .Values.persistence.enabled -}}
+{{- if empty .Values.persistence.existingClaim -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ template "core-cacheservice.fileItemStore" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+spec:
+    {{- if .Values.persistence.fileItemStore.hostPath }}
+  accessModes:
+    - ReadWriteMany
+    {{- else}}
+  accessModes:
+    - {{ .Values.persistence.fileItemStore.accessMode | default .Values.persistence.accessMode | quote }}
+    {{- end}}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.fileItemStore.size | quote }}
+    {{- if .Values.persistence.fileItemStore.volumeName }}
+  volumeName: {{ .Values.persistence.fileItemStore.volumeName }}
+    {{- end }}
+    {{- if .Values.persistence.fileItemStore.storageClass }}
+    {{- if (eq "-" .Values.persistence.fileItemStore.storageClass) }}
+  storageClassName: ""
+    {{- else }}
+  storageClassName: "{{ .Values.persistence.fileItemStore.storageClass }}"
+    {{- end -}}
+    {{- end }}
+  selector:
+    {{- if .Values.persistence.fileItemStore.matchLabels }}
+    matchLabels:
+      {{ toYaml .Values.persistence.fileItemStore.matchLabels | indent 6 }}
+    {{- end -}}
+    {{- if .Values.persistence.fileItemStore.matchExpressions }}
+    matchExpressions:
+      {{ toYaml .Values.persistence.fileItemStore.matchExpressions | indent 6 }}
+    {{- end }}
+{{- end -}}
+{{- end -}}

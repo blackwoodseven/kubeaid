@@ -1,0 +1,29 @@
+{{- $globalContext := . -}}
+{{- $scaling := (include "core-mw.scaling" . | fromYaml) -}}
+{{- if not $globalContext.Values.update.enabled -}}
+{{-   range $typeName, $typeConfig := $scaling -}}
+{{-     $values := (include "core-mw.computeValuesFor" (dict "Context" $globalContext "Roles" $typeConfig.roles "TypeConfig" $typeConfig "TypeName" $typeName) | fromYaml) -}}
+{{-     $typePdb := $values.pdb -}}
+{{-     if $typePdb.create -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "ox-common.names.fullname" $globalContext }}-{{ $typeName }}
+  labels:
+    {{- include "ox-common.labels.standard" $globalContext | nindent 4 }}
+spec:
+  {{- if $typePdb.minAvailable }}
+  minAvailable: {{ $typePdb.minAvailable }}
+  {{- else if $typePdb.maxUnavailable }}
+  maxUnavailable: {{ $typePdb.maxUnavailable }}
+  {{- else }}
+  {{- fail (printf "Either pdb.minAvailable or pdb.maxUnavailable must be set for type \"%s\"" $typeName) }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "ox-common.labels.matchLabels" $globalContext | nindent 6 }}
+      middleware.open-xchange.com/type: {{ $typeName }}
+---
+{{-     end -}}
+{{-   end -}}
+{{- end -}}

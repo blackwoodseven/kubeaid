@@ -1,0 +1,8 @@
+.*
+{{- if and .Values.documentConverter .Values.documentConverter.remoteAccess }}
+{{- if .Values.documentConverter.remoteAccess.denyURLRegExp }}
+{{- range .Values.documentConverter.remoteAccess.denyURLRegExp }}
+{{ . }}
+{{- end }}
+{{- end }}
+{{- end }}

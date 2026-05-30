@@ -1,0 +1,60 @@
+{{- if and .Values.traefik.enabled .Values.traefik.ingressRoute.enabled }}
+{{- if .Values.traefik.ingressRoute.oidcRedirect.enabled }}
+# Redirect bare / to the OIDC init endpoint. Enable via traefik.ingressRoute.oidcRedirect.enabled.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ .Release.Name }}-oidc-redirect
+  namespace: {{ .Release.Namespace }}
+spec:
+  redirectRegex:
+    regex: ".*"
+    replacement: "https://{{ required "traefik.host is required" .Values.traefik.host }}{{ .Values.traefik.ingressRoute.oidcRedirect.path }}"
+    permanent: false
+---
+{{- end }}
+# IngressRoute: explicit API path routing.
+# The upstream appsuite chart generates Ingresses with nginx-style path regex (.*)
+# which Traefik does not evaluate. This routes API paths explicitly at higher priority.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ .Release.Name }}-api-routes
+  namespace: {{ .Release.Namespace }}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    {{- if .Values.traefik.ingressRoute.oidcRedirect.enabled }}
+    - match: Host(`{{ .Values.traefik.host }}`) && Path(`/`)
+      kind: Rule
+      priority: 300
+      middlewares:
+        - name: {{ .Release.Name }}-oidc-redirect
+      services:
+        - name: {{ printf "%s-core-mw-http-api" .Release.Name }}
+          port: 80
+    {{- end }}
+    - match: Host(`{{ required "traefik.host is required" .Values.traefik.host }}`) && PathPrefix(`/appsuite/api`)
+      kind: Rule
+      priority: 200
+      services:
+        - name: {{ printf "%s-core-mw-http-api" .Release.Name }}
+          port: 80
+          passHostHeader: true
+    - match: Host(`{{ .Values.traefik.host }}`) && PathPrefix(`/ajax`)
+      kind: Rule
+      priority: 200
+      services:
+        - name: {{ printf "%s-core-mw-http-api" .Release.Name }}
+          port: 80
+          passHostHeader: true
+    - match: Host(`{{ .Values.traefik.host }}`) && PathPrefix(`/api`) && !PathPrefix(`/api/drive/client/windows`)
+      kind: Rule
+      priority: 200
+      services:
+        - name: {{ printf "%s-core-mw-http-api" .Release.Name }}
+          port: 80
+          passHostHeader: true
+  tls: {}
+{{- end }}

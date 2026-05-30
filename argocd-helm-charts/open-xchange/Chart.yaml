@@ -1,0 +1,10 @@
+apiVersion: v2
+name: open-xchange
+version: 1.0.0
+dependencies:
+  - name: kubeaid-addons
+    version: 0.1.0
+    repository: file://../kubeaid-addons
+  - name: appsuite
+    version: 8.48.481
+    repository: oci://registry.open-xchange.com/appsuite/charts

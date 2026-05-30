@@ -1,0 +1,21 @@
+{{- if .Values.istio.enabled -}}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ include "switchboard.fullname" . }}
+spec:
+  hosts:
+  - {{ .Values.istio.hostname}}
+  gateways:
+  - {{ .Values.istio.gateway}}
+  http:
+  - match:
+    - uri:
+        prefix: /
+    name: switchboard
+    route:
+    - destination:
+        host: {{ include "switchboard.fullname" . }}
+        port:
+          number: 80
+{{- end }}

@@ -1,0 +1,35 @@
+{{- if ((.Values).istio).enabled -}}
+{{- if not (((.Values).istio).ingressGateway).name -}}
+{{- if (((.Values).istio).securityHeaders).enabled -}}
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{ printf "%s-%s-envoy-security-headers" (include "ox-common.names.fullname" $) $.Release.Namespace | quote }}
+  namespace: istio-system
+spec:
+  workloadSelector:
+    labels:
+      istio: {{ .Values.istio.ingressGateway.selector }}
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.lua
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua"
+            inlineCode: |
+              function envoy_on_response(response_handle)
+                response_handle:logInfo(" ========= Replacing security headers ==========");
+                response_handle:headers():replace("referrer-policy", "same-origin");
+                response_handle:headers():replace("strict-transport-security", "max-age=15552000");
+              end
+{{- end -}}
+{{- end -}}
+{{- end -}}

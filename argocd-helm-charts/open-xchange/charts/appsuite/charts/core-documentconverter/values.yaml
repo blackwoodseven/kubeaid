@@ -1,0 +1,175 @@
+# Default values for core-documentconverter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  extras:
+    monitoring:
+      enabled: false
+
+replicaCount: 1
+
+defaultRegistry: registry.open-xchange.com
+
+image:
+  repository: "core-documentconverter"
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations:
+  logging.open-xchange.com/format: "appsuite-json"
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8008
+  portHttps: 8011
+  portLiveness: 8017
+
+resources:
+  requests:
+    cpu: 2000m
+    memory: 2000Mi
+    ephemeral-storage: 1000Mi
+  limits:
+    cpu: 4000m
+    memory: 4500Mi
+    ephemeral-storage: 3000Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+probe:
+  liveness:
+    enabled: true
+    periodSeconds: 10
+    failureThreshold: 15
+
+  readiness:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    failureThreshold: 2
+    timeoutSeconds: 5
+
+  startup:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    failureThreshold: 30
+
+remoteDebug:
+  enabled: false
+  # port: 8108
+
+documentConverter:
+  # processorCount: 3
+  # processingTimeoutSeconds: 60
+  # jobQueueCountLimitHigh: 40
+  # jobQueueCountLimitLow: 25
+  # jobQueueTimeoutSeconds: 300
+  # jobAsyncQueueCountLimitHigh: 1024
+  # urlLinkLimit: 200
+  # urlLinkProxy: optional-proxy-host:optional-proxy-port, default is empty
+  cache:
+    remoteCache: {}
+      # url: https://optional-cache-host:8001/cache or blank (explicitly: "" value) to disable usage of CacheService in case global.core-cacheservice.enabled=true
+    # maxEntries: 1000000
+    # maxSizeMegaBytes: -1
+    # maxLifetimeSeconds: 2592000
+    # minFreeSizeMegaBytes: 1024
+    # cleanupPeriodSeconds: 300
+  # remoteAccess: {}
+    # denyURLRegExp: []
+      # default, always set:
+      # - .*
+    # allowURLRegExp: []
+      # e.g
+      # - http[s]?://.*
+  # livenessDownAfterReadinessDownSeconds: 15
+  # readinessDownAfterUsedServiceUnavailabilitySeconds: 300
+  # readinessUpUsedServiceRecoveryPeriodSeconds: 20
+  # jvmHeapSizeMB: 768
+
+logging:
+  debug: true
+  logDir: /var/log/open-xchange/documentconverter
+  logFile: documentconverter.log
+  maxFileSize: 2MB
+  maxTotalFileSize: 50GB
+  maxIndex: 20
+  queueSize: 2048
+  root:
+    level: INFO
+    json: true
+    logstash: false
+    syslog: false
+    file: false
+  json:
+    prettyPrint: false
+  logstash:
+    host: elk.open-xchange.com
+    port: 31337
+  syslog:
+    host: localhost
+    port: 514
+    facility: USER
+  logger:
+    - name: com.openexchange.documentconverter
+      level: INFO
+
+extras:
+  monitoring:
+    # -- Whether monitoring resources should be created, e.g. a `ConfigMap` containing the Grafana dashboards.
+    enabled: false
+
+persistence:
+  enabled: false
+  existingClaim: ""
+  ## core-documentconverter data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ## set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ## GKE, AWS & OpenStack)
+  storageClass: null
+  accessMode: ReadWriteOnce
+  cacheDir:
+    ## if volumeName is set, use this existing PersistentVolume
+    # volumeName:
+    matchLabels: {}
+    matchExpressions: []
+    path: "/var/cache/open-xchange/documentconverter"
+    # hostPath: /data/documentconverter/cache
+    size: "20Gi"
+  errorDir:
+    ## if volumeName is set, use this existing PersistentVolume
+    # volumeName:
+    matchLabels: {}
+    matchExpressions: []
+    path: "/var/lib/open-xchange/documentconverter"
+    size: "5Gi"
+
+env: []
+
+remoteDebug:
+  enabled: false
+  port:

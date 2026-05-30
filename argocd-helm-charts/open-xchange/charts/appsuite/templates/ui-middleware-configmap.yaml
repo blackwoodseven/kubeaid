@@ -1,0 +1,31 @@
+{{- if (get .Values "core-ui-middleware").enabled -}}
+{{- $releaseName := .Release.Name -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-ui-middleware") }}
+data:
+  config.yaml: |
+    baseUrls:
+      {{- if (index .Values "core-ui" "enabled") }}
+      - http://{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-ui") }}/manifest.json
+      {{- end }}
+      {{- if (index .Values "office-web" "enabled") }}
+      - http://{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "office-web") }}/manifest.json
+      {{- end }}
+      {{- if (index .Values "core-guidedtours" "enabled") }}
+      - http://{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-guidedtours") }}/manifest.json
+      {{- end }}
+      {{- if (index .Values "guard-ui" "enabled") }}
+      - http://{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "guard-ui") }}/manifest.json
+      {{- end }}
+      {{- if (index .Values "plugins-ui" "enabled") }}
+      - http://{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "plugins-ui") }}/manifest.json
+      {{- end }}
+      {{- if (index .Values "switchboard" "enabled") }}
+      - http://{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "switchboard") }}
+      {{- end }}
+      {{- range (include "appsuite.mergeListWithMap" (dict "list" .Values.extraUIManifestURLs "map" .Values.overridableExtraUIManifestURLs) | fromYaml).Result }}
+      - {{ . | replace "%%RELEASE-NAME%%" $releaseName }}
+      {{- end }}
+{{- end -}}

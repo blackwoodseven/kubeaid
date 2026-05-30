@@ -1,0 +1,232 @@
+# Default values for core-imageconverter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  extras:
+    monitoring:
+      enabled: false
+
+replicaCount: 1
+
+defaultRegistry: registry.open-xchange.com
+
+image:
+  repository: "core-cacheservice"
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations:
+  logging.open-xchange.com/format: "appsuite-json"
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8001
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 750Mi
+  limits:
+    cpu: 4000m
+    memory: 2000Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+probe:
+  liveness:
+    enabled: true
+    periodSeconds: 10
+    failureThreshold: 15
+
+  readiness:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    failureThreshold: 2
+    timeoutSeconds: 5
+
+  startup:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    failureThreshold: 30
+
+# existingPropertiesSecret: ""
+
+# basicAuthLogin: ""
+# basicAuthPassword: ""
+
+remoteDebug:
+  enabled: false
+  # port: 8101
+
+cacheService:
+  mysql:
+    host: ""
+    port: 3306
+    database: "cacheservicedb"
+    auth:
+      user: ""
+      password: ""
+      rootPassword: ""
+    connectionPool: {}
+      # connectTimeoutMilliseconds: 2000
+      # maxLifetimeMilliseconds: 600000
+      # idleTimeoutMilliseconds: 300000
+      # maxPoolSize: 10
+      # minPoolIdleSize: 5
+    keystore: {}
+      # If the keystore(base64 encoded) is set it can be used as follows: "clientCertificateKeyStoreUrl: file:/opt/open-xchange/etc/ox-sql-clientstore"
+      # clientCertificateKeyStore:
+      # If the keystore(base64 encoded) is set it can be used as follows: "trustCertificateKeyStoreUrl: file:/opt/open-xchange/etc/ox-sql-truststore"
+      # trustCertificateKeyStore:
+    properties: []
+      # - name: useUnicode
+      #   value: true
+      # - name: characterEncoding
+      #   value: UTF-8
+      # - name: autoReconnect
+      #   value: false
+      # - name: useServerPrepStmts
+      #   value: true
+      # - name: useTimezone
+      #   value: true
+      # - name: serverTimezone
+      #   value: UTC
+      # - name: connectTimeout
+      #   value: 10000
+      # - name: socketTimeout
+      #   value: 300000
+      # - name: prepStmtCacheSize
+      #   value: 250
+      # - name: prepStmtCacheSqlLimit
+      #   value: 4096
+      # - name: cachePrepStmts
+      #   value: true
+      # - name: useSSL
+      #   value: false
+      # - name: requireSSL
+      #   value: false
+      # - name: verifyServerCertificate
+      #   value: false
+      # - name: enabledTLSProtocols
+      #   value: TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
+      # - name: clientCertificateKeyStoreUrl
+      #   value:
+      # - name: clientCertificateKeyStorePassword
+      #   value:
+      # - name: clientCertificateKeyStoreType
+      #   value:
+      # - name: trustCertificateKeyStoreUrl
+      #   value:
+      # - name: trustCertificateKeyStorePassword
+      #   value:
+      # - name: trustCertificateKeyStoreType
+      #   value:
+  s3ObjectStores: []
+    # - id: 1
+    #   endpoint: ""
+    #   region: "eu-central-1"
+    #   bucketName: "cacheservice"
+    #   accessKey: ""
+    #   secretKey: ""
+    #   trace: false
+  sproxydObjectStores: []
+    # - id: 1
+    #   endpoint: ""
+    #   path: "proxyd/cacheservice"
+  fileStores: []
+    # - id: 1
+    #   path: "/var/spool/open-xchange/cacheservice"
+  cacheDefaults: {}
+    # maxEntries: 100000
+    # maxSizeMegaBytes: -1
+    # maxLifetimeSeconds: 2592000
+    # cleanupPeriodSeconds: 300
+    # minCleanupRuntimeSeconds: 0
+  # jvmHeapSizeMB: 768
+
+logging:
+  debug: true
+  logDir: /var/log/open-xchange/cacheservice
+  logFile: cacheservice.log
+  maxFileSize: 2MB
+  maxTotalFileSize: 50GB
+  maxIndex: 20
+  queueSize: 2048
+  root:
+    level: INFO
+    json: true
+    syslog: false
+    logstash: false
+    file: false
+  json:
+    prettyPrint: false
+  syslog:
+    host: localhost
+    port: 514
+    facility: USER
+  logstash:
+    host: elk.open-xchange.com
+    port: 31337
+  logger:
+    - name: org.apache.cxf
+      level: WARN
+    - name: com.openexchange.soap.cxf.logger
+      level: WARN
+    - name: com.openexchange.cacheservice
+      level: INFO
+
+persistence:
+  enabled: false
+  existingClaim: ""
+  ## core-cacheservice data Persistent Volume Storage Class
+  ## If defined, storageClass: <storageClassName>.
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning.
+  ## If undefined or set to null, no storageClassName spec is
+  ## set, choosing the default(gp2 on AWS, standard on GKE, AWS & OpenStack).
+  ## accessMode can be overridden for entry fileItemStore.
+  storageClass: null
+  accessMode: ReadWriteOnce
+  fileItemStore:
+    ## if volumeName is set, use this existing PersistentVolume
+    #volumeName:
+    ## Provide proper class for existing volume
+    #storageClass: "-"
+    ## Provide matching accessMode for volume
+    #accessMode: "ReadWriteMany"
+    matchLabels: {}
+    matchExpressions: []
+    #hostPath: "/var/opt/cacheservice"
+    path: "/var/spool/open-xchange/cacheservice"
+    size: "10Gi"
+
+extras:
+  monitoring:
+     # -- Whether monitoring resources should be created, e.g. a `ConfigMap` containing the Grafana dashboards.
+    enabled: false
+
+remoteDebug:
+  enabled: false
+  port:

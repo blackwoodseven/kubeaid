@@ -1,0 +1,144 @@
+# Default values for core-ui.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 2
+
+defaultRegistry: registry.open-xchange.com
+
+image:
+  repository: "core-ui"
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations:
+  logging.open-xchange.com/format: "appsuite-json"
+
+podSecurityContext: {}
+
+defaultPodSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+
+securityContext: {}
+
+defaultSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+
+istio:
+  enabled: false
+  hostname: ""
+  gateway: "istio-system/default-gateway"
+
+resources:
+  limits:
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 256Mi
+
+monitoring:
+  prometheus:
+    dataSource: ""
+    url: ""
+    kube-prometheus: false
+    serviceMonitor:
+      namespace: ''
+      interval: 30s
+      scrapeTimeout: ''
+      relabelings:
+      - sourceLabels:
+        - __meta_kubernetes_pod_label_app_kubernetes_io_name
+        targetLabel: app
+      metricRelabelings: []
+      honorLabels: false
+      additionalLabels: {}
+      annotations: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+probe:
+  liveness:
+    enabled: false
+    periodSeconds: 10
+    failureThreshold: 15
+
+  readiness:
+    enabled: false
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    failureThreshold: 2
+    timeoutSeconds: 5
+
+  startup:
+    enabled: false
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    failureThreshold: 30
+
+containerPort: 8080
+metricsPort: 9090
+
+commonName: ''
+hostname: ''
+origins: '*'
+logLevel: 'info'
+exposeApiDocs: false
+commitSha: ''
+
+jwks:
+  enabled: false
+  issuer: ""
+  # If set, use this existing Secret (e.g. created by cert-manager)
+  # If empty, Helm will create a Secret from publicKey/privateKey
+  existingSecret: ""
+  # Only used when existingSecret is empty
+  publicKey: ""
+  privateKey: ""
+
+jwt:
+  algorithm: ""
+  capabilities: "ai,calendar,contacts,infostore,jitsi,openai,switchboard,webmail,zoom"
+  expiration: "1h"
+
+appsuite:
+  # needed for the acquire/redeem token handshake with app suite middleware
+  api: ""
+  appId: "core-ui"
+
+overrides:
+  dbSecret: 'core-ui-db-secret'
+
+# only used with bitnami chart (for preview/testing systems)
+mysql:
+  host: ''
+  port: 3306
+  auth:
+    password: ''
+    rootPassword: ''
+
+databases:
+  # add DBs here
+
+config:
+  features:
+    bimi: false

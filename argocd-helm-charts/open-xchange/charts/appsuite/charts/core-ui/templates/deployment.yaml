@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ox-common.names.fullname" . }}
+  labels:
+    {{- include "ox-common.labels.standard" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ox-common.labels.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations: {{ toYaml .Values.podAnnotations | nindent 8 }}
+      labels:
+        {{- include "ox-common.labels.podLabels" . | nindent 8 }}
+    spec: {{ include "ox-common.pods.podSpec" (dict "podRoot" .Values "global" $ "context" . ) | nindent 6 }}
+      containers:
+        - name: main
+          {{- include "ox-common.containers.securityContext" (dict "podRoot" .Values "global" $ "context" . ) | nindent 10 }}
+          image: {{ include "ox-common.images.image" (dict "imageRoot" .Values.image "global" $ "context" . ) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- include "core-ui.env" . | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort | default 8080 }}
+              protocol: TCP
+            - name: monitoring
+              containerPort: 9090
+              protocol: TCP
+          {{- if .Values.probe.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 9090
+            {{- omit .Values.probe.liveness "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          {{- if .Values.probe.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 9090
+            {{- omit .Values.probe.readiness "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "core-ui.volumeMounts" . | nindent 12 }}
+      volumes:
+        {{- include "core-ui.volumes" . | nindent 8 }}

@@ -1,0 +1,46 @@
+traefik:
+  # Enable when using Traefik as ingress controller.
+  # The upstream appsuite chart uses nginx path regex (.*) which Traefik does not evaluate,
+  # so this IngressRoute handles API path routing explicitly.
+  enabled: false
+  host: ""
+  ingressRoute:
+    enabled: true
+    # Redirect bare / to the OIDC init endpoint so visiting the root URL starts
+    # the Keycloak login flow. Only enable when OIDC is configured.
+    oidcRedirect:
+      enabled: false
+      # Path to redirect to when visiting the root URL. Override only if using a custom OIDC setup.
+      path: "/appsuite/api/oidc/init?flow=login&redirect=true"
+
+appsuite:
+  # Ingress — configure host and TLS secret
+  ingress:
+    enabled: false
+    appsuite:
+      hosts: []
+      #   - ox.example.com
+    tls:
+      enabled: false
+      existingSecret: ""
+
+  # core-mw requires an external MySQL/MariaDB database
+  core-mw:
+    mysql:
+      host: ""
+      port: "3306"
+      database: "open_xchange"
+      # existingSecret: ox-mysql-secret
+      # Secret must contain keys: mysql-login, mysql-password
+
+  # Optional components — all disabled by default
+  switchboard:
+    enabled: false
+  office-web:
+    enabled: false
+  core-documents-collaboration:
+    enabled: false
+  core-documentconverter:
+    enabled: false
+  core-spellcheck:
+    enabled: false

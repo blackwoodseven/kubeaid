@@ -1,0 +1,8 @@
+file:///opt/readerengine/share/gallery/.*
+{{- if and .Values.documentConverter .Values.documentConverter.remoteAccess }}
+{{- if .Values.documentConverter.remoteAccess.allowURLRegExp }}
+{{- range .Values.documentConverter.remoteAccess.allowURLRegExp }}
+{{ . }}
+{{- end }}
+{{- end }}
+{{- end }}

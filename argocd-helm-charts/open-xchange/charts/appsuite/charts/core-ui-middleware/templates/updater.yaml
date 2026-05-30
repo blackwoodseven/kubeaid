@@ -1,0 +1,102 @@
+{{- if not (and (eq (len .Values.redis.hosts) 1) (eq (index .Values.redis.hosts 0) "localhost:6379")) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ox-common.names.fullname" . }}-updater
+  labels:
+    {{- include "ox-common.labels.standard" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "ox-common.labels.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations: {{ toYaml .Values.podAnnotations | nindent 8 }}
+      labels:
+        {{- include "ox-common.labels.podLabels" . | nindent 8 }}
+    spec: {{ include "ox-common.pods.podSpec" (dict "podRoot" .Values "global" $ "context" . ) | nindent 6 }}
+      containers:
+        - name: main
+          {{- include "ox-common.containers.securityContext" (dict "podRoot" .Values "context" . "global" $) | nindent 10 }}
+          image: {{ include "ox-common.images.image" (dict "imageRoot" .Values.image "global" $ "context" . ) }}
+          command: ["/usr/bin/node", "src/updater.js"]
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PROPAGATE_UPGRADES
+              value: {{ .Values.updater.propagateUpgrades | quote }}
+            - name: CACHE_TTL
+              value: "{{ .Values.cacheTTL | int }}"
+            - name: LOG_LEVEL
+              value: "{{ .Values.logLevel }}"
+            - name: BIND_ADDR
+              value: "{{ .Values.bindAddr }}"
+            - name: APP_ROOT
+              value: "{{ include "ox-common.appsuite.appRoot" . }}/"
+            - name: COMPRESS_FILE_SIZE
+              value: "{{ .Values.compressFileSize }}"
+            - name: COMPRESS_FILE_TYPES
+              value: "{{ .Values.compressFileTypes }}"
+            - name: SLOW_REQUEST_THRESHOLD
+              value: "{{ .Values.slowRequestThreshold }}"
+            - name: REDIS_MODE
+              value: "{{ .Values.redis.mode }}"
+            - name: REDIS_HOSTS
+              value: "{{ .Values.redis.hosts | join "," }}"
+            - name: REDIS_DB
+              value: "{{ .Values.redis.db | int }}"
+            {{- if eq .Values.redis.mode "sentinel" }}
+            - name: REDIS_SENTINEL_MASTER_ID
+              value: {{ .Values.redis.sentinelMasterId | quote }}
+            {{- end }}
+            {{- if .Values.redis.auth.enabled }}
+            - name: REDIS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "core-ui-middleware.redisSecret" . }}
+                  key: username
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "core-ui-middleware.redisSecret" . }}
+                  key: password
+            {{- end }}
+            - name: REDIS_PREFIX
+              value: "{{ .Values.redis.prefix }}"
+            - name: REDIS_TLS_ENABLED
+              value: "{{ .Values.redis.tls.enabled }}"
+            {{- if .Values.redis.tls.enabled }}
+            - name: REDIS_TLS_CA
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "core-ui-middleware.redisSecret" . }}
+                  key: ca.crt
+            {{- end }}
+          ports:
+            - name: tcp-monitoring
+              containerPort: 9090
+              protocol: TCP
+          {{- if .Values.probe.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 9000
+            {{- omit .Values.probe.liveness "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          {{- if .Values.probe.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+                path: /ready
+                port: 9000
+            {{- omit .Values.probe.readiness "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.updater.resources | nindent 12 }}
+          volumeMounts:
+            - name: manifest-config
+              mountPath: /app/config/
+      volumes:
+        - name: manifest-config
+          configMap:
+            name: "{{- tpl (.Values.existingConfigMap | default (include "ox-common.names.fullname" .)) . }}"
+{{- end }}

@@ -1,0 +1,71 @@
+{{- if ((.Values).istio).enabled -}}
+{{- $appRoot := include "ox-common.appsuite.appRoot" . -}}
+{{- range $name, $services := .Values.istio.extraVirtualServices }}
+---
+{{- $hosts := (include "appsuite.mergeListWithMap" (dict "list" $services.hosts "map" $services.overridableHosts) | fromYaml).Result -}}
+{{- $routes := $services.routes -}}
+{{- $extraRoutes := $services.extraRoutes }}
+{{- $extraRouteProperties := $services.extraRouteProperties }}
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: {{ printf "%s-%s-%s" (include "ox-common.names.fullname" $) "virtualservice" $name | quote }}
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    {{- include "ox-common.labels.standard" $ | nindent 4 }}
+spec:
+  hosts:
+    {{- if not (empty $hosts) }}
+    {{- range $hosts }}
+    - {{ . | quote }}
+    {{- end }}
+    {{- else }}
+    {{ fail (printf "No hosts defined for service %s" $name) }}
+    {{- end }}
+  gateways:
+    - {{ include "appsuite.ingressGateway" $ }}
+  http:
+    {{- if $.Values.istio.segmentedRouting.enabled -}}
+    {{ include "appsuite.segmentedRoutingRedirect" (dict "LocalSite" $.Values.istio.segmentedRouting.localSite "Sites" $.Values.istio.segmentedRouting.sites "Paths" $services.segmentedRoutingPaths "Port" $.Values.istio.segmentedRouting.port "Context" $ "AppRoot" $appRoot) | nindent 4 }}
+    {{- end }}
+    {{- if not (empty $routes) }}
+    {{- range $key, $val := $routes }}
+    - name: {{ $val.name | quote }}
+      match:
+        {{- range $val.matchPrefix }}
+        - uri:
+            prefix: {{ . | quote }}
+        {{- end }}
+      {{- if $val.redirect }}
+      redirect:
+         uri: {{ $val.redirect }}
+      {{- else }} {{- /* if $val.redirect */}}
+      {{- if $val.rewrite }}
+      rewrite:
+        uri: {{ $val.rewrite | quote }}
+      {{- end }}
+      route:
+        - destination:
+            host: {{ include "appsuite.destinationHostForRoute" (dict "Route" $val "Context" $) }}
+            port:
+              number: {{ default 80 $val.destinationPort }}
+      {{- if $val.timeout }}
+      timeout: {{ $val.timeout | quote }}
+      {{- end }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }} {{- /* if $services.headers */}}
+      {{- end }} {{- /* if $val.redirect */}}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }} {{- /* if not (empty $extraRouteProperties) */}}
+    {{- end }} {{- /*range $key, $val := $routes */}}
+    {{- else }} {{- /* if not (empty $routes) */}}
+    {{ required "You need to define at least one route when using .Values.istio.extraVirtualServices" "" }}
+    {{- end }} {{- /* range $key, $val := $routes */}}
+{{- end -}} {{- /* range $name, $services := .Values.istio.extraVirtualServices */}}
+{{- end -}} {{- /* if ((.Values).istio).enabled - */}}

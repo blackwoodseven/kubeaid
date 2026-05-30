@@ -1,0 +1,501 @@
+---
+global:
+  extras:
+    monitoring:
+      enabled: false
+  useDefaultSecurityContext: true
+  core-cacheservice:
+    enabled: true
+nameOverride: ''
+fullnameOverride: ''
+createCommonEnv: true
+istio:
+  enabled: false
+  ingressGateway:
+    name: ''
+    hosts: []
+    overridableHosts: {}
+    selector: ingressgateway
+    tls:
+      enabled: false
+      existingSecret: ''
+      minProtocolVersion: TLSV1_2
+  securityHeaders:
+    enabled: false
+  destinationRules:
+    appsuite:
+      tls:
+        mode: DISABLE
+    dav:
+      tls:
+        mode: DISABLE
+    businessmobility:
+      tls:
+        mode: DISABLE
+  virtualServices:
+    appsuite:
+      hosts: []
+      overridableHosts: {}
+      extraRoutes: []
+      extraRouteProperties: {}
+    dav:
+      enabled: true
+      hosts: []
+      overridableHosts: {}
+      extraRoutes: []
+      extraRouteProperties: {}
+    businessmobility:
+      enabled: false
+      hosts: []
+      overridableHosts: {}
+      extraRoutes: []
+      extraRouteProperties: {}
+  extraVirtualServices: {}
+  segmentedRouting:
+    enabled: false
+    localSite: ''
+    sites: []
+    appsuitePaths:
+    - "/api"
+    - "/ajax"
+    - "%%APP_ROOT%%/api"
+    - "/pks"
+    - "/rt2"
+    - "/admin"
+    - "/advertisement"
+    - "/chronos"
+    - "/preliminary"
+    - "/userfeedback"
+    - "/servlet"
+    - "/realtime"
+    - "/infostore"
+    - "/webservices"
+    davPaths:
+    - "/"
+    businessmobilityPaths:
+    - "/usm-json"
+    - "/Microsoft-Server-ActiveSync"
+ingress:
+  enabled: false
+  adapter: appsuite.ingress.ingress-nginx
+  annotations: {}
+  tls:
+    enabled: false
+    existingSecret: ''
+  appsuite:
+    hosts: []
+    overridableHosts: {}
+  dav:
+    enabled: true
+    hosts: []
+    overridableHosts: {}
+  switchboard:
+    enabled: false
+    hosts: []
+    overridableHosts: {}
+  businessmobility:
+    enabled: false
+    hosts: []
+    overridableHosts: {}
+  routes:
+    appsuite-base:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    rootredirect:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    trailslash:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    rest-routes-admin:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    rest-routes-advertisement:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    rest-routes-chronos:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    rest-routes-preliminary:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    rest-routes-userfeedback:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    static-routes-servlet:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    static-routes-realtime:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    static-routes-infostore:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    static-routes-webservices:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    drive-client-windows-ox-route:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    guard-api-route:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    guard-support-api-route:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    guard-pgp-route:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    http-api-routes-api:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    http-api-routes-ajax:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    http-api-routes-appsuite-api:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    http-api-routes-app-root-api:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    rt2-route:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    documents-help-route:
+      enabled: true
+      annotations: {}
+      annotationMode: Add
+    drive-help-route:
+      enabled: true
+      annotations: {}
+      annotationMode: add
+    core-help-route:
+      enabled: true
+      annotations: {}
+      annotationMode: add
+    office-web-route:
+      enabled: true
+      annotations: {}
+      annotationMode: add
+    caldav-well-known-redirect:
+      enabled: true
+      annotations: {}
+      annotationMode: add
+    carddav-well-known-redirect:
+      enabled: true
+      annotations: {}
+      annotationMode: add
+    dav-infostore-route:
+      enabled: true
+      annotations: {}
+      annotationMode: add
+    dav-root-route:
+      enabled: true
+      annotations: {}
+      annotationMode: add
+    switchboard-root-route:
+      enabled: true
+      annotations: {}
+      annotationMode: add
+    wopi-server-route:
+      enabled: false
+      annotations: {}
+      annotationMode: add
+    core-ui-api-route:
+      enabled: true
+      annotations: {}
+      annotationMode: add
+    businessmobility-microsoft-route:
+      enabled: true
+      annotations: {}
+      annotationMode: add
+      timeout: 1900
+    businessmobility-usm-route:
+      enabled: true
+      annotations: {}
+      annotationMode: add
+      timeout: 1900
+redis:
+  core-mw:
+    enabled: false
+    customConfig:
+    - maxmemory-policy allkeys-lru
+    - maxmemory-samples 10
+    replicaCount: 3
+    resources:
+      requests:
+        cpu: 100m
+        memory: 100Mi
+      limits:
+        memory: 500Mi
+    sentinelCustomConfig: []
+    sentinelReplicaCount: 3
+    sentinelResources:
+      requests:
+        cpu: 100m
+      limits:
+        memory: 100Mi
+    metrics:
+      enabled: false
+      imageSentinelExporter: leominov/redis_sentinel_exporter:1.7.1
+      imageRedisExporter: oliver006/redis_exporter:v1.53.0-alpine
+  core-ui-middleware:
+    enabled: false
+    customConfig:
+    - maxmemory-policy allkeys-lru
+    - maxmemory-samples 10
+    replicaCount: 3
+    resources:
+      requests:
+        cpu: 100m
+        memory: 100Mi
+      limits:
+        memory: 500Mi
+    sentinelCustomConfig: []
+    sentinelReplicaCount: 3
+    sentinelResources:
+      requests:
+        cpu: 100m
+      limits:
+        memory: 100Mi
+    metrics:
+      enabled: false
+      imageSentinelExporter: leominov/redis_sentinel_exporter:1.7.1
+      imageRedisExporter: oliver006/redis_exporter:v1.53.0-alpine
+  switchboard:
+    enabled: false
+    customConfig:
+    - maxmemory-policy allkeys-lru
+    - maxmemory-samples 10
+    replicaCount: 3
+    resources:
+      requests:
+        cpu: 100m
+        memory: 100Mi
+      limits:
+        memory: 500Mi
+    sentinelCustomConfig: []
+    sentinelReplicaCount: 3
+    sentinelResources:
+      requests:
+        cpu: 100m
+      limits:
+        memory: 100Mi
+    metrics:
+      enabled: false
+      imageSentinelExporter: leominov/redis_sentinel_exporter:1.7.1
+      imageRedisExporter: oliver006/redis_exporter:v1.53.0-alpine
+core-mw:
+  enabled: true
+  createCommonEnv: false
+  image:
+    repository: appsuite/middleware
+    tag: 8.48.86
+  update:
+    image:
+      repository: appsuite/middleware
+      tag: 8.48.86
+    defaultRegistry: registry.open-xchange.com
+    podAnnotations:
+      commit.open-xchange.com/core: e3210c94e5f482edd01c8ba14db1a355aa307929
+      commit.open-xchange.com/guard: bfd97ca54526c90a3b0a3af75605f2a810f76262
+      commit.open-xchange.com/office: d6ac1d69f55a79a0991951471a83239122bf2915
+      commit.open-xchange.com/weakforced: 7a3d63dfece8ba3fbfec8b9f2e0e60e47567d4bf
+  podAnnotations:
+    commit.open-xchange.com/core: e3210c94e5f482edd01c8ba14db1a355aa307929
+    commit.open-xchange.com/guard: bfd97ca54526c90a3b0a3af75605f2a810f76262
+    commit.open-xchange.com/office: d6ac1d69f55a79a0991951471a83239122bf2915
+    commit.open-xchange.com/weakforced: 7a3d63dfece8ba3fbfec8b9f2e0e60e47567d4bf
+  defaultRegistry: registry.open-xchange.com
+  packages:
+    status:
+      open-xchange-drive-client-windows: enabled
+    configuration:
+      sessiond:
+        redis:
+          enabled: true
+    redis:
+      enabled: true
+  gotenberg:
+    image:
+      repository: registry.open-xchange.com/appsuite/gotenberg
+      tag: 8.15.3
+    podAnnotations: {}
+  collabora-online:
+    image:
+      repository: registry.open-xchange.com/appsuite/collabora-online@sha256
+      tag: '0686d50956c3ef1baa44f91165186fcbe1663f98f298010058f12e39f6abab40'
+    podAnnotations: {}
+core-user-guide:
+  enabled: true
+  image:
+    repository: appsuite/core-user-guide
+    tag: 8.48.2468440163
+  podAnnotations:
+    commit.open-xchange.com/user-guide: 3f1e304bd3c88efbc078f782a3c38794c7061855
+  defaultRegistry: registry.open-xchange.com
+core-cacheservice:
+  enabled: true
+  image:
+    repository: appsuite/cacheservice
+    tag: 8.48.2120
+  podAnnotations:
+    commit.open-xchange.com/cacheservice: 4a412b688870d53be7f80a3a3a00609d0b8963da
+  defaultRegistry: registry.open-xchange.com
+core-documentconverter:
+  enabled: true
+  createCommonEnv: false
+  image:
+    repository: appsuite/documentconverter
+    tag: 8.48.2083
+  podAnnotations:
+    commit.open-xchange.com/documentconverter: c0ea90926f408851836d5f1fa879fa7ef148c001
+  defaultRegistry: registry.open-xchange.com
+core-documents-collaboration:
+  enabled: true
+  image:
+    repository: appsuite/documents-collaboration
+    tag: 8.48.705
+  podAnnotations:
+    commit.open-xchange.com/documents-collaboration: f46ee71fad0536b9ce3d73868ce02db3d3887cfb
+  defaultRegistry: registry.open-xchange.com
+core-imageconverter:
+  enabled: true
+  createCommonEnv: false
+  image:
+    repository: appsuite/imageconverter
+    tag: 8.48.2582
+  podAnnotations:
+    commit.open-xchange.com/imageconverter: 1a6b681a9a8c19c752aa66accc35133c8ee97e36
+  defaultRegistry: registry.open-xchange.com
+core-spellcheck:
+  enabled: true
+  image:
+    repository: appsuite/spellcheck
+    tag: 8.48.1023
+  podAnnotations:
+    commit.open-xchange.com/spellcheck: 44069c90db1a839b2a47e4af037b515083ea2ad7
+  defaultRegistry: registry.open-xchange.com
+office-web:
+  enabled: true
+  image:
+    repository: appsuite/office-web
+    tag: 8.48.1797343
+  podAnnotations:
+    commit.open-xchange.com/office-web: 935e3f1989873a1dc21a845313aaeedee734f9fc
+  defaultRegistry: registry.open-xchange.com
+office-user-guide:
+  enabled: true
+  image:
+    repository: appsuite/office-user-guide
+    tag: 8.48.1797342
+  podAnnotations:
+    commit.open-xchange.com/office-user-guide: 777947e971e21130932828185551e03360689a43
+  defaultRegistry: registry.open-xchange.com
+core-ui:
+  enabled: true
+  image:
+    repository: appsuite/core-ui
+    tag: 8.48.5
+  podAnnotations:
+    commit.open-xchange.com/ui: 7b488939a506d64b7201c5b0b690d1b678dbd590
+  defaultRegistry: registry.open-xchange.com
+core-ui-middleware:
+  enabled: true
+  image:
+    repository: appsuite/core-ui-middleware
+    tag: 2.3.3
+  podAnnotations:
+    commit.open-xchange.com/ui-service: d7e243e044b79f20cf1ff2ca46203538c89094e5
+  existingConfigMap: "{{ .Release.Name }}-core-ui-middleware"
+  defaultRegistry: registry.open-xchange.com
+  redis:
+    enabled: false
+extraUIManifestURLs: []
+overridableExtraUIManifestURLs: {}
+core-guidedtours:
+  enabled: true
+  image:
+    repository: appsuite/core-guidedtours
+    tag: 8.7.4
+  podAnnotations:
+    commit.open-xchange.com/guidedtours: 64d52474a6695de59c48ec792ba06760615e7ae9
+  defaultRegistry: registry.open-xchange.com
+guard-ui:
+  enabled: true
+  image:
+    repository: appsuite/guard-ui
+    tag: 8.48.0
+  podAnnotations:
+    commit.open-xchange.com/guard-ui: 99b5ab7144f5ecc3a036f7563f05146dea27837d
+  defaultRegistry: registry.open-xchange.com
+core-drive-help:
+  enabled: true
+  image:
+    repository: appsuite/core-drive-help
+    tag: 8.13.1471173
+  podAnnotations:
+    commit.open-xchange.com/core-drive-help: 32f82b52757e1e9fd03f68edf45f07019ae7e04a
+  defaultRegistry: registry.open-xchange.com
+switchboard:
+  enabled: true
+  image:
+    repository: appsuite/switchboard
+    tag: 5.3.2
+  podAnnotations:
+    commit.open-xchange.com/switchboard: ea2b152ed4cdf499cb7071d1fda6c1ab9fd32478
+  defaultRegistry: registry.open-xchange.com
+extras:
+  monitoring:
+    enabled: false
+    serviceMonitor:
+      namespace: ''
+      interval: 30s
+      scrapeTimeout: ''
+      relabelings:
+      - sourceLabels:
+        - __meta_kubernetes_pod_label_app_kubernetes_io_name
+        targetLabel: app
+      metricRelabelings: []
+      honorLabels: false
+      additionalLabels: {}
+      annotations: {}
+tags:
+  preUpdate: false
+appsuite-toolkit:
+  enabled: true
+  replicaCount: 0
+  defaultRegistry: registry.open-xchange.com
+  image:
+    repository: appsuite/appsuite-toolkit
+    tag: 1.16.1781328
+  mwctl:
+    image:
+      repository: appsuite/middleware-debug
+      tag: 2.0.1868825
+    defaultRegistry: registry.open-xchange.com
+    podAnnotations:
+      commit.open-xchange.com/middleware-debug: add5352b6ac00aea6e59f9d26e8403a7ca415982
+  podAnnotations:
+    commit.open-xchange.com/appsuite-toolkit: 017faad1450f3fe6593778fdcf45ad0a46138dab

@@ -1,0 +1,807 @@
+{
+   "description": "App Suite Core Middleware JVM Dashboard\n",
+   "editable": false,
+   "graphTooltip": 1,
+   "panels": [
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 1
+         },
+         "id": 1,
+         "panels": [ ],
+         "title": "Overview",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "fieldConfig": {
+            "defaults": {
+               "color": {
+                  "mode": "thresholds"
+               },
+               "decimals": 1,
+               "mappings": [
+                  {
+                     "options": {
+                        "match": "null",
+                        "result": {
+                           "text": "N/A"
+                        }
+                     },
+                     "type": "special"
+                  }
+               ],
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "rgba(245, 54, 54, 0.9)",
+                        "value": null
+                     },
+                     {
+                        "color": "rgba(237, 129, 40, 0.89)",
+                        "value": 300
+                     },
+                     {
+                        "color": "rgba(50, 172, 45, 0.97)",
+                        "value": 3600
+                     }
+                  ]
+               },
+               "unit": "s"
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 0,
+            "y": 2
+         },
+         "id": 2,
+         "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto"
+         },
+         "pluginVersion": "v11.4.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "process_uptime_seconds{\n  pod=~\"$pod\"\n}\n"
+            }
+         ],
+         "title": "Uptime",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "mappings": [
+                  {
+                     "options": {
+                        "match": "null",
+                        "result": {
+                           "text": "N/A"
+                        }
+                     },
+                     "type": "special"
+                  },
+                  {
+                     "options": {
+                        "from": -100000000000000005366162204393472,
+                        "result": {
+                           "text": "N/A"
+                        },
+                        "to": 0
+                     },
+                     "type": "range"
+                  }
+               ],
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "rgba(50, 172, 45, 0.97)",
+                        "value": null
+                     },
+                     {
+                        "color": "rgba(237, 129, 40, 0.89)",
+                        "value": 70
+                     },
+                     {
+                        "color": "rgba(245, 54, 54, 0.9)",
+                        "value": 90
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 3,
+            "y": 2
+         },
+         "id": 3,
+         "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto"
+         },
+         "pluginVersion": "v11.4.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(\n  jvm_memory_used_bytes{\n    pod=~\"$pod\",\n    area=\"heap\"\n  }\n) * 100 / sum(\n  jvm_memory_max_bytes{\n    pod=~\"$pod\",\n    area=\"heap\"\n  }\n)\n"
+            }
+         ],
+         "title": "Heap",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "mappings": [
+                  {
+                     "options": {
+                        "match": "null",
+                        "result": {
+                           "text": "N/A"
+                        }
+                     },
+                     "type": "special"
+                  },
+                  {
+                     "options": {
+                        "from": -100000000000000005366162204393472,
+                        "result": {
+                           "text": "N/A"
+                        },
+                        "to": 0
+                     },
+                     "type": "range"
+                  }
+               ],
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "rgba(50, 172, 45, 0.97)",
+                        "value": null
+                     },
+                     {
+                        "color": "rgba(237, 129, 40, 0.89)",
+                        "value": 70
+                     },
+                     {
+                        "color": "rgba(245, 54, 54, 0.9)",
+                        "value": 90
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 6,
+            "y": 2
+         },
+         "id": 4,
+         "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto"
+         },
+         "pluginVersion": "v11.4.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(\n  jvm_memory_used_bytes{\n    pod=~\"$pod\",\n    area=\"nonheap\"\n  }\n) * 100 / sum(\n  jvm_memory_max_bytes{\n    pod=~\"$pod\",\n    area=\"nonheap\"\n  }\n)\n"
+            }
+         ],
+         "title": "Non-Heap",
+         "type": "stat"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 5
+         },
+         "id": 5,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "decbytes"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "Max"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-red",
+                                 "mode": "fixed"
+                              }
+                           },
+                           {
+                              "id": "custom.fillOpacity",
+                              "value": 0
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 12,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 6,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "repeat": "mem_pools_heap",
+               "repeatDirection": "h",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  jvm_memory_used_bytes{\n    pod=~\"$pod\",\n    area=\"heap\",\n    id=~\"$mem_pools_heap\"\n  }\n)\n",
+                     "legendFormat": "Used"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  jvm_memory_committed_bytes{\n    pod=~\"$pod\",\n    area=\"heap\",\n    id=~\"$mem_pools_heap\"\n  }\n)\n",
+                     "legendFormat": "Committed"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  jvm_memory_max_bytes{\n    pod=~\"$pod\",\n    area=\"heap\",\n    id=~\"$mem_pools_heap\"\n  }\n)\n",
+                     "legendFormat": "Max"
+                  }
+               ],
+               "title": "$mem_pools_heap",
+               "type": "timeseries"
+            }
+         ],
+         "title": "Memory Pools (Heap)",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 6
+         },
+         "id": 7,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "decbytes"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "Max"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-red",
+                                 "mode": "fixed"
+                              }
+                           },
+                           {
+                              "id": "custom.fillOpacity",
+                              "value": 0
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 12,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 8,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "repeat": "mem_pools_nonheap",
+               "repeatDirection": "h",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  jvm_memory_used_bytes{\n    pod=~\"$pod\",\n    area=\"nonheap\",\n    id=~\"$mem_pools_nonheap\"\n  }\n)\n",
+                     "legendFormat": "Used"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  jvm_memory_committed_bytes{\n    pod=~\"$pod\",\n    area=\"nonheap\",\n    id=~\"$mem_pools_nonheap\"\n  }\n)\n",
+                     "legendFormat": "Committed"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  jvm_memory_max_bytes{\n    pod=~\"$pod\",\n    area=\"nonheap\",\n    id=~\"$mem_pools_nonheap\"\n  }\n)\n",
+                     "legendFormat": "Max"
+                  }
+               ],
+               "title": "$mem_pools_nonheap",
+               "type": "timeseries"
+            }
+         ],
+         "title": "Memory Pools (Non-Heap)",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 7
+         },
+         "id": 9,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "s"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 12,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 10,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "rate(\n  jvm_gc_collection_seconds_sum{\n    pod=~\"$pod\"\n  }[$__rate_interval]\n) / rate(\n  jvm_gc_collection_seconds_count{\n    pod=~\"$pod\"\n  }[$__rate_interval]\n)\n",
+                     "legendFormat": "{{gc}}\n"
+                  }
+               ],
+               "title": "GC duration",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 2,
+                     "min": 0,
+                     "unit": "ops"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 12,
+                  "x": 12,
+                  "y": 0
+               },
+               "id": 11,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "rate(\n  jvm_gc_collection_seconds_count{\n    pod=~\"$pod\"\n  }[$__rate_interval]\n)\n",
+                     "legendFormat": "{{gc}}\n"
+                  }
+               ],
+               "title": "Collection",
+               "type": "timeseries"
+            }
+         ],
+         "title": "Garbage Collector",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 8
+         },
+         "id": 12,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 0,
+                     "unit": "short"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 12,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 13,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "jvm_classes_loaded_classes{\n  pod=~\"$pod\"\n}\n",
+                     "legendFormat": "Loaded"
+                  }
+               ],
+               "title": "Classes loaded",
+               "type": "timeseries"
+            }
+         ],
+         "title": "Classloading",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 9
+         },
+         "id": 14,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     }
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "Peak"
+                        },
+                        "properties": [
+                           {
+                              "id": "custom.fillOpacity",
+                              "value": 0
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 12,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 15,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "jvm_threads_live_threads{\n  pod=~\"$pod\"\n}\n",
+                     "legendFormat": "Live\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "jvm_threads_daemon_threads{\n  pod=~\"$pod\"\n}\n",
+                     "legendFormat": "Daemon"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "jvm_threads_peak_threads{\n  pod=~\"$pod\"\n}\n",
+                     "legendFormat": "Peak"
+                  }
+               ],
+               "title": "Threads",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     }
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 12,
+                  "x": 12,
+                  "y": 0
+               },
+               "id": 16,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "jvm_threads_states_threads{\n  pod=~\"$pod\"\n}\n",
+                     "legendFormat": "{{state}}\n"
+                  }
+               ],
+               "title": "Thread States",
+               "type": "timeseries"
+            }
+         ],
+         "title": "Thread",
+         "type": "row"
+      }
+   ],
+   "refresh": "1m",
+   "schemaVersion": 39,
+   "tags": [
+      "java",
+      "app-suite"
+   ],
+   "templating": {
+      "list": [
+         {
+            "name": "datasource",
+            "query": "prometheus",
+            "type": "datasource"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "name": "namespace",
+            "query": "label_values(appsuite_version_info, namespace)",
+            "refresh": 2,
+            "sort": 1,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "hide": 2,
+            "name": "app",
+            "query": "label_values(up{namespace=\"$namespace\"}, app)",
+            "refresh": 2,
+            "regex": "/.*core-mw.*/",
+            "sort": 1,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "name": "pod",
+            "query": "label_values(appsuite_version_info{namespace=\"$namespace\", app=~\".*$app.*\"}, pod)",
+            "refresh": 2,
+            "sort": 1,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "hide": 2,
+            "includeAll": true,
+            "name": "mem_pools_heap",
+            "query": "label_values(jvm_memory_used_bytes{pod=~\"$pod\", area=\"heap\"}, id)",
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "hide": 2,
+            "includeAll": true,
+            "name": "mem_pools_nonheap",
+            "query": "label_values(jvm_memory_used_bytes{pod=~\"$pod\", area=\"nonheap\"}, id)",
+            "type": "query"
+         }
+      ]
+   },
+   "time": {
+      "from": "now-15m",
+      "to": "now"
+   },
+   "timezone": "browser",
+   "title": "App Suite / Core-Middleware / JVM",
+   "uid": "app-suite--coremiddleware--jvm"
+}

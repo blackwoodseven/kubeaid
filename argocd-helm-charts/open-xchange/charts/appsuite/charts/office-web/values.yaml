@@ -1,0 +1,89 @@
+#
+#  @copyright Copyright (c) Open-Xchange GmbH, Germany <info@open-xchange.com>
+#  @license AGPL-3.0
+#
+#  This code is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+#  GNU Affero General Public License for more details.
+#
+#  You should have received a copy of the GNU Affero General Public License
+#  along with OX App Suite. If not, see <https://www.gnu.org/licenses/agpl-3.0.txt>.
+#
+#  Any use of the work other than as authorized under this license or copyright law is prohibited.
+#
+
+# Default values for office-web.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+defaultRegistry: registry.open-xchange.com
+
+image:
+  repository: "office-web"
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 96Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+probe:
+  liveness:
+    enabled: false
+    periodSeconds: 10
+    failureThreshold: 15
+
+  readiness:
+    enabled: false
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    failureThreshold: 2
+    timeoutSeconds: 5
+
+  startup:
+    enabled: false
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    failureThreshold: 30
+
+containerPort: 8080

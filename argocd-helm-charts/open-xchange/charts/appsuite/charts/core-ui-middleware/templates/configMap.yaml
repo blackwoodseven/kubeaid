@@ -1,0 +1,10 @@
+{{- if (not .Values.existingConfigMap) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ox-common.names.fullname" . }}
+data:
+  config.yaml: |
+    baseUrls:
+      {{- toYaml .Values.baseUrls | nindent 6 }}
+{{- end }}

@@ -1,0 +1,56 @@
+{{- if (index .Values "redis" "core-mw" "enabled") -}}
+apiVersion: databases.spotahome.com/v1
+kind: RedisFailover
+metadata:
+  name: core-mw
+  namespace: {{ .Release.Namespace }}
+spec:
+  sentinel:
+    replicas: {{ (index .Values "redis" "core-mw" "sentinelReplicaCount") }}
+    image: redis:7.4.0-alpine
+    {{- if (index .Values "redis" "core-mw" "sentinelCustomConfig") }}
+    customConfig:
+      {{- toYaml (index .Values "redis" "core-mw" "sentinelCustomConfig") | nindent 6 }}
+    {{- end }}
+    resources:
+      {{- toYaml (index .Values "redis" "core-mw" "sentinelResources") | nindent 6 }}
+{{- if (index .Values "redis" "core-mw" "metrics" "enabled") }}
+    podAnnotations:
+      prometheus.io/path: /metrics
+      prometheus.io/port: "9355"
+      prometheus.io/scrape: "true"
+    exporter:
+      enabled: true
+      imagePullPolicy: Always
+      image: {{ index .Values "redis" "core-mw" "imageSentinelExporter" }}
+{{- end }}
+  redis:
+    replicas: {{ (index .Values "redis" "core-mw" "replicaCount") }}
+    image: redis:7.4.0-alpine
+    {{- if (index .Values "redis" "core-mw" "customConfig") }}
+    customConfig:
+      {{- toYaml (index .Values "redis" "core-mw" "customConfig") | nindent 6 }}
+    {{- end }}
+    resources:
+      {{- toYaml (index .Values "redis" "core-mw" "resources") | nindent 6 }}
+{{- if (index .Values "redis" "core-mw" "metrics" "enabled") }}
+    podAnnotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "9121"
+        prometheus.io/scrape: "true"
+    exporter:
+      enabled: true
+      imagePullPolicy: Always
+      image: {{ index .Values "redis" "core-mw" "imageRedisExporter" }}
+      args:
+        - --web.telemetry-path
+        - /metrics
+      env:
+        - name: REDIS_EXPORTER_LOG_FORMAT
+          value: txt
+{{- end }}
+{{- if and (hasKey (index .Values "redis" "core-mw") "auth") (index .Values "redis" "core-mw" "auth" "enabled") (hasKey (index .Values "redis" "core-mw" "auth") "secretPath") }}
+  auth:
+    secretPath: {{ (index .Values "redis" "core-mw" "auth" "secretPath") }}
+{{- end }}
+{{- end -}}
