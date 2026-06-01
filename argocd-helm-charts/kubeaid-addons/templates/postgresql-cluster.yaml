@@ -17,7 +17,26 @@ spec:
     labels:
       velero.io/exclude-from-backup: "true"
 
-  {{- with $postgresql.resources }}
+  {{- $resources := deepCopy $postgresql.resources }}
+  {{- range $resourceType, $resourceValues := $resources }}
+    {{- range $resourceName, $resourceValue := $resourceValues }}
+      {{- if eq $resourceValue nil }}
+        {{- $_ := unset $resourceValues $resourceName }}
+      {{- end }}
+    {{- end }}
+    {{- if not $resourceValues }}
+      {{- $_ := unset $resources $resourceType }}
+    {{- end }}
+  {{- end }}
+  {{- if $postgresql.disableCpuLimit }}
+    {{- with $resources.limits }}
+      {{- $_ := unset . "cpu" }}
+    {{- end }}
+    {{- if not $resources.limits }}
+      {{- $_ := unset $resources "limits" }}
+    {{- end }}
+  {{- end }}
+  {{- with $resources }}
   resources:
     {{- toYaml . | nindent 4 }}
   {{- end }}
