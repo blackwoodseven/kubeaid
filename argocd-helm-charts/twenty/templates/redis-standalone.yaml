@@ -27,4 +27,7 @@ spec:
         resources:
           requests:
             storage: {{ .Values.externalRedis.storage | default "2Gi" }}
+  podSecurityContext:
+    runAsUser: 1000
+    fsGroup: 1000
 {{- end }}
