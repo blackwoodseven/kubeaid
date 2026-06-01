@@ -1,0 +1,52 @@
+{{- if (index .Values "redis" "switchboard" "enabled") -}}
+apiVersion: databases.spotahome.com/v1
+kind: RedisFailover
+metadata:
+  name: switchboard
+  namespace: {{ .Release.Namespace }}
+spec:
+  sentinel:
+    replicas: {{ (index .Values "redis" "switchboard" "sentinelReplicaCount") }}
+    image: redis:7.4.0-alpine
+    {{- if (index .Values "redis" "switchboard" "sentinelCustomConfig") }}
+    customConfig:
+      {{- toYaml (index .Values "redis" "switchboard" "sentinelCustomConfig") | nindent 6 }}
+    {{- end }}
+    resources:
+      {{- toYaml (index .Values "redis" "switchboard" "sentinelResources") | nindent 6 }}
+{{- if (index .Values "redis" "switchboard" "metrics" "enabled") }}
+    podAnnotations:
+      prometheus.io/path: /metrics
+      prometheus.io/port: "9355"
+      prometheus.io/scrape: "true"
+    exporter:
+      enabled: true
+      imagePullPolicy: Always
+      image: {{ index .Values "redis" "switchboard" "imageSentinelExporter" }}
+{{- end }}
+  redis:
+    replicas: {{ (index .Values "redis" "switchboard" "replicaCount") }}
+    image: redis:7.4.0-alpine
+    {{- if (index .Values "redis" "switchboard" "customConfig") }}
+    customConfig:
+      {{- toYaml (index .Values "redis" "switchboard" "customConfig") | nindent 6 }}
+    {{- end }}
+    resources:
+      {{- toYaml (index .Values "redis" "switchboard" "resources") | nindent 6 }}
+{{- if (index .Values "redis" "switchboard" "metrics" "enabled") }}
+    podAnnotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "9121"
+        prometheus.io/scrape: "true"
+    exporter:
+      enabled: true
+      imagePullPolicy: Always
+      image: {{ index .Values "redis" "switchboard" "imageRedisExporter" }}
+      args:
+        - --web.telemetry-path
+        - /metrics
+      env:
+        - name: REDIS_EXPORTER_LOG_FORMAT
+          value: txt
+{{- end }}
+{{- end }}

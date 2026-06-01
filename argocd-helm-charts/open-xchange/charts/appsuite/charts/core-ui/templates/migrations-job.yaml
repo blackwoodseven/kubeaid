@@ -1,0 +1,35 @@
+{{- if include "core-ui.hasDatabases" . }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-migrations" (include "ox-common.names.fullname" .) | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- include "ox-common.labels.standard" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  # 3 retries
+  backoffLimit: 3
+  # keep the old pod for 1 minute; in case you want to check the log
+  ttlSecondsAfterFinished: 60
+  template:
+    metadata:
+      labels:
+        {{- include "ox-common.labels.podLabels" . | nindent 8 }}
+    spec: {{ include "ox-common.pods.podSpec" (dict "podRoot" .Values "global" $ "context" . ) | nindent 6 }}
+      restartPolicy: OnFailure
+      containers:
+        - name: migrations
+          {{- include "ox-common.containers.securityContext" (dict "podRoot" .Values "global" $ "context" . ) | nindent 10 }}
+          image: {{ include "ox-common.images.image" (dict "imageRoot" .Values.image "global" $ "context" . ) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["server/migrate.js"]
+          env:
+            {{- include "core-ui.env" . | nindent 12 }}
+          volumeMounts:
+            {{- include "core-ui.volumeMounts" . | nindent 12 }}
+      volumes:
+        {{- include "core-ui.volumes" . | nindent 8 }}
+{{- end }}

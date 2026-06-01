@@ -1,0 +1,48 @@
+# Default values for appsuite-toolkit.
+
+replicaCount: 1
+defaultRegistry: registry.open-xchange.com
+
+fullnameOverride: ""
+
+image:
+  repository: "appsuite-core-internal/appsuite-toolkit"
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+  
+mwctl: 
+  defaultRegistry: registry.open-xchange.com 
+  image:
+    repository: "appsuite-core-internal/middleware-debug"
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "latest"
+
+imagePullSecrets: []
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+serviceAccountName: ""
+
+serviceAccount:
+  create: true
+  name: ""

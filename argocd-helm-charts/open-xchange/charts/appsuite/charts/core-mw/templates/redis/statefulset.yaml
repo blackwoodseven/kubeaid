@@ -1,0 +1,68 @@
+{{- $redisHosts := include "ox-common.redis.hosts" (dict "redis" .Values.redis "context" .) -}}
+{{- if empty $redisHosts -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "core-mw.redis" . }}
+  labels:
+{{ include "ox-common.labels.standard" . | indent 4 }}
+    component: redis
+spec:
+  replicas: 1
+  serviceName: {{ include "core-mw.redis" . }}
+  selector:
+    matchLabels:
+{{ include "ox-common.labels.matchLabels" . | indent 6 }}
+      component: redis
+  template:
+    metadata:
+      labels:
+{{ include "ox-common.labels.standard" . | indent 8 }}
+        component: redis
+    spec:
+      securityContext:
+        runAsUser: 999
+        fsGroup: 999
+      terminationGracePeriodSeconds: 120
+      serviceAccountName: {{ include "core-mw.serviceAccountName" . }}
+      containers:
+        - name: redis
+          image: {{ printf "%s:%s" .Values.redis.image.repository .Values.redis.image.tag }}
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 300
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 1
+            periodSeconds: 10
+          {{- if .Values.redis.resources }}
+          resources: {{ toYaml .Values.redis.resources | nindent 12 }}
+          {{- end }}
+          {{- with .Values.redis.extraEnvVars }}
+          env: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/redis
+              subPath: ""
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: data
+          emptyDir: {}
+      {{- with .Values.redis.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.redis.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.redis.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+{{- end -}}

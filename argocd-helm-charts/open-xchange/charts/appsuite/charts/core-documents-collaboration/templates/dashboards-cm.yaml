@@ -1,0 +1,12 @@
+{{- if (or .Values.extras.monitoring.enabled .Values.global.extras.monitoring.enabled) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ox-common.names.fullname" . }}-dashboards
+  labels:
+    {{- include "ox-common.labels.standard" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+{{ (.Files.Glob "dashboards/appsuite_dcs.json").AsConfig | indent 2 }}
+{{ (.Files.Glob "dashboards/appsuite_documents.json").AsConfig | indent 2 }}
+{{- end -}}

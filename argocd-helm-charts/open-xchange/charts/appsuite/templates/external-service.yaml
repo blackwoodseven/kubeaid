@@ -1,0 +1,43 @@
+{{- if .Values.istio.enabled -}}
+{{- if .Values.istio.segmentedRouting.enabled -}}
+{{ $context := . }}
+{{ $localSite := .Values.istio.segmentedRouting.localSite -}}
+{{- range .Values.istio.segmentedRouting.sites -}}
+{{- if ne $localSite .name }}
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: {{ include "ox-common.names.fullname" $context }}-{{ .name | lower}}
+  labels:
+    {{- include "ox-common.labels.standard" $context | nindent 4 }}
+spec:
+  hosts:
+  - {{ .name | lower }}.{{ include "ox-common.names.fullname" $context }}.svc.cluster.local
+  ports:
+  - number: {{ .portNumber | default 443 }}
+    name: https
+    protocol: HTTPS
+  resolution: STATIC
+  endpoints:
+  - address: {{ .address | quote }}
+    ports:
+      https: {{ .portNumber | default 443 }}
+  location: MESH_EXTERNAL
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: {{ include "ox-common.names.fullname" $context }}-{{ .name | lower}}-tls
+  labels:
+    {{- include "ox-common.labels.standard" $context | nindent 4 }}
+spec:
+  host: {{ .name | lower }}.{{ include "ox-common.names.fullname" $context }}.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: SIMPLE
+      sni: {{ .sni | quote }}
+---
+{{- end -}}
+{{- end -}}
+{{- end }}
+{{- end -}}

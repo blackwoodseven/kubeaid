@@ -1,0 +1,146 @@
+{{- if .Values.ingress.enabled -}}
+{{- $routeConfig := .Values.ingress.routes -}}
+{{- $appRoot := include "ox-common.appsuite.appRoot" . -}}
+{{- if (get (get $routeConfig "appsuite-base") "enabled") -}}
+{{- $appsuite_paths := list -}}
+{{- $appsuite_paths = append $appsuite_paths (dict "Path" (printf "%s/" $appRoot) "PathType" "Prefix" "Service" "core-ui-middleware" "PortNumber" 80  ) -}}
+{{ include "appsuite.ingress.plainIngress" (dict "Name" "appsuite-base" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Paths" $appsuite_paths "Context" .) }}
+---
+{{ end -}}
+{{- if $appRoot }}
+{{- if (get (get $routeConfig "rootredirect") "enabled") -}}
+{{ include "appsuite.ingress.redirect" (dict "Name" "rootredirect" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/" "PathType" "Exact" "Redirect" (printf "%s/" $appRoot) "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- end }}
+{{- if (get (get $routeConfig "rest-routes-admin") "enabled") -}}
+{{ include "appsuite.ingress.sticky" (dict "Name" "rest-routes-admin" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/admin" "PathType" "Prefix" "Service" "core-mw-admin"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "rest-routes-advertisement") "enabled") -}}
+{{ include "appsuite.ingress.sticky" (dict "Name" "rest-routes-advertisement" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/advertisement" "PathType" "Prefix" "Service" "core-mw-http-api"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "rest-routes-chronos") "enabled") -}}
+{{ include "appsuite.ingress.sticky" (dict "Name" "rest-routes-chronos" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/chronos" "PathType" "Prefix" "Service" "core-mw-http-api"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 )  "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "rest-routes-preliminary") "enabled") -}}
+{{ include "appsuite.ingress.sticky" (dict "Name" "rest-routes-preliminary" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/preliminary" "PathType" "Prefix" "Service" "core-mw-http-api"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "PortNumber" 80 "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "rest-routes-userfeedback") "enabled") -}}
+{{ include "appsuite.ingress.sticky" (dict "Name" "rest-routes-userfeedback" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/userfeedback" "PathType" "Prefix" "Service" "core-mw-http-api"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "static-routes-servlet") "enabled") -}}
+{{ include "appsuite.ingress.sticky" (dict "Name" "static-routes-servlet" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/servlet" "PathType" "Prefix" "Service" "core-mw-http-api"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "static-routes-realtime") "enabled") -}}
+{{ include "appsuite.ingress.sticky" (dict "Name" "static-routes-realtime" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/realtime" "PathType" "Prefix" "Service" "core-mw-http-api"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "static-routes-infostore") "enabled") -}}
+{{ include "appsuite.ingress.sticky" (dict "Name" "static-routes-infostore" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/infostore" "PathType" "Prefix" "Service" "core-mw-http-api"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "static-routes-webservices") "enabled") -}}
+{{ include "appsuite.ingress.sticky" (dict "Name" "static-routes-webservices" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/webservices" "PathType" "Prefix" "Service" "core-mw-http-api"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "drive-client-windows-ox-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "drive-client-windows-ox-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/api/drive/client/windows/ox/install" "PathType" "Prefix" "Service" "drive-client-windows-ox" "Rewrite" "/"  "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "guard-api-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "guard-api-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" (printf "%s/api/oxguard" $appRoot) "PathType" "Prefix" "Service" "core-mw-http-api" "Rewrite" "/oxguard"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "guard-support-api-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "guard-support-api-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" (printf "%s/api/guardsupport" $appRoot) "PathType" "Prefix" "Service" "core-mw-http-api" "Rewrite" "/guardsupport"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "guard-pgp-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "guard-pgp-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/pks" "PathType" "Prefix" "Service" "core-mw-http-api" "Rewrite" "/pgp"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "http-api-routes-api") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "http-api-routes-api" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/api" "PathType" "Prefix" "Service" "core-mw-http-api" "Rewrite" "/appsuite/api"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "http-api-routes-ajax") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "http-api-routes-ajax" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/ajax" "PathType" "Prefix" "Service" "core-mw-http-api" "Rewrite" "/appsuite/api"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "http-api-routes-appsuite-api") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "http-api-routes-appsuite-api" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" "/appsuite/api" "PathType" "Prefix" "Service" "core-mw-http-api" "Rewrite" "/appsuite/api"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (and (and (ne $appRoot "") (ne $appRoot "/appsuite")) (get (get $routeConfig "http-api-routes-app-root-api") "enabled")) }}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "http-api-routes-app-root-api" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" (printf "%s/api" $appRoot) "PathType" "Prefix" "Service" "core-mw-http-api" "Rewrite" "/appsuite/api"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "rt2-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "rt2-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" (printf "%s/rt2" $appRoot) "PathType" "Prefix" "Service" "core-mw-http-api" "Rewrite" "/rt2"  "StickyDestination" (dict "Type" "cookie" "Name" "appsuite-core-mw-http-api-route") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "documents-help-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "documents-help-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" (printf "%s/help-documents" $appRoot) "PathType" "Prefix" "Service" "office-user-guide" "Rewrite" "/help-documents" "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "drive-help-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "drive-help-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" (printf "%s/help-drive" $appRoot) "PathType" "Prefix" "Service" "core-drive-help" "Rewrite" "/help" "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "core-help-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "core-help-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" (printf "%s/help" $appRoot) "PathType" "Prefix" "Service" "core-user-guide" "Rewrite" "/help"   "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "office-web-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "office-web-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" (printf "%s/office" $appRoot) "PathType" "Prefix" "Service" "core-ui-middleware" "Rewrite" $appRoot "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "wopi-server-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "wopi-server-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" (printf "%s/wopi" $appRoot) "PathType" "Prefix" "Service" "wopi-server" "Rewrite" "/wopi" "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "core-ui-api-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "core-ui-api-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.appsuite.hosts "Path" (dict "Path" (printf "%s/ui" $appRoot) "PathType" "Prefix" "Service" "core-ui" "Rewrite" "/ui" "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if .Values.ingress.businessmobility.enabled -}}
+{{- if (get (get $routeConfig "businessmobility-microsoft-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "businessmobility-microsoft-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.businessmobility.hosts "Path" (dict "Path" "/Microsoft-Server-ActiveSync" "PathType" "Prefix" "Service" "core-mw-businessmobility" "Rewrite" "/Microsoft-Server-ActiveSync" "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "businessmobility-usm-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "businessmobility-usm-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.businessmobility.hosts "Path" (dict "Path" "/usm-json" "PathType" "Prefix" "Service" "core-mw-businessmobility" "Rewrite" "/usm-json" "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{ end -}}
+{{- if .Values.ingress.dav.enabled -}}
+{{- if (get (get $routeConfig "caldav-well-known-redirect") "enabled") -}}
+{{ include "appsuite.ingress.redirect" (dict "Name" "caldav-well-known-redirect" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.dav.hosts "Path" (dict "Path" "/.well-known/caldav" "PathType" "Prefix" "Redirect" "/caldav/" "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "carddav-well-known-redirect") "enabled") -}}
+{{ include "appsuite.ingress.redirect" (dict "Name" "carddav-well-known-redirect" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.dav.hosts "Path" (dict "Path" "/.well-known/carddav" "PathType" "Prefix" "Redirect" "/carddav/" "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "dav-infostore-route") "enabled") -}}
+{{ include "appsuite.ingress.sticky" (dict "Name" "dav-infostore-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.dav.hosts "Path" (dict "Path" "/servlet/webdav.infostore/" "PathType" "Prefix" "Service" "core-mw-sync"  "StickyDestination" (dict "Type" "header" "Name" "authorization") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- if (get (get $routeConfig "dav-root-route") "enabled") -}}
+{{ include "appsuite.ingress.rewrite" (dict "Name" "dav-root-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.dav.hosts "Path" (dict "Path" "/" "PathType" "Prefix" "Service" "core-mw-sync" "Rewrite" "/servlet/dav/"  "StickyDestination" (dict "Type" "header" "Name" "authorization") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{ end -}}
+{{- if .Values.ingress.switchboard.enabled -}}
+{{- if (get (get $routeConfig "switchboard-root-route") "enabled") -}}
+{{ include "appsuite.ingress.sticky" (dict "Name" "switchboard-root-route" "TLS" .Values.ingress.tls "Hosts" .Values.ingress.switchboard.hosts "Path" (dict "Path" "/" "PathType" "Prefix" "Service" "switchboard"  "StickyDestination" (dict "Type" "header" "Name" "authorization") "PortNumber" 80 ) "Context" .) }}
+---
+{{ end -}}
+{{- end -}}
+{{- end -}}

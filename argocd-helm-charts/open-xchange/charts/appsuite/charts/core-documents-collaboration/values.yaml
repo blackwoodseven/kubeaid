@@ -1,0 +1,111 @@
+# Default values for core-documents-collaboration.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  extras:
+    monitoring:
+      enabled: false
+
+replicaCount: 1
+
+defaultRegistry: registry.open-xchange.com
+
+image:
+  repository: "core-documents-collaboration"
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+isEnabled: true
+discoveryStrategy: "dns"
+
+podAnnotations:
+  logging.open-xchange.com/format: "appsuite-json"
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  portMetrics: 8004
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 750Mi
+  limits:
+    cpu: 2000m
+    memory: 1000Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+probe:
+  liveness:
+    enabled: true
+    periodSeconds: 10
+    failureThreshold: 10
+
+  readiness:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    failureThreshold: 2
+    timeoutSeconds: 5
+
+  startup:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 5
+
+#
+# Logging
+#
+logging:
+  debug: false
+  maxFileSize: 2MB
+  maxIndex: 5
+  queueSize: 2048
+  syslog:
+    host: localhost
+    port: 514
+    facility: USER
+  logstash:
+    host: elk.open-xchange.com
+    port: 31337
+  root:
+    level: INFO
+    console: true
+    file: true
+    syslog: false
+    logstash: false
+  logger:
+    - name: org.apache.cxf
+      level: WARN
+
+extras:
+  monitoring:
+     # -- Whether monitoring resources should be created, e.g. a `ConfigMap` containing the Grafana dashboards.
+    enabled: false
+  javaOpts:
+    maxHeapSizeInMB: 512
+
+remoteDebug:
+  enabled: false
+  port:

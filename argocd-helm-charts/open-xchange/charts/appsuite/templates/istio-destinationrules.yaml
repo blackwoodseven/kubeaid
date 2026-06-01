@@ -1,0 +1,59 @@
+{{- if ((.Values).istio).enabled -}}
+{{- $component := "core-mw" -}}
+{{- if (index .Values $component).enabled -}}
+{{- $values := index .Values $component -}}
+{{- $chart := index .Subcharts $component "Chart" -}}
+{{- $release := index .Subcharts $component "Release" -}}
+{{- $fullname := include "ox-common.names.fullname" (dict "Values" $values "Chart" $chart "Release" $release) -}}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: {{ $fullname }}-http-api-route
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  host: {{ $fullname }}-http-api.{{ .Release.Namespace }}.svc.cluster.local
+  trafficPolicy:
+    {{- if ((((.Values).istio).destinationRules).appsuite).tls }}
+    tls: {{ toYaml .Values.istio.destinationRules.appsuite.tls | nindent 6 }}
+    {{- end }}
+    loadBalancer:
+      consistentHash:
+        httpCookie:
+          name: {{ $fullname }}-http-api-route
+          path: /
+          ttl: 720h # 30 days
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: {{ $fullname }}-sync-route
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  host: {{ $fullname }}-sync.{{ .Release.Namespace }}.svc.cluster.local
+  trafficPolicy:
+    {{- if ((((.Values).istio).destinationRules).dav).tls }}
+    tls: {{ toYaml .Values.istio.destinationRules.dav.tls | nindent 6 }}
+    {{- end }}
+    loadBalancer:
+      consistentHash:
+        httpHeaderName: authorization
+{{- if .Values.istio.virtualServices.businessmobility.enabled }}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: {{ $fullname }}-businessmobility-route
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  host: {{ $fullname }}-businessmobility.{{ .Release.Namespace }}.svc.cluster.local
+  trafficPolicy:
+    {{- if ((((.Values).istio).destinationRules).businessmobility).tls }}
+    tls: {{ toYaml .Values.istio.destinationRules.businessmobility.tls | nindent 6 }}
+    {{- end }}
+    loadBalancer:
+      consistentHash:
+        httpHeaderName: authorization
+{{- end }}
+{{- end -}}
+{{- end -}}

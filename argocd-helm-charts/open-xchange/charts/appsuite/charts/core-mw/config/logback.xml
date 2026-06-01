@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration debug={{ .Values.configuration.logging.debug | quote }}>
+
+  <property scope="context" name="com.openexchange.logging.filter.loggerWhitelist" value="com.openexchange" />
+  <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>
+  <define name="syslogPatternLayoutActivator" class="com.openexchange.logback.extensions.SyslogPatternLayoutActivator" />
+
+  {{- if .Values.configuration.logging.root.file }}
+
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <!--                              File Appender                              -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>{{ .Values.configuration.logging.file.name }}</file>
+      <rollingPolicy class="com.openexchange.logback.extensions.policies.FixedWindowRollingPolicy">
+          <fileNamePattern>{{ .Values.configuration.logging.file.pattern }}</fileNamePattern>
+          <minIndex>{{ .Values.configuration.logging.file.minIndex }}</minIndex>
+          <maxIndex>{{ .Values.configuration.logging.file.maxIndex }}</maxIndex>
+      </rollingPolicy>
+      <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+          <maxFileSize>{{ .Values.configuration.logging.file.maxFileSize }}</maxFileSize>
+      </triggeringPolicy>
+      <encoder class="com.openexchange.logback.extensions.encoders.ExtendedPatternLayoutEncoder">
+          <pattern>%date{"yyyy-MM-dd'T'HH:mm:ss,SSSZ"} %-5level [%thread] %class.%method\(%class{0}.java:%line\)%n%sanitisedMessage%n%lmdc%exception{full}</pattern>
+      </encoder>
+  </appender>
+
+  <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+    <queueSize>{{ .Values.configuration.logging.queueSize }}</queueSize>
+    <discardingThreshold>0</discardingThreshold>
+    <includeCallerData>true</includeCallerData>
+    <appender-ref ref="FILE"/>
+  </appender>
+  {{- end }}
+
+  {{- if .Values.configuration.logging.root.json }}
+
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <!--                              JSON Appender                              -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+        <layout class="com.openexchange.logback.json.extensions.ExtendedJsonLayout">
+            <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter">
+                <prettyPrint>{{ .Values.configuration.logging.json.prettyPrint }}</prettyPrint>
+            </jsonFormatter>
+            <timestampFormat>yyyy-MM-dd'T'HH:mm:ss.SSSZ</timestampFormat>
+            <timestampFormatTimezoneId>Etc/UTC</timestampFormatTimezoneId>
+            <includeReadableTimestamp>{{ ternary true false (.Values.configuration.logging.json.prettyPrint) }}</includeReadableTimestamp>
+            <includeLogLevelName>{{ ternary true false (.Values.configuration.logging.json.prettyPrint) }}</includeLogLevelName>
+            <appendLineSeparator>true</appendLineSeparator>
+        </layout>
+    </encoder>
+  </appender>
+
+  <appender name="ASYNC_JSON" class="ch.qos.logback.classic.AsyncAppender">
+    <queueSize>{{ .Values.configuration.logging.queueSize }}</queueSize>
+    <discardingThreshold>0</discardingThreshold>
+    <includeCallerData>true</includeCallerData>
+    <appender-ref ref="JSON"/>
+  </appender>
+  {{- end }}
+
+  {{- if .Values.configuration.logging.root.logstash }}
+
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <!--                            Logstash Appender                            -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <property scope="context" name="com.openexchange.logback.extensions.logstash.enabled" value="true" />
+  <property scope="context" name="com.openexchange.logback.extensions.logstash.alwaysPersistEvents" value="true" />
+  <property scope="context" name="com.openexchange.logback.extensions.logstash.loadFactor" value="0.67" />
+  <appender name="LOGSTASH" class="com.openexchange.logback.extensions.logstash.LogstashSocketAppender">
+    <remoteHost>{{ .Values.configuration.logging.logstash.host }}</remoteHost>
+    <port>{{ .Values.configuration.logging.logstash.port }}</port>
+    <reconnectionDelay>10000</reconnectionDelay>
+    <eventDelayLimit>30000</eventDelayLimit>
+    <encoder class="com.openexchange.logback.extensions.logstash.LogstashEncoder" />
+    <queueSize>{{ .Values.configuration.logging.queueSize }}</queueSize>
+  </appender>
+  {{- end }}
+
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <!--                               Root Logger                               -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <root level={{ .Values.configuration.logging.root.level | quote }}>
+  {{- if .Values.configuration.logging.root.logstash }}
+    <appender-ref ref="LOGSTASH" />
+  {{- end }}
+  {{- if .Values.configuration.logging.root.json }}
+    <appender-ref ref="ASYNC_JSON" />
+  {{- end }}
+  {{- if .Values.configuration.logging.root.file }}
+    <appender-ref ref="ASYNC_FILE" />
+  {{- end }}
+  </root>
+
+  <logger name="com.openexchange.login.internal.LoginPerformer" level="INFO"/>
+  <logger name="com.openexchange.sessiond.redis.RedisSessiondService" level="INFO"/>
+
+  <logger name="sun.rmi" level="INFO"/>
+  <logger name="org.apache" level="WARN"/>
+  <logger name="com.sun" level="INFO"/>
+  <logger name="javax.management" level="INFO"/>
+  <logger name="javax.jmdns" level="WARN"/>
+  <logger name="org.glassfish.grizzly" level="WARN"/>
+  <logger name="liquibase.ext.logging.slf4j.Slf4jLogger" level="WARN"/>
+
+  <logger name="org.jaudiotagger" level="ERROR"/>
+  <logger name="com.openexchange.documentconverter.impl.Manager" level="WARN"/>
+  <logger name="com.gargoylesoftware.htmlunit" level="WARN"/>
+
+  <logger name="org.docx4j" level="WARN"/>
+  <logger name="org.xlsx4j" level="WARN"/>
+  <logger name="org.pptx4j" level="WARN"/>
+
+  <logger name="com.openexchange.ajax.requesthandler.DispatcherServlet" level="INFO"/>
+
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  <!--                                 Logger                                  -->
+  <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+  {{- range .Values.configuration.logging.logger }}
+  <logger name={{ .name | quote }} level={{ .level | quote }}/>
+  {{- end }}
+
+</configuration>

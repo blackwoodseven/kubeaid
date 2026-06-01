@@ -1,0 +1,47 @@
+{{- if eq (include "ox-common.serviceaccount.create" (dict "podRoot" .Values "context" . "global" $)) "true" -}}
+# allow getting status and patching only the one deployment you want
+# to restart
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "ox-common.names.fullname" . }}
+  labels:
+    {{- include "ox-common.labels.standard" . | nindent 4 }}
+rules:
+  - apiGroups: ["", "apps", "autoscaling", "batch", "extensions"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create", "update", "patch", "delete"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/ephemeralcontainers"]
+    verbs: ["create", "update", "patch"]
+---
+# Service account the client will use to reset the deployment,
+# by default the pods running inside the cluster can do no such things.
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: {{ include "ox-common.names.fullname" . }}
+  labels:
+    {{- include "ox-common.labels.standard" . | nindent 4 }}
+---
+# bind the role to the service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "ox-common.names.fullname" . }}
+  labels:
+    {{- include "ox-common.labels.standard" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "ox-common.names.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "ox-common.names.fullname" . }}
+{{- end -}}

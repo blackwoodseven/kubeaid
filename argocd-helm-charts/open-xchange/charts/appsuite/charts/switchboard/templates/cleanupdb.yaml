@@ -1,0 +1,26 @@
+{{- if .Values.mysql.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "ox-common.names.fullname" . }}-cleanupdb
+spec:
+  schedule: {{ .Values.cron.cleanupDb }}
+  jobTemplate:
+    spec:
+      template:
+        {{- if .Values.cron.sidecarInjection.disabled }}
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        {{- end }}
+        spec: {{ include "ox-common.pods.podSpec" (dict "podRoot" .Values "global" $ "context" . ) | nindent 10 }}
+          containers:
+            - name: main
+              {{- include "ox-common.containers.securityContext" (dict "podRoot" .Values "context" . "global" $) | nindent 14 }}
+              image: {{ include "ox-common.images.image" (dict "imageRoot" .Values.image "global" $ "context" . ) }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["/usr/bin/node", "src/cleanupdb.js"]
+              env:
+                {{- include "switchboard.env" . | nindent 16 }}
+          restartPolicy: OnFailure
+{{- end -}}

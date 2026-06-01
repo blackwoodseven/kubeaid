@@ -1,0 +1,10 @@
+apiVersion: v2
+appVersion: 2.7.2
+dependencies:
+- name: ox-common
+  repository: oci://registry.open-xchange.com/appsuite-core-internal/charts
+  version: ~1.0.20
+description: Helm chart for appsuite core drive help
+name: core-drive-help
+type: application
+version: 8.13.2

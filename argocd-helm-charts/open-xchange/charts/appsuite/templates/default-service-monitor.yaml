@@ -1,0 +1,48 @@
+{{- if (or .Values.extras.monitoring.enabled .Values.global.extras.monitoring.enabled) -}}
+{{- if .Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor" -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "ox-common.names.fullname" . }}-default-service-monitor
+  {{- if .Values.extras.monitoring.serviceMonitor.namespace }}
+  namespace: {{ .Values.extras.monitoring.serviceMonitor.namespace }}
+  {{- else }}
+  namespace: {{ .Release.Namespace }}
+  {{- end }}
+  labels:
+    {{- with .Values.extras.monitoring.serviceMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- if .Values.extras.monitoring.serviceMonitor.annotations }}
+  annotations:
+    {{- toYaml .Values.extras.monitoring.serviceMonitor.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  endpoints:
+    - port: monitoring
+      path: "/metrics"
+      {{- if .Values.extras.monitoring.serviceMonitor.interval }}
+      interval: {{ .Values.extras.monitoring.serviceMonitor.interval }}
+      {{- end }}
+      {{- if .Values.extras.monitoring.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ .Values.extras.monitoring.serviceMonitor.scrapeTimeout }}
+      {{- end }}
+      {{- if .Values.extras.monitoring.serviceMonitor.honorLabels }}
+      honorLabels: {{ .Values.extras.monitoring.serviceMonitor.honorLabels }}
+      {{- end }}
+      {{- if .Values.extras.monitoring.serviceMonitor.metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml .Values.extras.monitoring.serviceMonitor.metricRelabelings | nindent 8 }}
+      {{- end }}
+      {{- if .Values.extras.monitoring.serviceMonitor.relabelings }}
+      relabelings:
+        {{- toYaml .Values.extras.monitoring.serviceMonitor.relabelings | nindent 8 }}
+      {{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      grafana.ox.io/service-monitor-implementation: default
+{{- end -}}
+{{- end -}}

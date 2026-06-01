@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ox-common.dcs.serviceName" . }}
+  labels:
+    {{- include "ox-common.labels.standard" . | nindent 4 }}
+spec:
+  ports:
+    - port: 61616
+      name: jms
+    - port: {{ .Values.service.portMetrics }}
+      targetPort: 8004
+      protocol: TCP
+      name: dcs-port
+  clusterIP: None
+  selector:
+    {{- include "ox-common.labels.matchLabels" . | nindent 4 }}

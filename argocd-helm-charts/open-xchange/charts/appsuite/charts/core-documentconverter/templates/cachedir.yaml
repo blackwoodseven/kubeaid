@@ -1,0 +1,42 @@
+{{- if .Values.persistence.enabled -}}
+{{- if empty .Values.persistence.existingClaim -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ template "core-documentconverter.volumeClaim.cacheDir" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+spec:
+  {{- if .Values.persistence.cacheDir.hostPath }}
+  accessModes:
+    - ReadWriteMany
+  {{- else}}
+  accessModes:
+    - {{ .Values.persistence.accessMode | quote }}
+  {{- end}}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.cacheDir.size | quote }}
+  {{- if .Values.persistence.cacheDir.volumeName }}
+  volumeName: {{ .Values.persistence.cacheDir.volumeName }}
+  {{- end }}
+  {{- if .Values.persistence.cacheDir.storageClass }}
+  {{- if (eq "-" .Values.persistence.cacheDir.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: "{{ .Values.persistence.cacheDir.storageClass }}"
+  {{- end -}}
+  {{- end }}
+  selector:
+  {{- if .Values.persistence.cacheDir.matchLabels }}
+    matchLabels:
+      {{ toYaml .Values.persistence.cacheDir.matchLabels | indent 6 }}
+  {{- end -}}
+  {{- if .Values.persistence.cacheDir.matchExpressions }}
+    matchExpressions:
+      {{ toYaml .Values.persistence.cacheDir.matchExpressions | indent 6 }}
+  {{- end -}}
+{{- end -}}
+{{- end -}}

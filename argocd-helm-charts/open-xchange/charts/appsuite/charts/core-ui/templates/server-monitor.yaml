@@ -1,0 +1,50 @@
+{{- if index .Values.monitoring.prometheus "kube-prometheus" -}}
+{{- if .Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor" -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "ox-common.names.fullname" . }}
+  {{- if .Values.monitoring.prometheus.serviceMonitor.namespace }}
+  namespace: {{ .Values.monitoring.prometheus.serviceMonitor.namespace }}
+  {{- else }}
+  namespace: {{ .Release.Namespace }}
+  {{- end }}
+
+  labels:
+    {{- with .Values.monitoring.prometheus.serviceMonitor.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- if .Values.monitoring.prometheus.serviceMonitor.annotations }}
+  annotations:
+    {{- toYaml .Values.monitoring.prometheus.serviceMonitor.annotations | nindent 4 }}
+  {{- end }}
+spec:
+  endpoints:
+    - port: monitoring
+      path: /metrics
+      {{- if .Values.monitoring.prometheus.serviceMonitor.interval }}
+      interval: {{ .Values.monitoring.prometheus.serviceMonitor.interval }}
+      {{- end }}
+      {{- if .Values.monitoring.prometheus.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ .Values.monitoring.prometheus.serviceMonitor.scrapeTimeout }}
+      {{- end }}
+      {{- if .Values.monitoring.prometheus.serviceMonitor.honorLabels }}
+      honorLabels: {{ .Values.monitoring.prometheus.serviceMonitor.honorLabels }}
+      {{- end }}
+      {{- if .Values.monitoring.prometheus.serviceMonitor.metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml .Values.monitoring.prometheus.serviceMonitor.metricRelabelings | nindent 8 }}
+      {{- end }}
+      {{- if .Values.monitoring.prometheus.serviceMonitor.relabelings }}
+      relabelings:
+        {{- toYaml .Values.monitoring.prometheus.serviceMonitor.relabelings | nindent 8 }}
+      {{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      grafana.ox.io/service-monitor-implementation: default
+{{- end -}}
+{{- end -}}
+

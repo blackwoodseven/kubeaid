@@ -1,0 +1,9 @@
+apiVersion: v2
+appVersion: 8.48.5
+dependencies:
+- name: ox-common
+  repository: oci://registry.open-xchange.com/appsuite-core-internal/charts
+  version: ~1.0.38
+name: core-ui
+type: application
+version: 3.4.5

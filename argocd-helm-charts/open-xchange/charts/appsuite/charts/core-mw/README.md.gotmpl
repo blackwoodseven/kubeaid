@@ -1,0 +1,173 @@
+{{ template "chart.header" . }}
+{{ template "chart.deprecationWarning" . }}
+
+{{ template "chart.badgesSection" . }}
+
+{{ template "chart.description" . }}
+
+{{ template "chart.homepageLine" . }}
+
+{{ template "chart.maintainersSection" . }}
+
+{{ template "chart.sourcesSection" . }}
+
+{{ template "chart.requirementsSection" . }}
+
+## Additional informations
+
+### 4.0.0
+
+- This version introduces new `configuration.redis` and `configuration.sessiond` section which **adds support for** Redis. Please refer to the documentation in `values.yaml`.
+- Changed the default service type from `NodePort` to `ClusterIP` for `http-api`, `sync` and `admin` service.
+- Removed *all* ingress configuration settings.
+- Removed `services.documentconverterHost`, `services.imageconverterHost` and `services.spellcheckHost`.
+Not necessary anymore but it's possible to override them e.g. via `.Values.global.dc.serviceName`
+- Renamed environment variables
+  - `OX_IMAGECONVERTER_URL` &rarr; `IC_SERVER_URL`
+  - `OX_SPELLCHECK_URL` &rarr; `SPELLCHECK_SERVER_URL`
+  - `OX_DOCUMENTCONVERTER_URL` &rarr; `DC_SERVER_URL`
+- Partially or fully override `ox-common.names.fullname` via `nameOverride` or `fullnameOverride`.
+
+### 5.10.1
+
+- This version introduces new `configuration.redis.cache` section which **adds support for** a separate cache for volatile data. Please refer to the documentation in `values.yaml`.
+
+### 6.0.1
+
+- Hazelcast is now required for OX Documents only.
+- Disabled packages `open-xchange-documents-backend` and `open-xchange-hazelcast` per default.
+- Introduced a new role `documents` that enables packages `open-xchange-documents-backend` and `open-xchange-hazelcast` and adds necessary `HZ_*` env variables to containers. The role has been added to the `defaultScaling`.
+- Removed `packages.minimalWhitelist` as it was not used anymore
+- Removed role `hazelcast-data-holding` and `hazelcast-lite-member`
+
+### 6.4.0
+
+- Whether to use TLS to connect to the Redis endpoint can now be configured using `redis.tls.enabled` and `redis.cache.tls.enabled`.
+
+### 6.19.5
+
+- Added support for `PodDisruptionBudget` (PDB) via the new `pdb` configuration section.
+- This version adds a new `middleware.open-xchange.com/type` label to pods. Upgrading to this version will trigger a rolling restart of all pods due to the label change.
+
+## Upgrading
+
+### To 6.0.1
+
+If you are using custom node definitions (`scaling.nodes`) in your Helm values, please make sure to remove roles `hazelcast-data-holding` and `hazelcast-lite-member`.
+Beside of that, a new role called `documents` has been introduced. The role needs to be added to every node definition that contains the `http-api` role and should run OX Documents.
+Furthermore, it ensures that a Hazelcast headless service is still deployed for OX Documents.
+
+Please consider the following `scaling.nodes` definition:
+
+```
+core-mw:
+  scaling:
+    nodes:
+      groupware:
+        replicas: 2
+        roles:
+          - admin
+          - http-api
+          - hazelcast-data-holding
+      sync:
+        replicas: 1
+        roles:
+          - sync
+          - businessmobility
+          - hazelcast-lite-member
+```
+
+A migrated version could look like this:
+
+```
+core-mw:
+  scaling:
+    nodes:
+      groupware:
+        replicas: 2
+        roles:
+          - admin
+          - http-api
+          - documents
+      sync:
+        replicas: 1
+        roles:
+          - sync
+          - businessmobility
+```
+
+#### Warning
+
+Nodes that do not have the role `documents` will not be deployed as a `StatefulSet` anymore. Instead they will be deployed as a `Deployment`.
+Upgrading a `StatefulSet` to a `Deployment` is not easily possible without some preparation.
+Simply upgrading via Helm would remove all pods of the `StatefulSet` before starting the first pod of the new `Deployment`.
+This would result in a short downtime for endusers.
+
+##### Example
+
+Take a look at the following migrated example:
+
+```
+core-mw:
+  scaling:
+    nodes:
+      groupware-without-docs:
+        replicas: 2
+        roles:
+          - admin
+          - http-api
+      sync:
+        replicas: 1
+        roles:
+          - sync
+          - businessmobility
+```
+
+Nodes `groupware-without-docs` will not run OX Documents and roles `hazelcast-data-holding` and `hazelcast-lite-member` have been removed, too.
+Prior `6.0.1`, those nodes were deployed as a `StatefulSet`. After the upgrade, they will be deployed as `Deployment`.
+If downtime is not feasible, you need to do the following before the upgrade:
+
+1. Remove the `StatefulSet` without removing the pods with:
+
+```
+kubectl delete statefulset appsuite-core-mw-groupware-without-docs --cascade=orphan
+```
+
+2. Upgrade via Helm
+
+If you're low on resources, you should scale replicas to `0` in your `values.yaml`.
+Otherwise, you will end up with the two pods from the `StatefulSet` and another two pods for the `Deployment`:
+
+```
+core-mw:
+  scaling:
+    nodes:
+      groupware-without-docs:
+        replicas: 0
+        [...]
+```
+
+You can now upgrade the deployment via Helm:
+
+```
+helm upgrade [...]
+```
+
+After the upgrade, you can manually delete the `StatefulSet` pods and scale up the `Deployment`:
+
+```
+kubectl delete pod appsuite-core-mw-groupware-without-docs-1
+kubectl scale deployment appsuite-core-mw-groupware-without-docs --replicas=1
+kubectl delete pod appsuite-core-mw-groupware-without-docs-0
+kubectl scale deployment appsuite-core-mw-groupware-without-docs --replicas=2
+```
+
+This process needs to be followed for all node definitions that previously had the `hazelcast-data-holding` role without having the `documents` role after the migration.
+
+Don't forget to scale up the replicas in your `values.yaml` again.
+
+## Configuration
+
+The following table lists the configurable parameters of the `App Suite Middleware Core` chart and their default values.
+
+{{ template "chart.valuesTable" . }}

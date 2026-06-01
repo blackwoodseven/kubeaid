@@ -1,0 +1,52 @@
+{{- if (index .Values "redis" "core-ui-middleware" "enabled") -}}
+apiVersion: databases.spotahome.com/v1
+kind: RedisFailover
+metadata:
+  name: core-ui-middleware
+  namespace: {{ .Release.Namespace }}
+spec:
+  sentinel:
+    replicas: {{ (index .Values "redis" "core-ui-middleware" "sentinelReplicaCount") }}
+    image: redis:7.4.0-alpine
+    {{- if (index .Values "redis" "core-ui-middleware" "sentinelCustomConfig") }}
+    customConfig:
+      {{- toYaml (index .Values "redis" "core-ui-middleware" "sentinelCustomConfig") | nindent 6 }}
+    {{- end }}
+    resources:
+      {{- toYaml (index .Values "redis" "core-ui-middleware" "sentinelResources") | nindent 6 }}
+{{- if (index .Values "redis" "core-ui-middleware" "metrics" "enabled") }}
+    podAnnotations:
+      prometheus.io/path: /metrics
+      prometheus.io/port: "9355"
+      prometheus.io/scrape: "true"
+    exporter:
+      enabled: true
+      imagePullPolicy: Always
+      image: {{ index .Values "redis" "core-ui-middleware" "imageSentinelExporter" }}
+{{- end }}
+  redis:
+    replicas: {{ (index .Values "redis" "core-ui-middleware" "replicaCount") }}
+    image: redis:7.4.0-alpine
+    {{- if (index .Values "redis" "core-ui-middleware" "customConfig") }}
+    customConfig:
+      {{- toYaml (index .Values "redis" "core-ui-middleware" "customConfig") | nindent 6 }}
+    {{- end }}
+    resources:
+      {{- toYaml (index .Values "redis" "core-ui-middleware" "resources") | nindent 6 }}
+{{- if (index .Values "redis" "core-ui-middleware" "metrics" "enabled") }}
+    podAnnotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "9121"
+        prometheus.io/scrape: "true"
+    exporter:
+      enabled: true
+      imagePullPolicy: Always
+      image: {{ index .Values "redis" "core-ui-middleware" "imageRedisExporter" }}
+      args:
+        - --web.telemetry-path
+        - /metrics
+      env:
+        - name: REDIS_EXPORTER_LOG_FORMAT
+          value: txt
+{{- end }}
+{{- end -}}

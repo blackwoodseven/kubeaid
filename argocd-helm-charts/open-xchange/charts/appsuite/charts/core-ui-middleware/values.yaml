@@ -1,0 +1,135 @@
+# Default values for core-ui-middleware.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  extras:
+    monitoring:
+      enabled: false
+
+replicaCount: 1
+
+defaultRegistry: registry.open-xchange.com
+
+bindAddr: "::"
+containerPort: 8080
+
+image:
+  repository: "appsuite-core-internal/core-ui-middleware"
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+overrides: {}
+#  redisSecret: ""
+
+podAnnotations:
+  logging.open-xchange.com/format: "appsuite-json"
+
+podSecurityContext: {}
+
+defaultPodSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+
+securityContext: {}
+
+defaultSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  # We recommend to always specify resources after actually measuring the values under
+  # production-like circumstances.
+  limits:
+    cpu: 1
+    memory: 768Mi
+  requests:
+    cpu: 500m
+    memory: 196Mi
+
+coreServiceURL: ""
+updater:
+  propagateUpgrades: true
+  resources:
+    # We recommend to not define a cpu limit for this pod. This pod runs compression of many files in a short time frame.
+    limits:
+      memory: 768Mi
+    requests:
+      cpu: 100m
+      memory: 196Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+probe:
+  liveness:
+    enabled: true
+    periodSeconds: 10
+    failureThreshold: 15
+
+  readiness:
+    enabled: true
+    initialDelaySeconds: 1
+    periodSeconds: 5
+    failureThreshold: 2
+    timeoutSeconds: 5
+
+cacheTTL: 30000
+logLevel: info
+baseUrls: []
+compressFileSize: 600
+compressFileTypes: application/javascript application/json application/x-javascript application/xml application/xml+rss text/css text/html text/javascript text/plain text/xml image/svg+xml
+slowRequestThreshold: 4000
+
+extras:
+  monitoring:
+    enabled: false
+
+# override main container command
+command:
+  - "/usr/bin/node"
+  - "src/index.js"
+
+redis:
+  mode: 'standalone' # Other values: sentinel, cluster
+  hosts:
+    - localhost:6379
+  db: 0
+  sentinelMasterId: "mymaster"
+  tls:
+    enabled: false
+    ca: ""
+  auth:
+    enabled: false
+    username: ""
+    password: ""
+  prefix: ui-middleware
+  # This is only used for development. A sidecar container is started in the pod.
+  # Note: This does not scale!
+  sidecar:
+    image: redis:latest

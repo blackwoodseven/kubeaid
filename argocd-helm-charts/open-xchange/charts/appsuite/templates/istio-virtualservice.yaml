@@ -1,0 +1,755 @@
+{{- if ((.Values).istio).enabled -}}
+{{- $appRoot := include "ox-common.appsuite.appRoot" . -}}
+{{- $services := .Values.istio.virtualServices.appsuite -}}
+{{- $hosts := (include "appsuite.mergeListWithMap" (dict "list" $services.hosts "map" $services.overridableHosts) | fromYaml).Result -}}
+{{- $routes := $services.routes -}}
+{{- $extraRoutes := $services.extraRoutes }}
+{{- $extraRouteProperties := $services.extraRouteProperties }}
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: {{ printf "%s-%s-%s" (include "ox-common.names.fullname" $) "virtualservice" "appsuite" | quote }}
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    {{- include "ox-common.labels.standard" $ | nindent 4 }}
+spec:
+  hosts:
+    {{- if not (empty $hosts) }}
+    {{- range $hosts }}
+    - {{ . | quote }}
+    {{- end }}
+    {{- else }}
+    {{ fail (printf "No hosts defined for service appsuite") }}
+    {{- end }}
+  gateways:
+    - {{ include "appsuite.ingressGateway" $ }}
+  http:
+    {{- if not (empty $routes) }}
+    {{- range $key, $val := $routes }}
+    - name: {{ $val.name | quote }}
+      match:
+        {{- range $val.matchPrefix }}
+        - uri:
+            prefix: {{ . | quote }}
+        {{- end }}
+      {{- if $val.redirect }}
+      redirect:
+         uri: {{ $val.redirect }}
+      {{- else }}
+      {{- if $val.rewrite }}
+      rewrite:
+        uri: {{ $val.rewrite | quote }}
+      {{- end }}
+      route:
+        - destination:
+            host: {{ include "appsuite.destinationHostForRoute" (dict "Route" $val "Context" $) }}
+            port:
+              number: {{ default 80 $val.destinationPort }}
+      {{- if $val.timeout }}
+      timeout: {{ $val.timeout | quote }}
+      {{- end }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- else }}
+    {{- if (ne $appRoot "") }}
+    - name: rootredirect
+      match:
+      - uri:
+          exact: /
+      redirect:
+        uri: {{ $appRoot }}/
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    - name: trailslash
+      match:
+      - uri:
+          exact: {{ $appRoot }}
+      redirect:
+        uri: {{ $appRoot }}/
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- range $key, $val := $extraRoutes }}
+    - name: {{ $val.name | quote }}
+      match:
+        {{- range $val.matchExact }}
+        - uri:
+            exact: {{ . | quote }}
+        {{- end }}
+        {{- range $val.matchPrefix }}
+        - uri:
+            prefix: {{ . | quote }}
+        {{- end }}
+        {{- range $val.matchRegex }}
+        - uri:
+            regex: {{ $val.matchRegex | quote }}
+        {{- end }}
+      {{- if $val.redirect }}
+      redirect:
+        uri: {{ $val.redirect }}
+      {{- else }}
+      {{- if $val.rewrite }}
+      rewrite:
+        uri: {{ $val.rewrite | quote }}
+        {{- if $val.rewriteAuthority }}
+        authority: {{ $val.rewriteAuthority | quote }}
+        {{- end }}
+      {{- else }}
+      {{- if $val.rewriteMatchRegex }}
+      rewrite:
+        uriRegexRewrite:
+          match: {{ $val.rewriteMatchRegex | quote }}
+          rewrite: {{ $val.rewriteRegex | quote }}
+      {{- end }}
+      {{- end }}
+      route:
+        - destination:
+            host: {{ include "appsuite.destinationHostForRoute" (dict "Route" $val "Context" $) }}
+            port:
+              number: {{ default 80 $val.destinationPort }}
+      {{- if $val.timeout }}
+      timeout: {{ $val.timeout | quote }}
+      {{- end }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.istio.segmentedRouting.enabled -}}
+    {{ include "appsuite.segmentedRoutingRedirect" (dict "LocalSite" .Values.istio.segmentedRouting.localSite "Sites" .Values.istio.segmentedRouting.sites "Paths" .Values.istio.segmentedRouting.appsuitePaths "Context" . "AppRoot" $appRoot) | nindent 4 }}
+    {{- end }}
+    {{- if and (get .Values "drive-client-windows-ox") (get .Values "drive-client-windows-ox").enabled }}
+    - name: "drive-client-windows-ox-route"
+      match:
+        - uri:
+            prefix: "/api/drive/client/windows/ox/install"
+      rewrite:
+        uri: "/"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "drive-client-windows-ox") }}.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: 80
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-mw").enabled }}
+    - name: "guard-api-route"
+      match:
+        - uri:
+            prefix: "{{ $appRoot }}/api/oxguard"
+      rewrite:
+        uri: "/oxguard"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-mw") }}-http-api.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: {{ default 80 (index .Values "core-mw" "istio" "virtualServices" "destinationPort" ) }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-mw").enabled }}
+    - name: "guard-support-api-route"
+      match:
+        - uri:
+            prefix: "{{ $appRoot }}/api/guardsupport"
+      rewrite:
+        uri: "/guardsupport"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-mw") }}-http-api.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: {{ default 80 (index .Values "core-mw" "istio" "virtualServices" "destinationPort" ) }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-mw").enabled }}
+    - name: "guard-pgp-route"
+      match:
+        - uri:
+            prefix: "/pks"
+      rewrite:
+        uri: "/pgp"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-mw") }}-http-api.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: {{ default 80 (index .Values "core-mw" "istio" "virtualServices" "destinationPort" ) }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-mw").enabled }}
+    - name: "http-api-routes"
+      match:
+        - uri:
+            prefix: "/api"
+        - uri:
+            prefix: "/ajax"
+        - uri:
+            prefix: "/appsuite/api"
+        {{- if (and (ne $appRoot "") (ne $appRoot "/appsuite")) }}
+        - uri:
+            prefix: "{{ $appRoot }}/api"
+        {{- end }}
+      rewrite:
+        uri: "{{ $appRoot }}/api"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-mw") }}-http-api.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: {{ default 80 (index .Values "core-mw" "istio" "virtualServices" "destinationPort") }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-mw").enabled }}
+    - name: "rt2-route"
+      match:
+        - uri:
+            prefix: "{{ $appRoot }}/rt2"
+      rewrite:
+        uri: "/rt2"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-mw") }}-http-api.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: {{ default 80 (index .Values "core-mw" "istio" "virtualServices" "destinationPort") }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-mw").enabled }}
+    - name: "admin-routes"
+      match:
+        - uri:
+            prefix: "/admin"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-mw") }}-admin.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: {{ default 80 (index .Values "core-mw" "istio" "virtualServices" "destinationPort") }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-mw").enabled }}
+    - name: "rest-routes"
+      match:
+        - uri:
+            prefix: "/advertisement"
+        - uri:
+            prefix: "/chronos"
+        - uri:
+            prefix: "/preliminary"
+        - uri:
+            prefix: "/userfeedback"
+        - uri:
+            prefix: "/request-analysis"
+        - uri:
+            prefix: "/davx5"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-mw") }}-http-api.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: {{ default 80 (index .Values "core-mw" "istio" "virtualServices" "destinationPort") }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-mw").enabled }}
+    - name: "static-routes"
+      match:
+        - uri:
+            prefix: "/servlet"
+        - uri:
+            prefix: "/realtime"
+        - uri:
+            prefix: "/infostore"
+        - uri:
+            prefix: "/webservices"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-mw") }}-http-api.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: {{ default 80 (index .Values "core-mw" "istio" "virtualServices" "destinationPort" ) }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "office-user-guide").enabled }}
+    - name: "documents-help-route"
+      match:
+        - uri:
+            prefix: "{{ $appRoot }}/help-documents"
+      rewrite:
+        uri: "/help-documents"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "office-user-guide") }}.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: 80
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-drive-help").enabled }}
+    - name: "drive-help-route"
+      match:
+        - uri:
+            prefix: "{{ $appRoot }}/help-drive"
+      rewrite:
+        uri: "/help"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-drive-help") }}.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: 80
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-user-guide").enabled }}
+    - name: "core-help-route"
+      match:
+        - uri:
+            prefix: "{{ $appRoot }}/help"
+      rewrite:
+        uri: "/help"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-user-guide") }}.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: 80
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-ui-middleware").enabled }}
+    - name: "office-web-route"
+      match:
+        - uri:
+            prefix: "{{ $appRoot }}/office"
+      rewrite:
+        uri: "{{ $appRoot }}/"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-ui-middleware") }}.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: 80
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if and (get .Values "wopi-server") (get .Values "wopi-server").enabled }}
+    - name: "wopi-server-route"
+      match:
+        - uri:
+            prefix: "{{ $appRoot }}/wopi"
+      rewrite:
+        uri: "/wopi"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "wopi-server") }}.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: 80
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-ui").enabled }}
+    - name: "core-ui-api-route"
+      match:
+        - uri:
+            prefix: "{{ $appRoot }}/ui"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-ui") }}.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: 80
+      rewrite:
+        uri: /ui
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if (get .Values "core-ui-middleware").enabled }}
+    - name: "manifest-route"
+      match:
+        - uri:
+            prefix: "{{ $appRoot }}"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-ui-middleware") }}.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: 80
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- if and .Values.istio.virtualServices.dav.enabled (get .Values "core-mw").enabled }}
+---
+{{- $services := .Values.istio.virtualServices.dav }}
+{{- $hosts := (include "appsuite.mergeListWithMap" (dict "list" $services.hosts "map" $services.overridableHosts) | fromYaml).Result -}}
+{{- $routes := $services.routes }}
+{{- $extraRoutes := $services.extraRoutes }}
+{{- $extraRouteProperties := $services.extraRouteProperties }}
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: {{ printf "%s-%s-%s" (include "ox-common.names.fullname" $) "virtualservice" "dav" | quote }}
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    {{- include "ox-common.labels.standard" $ | nindent 4 }}
+spec:
+  hosts:
+    {{- if not (empty $hosts) }}
+    {{- range $hosts }}
+    - {{ . | quote }}
+    {{- end }}
+    {{- else }}
+    {{ fail (printf "No hosts defined for service dav") }}
+    {{- end }}
+  gateways:
+    - {{ include "appsuite.ingressGateway" $ }}
+  http:
+    {{- if .Values.istio.segmentedRouting.enabled -}}
+    {{ include "appsuite.segmentedRoutingRedirect" (dict "LocalSite" .Values.istio.segmentedRouting.localSite "Sites" .Values.istio.segmentedRouting.sites "Paths" .Values.istio.segmentedRouting.davPaths "Context" . "AppRoot" $appRoot) | nindent 4 }}
+    {{- end }}
+    {{- if not (empty $routes) }}
+    {{- range $key, $val := $routes }}
+    - name: {{ $val.name | quote }}
+      match:
+        {{- range $val.matchPrefix }}
+        - uri:
+            prefix: {{ . | quote }}
+        {{- end }}
+      {{- if $val.redirect }}
+      redirect:
+         uri: {{ $val.redirect }}
+      {{- else }}
+      {{- if $val.rewrite }}
+      rewrite:
+        uri: {{ $val.rewrite | quote }}
+      {{- end }}
+      route:
+        - destination:
+            host: {{ include "appsuite.destinationHostForRoute" (dict "Route" $val "Context" $) }}
+            port:
+              number: {{ default 80 $val.destinationPort }}
+      {{- if $val.timeout }}
+      timeout: {{ $val.timeout | quote }}
+      {{- end }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- else }}
+    {{- range $key, $val := $extraRoutes }}
+    - name: {{ $val.name | quote }}
+      match:
+        {{- range $val.matchPrefix }}
+        - uri:
+            prefix: {{ . | quote }}
+        {{- end }}
+      {{- if $val.redirect }}
+      redirect:
+         uri: {{ $val.redirect }}
+      {{- else }}
+      {{- if $val.rewrite }}
+      rewrite:
+        uri: {{ $val.rewrite | quote }}
+      {{- end }}
+      route:
+        - destination:
+            host: {{ include "appsuite.destinationHostForRoute" (dict "Route" $val "Context" $) }}
+            port:
+              number: {{ default 80 $val.destinationPort }}
+      {{- if $val.timeout }}
+      timeout: {{ $val.timeout | quote }}
+      {{- end }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- end }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    - name: "caldav-well-known-redirect"
+      match:
+        - uri:
+            prefix: "/.well-known/caldav"
+      redirect:
+         uri: /caldav/
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    - name: "carddav-well-known-redirect"
+      match:
+        - uri:
+            prefix: "/.well-known/carddav"
+      redirect:
+         uri: /carddav/
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- if (get .Values "core-mw").enabled }}
+    - name: "dav-infostore-route"
+      match:
+        - uri:
+            prefix: "/servlet/webdav.infostore/"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-mw") }}-sync.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: {{ default 80 (index .Values "core-mw" "istio" "virtualServices" "destinationPort" ) }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    - name: "dav-root-route"
+      match:
+        - uri:
+            prefix: "/"
+      rewrite:
+        uri: "/servlet/dav/"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-mw") }}-sync.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: {{ default 80 (index .Values "core-mw" "istio" "virtualServices" "destinationPort" ) }}
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end -}}
+{{- if and .Values.istio.virtualServices.businessmobility.enabled (get .Values "core-mw").enabled }}
+---
+{{- $services := .Values.istio.virtualServices.businessmobility }}
+{{- $hosts := (include "appsuite.mergeListWithMap" (dict "list" $services.hosts "map" $services.overridableHosts) | fromYaml).Result -}}
+{{- $routes := $services.routes }}
+{{- $extraRoutes := $services.extraRoutes }}
+{{- $extraRouteProperties := $services.extraRouteProperties }}
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: {{ printf "%s-%s-%s" (include "ox-common.names.fullname" $) "virtualservice" "businessmobility" | quote }}
+  namespace: {{ $.Release.Namespace | quote }}
+  labels:
+    {{- include "ox-common.labels.standard" $ | nindent 4 }}
+spec:
+  hosts:
+    {{- if not (empty $hosts) }}
+    {{- range $hosts }}
+    - {{ . | quote }}
+    {{- end }}
+    {{- else }}
+    {{ fail (printf "No hosts defined for service businessmobility") }}
+    {{- end }}
+  gateways:
+    - {{ include "appsuite.ingressGateway" $ }}
+  http:
+    {{- range $key, $val := $extraRoutes }}
+    - name: {{ $val.name | quote }}
+      match:
+        {{- range $val.matchPrefix }}
+        - uri:
+            prefix: {{ . | quote }}
+        {{- end }}
+      {{- if $val.redirect }}
+      redirect:
+         uri: {{ $val.redirect }}
+      {{- else }}
+      {{- if $val.rewrite }}
+      rewrite:
+        uri: {{ $val.rewrite | quote }}
+      {{- end }}
+      route:
+        - destination:
+            host: {{ include "appsuite.destinationHostForRoute" (dict "Route" $val "Context" $) }}
+            port:
+              number: {{ default 80 $val.destinationPort }}
+      {{- if $val.timeout }}
+      timeout: {{ $val.timeout | quote }}
+      {{- end }}
+      {{- if $services.headers }}
+      headers:
+        request:
+          set:
+            host: {{ $services.headers.request.set.host | quote }}
+            x-host: {{ index $services.headers.request.set "x-host" | quote }}
+      {{- end }}
+      {{- end }}
+      {{- if $extraRouteProperties }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.istio.segmentedRouting.enabled -}}
+    {{ include "appsuite.segmentedRoutingRedirect" (dict "LocalSite" .Values.istio.segmentedRouting.localSite "Sites" .Values.istio.segmentedRouting.sites "Paths" .Values.istio.segmentedRouting.businessmobilityPaths "Context" . "AppRoot" $appRoot) | nindent 4 }}
+    {{- end }}
+    - name: "businessmobility-route"
+      match:
+        - uri:
+            prefix: "/usm-json"
+        - uri:
+            prefix: "/Microsoft-Server-ActiveSync"
+      route:
+        - destination:
+            host: "{{ include "appsuite.fullnameFromComponent" (dict "Context" $ "Component" "core-mw") }}-businessmobility.{{ .Release.Namespace }}.svc.cluster.local"
+            port:
+              number: {{ default 80 (index .Values "core-mw" "istio" "virtualServices" "destinationPort" ) }}
+      timeout: 1900s # needed for long polling. Similar to former Apache routing:
+                     # BalancerMember http://localhost_sync:8009 timeout=1900 smax=0 ttl=60 retry=60 loadfactor=50 route=APP1
+      {{- if not (empty $extraRouteProperties) }}
+      {{- $extraRouteProperties | toYaml | nindent 6 }}
+      {{- end }}
+{{- end }}
+{{- end -}}

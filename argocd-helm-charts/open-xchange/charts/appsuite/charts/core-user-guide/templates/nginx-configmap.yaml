@@ -1,0 +1,17 @@
+{{- if or .Values.nginx.mainConfig .Values.nginx.httpConfig }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ox-common.names.fullname" . }}-nginx-config
+  labels:
+    {{- include "ox-common.labels.standard" . | nindent 4 }}
+data:
+  {{- range $filename, $content := .Values.nginx.mainConfig }}
+  main.d-{{ $filename }}: |
+{{ $content | indent 4 }}
+  {{- end }}
+  {{- range $filename, $content := .Values.nginx.httpConfig }}
+  conf.d-{{ $filename }}: |
+{{ $content | indent 4 }}
+  {{- end }}
+{{- end }}

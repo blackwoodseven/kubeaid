@@ -1,0 +1,48 @@
+{{- if ((.Values).istio).enabled -}}
+{{- if not (((.Values).istio).ingressGateway).name -}}
+{{- $hosts := (include "appsuite.mergeListWithMap" (dict "list" .Values.istio.ingressGateway.hosts "map" .Values.istio.ingressGateway.overridableHosts) | fromYaml).Result }}
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: {{ include "appsuite.ingressGateway" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "ox-common.labels.standard" . | nindent 4 }}
+spec:
+  selector:
+    istio: {{ .Values.istio.ingressGateway.selector }}
+  servers:
+    - hosts:
+      {{- if not (empty $hosts) }}
+      {{- range $hosts }}
+        - {{ . | quote }}
+      {{- end }}
+      {{- else }}
+      {{ required "You need to define at least one hostname, for which the Gateway is responsible in .Values.istio.ingressGateway.hosts" "" }}
+      {{- end }}
+      port:
+        number: 80
+        name: http
+        protocol: HTTP
+    {{- if .Values.istio.ingressGateway.tls.enabled }}
+      tls:
+        httpsRedirect: true
+    - hosts:
+      {{- if not (empty $hosts) }}
+      {{- range $hosts }}
+        - {{ . | quote }}
+      {{- end }}
+      {{- else }}
+      {{ required "You need to define at least one hostname, for which the Gateway is responsible in .Values.istio.ingressGateway.hosts" "" }}
+      {{- end }}
+      port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: {{ include "appsuite.secretTLSName" . }}
+        minProtocolVersion: {{ .Values.istio.ingressGateway.tls.minProtocolVersion }}
+    {{- end }}
+{{- end -}}
+{{- end -}}

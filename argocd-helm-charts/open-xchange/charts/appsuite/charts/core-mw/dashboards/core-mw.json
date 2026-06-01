@@ -1,0 +1,2942 @@
+{
+   "description": "App Suite Core Middleware Dashboard\n",
+   "editable": false,
+   "graphTooltip": 1,
+   "links": [
+      {
+         "title": "Documentation",
+         "type": "link",
+         "url": "https://documentation.open-xchange.com/latest/middleware/monitoring/02_micrometer_and_prometheus.html#visualization"
+      }
+   ],
+   "panels": [
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 1
+         },
+         "id": 1,
+         "panels": [ ],
+         "title": "Overview",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 2
+         },
+         "id": 2,
+         "options": {
+            "colorMode": "none",
+            "graphMode": "none",
+            "textMode": "name"
+         },
+         "pluginVersion": "v11.4.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "topk(1, count(\n  appsuite_version_info{pod=~\"$pod\", namespace=\"$namespace\"}\n  ) by (server_version)\n)\n",
+               "instant": true,
+               "legendFormat": "{{server_version}}\n",
+               "range": false
+            }
+         ],
+         "title": "Server Version",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "fieldConfig": {
+            "defaults": {
+               "color": {
+                  "mode": "thresholds"
+               },
+               "decimals": 1,
+               "mappings": [
+                  {
+                     "options": {
+                        "match": "null",
+                        "result": {
+                           "text": "N/A"
+                        }
+                     },
+                     "type": "special"
+                  }
+               ],
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "rgba(245, 54, 54, 0.9)",
+                        "value": null
+                     },
+                     {
+                        "color": "rgba(237, 129, 40, 0.89)",
+                        "value": 300
+                     },
+                     {
+                        "color": "rgba(50, 172, 45, 0.97)",
+                        "value": 3600
+                     }
+                  ]
+               },
+               "unit": "s"
+            }
+         },
+         "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 2
+         },
+         "id": 3,
+         "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto"
+         },
+         "pluginVersion": "v11.4.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "process_uptime_seconds{pod=\"$pod\"}",
+               "instant": true,
+               "range": false
+            }
+         ],
+         "title": "Uptime",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "fieldConfig": {
+            "defaults": {
+               "mappings": [
+                  {
+                     "options": {
+                        "0": {
+                           "text": "Unhealthy"
+                        },
+                        "1": {
+                           "text": "Healthy"
+                        }
+                     },
+                     "type": "value"
+                  }
+               ],
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "rgba(245, 54, 54, 0.9)",
+                        "value": null
+                     },
+                     {
+                        "color": "rgba(237, 129, 40, 0.89)",
+                        "value": 0.10000000000000001
+                     },
+                     {
+                        "color": "rgba(50, 172, 45, 0.97)",
+                        "value": 1
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 12,
+            "y": 2
+         },
+         "id": 4,
+         "maxDataPoints": 100,
+         "options": {
+            "colorMode": "background",
+            "graphMode": "none"
+         },
+         "pluginVersion": "v11.4.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "topk(1, count(\n  appsuite_health_status{\n    pod=\"$pod\"\n  } > 0)\n)\n"
+            }
+         ],
+         "title": "Health Status",
+         "type": "stat"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 6
+         },
+         "id": 5,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "axisLabel": "Sessions",
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 0,
+                     "unit": "short"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 24,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 6,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_sessions_total{\n  client=\"all\",\n  namespace=\"$namespace\",\n  pod=~\"$pod\"\n}\n",
+                     "legendFormat": "Total"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_sessions_active_total{\n  client=\"all\",\n  namespace=\"$namespace\",\n  pod=~\"$pod\"\n}\n",
+                     "legendFormat": "Active"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_sessions_short_term_total{\n  client=\"all\",\n  namespace=\"$namespace\",\n  pod=~\"$pod\"\n}\n",
+                     "legendFormat": "Short Term"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_sessions_long_term_total{\n  client=\"all\",\n  namespace=\"$namespace\",\n  pod=~\"$pod\"\n}\n",
+                     "legendFormat": "Long Term"
+                  }
+               ],
+               "title": "Overview",
+               "type": "timeseries"
+            }
+         ],
+         "title": "Sessions",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 15
+         },
+         "id": 7,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "unit": "s"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byRegexp",
+                           "options": "/mean/i"
+                        },
+                        "properties": [
+                           {
+                              "id": "custom.fillOpacity",
+                              "value": 0
+                           },
+                           {
+                              "id": "custom.lineStyle",
+                              "value": {
+                                 "dash": [
+                                    8,
+                                    10
+                                 ],
+                                 "fill": "dash"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 24,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 8,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "calcs": [
+                        "min",
+                        "mean",
+                        "max"
+                     ],
+                     "displayMode": "table",
+                     "placement": "right",
+                     "sortBy": "Mean",
+                     "sortDesc": false
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by (command) (\n  rate(\n    lettuce_command_completion_seconds_sum{\n      pod=~\"$pod\",\n      namespace=~\"$namespace\"\n    }[$__rate_interval]\n  )\n) /\nsum by (command) (\n  rate(\n    lettuce_command_completion_seconds_count{\n      pod=~\"$pod\",\n      namespace=~\"$namespace\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "{{command}}"
+                  }
+               ],
+               "title": "Average Command Completion",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 0,
+                     "unit": "short"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 24,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 9,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_redis_connections_num_active{\n  pod=~\"$pod\",\n  namespace=~\"$namespace\",\n  name=\"redis-pool\"\n}\n",
+                     "legendFormat": "Active"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_redis_connections_num_idle{\n  pod=~\"$pod\",\n  namespace=~\"$namespace\",\n  name=\"redis-pool\"\n}\n",
+                     "legendFormat": "Idle"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_redis_connections_num_waiters{\n  pod=~\"$pod\",\n  namespace=~\"$namespace\",\n  name=\"redis-pool\"\n}\n",
+                     "legendFormat": "Waiters"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_redis_connections_num_total{\n  pod=~\"$pod\",\n  namespace=~\"$namespace\",\n  name=\"redis-pool\"\n}\n",
+                     "legendFormat": "Total"
+                  }
+               ],
+               "title": "Connections",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 0,
+                     "unit": "short"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 24,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 10,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_redis_cache_connections_num_active{\n  pod=~\"$pod\",\n  namespace=~\"$namespace\",\n  name=\"redis-cache-pool\"\n}\n",
+                     "legendFormat": "Active"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_redis_cache_connections_num_idle{\n  pod=~\"$pod\",\n  namespace=~\"$namespace\",\n  name=\"redis-cache-pool\"\n}\n",
+                     "legendFormat": "Idle"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_redis_cache_connections_num_waiters{\n  pod=~\"$pod\",\n  namespace=~\"$namespace\",\n  name=\"redis-cache-pool\"\n}\n",
+                     "legendFormat": "Waiters"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_redis_cache_connections_num_total{\n  pod=~\"$pod\",\n  namespace=~\"$namespace\",\n  name=\"redis-cache-pool\"\n}\n",
+                     "legendFormat": "Total"
+                  }
+               ],
+               "title": "Cache Connections",
+               "type": "timeseries"
+            }
+         ],
+         "title": "Redis (Lettuce)",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 15
+         },
+         "id": 11,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "axisLabel": "Threads",
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     }
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 12,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_executor_active_threads{\n  name=\"main\",\n  pod=\"$pod\"\n}\n",
+                     "legendFormat": "ActiveCount"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_executor_pool_size_threads{\n  name=\"main\",\n  pod=\"$pod\"\n}\n",
+                     "legendFormat": "PoolSize"
+                  }
+               ],
+               "title": "ThreadPool",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "axisLabel": "Tasks/s",
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     }
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 8,
+                  "y": 0
+               },
+               "id": 13,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_executor_queue_remaining_tasks{\n  name=\"main\",\n  pod=~\"$pod\"\n}\n",
+                     "legendFormat": "Remaining"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_executor_queued_tasks{\n  name=\"main\",\n  pod=~\"$pod\"\n}\n",
+                     "legendFormat": "Queued"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "rate(\n  appsuite_executor_completed_tasks_total{\n    name=\"main\",\n    pod=~\"$pod\"\n  }[$__rate_interval])\n",
+                     "legendFormat": "Completed"
+                  }
+               ],
+               "title": "ThreadPool Tasks",
+               "type": "timeseries"
+            }
+         ],
+         "title": "ThreadPool",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 16
+         },
+         "id": 14,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 0,
+                     "unit": "short"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 15,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by(module) (\n  rate(\n    appsuite_redis_cache_hits_total{\n      pod=~\"$pod\"\n    }\n    [$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "{{module}}"
+                  }
+               ],
+               "title": "Cache Hits",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 0,
+                     "unit": "short"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 8,
+                  "y": 0
+               },
+               "id": 16,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by(module) (\n  rate(\n    appsuite_redis_cache_misses_total{\n      pod=~\"$pod\"\n    }\n    [$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "{{module}}"
+                  }
+               ],
+               "title": "Cache Misses",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 0,
+                     "max": 1,
+                     "min": 0,
+                     "unit": "percentunit"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 16,
+                  "y": 0
+               },
+               "id": 17,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_redis_cache_hits_total{\n      pod=\"$pod\"\n    }\n    [$__rate_interval]\n  )\n) / (\n  sum(\n    rate(\n      appsuite_redis_cache_hits_total{\n        pod=\"$pod\"\n      }\n      [$__rate_interval]\n    )\n  ) + sum(\n    rate(\n      appsuite_redis_cache_misses_total{\n        pod=\"$pod\"\n      }\n      [$__rate_interval]\n    )\n  )\n)\n",
+                     "legendFormat": "Hit Ratio"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_redis_cache_misses_total{\n      pod=\"$pod\"\n      }\n      [$__rate_interval]\n    )\n  )\n/ (\n  sum(\n    rate(\n      appsuite_redis_cache_hits_total{\n        pod=\"$pod\"\n      }\n      [$__rate_interval]\n    )\n  )\n  + sum(\n    rate(\n      appsuite_redis_cache_misses_total{\n        pod=\"$pod\"\n      }\n      [$__rate_interval]\n    )\n  )\n)\n",
+                     "legendFormat": "Miss Ratio"
+                  }
+               ],
+               "title": "Cache Hit/Miss Ratio",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 0,
+                     "unit": "short"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 18,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by(module) (\n  rate(\n    appsuite_redis_cache_puts_total{\n      pod=~\"$pod\"\n    }\n    [$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "{{module}}"
+                  }
+               ],
+               "title": "Cache Puts",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 0,
+                     "unit": "short"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 8,
+                  "y": 0
+               },
+               "id": 19,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by(module) (\n  rate(\n    appsuite_redis_cache_removals_total{\n      pod=~\"$pod\"\n    }\n    [$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "{{module}}"
+                  }
+               ],
+               "title": "Cache Removals",
+               "type": "timeseries"
+            }
+         ],
+         "title": "Cache",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 17
+         },
+         "id": 20,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 0,
+                     "unit": "short"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 21,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_mysql_connections_total{class=\"configdb\",pod=~\"$pod\",type=\"read\"}\n",
+                     "legendFormat": "Pooled"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_mysql_connections_active{class=\"configdb\",pod=\"$pod\",type=\"read\"}\n",
+                     "legendFormat": "Active"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_mysql_connections_idle{class=\"configdb\",pod=~\"$pod\",type=\"read\"}\n",
+                     "legendFormat": "Idle"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(appsuite_mysql_connections_max{class=\"configdb\",pod=~\"$pod\",type=\"read\"})\n",
+                     "legendFormat": "Max"
+                  }
+               ],
+               "title": "ConfigDB Read Connections",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 0,
+                     "unit": "short"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 8,
+                  "y": 0
+               },
+               "id": 22,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_mysql_connections_total{class=\"configdb\",pod=~\"$pod\",type=\"write\"}\n",
+                     "legendFormat": "Pooled"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_mysql_connections_active{class=\"configdb\",pod=\"$pod\",type=\"write\"}\n",
+                     "legendFormat": "Active"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_mysql_connections_idle{class=\"configdb\",pod=~\"$pod\",type=\"write\"}\n",
+                     "legendFormat": "Idle"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(appsuite_mysql_connections_max{class=\"configdb\",pod=~\"$pod\",type=\"write\"})\n",
+                     "legendFormat": "Max"
+                  }
+               ],
+               "title": "ConfigDB Write Connections",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "decimals": 0,
+                     "unit": "short"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 16,
+                  "y": 0
+               },
+               "id": 23,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_mysql_connections_total{\n  class=~\"userdb\",\n  pod=~\"$pod\",\n  pool=~\"$dbpool\"\n}\n",
+                     "legendFormat": "Pooled (Type: {{type}}, Pool: {{pool}})\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_mysql_connections_active{\n  class=~\"userdb\",\n  pod=~\"$pod\",\n  pool=~\"$dbpool\"\n}\n",
+                     "legendFormat": "Active (Type: {{type}}, Pool: {{pool}})\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_mysql_connections_idle{\n  class=~\"userdb\",\n  pod=~\"$pod\",\n  pool=~\"$dbpool\"\n}\n",
+                     "legendFormat": "Idle (Type: {{type}}, Pool: {{pool}})\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_mysql_connections_max{\n  class=~\"userdb\",\n  pod=~\"$pod\",\n  pool=~\"$dbpool\"\n}\n",
+                     "legendFormat": "Max (Type: {{type}}, Pool: {{pool}})\n"
+                  }
+               ],
+               "title": "UserDB Connections",
+               "type": "timeseries"
+            }
+         ],
+         "title": "DB Pool",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 18
+         },
+         "id": 24,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "cps"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "OK"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-green",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "KO"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-red",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "Total"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-yellow",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 25,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by (client, instance) (\n  rate(\n    appsuite_httpclient_requests_seconds_count{\n      pod=~\"$pod\",\n      client=\"$httpclient\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "Total"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by (client, instance) (\n  rate(\n    appsuite_httpclient_requests_seconds_count{\n      pod=~\"$pod\",\n      client=\"$httpclient\",\n      status!~\"[45][0-9]{2}\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "OK"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by (client, instance) (\n  rate(\n    appsuite_httpclient_requests_seconds_count{\n      pod=~\"$pod\",\n      client=\"$httpclient\",\n      status=~\"[45][0-9]{2}\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "KO"
+                  }
+               ],
+               "title": "Requests (per-second)",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 8,
+                  "y": 0
+               },
+               "id": 26,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_httpclient_connections_pending{\n  pod=\"$pod\",\n  client=~\"$httpclient\"\n}\n",
+                     "legendFormat": "Pending"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_httpclient_connections_available{\n  pod=\"$pod\",\n  client=~\"$httpclient\"\n}\n",
+                     "legendFormat": "Available"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_httpclient_connections_leased{\n  pod=\"$pod\",\n  client=~\"$httpclient\"\n}\n",
+                     "legendFormat": "Leased"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "appsuite_httpclient_connections_max{\n  pod=\"$pod\",\n  client=~\"$httpclient\"\n}\n",
+                     "legendFormat": "Max"
+                  }
+               ],
+               "title": "Connections",
+               "type": "timeseries"
+            }
+         ],
+         "title": "HTTP Client ($httpclient)",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 19
+         },
+         "id": 27,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "cps"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "OK"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-green",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "KO"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-red",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "Total"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-yellow",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 28,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_httpapi_requests_seconds_count{\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "Total"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_httpapi_requests_seconds_count{\n      status=~\"OK\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "OK"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_httpapi_requests_seconds_count{\n      status!~\"OK\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "KO"
+                  }
+               ],
+               "title": "Requests (per-second)",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "unit": "s"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byRegexp",
+                           "options": "/mean/i"
+                        },
+                        "properties": [
+                           {
+                              "id": "custom.fillOpacity",
+                              "value": 0
+                           },
+                           {
+                              "id": "custom.lineStyle",
+                              "value": {
+                                 "dash": [
+                                    8,
+                                    10
+                                 ],
+                                 "fill": "dash"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 8,
+                  "y": 0
+               },
+               "id": 29,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "histogram_quantile(\n  0.90,\n  sum by (namespace, le, pod) (\n    rate(\n      appsuite_httpapi_requests_seconds_bucket{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n      }[$__rate_interval]\n    )\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "p90\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "histogram_quantile(\n  0.95,\n  sum by (namespace, le, pod) (\n    rate(\n      appsuite_httpapi_requests_seconds_bucket{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n      }[$__rate_interval]\n    )\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "p95\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "histogram_quantile(\n  0.99,\n  sum by (namespace, le, pod) (\n    rate(\n      appsuite_httpapi_requests_seconds_bucket{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n      }[$__rate_interval]\n    )\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "p99\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by (namespace, le, pod) (\n  rate(\n    appsuite_httpapi_requests_seconds_sum{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n    }[$__rate_interval])\n) /\nsum by (namespace, le, pod) (\n  rate(\n    appsuite_httpapi_requests_seconds_count{\n      namespace=~\"$namespace\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "mean"
+                  }
+               ],
+               "title": "Response Time Percentiles",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "axisLabel": "Response Time",
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "s"
+                  }
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 16,
+                  "y": 0
+               },
+               "id": 30,
+               "interval": "1m",
+               "options": {
+                  "legend": {
+                     "displayMode": "list",
+                     "placement": "bottom"
+                  },
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "topk(\n  5,\n  histogram_quantile(\n    0.99, sum by (le, module, action, instance) (\n      rate(\n        appsuite_httpapi_requests_seconds_bucket{\n          pod=~\"$pod\"\n        }[${__range_s}s]\n      )\n    )\n  )\n)\n",
+                     "legendFormat": "{{module}}/{{action}}\n"
+                  }
+               ],
+               "title": "Top 5 Requests (99th percentile)",
+               "type": "timeseries"
+            }
+         ],
+         "title": "HTTP API",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 20
+         },
+         "id": 31,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "cps"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "OK"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-green",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "KO"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-red",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "Total"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-yellow",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 32,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_restapi_requests_seconds_count{\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "Total"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_restapi_requests_seconds_count{\n      status=~\"OK\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "OK"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_restapi_requests_seconds_count{\n      status!~\"OK\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "KO"
+                  }
+               ],
+               "title": "Requests (per-second)",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "unit": "s"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byRegexp",
+                           "options": "/mean/i"
+                        },
+                        "properties": [
+                           {
+                              "id": "custom.fillOpacity",
+                              "value": 0
+                           },
+                           {
+                              "id": "custom.lineStyle",
+                              "value": {
+                                 "dash": [
+                                    8,
+                                    10
+                                 ],
+                                 "fill": "dash"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 8,
+                  "y": 0
+               },
+               "id": 33,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "histogram_quantile(\n  0.90,\n  sum by (namespace, le, pod) (\n    rate(\n      appsuite_restapi_requests_seconds_bucket{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n      }[$__rate_interval]\n    )\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "p90\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "histogram_quantile(\n  0.95,\n  sum by (namespace, le, pod) (\n    rate(\n      appsuite_restapi_requests_seconds_bucket{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n      }[$__rate_interval]\n    )\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "p95\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "histogram_quantile(\n  0.99,\n  sum by (namespace, le, pod) (\n    rate(\n      appsuite_restapi_requests_seconds_bucket{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n      }[$__rate_interval]\n    )\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "p99\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by (namespace, le, pod) (\n  rate(\n    appsuite_restapi_requests_seconds_sum{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n    }[$__rate_interval])\n) /\nsum by (namespace, le, pod) (\n  rate(\n    appsuite_restapi_requests_seconds_count{\n      namespace=~\"$namespace\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "mean"
+                  }
+               ],
+               "title": "Response Time Percentiles",
+               "type": "timeseries"
+            }
+         ],
+         "title": "REST API",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 21
+         },
+         "id": 34,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "cps"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "OK"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-green",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "KO"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-red",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "Total"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-yellow",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 35,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_webdav_requests_seconds_count{\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "Total"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_webdav_requests_seconds_count{\n      status=~\"OK\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "OK"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_webdav_requests_seconds_count{\n      status!~\"OK\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "KO"
+                  }
+               ],
+               "title": "Requests (per-second)",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "unit": "s"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byRegexp",
+                           "options": "/mean/i"
+                        },
+                        "properties": [
+                           {
+                              "id": "custom.fillOpacity",
+                              "value": 0
+                           },
+                           {
+                              "id": "custom.lineStyle",
+                              "value": {
+                                 "dash": [
+                                    8,
+                                    10
+                                 ],
+                                 "fill": "dash"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 8,
+                  "y": 0
+               },
+               "id": 36,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "histogram_quantile(\n  0.90,\n  sum by (namespace, le, pod) (\n    rate(\n      appsuite_webdav_requests_seconds_bucket{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n      }[$__rate_interval]\n    )\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "p90\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "histogram_quantile(\n  0.95,\n  sum by (namespace, le, pod) (\n    rate(\n      appsuite_webdav_requests_seconds_bucket{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n      }[$__rate_interval]\n    )\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "p95\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "histogram_quantile(\n  0.99,\n  sum by (namespace, le, pod) (\n    rate(\n      appsuite_webdav_requests_seconds_bucket{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n      }[$__rate_interval]\n    )\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "p99\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by (namespace, le, pod) (\n  rate(\n    appsuite_webdav_requests_seconds_sum{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n    }[$__rate_interval])\n) /\nsum by (namespace, le, pod) (\n  rate(\n    appsuite_webdav_requests_seconds_count{\n      namespace=~\"$namespace\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "mean"
+                  }
+               ],
+               "title": "Response Time Percentiles",
+               "type": "timeseries"
+            }
+         ],
+         "title": "WebDAV API",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 22
+         },
+         "id": 37,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "cps"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "OK"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-green",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "KO"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-red",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "Total"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-yellow",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 38,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_soapapi_requests_seconds_count{\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "Total"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_soapapi_requests_seconds_count{\n      status=~\"OK\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "OK"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_soapapi_requests_seconds_count{\n      status!~\"OK\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "KO"
+                  }
+               ],
+               "title": "Requests (per-second)",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "unit": "s"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byRegexp",
+                           "options": "/mean/i"
+                        },
+                        "properties": [
+                           {
+                              "id": "custom.fillOpacity",
+                              "value": 0
+                           },
+                           {
+                              "id": "custom.lineStyle",
+                              "value": {
+                                 "dash": [
+                                    8,
+                                    10
+                                 ],
+                                 "fill": "dash"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 8,
+                  "y": 0
+               },
+               "id": 39,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "histogram_quantile(\n  0.90,\n  sum by (namespace, le, pod) (\n    rate(\n      appsuite_soapapi_requests_seconds_bucket{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n      }[$__rate_interval]\n    )\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "p90\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "histogram_quantile(\n  0.95,\n  sum by (namespace, le, pod) (\n    rate(\n      appsuite_soapapi_requests_seconds_bucket{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n      }[$__rate_interval]\n    )\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "p95\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "histogram_quantile(\n  0.99,\n  sum by (namespace, le, pod) (\n    rate(\n      appsuite_soapapi_requests_seconds_bucket{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n      }[$__rate_interval]\n    )\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "p99\n"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by (namespace, le, pod) (\n  rate(\n    appsuite_soapapi_requests_seconds_sum{\n        namespace=~\"$namespace\",\n        pod=~\"$pod\"\n    }[$__rate_interval])\n) /\nsum by (namespace, le, pod) (\n  rate(\n    appsuite_soapapi_requests_seconds_count{\n      namespace=~\"$namespace\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "intervalFactor": 2,
+                     "legendFormat": "mean"
+                  }
+               ],
+               "title": "Response Time Percentiles",
+               "type": "timeseries"
+            }
+         ],
+         "title": "SOAP API",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 23
+         },
+         "id": 40,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "cps"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "OK"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-green",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "KO"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-red",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "Total"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-yellow",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 41,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_provisioning_api_duration_seconds_count{\n      pod=~\"$pod\"\n    }\n    [$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "Total"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_provisioning_api_duration_seconds_count{\n      status=~\"OK\",\n      pod=~\"$pod\"\n    }\n    [$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "OK"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_provisioning_api_duration_seconds_count{\n      status!~\"OK\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "KO"
+                  }
+               ],
+               "title": "API Requests (per-second)",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "cps"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "OK"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-green",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "KO"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-red",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "Total"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-yellow",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 8,
+                  "y": 0
+               },
+               "id": 42,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_provisioning_plugin_duration_seconds_count{\n      pod=~\"$pod\"\n    }\n    [$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "Total"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_provisioning_plugin_duration_seconds_count{\n      status=~\"OK\",\n      pod=~\"$pod\"\n    }\n    [$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "OK"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_provisioning_plugin_duration_seconds_count{\n      status!~\"OK\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "KO"
+                  }
+               ],
+               "title": "Plugin Requests (per-second)",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "cps"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "OK"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-green",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "KO"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-red",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "Total"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-yellow",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 16,
+                  "y": 0
+               },
+               "id": 43,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_provisioning_storage_duration_seconds_count{\n      pod=~\"$pod\"\n    }\n    [$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "Total"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_provisioning_storage_duration_seconds_count{\n      status=~\"OK\",\n      pod=~\"$pod\"\n    }\n    [$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "OK"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_provisioning_storage_duration_seconds_count{\n      status!~\"OK\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "KO"
+                  }
+               ],
+               "title": "Storage Requests (per-second)",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "unit": "s"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byRegexp",
+                           "options": "/mean/i"
+                        },
+                        "properties": [
+                           {
+                              "id": "custom.fillOpacity",
+                              "value": 0
+                           },
+                           {
+                              "id": "custom.lineStyle",
+                              "value": {
+                                 "dash": [
+                                    8,
+                                    10
+                                 ],
+                                 "fill": "dash"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 44,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by (api_class, method, operation) (\n  rate(\n    appsuite_provisioning_api_duration_seconds_sum{\n      pod=~\"$pod\",\n      namespace=~\"$namespace\"\n    }[$__rate_interval]\n  )\n) /\nsum by (api_class, method, operation) (\n  rate(\n    appsuite_provisioning_api_duration_seconds_count{\n      pod=~\"$pod\",\n      namespace=~\"$namespace\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "{{api_class}} - {{method}} - {{operation}}\n"
+                  }
+               ],
+               "title": "Average API Duration",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "unit": "s"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byRegexp",
+                           "options": "/mean/i"
+                        },
+                        "properties": [
+                           {
+                              "id": "custom.fillOpacity",
+                              "value": 0
+                           },
+                           {
+                              "id": "custom.lineStyle",
+                              "value": {
+                                 "dash": [
+                                    8,
+                                    10
+                                 ],
+                                 "fill": "dash"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 8,
+                  "y": 0
+               },
+               "id": 45,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by (plugin_name, method, operation) (\n  rate(\n    appsuite_provisioning_plugin_duration_seconds_sum{\n      pod=~\"$pod\",\n      namespace=~\"$namespace\"\n    }[$__rate_interval]\n  )\n) /\nsum by (plugin_name, method, operation) (\n  rate(\n    appsuite_provisioning_plugin_duration_seconds_count{\n      pod=~\"$pod\",\n      namespace=~\"$namespace\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "{{plugin_name}} - {{method}} - {{operation}}\n"
+                  }
+               ],
+               "title": "Average Plugin Duration",
+               "type": "timeseries"
+            },
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "unit": "s"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byRegexp",
+                           "options": "/mean/i"
+                        },
+                        "properties": [
+                           {
+                              "id": "custom.fillOpacity",
+                              "value": 0
+                           },
+                           {
+                              "id": "custom.lineStyle",
+                              "value": {
+                                 "dash": [
+                                    8,
+                                    10
+                                 ],
+                                 "fill": "dash"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 16,
+                  "y": 0
+               },
+               "id": 46,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum by (storage_class, method, operation) (\n  rate(\n    appsuite_provisioning_storage_duration_seconds_sum{\n      pod=~\"$pod\",\n      namespace=~\"$namespace\"\n    }[$__rate_interval]\n  )\n) /\nsum by (storage_class, method, operation) (\n  rate(\n    appsuite_provisioning_storage_duration_seconds_count{\n      pod=~\"$pod\",\n      namespace=~\"$namespace\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "{{storage_class}} - {{method}} - {{operation}}\n"
+                  }
+               ],
+               "title": "Average Storage Duration",
+               "type": "timeseries"
+            }
+         ],
+         "title": "Provisioning",
+         "type": "row"
+      },
+      {
+         "collapsed": true,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 24
+         },
+         "id": 47,
+         "panels": [
+            {
+               "datasource": {
+                  "type": "datasource",
+                  "uid": "-- Mixed --"
+               },
+               "fieldConfig": {
+                  "defaults": {
+                     "custom": {
+                        "fillOpacity": 10,
+                        "showPoints": "never"
+                     },
+                     "min": 0,
+                     "unit": "cps"
+                  },
+                  "overrides": [
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "OK"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-green",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "KO"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-red",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     },
+                     {
+                        "matcher": {
+                           "id": "byName",
+                           "options": "Total"
+                        },
+                        "properties": [
+                           {
+                              "id": "color",
+                              "value": {
+                                 "fixedColor": "dark-yellow",
+                                 "mode": "fixed"
+                              }
+                           }
+                        ]
+                     }
+                  ]
+               },
+               "gridPos": {
+                  "h": 8,
+                  "w": 8,
+                  "x": 0,
+                  "y": 0
+               },
+               "id": 48,
+               "interval": "1m",
+               "options": {
+                  "tooltip": {
+                     "mode": "multi",
+                     "sort": "desc"
+                  }
+               },
+               "pluginVersion": "v11.4.0",
+               "targets": [
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_imap_commands_seconds_count{\n      pod=~\"$pod\"\n    }\n    [$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "Total"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_imap_commands_seconds_count{\n      status=~\"OK\",\n      pod=~\"$pod\"\n    }\n    [$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "OK"
+                  },
+                  {
+                     "datasource": {
+                        "type": "prometheus",
+                        "uid": "$datasource"
+                     },
+                     "expr": "sum(\n  rate(\n    appsuite_imap_commands_seconds_count{\n      status!~\"OK\",\n      pod=~\"$pod\"\n    }[$__rate_interval]\n  )\n)\n",
+                     "legendFormat": "KO"
+                  }
+               ],
+               "title": "Requests (per-second)",
+               "type": "timeseries"
+            }
+         ],
+         "title": "IMAP",
+         "type": "row"
+      }
+   ],
+   "refresh": "1m",
+   "schemaVersion": 39,
+   "tags": [
+      "java",
+      "app-suite"
+   ],
+   "templating": {
+      "list": [
+         {
+            "name": "datasource",
+            "query": "prometheus",
+            "type": "datasource"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "name": "namespace",
+            "query": "label_values(appsuite_version_info, namespace)",
+            "refresh": 2,
+            "sort": 1,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "hide": 2,
+            "name": "app",
+            "query": "label_values(up{namespace=\"$namespace\"}, app)",
+            "refresh": 2,
+            "regex": "/.*core-mw.*/",
+            "sort": 1,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "name": "pod",
+            "query": "label_values(appsuite_version_info{namespace=\"$namespace\", app=~\".*$app.*\"}, pod)",
+            "refresh": 2,
+            "sort": 1,
+            "type": "query"
+         },
+         {
+            "allValue": ".*",
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "includeAll": true,
+            "name": "dbpool",
+            "query": "label_values(appsuite_mysql_connections_total{namespace=\"$namespace\"}, pool)",
+            "regex": "([0-9]+)",
+            "sort": 3,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "name": "httpclient",
+            "query": "label_values(appsuite_httpclient_requests_seconds_count, client)",
+            "sort": 1,
+            "type": "query"
+         }
+      ]
+   },
+   "time": {
+      "from": "now-15m",
+      "to": "now"
+   },
+   "timezone": "browser",
+   "title": "App Suite / Core-Middleware",
+   "uid": "app-suite--coremiddleware"
+}
