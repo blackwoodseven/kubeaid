@@ -37,7 +37,7 @@ plugins:
     # template-render time and fails with an actionable error; the check is
     # skipped when `plugins.existingSecret` is set because the contents of an
     # externally-managed Secret cannot be introspected from Helm.
-    # Example: ["datadog", "mongodb"]
+    # Example: ["datadog", "mongodb"].
     # If empty, falls back to downloading plugins based on keys in configs (legacy behavior).
     plugins: []
   folder: /opt/opencost/plugin
@@ -154,13 +154,14 @@ pdb:
   maxUnavailable: ~
 
 opencost:
-  # -- <SECRET_NAME> for the secret containing the Cloud Costs cloud-integration.json https://www.opencost.io/docs/configuration/#cloud-costs
-  # -- kubectl create secret generic <SECRET_NAME> --from-file=cloud-integration.json -n opencost
-  # -- Mutually exclusive with opencost.cloudIntegrationJSON.
+  # -- Existing Secret containing `cloud-integration.json` for Cloud Costs. See
+  # https://www.opencost.io/docs/configuration/#cloud-costs.
+  # Create with: `kubectl create secret generic <SECRET_NAME> --from-file=cloud-integration.json -n opencost`.
+  # Mutually exclusive with `opencost.cloudIntegrationJSON`.
   cloudIntegrationSecret: ""
-  # -- Specify the cloud integration information in JSON form. This will create a Secret named
-  # -- "<fullname>-cloud-integration" in the release namespace. Mutually exclusive with
-  # -- opencost.cloudIntegrationSecret.
+  # -- Raw JSON for `cloud-integration.json`. Creates a Secret named
+  # `<fullname>-cloud-integration` in the release namespace.
+  # Mutually exclusive with `opencost.cloudIntegrationSecret`.
   cloudIntegrationJSON: ""
   # cloudIntegrationJSON: |-
   #   {
@@ -293,7 +294,7 @@ opencost:
       # -- Exporter container image name
       repository: opencost/opencost
       # -- Exporter container image tag
-      tag: "1.120.2@sha256:5f37f689557dbb6737a9182b70625bba55bbba843a2caaba5a79746945a56cc6"
+      tag: "1.120.3@sha256:9f282400e59a4fc886e5fa3bca3c777b9dcae866b781641ca1d1271525d15f72"
       # -- Exporter container image pull policy
       pullPolicy: IfNotPresent
       # -- Override the full image name for development purposes
@@ -630,7 +631,7 @@ opencost:
       repository: opencost/opencost-ui
       # -- UI container image tag
       # @default -- `""` (use appVersion in Chart.yaml)
-      tag: "1.120.2@sha256:3e7fc176315a25e7acca47b670fa78b2620480981e8d34c2e8f64ca6371c8bcc"
+      tag: "1.120.3@sha256:12b6e7a844c17f9a4019cdd55e5bfe6c720c1a0961d8a9be2333a97c69bffcc9"
       # -- UI container image pull policy
       pullPolicy: IfNotPresent
       # -- Override the full image name for development purposes
@@ -859,3 +860,10 @@ opencost:
       enablePromAccess: false
 # -- A list of volumes to be added to the pod
 extraVolumes: []
+
+# -- Array of extra K8s manifests rendered through `tpl` and owned by the release.
+extraObjects: []
+  # - apiVersion: external-secrets.io/v1beta1
+  #   kind: ExternalSecret
+  #   metadata:
+  #     name: '{{ include "opencost.fullname" . }}-cloud-integration'
