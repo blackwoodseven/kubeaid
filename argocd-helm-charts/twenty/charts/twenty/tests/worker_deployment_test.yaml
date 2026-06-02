@@ -73,4 +73,4 @@ tests:
     asserts:
       - matchRegex:
           path: spec.template.spec.containers[0].image
-          pattern: ":v1.14.0$"
+          pattern: ":v2.8.3$"
