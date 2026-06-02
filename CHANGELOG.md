@@ -2,6 +2,43 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.3.0
+
+### Minor Version Upgrades
+
+- 46cada0a4 Updated keycloakx from version 7.1.11 to 7.2.0
+- 46cada0a4 Updated metal3 from version 0.13.1 to 0.15.0
+- 46cada0a4 Updated opentelemetry-operator from version 0.113.1 to 0.114.1
+- 46cada0a4 Updated opentelemetry-collector from version 0.156.2 to 0.158.0
+- 46cada0a4 Updated seaweedfs from version 4.28.0 to 4.31.0
+
+### Patch Version Upgrades
+
+- 46cada0a4 Updated erpnext from version 8.0.53 to 8.0.55
+- 46cada0a4 Updated hcloud-csi from version 2.21.1 to 2.21.2
+- 46cada0a4 Updated opencost from version 2.5.20 to 2.5.22
+- 46cada0a4 Updated reloader from version 2.2.11 to 2.2.12
+- 46cada0a4 Updated rook-ceph from version v1.19.5 to v1.19.6
+- 46cada0a4 Updated rook-ceph-cluster from version v1.19.5 to v1.19.6
+- 46cada0a4 Updated velero from version 12.0.1 to 12.0.2
+- 46cada0a4 Updated yetibot from version 1.0.173 to 1.0.184
+
+### Features
+
+- 6dfc13a54 feat(open-xchange): add appsuite helm chart with Traefik IngressRoute and OIDC redirect
+
+### Bug Fixes
+
+- 59331e85f fix: psql templating
+
+### Other Changes
+
+- 6d7ff5305 add secret mount support in blackbox deployment and support for custom prometheus probe type
+- 280331639 add firewall to relate application
+- 4f2858c6b lint fix
+- 258e9d2ff Update openobserve doc to add roles via keycloak
+- 3f5fd1732 (chore): Fix connection issue in network policy for prometheus
+
 ## KubeAid Release Version 29.2.0
 
 ### Minor Version Upgrades
