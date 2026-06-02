@@ -2,9 +2,9 @@
 
 OpenCost and OpenCost UI
 
-![Version: 2.5.20](https://img.shields.io/badge/Version-2.5.20-informational?style=flat-square)
+![Version: 2.5.22](https://img.shields.io/badge/Version-2.5.22-informational?style=flat-square)
 ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
-![AppVersion: 1.120.2](https://img.shields.io/badge/AppVersion-1.120.2-informational?style=flat-square)
+![AppVersion: 1.120.3](https://img.shields.io/badge/AppVersion-1.120.3-informational?style=flat-square)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opencost)](https://artifacthub.io/packages/search?repo=opencost)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opencost-oci)](https://artifacthub.io/packages/search?repo=opencost-oci)
 
@@ -31,6 +31,7 @@ $ helm install opencost opencost/opencost
 |-----|------|---------|-------------|
 | annotations | object | `{}` | Annotations to add to the all the resources |
 | clusterName | string | `"cluster.local"` | Override the default name of cluster - Can be found in /etc/kubernetes/admin.conf: clusters -> cluster -> name |
+| extraObjects | list | `[]` | Array of extra K8s manifests rendered through `tpl` and owned by the release. |
 | extraVolumes | list | `[]` | A list of volumes to be added to the pod |
 | fullnameOverride | string | `""` | Overwrite all resources name created by the chart |
 | imagePullSecrets | list | `[]` | List of secret names to use for pulling the images |
@@ -50,8 +51,8 @@ $ helm install opencost opencost/opencost
 | opencost.cloudCost.queryWindowDays | int | `7` | The max number of days that any single query will be made to construct Cloud Costs |
 | opencost.cloudCost.refreshRateHours | int | `6` | Number of hours between each run of the Cloud Cost pipeline |
 | opencost.cloudCost.runWindowDays | int | `3` | Number of days into the past that a Cloud Cost standard run will query for |
-| opencost.cloudIntegrationJSON | string | `""` | opencost.cloudIntegrationSecret. |
-| opencost.cloudIntegrationSecret | string | `""` | Mutually exclusive with opencost.cloudIntegrationJSON. |
+| opencost.cloudIntegrationJSON | string | `""` | Raw JSON for `cloud-integration.json`. Creates a Secret named `<fullname>-cloud-integration` in the release namespace. Mutually exclusive with `opencost.cloudIntegrationSecret`. |
+| opencost.cloudIntegrationSecret | string | `""` | Existing Secret containing `cloud-integration.json` for Cloud Costs. See https://www.opencost.io/docs/configuration/#cloud-costs. Create with: `kubectl create secret generic <SECRET_NAME> --from-file=cloud-integration.json -n opencost`. Mutually exclusive with `opencost.cloudIntegrationJSON`. |
 | opencost.customPricing.configPath | string | `"/tmp/custom-config"` | Path for the pricing configuration. |
 | opencost.customPricing.configmapName | string | `"custom-pricing-model"` | Customize the configmap name used for custom pricing |
 | opencost.customPricing.costModel | object | `{"CPU":1.25,"GPU":0.95,"RAM":0.5,"description":"Modified pricing configuration.","internetNetworkEgress":0.12,"regionNetworkEgress":0.01,"spotCPU":0.006655,"spotRAM":0.000892,"storage":0.25,"zoneNetworkEgress":0.01}` | More information about these values here: https://www.opencost.io/docs/configuration/on-prem#custom-pricing-using-the-opencost-helm-chart |
@@ -92,12 +93,12 @@ $ helm install opencost opencost/opencost
 | opencost.exporter.extraArgs | list | `[]` | List of extra arguments for the command, e.g.: log-format=json |
 | opencost.exporter.extraEnv | object | `{}` | Any extra environment variables you would like to pass on to the pod |
 | opencost.exporter.extraVolumeMounts | list | `[]` | A list of volume mounts to be added to the pod |
-| opencost.exporter.image | object | `{"fullImageName":null,"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"opencost/opencost","tag":"1.120.2@sha256:5f37f689557dbb6737a9182b70625bba55bbba843a2caaba5a79746945a56cc6"}` | This overrides the above defaultClusterId. Ensure the ConfigMap exists and contains the required CLUSTER_ID key. clusterIdConfigmap: cluster-id-configmap |
+| opencost.exporter.image | object | `{"fullImageName":null,"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"opencost/opencost","tag":"1.120.3@sha256:9f282400e59a4fc886e5fa3bca3c777b9dcae866b781641ca1d1271525d15f72"}` | This overrides the above defaultClusterId. Ensure the ConfigMap exists and contains the required CLUSTER_ID key. clusterIdConfigmap: cluster-id-configmap |
 | opencost.exporter.image.fullImageName | string | `nil` | Override the full image name for development purposes |
 | opencost.exporter.image.pullPolicy | string | `"IfNotPresent"` | Exporter container image pull policy |
 | opencost.exporter.image.registry | string | `"ghcr.io"` | Exporter container image registry |
 | opencost.exporter.image.repository | string | `"opencost/opencost"` | Exporter container image name |
-| opencost.exporter.image.tag | string | `"1.120.2@sha256:5f37f689557dbb6737a9182b70625bba55bbba843a2caaba5a79746945a56cc6"` | Exporter container image tag |
+| opencost.exporter.image.tag | string | `"1.120.3@sha256:9f282400e59a4fc886e5fa3bca3c777b9dcae866b781641ca1d1271525d15f72"` | Exporter container image tag |
 | opencost.exporter.livenessProbe.enabled | bool | `true` | Whether probe is enabled |
 | opencost.exporter.livenessProbe.failureThreshold | int | `3` | Number of failures for probe to be considered failed |
 | opencost.exporter.livenessProbe.initialDelaySeconds | int | `10` | Number of seconds before probe is initiated |
@@ -275,7 +276,7 @@ $ helm install opencost opencost/opencost
 | plugins.folder | string | `"/opt/opencost/plugin"` |  |
 | plugins.install.enabled | bool | `true` |  |
 | plugins.install.fullImageName | string | `"curlimages/curl:latest"` |  |
-| plugins.install.plugins | list | `[]` | List of plugins to download, independent of `plugins.configs`. When specified, these plugins are downloaded regardless of what's in configs, which enables using `plugins.existingSecret` for credentials while still downloading plugin binaries. This list also drives which `<plugin>_config.json` subPaths the Deployment mounts, so each listed plugin MUST have a matching config source -- either a `plugins.configs.<plugin>` entry (when `plugins.existingSecret` is empty) or a `<plugin>_config.json` key in the Secret referenced by `plugins.existingSecret`. Missing entries cause Pod startup failures because the mounted subPath will not exist. When `plugins.existingSecret` is empty, the chart validates this at template-render time and fails with an actionable error; the check is skipped when `plugins.existingSecret` is set because the contents of an externally-managed Secret cannot be introspected from Helm. Example: ["datadog", "mongodb"] If empty, falls back to downloading plugins based on keys in configs (legacy behavior). |
+| plugins.install.plugins | list | `[]` | List of plugins to download, independent of `plugins.configs`. When specified, these plugins are downloaded regardless of what's in configs, which enables using `plugins.existingSecret` for credentials while still downloading plugin binaries. This list also drives which `<plugin>_config.json` subPaths the Deployment mounts, so each listed plugin MUST have a matching config source -- either a `plugins.configs.<plugin>` entry (when `plugins.existingSecret` is empty) or a `<plugin>_config.json` key in the Secret referenced by `plugins.existingSecret`. Missing entries cause Pod startup failures because the mounted subPath will not exist. When `plugins.existingSecret` is empty, the chart validates this at template-render time and fails with an actionable error; the check is skipped when `plugins.existingSecret` is set because the contents of an externally-managed Secret cannot be introspected from Helm. Example: ["datadog", "mongodb"]. If empty, falls back to downloading plugins based on keys in configs (legacy behavior). |
 | plugins.install.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | plugins.install.securityContext.capabilities.drop[0] | string | `"ALL"` |  |
 | plugins.install.securityContext.readOnlyRootFilesystem | bool | `true` |  |
