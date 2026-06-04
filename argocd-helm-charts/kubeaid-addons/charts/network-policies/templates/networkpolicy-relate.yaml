@@ -74,4 +74,16 @@ spec:
               protocol: TCP
     {{- end }}
 
+    {{- if ((.Values.global.relate).smtp).enabled }}
+    # SMTP — outbound mail relay
+    - toFQDNs:
+        {{- range .Values.global.relate.smtp.fqdns }}
+        - matchName: {{ . | quote }}
+        {{- end }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.relate.smtp.port | default "587" | quote }}
+              protocol: TCP
+    {{- end }}
+
 {{- end }}

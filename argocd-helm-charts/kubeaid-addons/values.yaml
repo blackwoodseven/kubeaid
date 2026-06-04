@@ -289,6 +289,13 @@ global:
     # hosts here in the private kubeaid-config values without repeating the defaults.
     extraEgressFQDNs: []
 
+    # -- SMTP egress for outbound mail.
+    smtp:
+      # -- Enable SMTP egress rule.
+      enabled: true
+      # -- SMTP port (default 587).
+      port: "587"
+
   graylog:
     # -- Enable CiliumNetworkPolicy for Graylog.
     netpol: false
