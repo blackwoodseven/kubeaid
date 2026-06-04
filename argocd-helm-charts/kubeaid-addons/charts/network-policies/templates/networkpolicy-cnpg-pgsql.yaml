@@ -132,4 +132,13 @@ spec:
               protocol: TCP
     {{- end }}
 
+    # CNPG Operator instance manager communication
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Values.global.postgresql.cnpg.namespace | default "cloudnative-pg" }}
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+
 {{- end }}

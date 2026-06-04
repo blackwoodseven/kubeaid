@@ -13,6 +13,14 @@ metadata:
 spec:
   instances: {{ $postgresql.instances }}
 
+  {{- if $postgresql.env }}
+  env:
+    {{- range $postgresql.env }}
+    - name: {{ .name }}
+      value: {{ .value | quote }}
+    {{- end }}
+  {{- end }}
+
   inheritedMetadata:
     labels:
       velero.io/exclude-from-backup: "true"
