@@ -126,7 +126,8 @@ global:
     clients: []
 
     # -- CNPG operator pod selector for webhook traffic (port 8000).
-    cnpg: {}
+    cnpg:
+      namespace: cloudnative-pg
 
   # mongodb
   # Provisions a MongoDBCommunity resource.
