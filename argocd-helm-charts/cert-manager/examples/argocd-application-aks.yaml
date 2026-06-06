@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  labels:
+    kubeaid.io/managed-by: kubeaid
+spec:
+  destination:
+    namespace: cert-manager
+    server: https://kubernetes.default.svc
+  project: kubeaid
+  sources:
+    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+      path: argocd-helm-charts/cert-manager
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - $values/k8s/<cluster>/argocd-apps/values-cert-manager.yaml
+    - repoURL: <your-config-repo>
+      targetRevision: HEAD
+      ref: values
+  # ignoreDifferences suppresses expected drift caused by AKS injecting
+  # kubernetes.azure.com/managedby: aks into webhook namespaceSelectors.
+  # This field is not in the Helm chart so ArgoCD would otherwise show
+  # OutOfSync permanently on AKS clusters.
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/namespaceSelector
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/namespaceSelector
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
