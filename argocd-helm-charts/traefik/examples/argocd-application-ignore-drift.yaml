@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  labels:
+    kubeaid.io/managed-by: kubeaid
+spec:
+  destination:
+    namespace: traefik
+    server: https://kubernetes.default.svc
+  project: kubeaid
+  sources:
+    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+      path: argocd-helm-charts/traefik
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - $values/k8s/<cluster>/argocd-apps/values-traefik.yaml
+    - repoURL: <your-config-repo>
+      targetRevision: HEAD
+      ref: values
+  # ignoreDifferences suppresses expected drift:
+  # - Service clusterIP/clusterIPs: assigned by Kubernetes, not in Helm chart
+  # - Deployment annotations: checksum annotations change when config updates
+  # - ClusterRole/ClusterRoleBinding: rules/subjects may be extended by cluster
+  # - IngressRoute: dashboard spec may drift from chart defaults
+  # - PodDisruptionBudget: spec may be modified by cluster autoscaler
+  ignoreDifferences:
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec/clusterIP
+        - /spec/clusterIPs
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/template/metadata/annotations
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      jsonPointers:
+        - /rules
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      jsonPointers:
+        - /subjects
+    - group: traefik.io
+      kind: IngressRoute
+      jsonPointers:
+        - /spec
+    - group: policy
+      kind: PodDisruptionBudget
+      jsonPointers:
+        - /spec
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
