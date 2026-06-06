@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opensearch
+  namespace: argocd
+  labels:
+    kubeaid.io/managed-by: kubeaid
+spec:
+  destination:
+    namespace: opensearch
+    server: https://kubernetes.default.svc
+  project: kubeaid
+  sources:
+    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+      path: argocd-helm-charts/opensearch
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - $values/k8s/<cluster>/argocd-apps/values-opensearch.yaml
+    - repoURL: <your-config-repo>
+      targetRevision: HEAD
+      ref: values
+  # ignoreDifferences suppresses expected drift:
+  # - ConfigMap /data: cluster settings updated at runtime by opensearch
+  # - Service /spec: clusterIP and other fields set by Kubernetes
+  # - PodDisruptionBudget /spec: may be modified by cluster autoscaler
+  ignoreDifferences:
+    - group: ""
+      kind: ConfigMap
+      jsonPointers:
+        - /data
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec
+    - group: policy
+      kind: PodDisruptionBudget
+      jsonPointers:
+        - /spec
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true

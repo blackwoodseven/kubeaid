@@ -217,3 +217,43 @@ curl -X PUT "http://localhost:9200/_cluster/settings?pretty" -H 'Content-Type: a
   - Run curl -X GET "http://localhost:9200/_cat/allocation?v" to verify data is beginning to naturally balance back onto the new node.
   - Check curl -X GET "http://localhost:9200/_cluster/health?pretty" to ensure the cluster remains green (or yellow temporarily).
   - Repeat Steps 1 through 4 sequentially for every remaining oversized node in the cluster.
+
+## Known ArgoCD Drift
+
+### ConfigMap, Service, and PodDisruptionBudget runtime drift
+
+opensearch ConfigMap data (cluster settings, JVM options) and Service spec fields can be updated at runtime by the opensearch cluster. PodDisruptionBudget spec may also be modified by the cluster autoscaler or operator. These cause permanent `OutOfSync` without affecting runtime behaviour.
+
+Add `ignoreDifferences` to your ArgoCD Application:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opensearch
+  namespace: argocd
+spec:
+  ignoreDifferences:
+    - group: ""
+      kind: ConfigMap
+      jsonPointers:
+        - /data
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec
+    - group: policy
+      kind: PodDisruptionBudget
+      jsonPointers:
+        - /spec
+  sources:
+    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+      path: argocd-helm-charts/opensearch
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - $values/k8s/<cluster>/argocd-apps/values-opensearch.yaml
+    - repoURL: <your-config-repo>
+      targetRevision: HEAD
+      ref: values
+```
