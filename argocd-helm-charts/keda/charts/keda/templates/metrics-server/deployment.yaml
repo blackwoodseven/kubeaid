@@ -1,3 +1,4 @@
+{{- if .Values.metricsServer.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -106,6 +107,12 @@ spec:
               value: {{ .Values.http.timeout | quote }}
             - name: KEDA_HTTP_MIN_TLS_VERSION
               value: {{ .Values.http.minTlsVersion }}
+            - name: KEDA_HTTP_TLS_CIPHER_LIST
+              value: {{ .Values.http.tlsCipherList | quote }}
+            - name: KEDA_SERVICE_MIN_TLS_VERSION
+              value: {{ .Values.service.minTlsVersion }}
+            - name: KEDA_SERVICE_TLS_CIPHER_LIST
+              value: {{ .Values.service.tlsCipherList | quote }}
             {{- if ( not .Values.http.keepAlive.enabled ) }}
             - name: KEDA_HTTP_DISABLE_KEEP_ALIVE
               value: "true"
@@ -195,7 +202,7 @@ spec:
       hostNetwork: {{ .Values.metricsServer.useHostNetwork }}
       nodeSelector:
         kubernetes.io/os: linux
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.metricsServer.nodeSelector | default .Values.nodeSelector }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- if .Values.metricsServer.affinity }}
@@ -209,7 +216,10 @@ spec:
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- if .Values.metricsServer.tolerations }}
       tolerations:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml .Values.metricsServer.tolerations | nindent 8 }}
+      {{- else if .Values.tolerations }}
+        {{- toYaml .Values.tolerations | nindent 8 }}
       {{- end }}
+{{- end }}
