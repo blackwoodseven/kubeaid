@@ -268,3 +268,41 @@ enableCertificateOwnerRef: true
 
 
 
+
+## Known ArgoCD Drift
+
+### AKS: ValidatingWebhookConfiguration and MutatingWebhookConfiguration namespaceSelector
+
+On AKS clusters, Kubernetes automatically injects a `kubernetes.azure.com/managedby: aks` expression into the `namespaceSelector` of all webhook configurations. This field is not present in the Helm chart, causing ArgoCD to permanently show `OutOfSync` for `ValidatingWebhookConfiguration` and `MutatingWebhookConfiguration`.
+
+Add `ignoreDifferences` to your ArgoCD Application to suppress this expected drift:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+spec:
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/namespaceSelector
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/namespaceSelector
+  sources:
+    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+      path: argocd-helm-charts/cert-manager
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - $values/k8s/<cluster>/argocd-apps/values-cert-manager.yaml
+    - repoURL: <your-config-repo>
+      targetRevision: HEAD
+      ref: values
+```
+
+See [example ArgoCD Application with ignoreDifferences for AKS](examples/argocd-application-aks.yaml) for a full AKS example, or [values-http.yaml](examples/values-http.yaml) for Helm values reference.

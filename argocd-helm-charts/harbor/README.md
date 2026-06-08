@@ -329,3 +329,50 @@ We usually do this for `obmondo-k8s-agent` to upload from Harbor registry to Git
 ```sh
 docker buildx imagetools create --tag ghcr.io/obmondo/obmondo-k8s-agent:v1.1.6 harbor.obmondo.com/obmondo/obmondo-k8s-agent:v1.1.6
 ```
+
+## Known ArgoCD Drift
+
+### Deployment checksum annotations
+
+Harbor's Helm chart sets `checksum/configmap`, `checksum/secret`, and `checksum/secret-jobservice` annotations on Deployments to trigger rolling restarts when config changes. These values are computed at render time and drift from the live state whenever secrets or configmaps change outside of a Helm sync. ArgoCD sees permanent `OutOfSync` on all harbor Deployments.
+
+Additionally, harbor ConfigMaps and Secrets may be updated at runtime by the harbor application itself.
+
+Add `ignoreDifferences` to your ArgoCD Application:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: harbor
+  namespace: argocd
+spec:
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      namespace: harbor
+      jsonPointers:
+        - /spec/template/metadata/annotations
+    - group: ""
+      kind: ConfigMap
+      namespace: harbor
+      jsonPointers:
+        - /data
+    - group: ""
+      kind: Secret
+      namespace: harbor
+      jsonPointers:
+        - /data
+See [example ArgoCD Application with ignoreDifferences](examples/argocd-application-ignore-drift.yaml).
+
+  sources:
+    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+      path: argocd-helm-charts/harbor
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - $values/k8s/<cluster>/argocd-apps/values-harbor.yaml
+    - repoURL: <your-config-repo>
+      targetRevision: HEAD
+      ref: values
+```

@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: harbor
+  namespace: argocd
+  labels:
+    kubeaid.io/managed-by: kubeaid
+spec:
+  destination:
+    namespace: harbor
+    server: https://kubernetes.default.svc
+  project: kubeaid
+  sources:
+    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+      path: argocd-helm-charts/harbor
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - $values/k8s/<cluster>/argocd-apps/values-harbor.yaml
+    - repoURL: <your-config-repo>
+      targetRevision: HEAD
+      ref: values
+  # ignoreDifferences suppresses expected drift:
+  # - Deployment annotations: Harbor Helm sets checksum/configmap and checksum/secret
+  #   annotations that change whenever config or secrets are updated outside a sync.
+  # - ConfigMap/Secret /data: Harbor may update these at runtime.
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      namespace: harbor
+      jsonPointers:
+        - /spec/template/metadata/annotations
+    - group: ""
+      kind: ConfigMap
+      namespace: harbor
+      jsonPointers:
+        - /data
+    - group: ""
+      kind: Secret
+      namespace: harbor
+      jsonPointers:
+        - /data
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true

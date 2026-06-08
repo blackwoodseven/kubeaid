@@ -114,3 +114,62 @@ as the Traefik Ingress will not be able to respond to the requests due to the Tr
 pod being deleted. Use `kubectl apply -f traefik-deployment.yaml` to create the
 deployment from the **[Step 2]** above.
 * Traefik pods should come up with the latest version.
+
+## Known ArgoCD Drift
+
+### Service clusterIP, Deployment annotations, ClusterRole, IngressRoute, PodDisruptionBudget
+
+Several Traefik resources drift from the chart-rendered state at runtime:
+
+- **Service**: `clusterIP` and `clusterIPs` are assigned by Kubernetes after creation and are not in the Helm chart
+- **Deployment**: checksum/config annotations update when Traefik config changes
+- **ClusterRole**: additional rules may be added by the cluster
+- **IngressRoute** (dashboard): spec may drift from chart defaults
+- **PodDisruptionBudget**: spec modified by cluster autoscaler
+
+Add `ignoreDifferences` to your ArgoCD Application:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+spec:
+  ignoreDifferences:
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec/clusterIP
+        - /spec/clusterIPs
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/template/metadata/annotations
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      jsonPointers:
+        - /rules
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      jsonPointers:
+        - /subjects
+    - group: traefik.io
+      kind: IngressRoute
+      jsonPointers:
+        - /spec
+    - group: policy
+      kind: PodDisruptionBudget
+      jsonPointers:
+        - /spec
+  sources:
+    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+      path: argocd-helm-charts/traefik
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - $values/k8s/<cluster>/argocd-apps/values-traefik.yaml
+    - repoURL: <your-config-repo>
+      targetRevision: HEAD
+      ref: values
+```

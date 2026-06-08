@@ -268,3 +268,36 @@ CronJobs for postgresql logical backup cronjob template can be found [here](./ex
       gzip -d mattermost_dump.sql.gz
       psql --host=localhost --port=5432 --username=postgres --password --dbname=mattermost < mattermost_dump.sql
       ```
+
+## Known ArgoCD Drift
+
+### CustomResourceDefinition caBundle and status
+
+Kubernetes automatically populates the `caBundle` field in CRD conversion webhook configurations and updates the `status` subresource. These fields are not managed by the Helm chart and cause permanent `OutOfSync` on `CustomResourceDefinition` resources.
+
+Add `ignoreDifferences` to your ArgoCD Application:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: postgres-operator
+  namespace: argocd
+spec:
+  ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jsonPointers:
+        - /spec/conversion/webhook/clientConfig/caBundle
+        - /status
+  sources:
+    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+      path: argocd-helm-charts/postgres-operator
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - $values/k8s/<cluster>/argocd-apps/values-postgres-operator.yaml
+    - repoURL: <your-config-repo>
+      targetRevision: HEAD
+      ref: values
+```
