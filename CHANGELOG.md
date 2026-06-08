@@ -2,6 +2,45 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.4.0
+
+### Minor Version Upgrades
+
+- 7a3d2ac96 Updated aws-ebs-csi-driver from version 2.60.1 to 2.61.1
+- 7a3d2ac96 Updated keda from version 2.19.0 to 2.20.0
+- 7a3d2ac96 Updated mariadb-operator from version 26.3.0 to 26.6.0
+- 7a3d2ac96 Updated rook-ceph-cluster from version v1.19.6 to v1.20.0
+- 7a3d2ac96 Updated trivy-operator from version 0.32.1 to 0.33.1
+
+### Patch Version Upgrades
+
+- 7a3d2ac96 Updated argo-cd from version 9.5.15 to 9.5.19
+- 7a3d2ac96 Updated azuredisk-csi-driver from version 1.34.3 to 1.34.4
+- 7a3d2ac96 Updated harbor from version 1.19.0 to 1.19.1
+- 7a3d2ac96 Updated sonarqube from version 2026.3.0 to 2026.3.1
+- 7a3d2ac96 Updated teleport-cluster from version 18.8.2 to 18.8.3
+- 7a3d2ac96 Updated teleport-kube-agent from version 18.8.2 to 18.8.3
+- 7a3d2ac96 Updated yetibot from version 1.0.184 to 1.0.191
+
+### Features
+
+- fc072dee1 feat(kubescape): default values
+
+### Configuration Changes
+
+- ab78828a3 chore: update k8s act runner image version to dind-1.0.6
+
+### Other Changes
+
+- 2187cd7af docs(traefik): add Known ArgoCD Drift section and example Application
+- 0aa9f964a docs(postgres-operator): add Known ArgoCD Drift section and example Application
+- ed65753e5 docs(opensearch): add Known ArgoCD Drift section and example Application
+- d445ec07c docs(harbor): add Known ArgoCD Drift section and example Application
+- f957b0693 docs(cert-manager): add Known ArgoCD Drift section and AKS example
+- 7cba9f0f1 Added option to add env in postgres template in kubeaid addons and improved cnpg pgsql netpol template
+- 3903f433a Updated the uid of the datasource
+- 437fd955f  add SMTP egress to relate CiliumNetworkPolicy
+
 ## KubeAid Release Version 29.3.0
 
 ### Minor Version Upgrades
