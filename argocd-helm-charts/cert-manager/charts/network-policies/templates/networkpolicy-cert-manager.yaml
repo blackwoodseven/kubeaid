@@ -1,0 +1,241 @@
+{{- if and ((.Values.global).netpol).enabled ((.Values.global).certmanager).netpol }}
+{{- $promNs := (.Values.global.certmanager.prometheusNamespace | default "monitoring") }}
+{{- $acmeFQDNs := (.Values.global.certmanager.acmeFQDNs | default (list "acme-v02.api.letsencrypt.org" "acme-staging-v02.api.letsencrypt.org")) }}
+{{- $dns01FQDNs := (.Values.global.certmanager.dns01FQDNs | default (list "api.cloudflare.com")) }}
+---
+# Default deny for all cert-manager pods.
+# startupapicheck is excluded — it is a transient Helm hook job that runs during
+# install/upgrade and needs unrestricted egress to verify the webhook is ready.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: default-deny
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: cilium-networkpolicy
+spec:
+  endpointSelector:
+    matchExpressions:
+    - key: app.kubernetes.io/name
+      operator: NotIn
+      values:
+      - startupapicheck
+  enableDefaultDeny:
+    egress: true
+    ingress: true
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      - port: "53"
+        protocol: TCP
+      rules:
+        dns:
+        - matchPattern: "*"
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cert-manager-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: cilium-networkpolicy
+spec:
+  endpointSelector:
+    matchLabels:
+      app: cert-manager
+
+# =========
+# INGRESS
+# =========
+
+  ingress:
+  # Prometheus scrapes controller metrics on port 9402.
+  - fromEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: prometheus
+        k8s:io.kubernetes.pod.namespace: {{ $promNs }}
+    toPorts:
+    - ports:
+      - port: "9402"
+        protocol: TCP
+
+# =========
+# EGRESS
+# =========
+
+  egress:
+  # kube-apiserver — manage Certificate/CertificateRequest/Secret resources.
+  - toEntities:
+    - kube-apiserver
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+      - port: "6443"
+        protocol: TCP
+  # kube-dns — DNS resolution (required for FQDN egress rules to work).
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+      rules:
+        dns:
+        - matchPattern: "*"
+  # ACME and DNS-01 provider endpoints.
+  - toFQDNs:
+    {{- range $acmeFQDNs }}
+    - matchName: {{ . }}
+    {{- end }}
+    {{- range $dns01FQDNs }}
+    - matchName: {{ . }}
+    {{- end }}
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+  # cert-manager-webhook — CertificateRequest validation calls.
+  - toEndpoints:
+    - matchLabels:
+        app: webhook
+        k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+    toPorts:
+    - ports:
+      - port: "10250"
+        protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cert-manager-webhook
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: cilium-networkpolicy
+spec:
+  endpointSelector:
+    matchLabels:
+      app: webhook
+
+# =========
+# INGRESS
+# =========
+
+  ingress:
+  # kube-apiserver calls the webhook for certificate validation/mutation.
+  # All three entities cover different cluster topologies:
+  #   kube-apiserver — managed clusters (EKS, AKS, GKE) where API server is external
+  #   host           — self-hosted clusters where API server runs on the same node
+  #   remote-node    — self-hosted clusters where API server runs on a different node
+  - fromEntities:
+    - kube-apiserver
+    - host
+    - remote-node
+    toPorts:
+    - ports:
+      - port: "10250"
+        protocol: TCP
+  # cert-manager controller calls the webhook for CertificateRequest validation.
+  - fromEndpoints:
+    - matchLabels:
+        app: cert-manager
+        k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+    toPorts:
+    - ports:
+      - port: "10250"
+        protocol: TCP
+  # Prometheus scrapes webhook metrics on port 9402.
+  - fromEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: prometheus
+        k8s:io.kubernetes.pod.namespace: {{ $promNs }}
+    toPorts:
+    - ports:
+      - port: "9402"
+        protocol: TCP
+
+# =========
+# EGRESS
+# =========
+
+  egress:
+  - toEntities:
+    - kube-apiserver
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+      - port: "6443"
+        protocol: TCP
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+      rules:
+        dns:
+        - matchPattern: "*"
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cert-manager-cainjector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: cilium-networkpolicy
+spec:
+  endpointSelector:
+    matchLabels:
+      app: cainjector
+
+# =========
+# INGRESS
+# =========
+
+  ingress:
+  # Prometheus scrapes cainjector metrics on port 9402.
+  - fromEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: prometheus
+        k8s:io.kubernetes.pod.namespace: {{ $promNs }}
+    toPorts:
+    - ports:
+      - port: "9402"
+        protocol: TCP
+
+# =========
+# EGRESS
+# =========
+
+  egress:
+  - toEntities:
+    - kube-apiserver
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+      - port: "6443"
+        protocol: TCP
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+      rules:
+        dns:
+        - matchPattern: "*"
+{{- end }}
