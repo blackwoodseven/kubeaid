@@ -1,6 +1,6 @@
 dependencies:
 - name: netbird-operator
   repository: oci://ghcr.io/netbirdio/helm-charts
-  version: 0.4.1
-digest: sha256:9005fc3ddc68e007b71eb577e12ad5e880f66b1035e18850d50699fc438822e8
-generated: "2026-05-18T14:35:33.441392491+05:30"
+  version: 0.6.0
+digest: sha256:1956c59b3654b2edb9078b0053b64d6912e610f0acd8fcb31d45c7826050dcb3
+generated: "2026-06-09T00:30:03.016605423+05:30"

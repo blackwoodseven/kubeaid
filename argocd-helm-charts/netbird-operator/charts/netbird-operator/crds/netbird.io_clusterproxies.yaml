@@ -4,14 +4,14 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.1
-  name: setupkeys.netbird.io
+  name: clusterproxies.netbird.io
 spec:
   group: netbird.io
   names:
-    kind: SetupKey
-    listKind: SetupKeyList
-    plural: setupkeys
-    singular: setupkey
+    kind: ClusterProxy
+    listKind: ClusterProxyList
+    plural: clusterproxies
+    singular: clusterproxy
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -24,7 +24,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: SetupKey is the Schema for the setupkeys API.
+        description: ClusterProxy is the Schema for the clusterproxies API
         properties:
           apiVersion:
             description: |-
@@ -44,77 +44,35 @@ spec:
           metadata:
             type: object
           spec:
-            description: SetupKeySpec defines the desired state of SetupKey.
+            description: ClusterProxySpec defines the desired state of ClusterProxy.
             properties:
-              allowExtraDnsLabels:
-                default: false
-                description: AllowExtraDnsLabels decides if peers added with the key
-                  can have extra DNS labels.
-                type: boolean
-                x-kubernetes-validations:
-                - message: allowExtraDnsLabels is immutable
-                  rule: self == oldSelf
-              autoGroups:
-                description: AutoGroups are groups that will be automatically assigned
-                  to peers using setup key.
-                items:
-                  properties:
-                    id:
-                      description: ID is the id of the group.
-                      type: string
-                    localRef:
-                      description: LocalReference is a reference to a group in the
-                        same namespace.
-                      properties:
-                        name:
-                          default: ""
-                          description: |-
-                            Name of the referent.
-                            This field is effectively required, but due to backwards compatibility is
-                            allowed to be empty. Instances of this type with an empty value here are
-                            almost certainly wrong.
-                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                          type: string
-                      type: object
-                      x-kubernetes-map-type: atomic
-                    name:
-                      description: Name is the name of the group.
-                      type: string
-                  type: object
-                  x-kubernetes-validations:
-                  - message: Exactly one of id, name, or localRef must be set
-                    rule: (has(self.id)?1:0)+(has(self.name)?1:0)+(has(self.localRef)?1:0)==1
-                type: array
-              duration:
-                description: Duration sets how long the setup key is valid for.
-                pattern: ^([0-9]+(\.[0-9]+)?(m|h))+$
+              apiServer:
+                default: https://kubernetes.default.svc.cluster.local
+                description: APIServer is the URL of the Kubernetes API server to
+                  proxy requests to.
+                type: string
+              clusterName:
+                description: ClusterName is the name of the Kubernetes cluster.
                 type: string
                 x-kubernetes-validations:
-                - message: duration is immutable
+                - message: Value is immutable
                   rule: self == oldSelf
-              ephemeral:
-                description: Ephemeral decides if peers added with the key are ephemeral
-                  or not.
-                type: boolean
-                x-kubernetes-validations:
-                - message: ephemeral is immutable
-                  rule: self == oldSelf
-              name:
-                description: Name of the setup key.
-                minLength: 1
+              serviceAccountName:
+                description: ServiceAccountName is a reference to the service account
+                  used for impersonation.
                 type: string
             required:
-            - allowExtraDnsLabels
-            - ephemeral
-            - name
+            - apiServer
+            - clusterName
+            - serviceAccountName
             type: object
           status:
             default:
               observedGeneration: -1
-            description: SetupKeyStatus defines the observed state of SetupKey.
+            description: ClusterProxyStatus defines the observed state of ClusterProxy.
             properties:
               conditions:
-                description: Conditions holds the conditions for the SetupKey.
+                description: Conditions holds the conditions for the ClusterProxy.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -177,9 +135,6 @@ spec:
                 description: ObservedGeneration is the last reconciled generation.
                 format: int64
                 type: integer
-              setupKeyID:
-                description: SetupKeyID is the id of the created setup key.
-                type: string
             type: object
         required:
         - spec

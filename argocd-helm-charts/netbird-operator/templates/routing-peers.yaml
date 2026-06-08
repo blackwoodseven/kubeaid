@@ -1,0 +1,8 @@
+apiVersion: netbird.io/v1
+kind: NBRoutingPeer
+metadata:
+  name: cluster-router
+  namespace: netbird
+spec:
+  replicas: 1
+
