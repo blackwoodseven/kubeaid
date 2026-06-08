@@ -41,6 +41,25 @@ tests:
               description: |
                 CPU usage on **cert.abc** is around 82% which is above the threshold of 80
 
+  # iowait must NOT count as CPU usage: real CPU ~15% busy but iowait ~75%.
+  # Old formula (100 - idle) read this as ~90% and paged falsely.
+  - interval: 1s
+    input_series:
+      - series: obmondo_monitoring{certname="cert.io", alert_id="monitor::system::cpu::usage"}
+        values: 1x2400
+      - series: node_cpu_seconds_total{mode="idle", certname="cert.io", cpu="1"}
+        values: 1024+0.10x1200
+      - series: node_cpu_seconds_total{mode="idle", certname="cert.io", cpu="2"}
+        values: 1024+0.10x1200
+      - series: node_cpu_seconds_total{mode="iowait", certname="cert.io", cpu="1"}
+        values: 1024+0.75x1200
+      - series: node_cpu_seconds_total{mode="iowait", certname="cert.io", cpu="2"}
+        values: 1024+0.75x1200
+    alert_rule_test:
+      - alertname: monitor::system::cpu::usage
+        eval_time: 18m
+        exp_alerts: []
+
   - interval: 1s
     input_series:
       - series: obmondo_monitoring{certname="cert.xyz", alert_id="monitor::system::cpu::temperature"}
