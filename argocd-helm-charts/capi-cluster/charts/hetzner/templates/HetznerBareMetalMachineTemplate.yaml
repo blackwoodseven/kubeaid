@@ -14,7 +14,6 @@ spec:
       hostSelector:
         matchLabels:
           role: {{ $.Values.global.clusterName }}-control-plane
-          host: {{ $host.serverID | quote }}
       installImage:
         image:
           path: {{ .Values.bareMetal.installImage.imagePath }}
