@@ -131,19 +131,32 @@ spec:
   joinConfiguration:
     nodeRegistration:
       kubeletExtraArgs:
-        config: /etc/kubernetes/kubelet/config.yaml
-        node-ip: {{ $host.privateIP | quote }}
-        anonymous-auth: "false"
-        authentication-token-webhook: "true"
-        authorization-mode: Webhook
-        cloud-provider: external
-        event-qps: "5"
-        kubeconfig: /etc/kubernetes/kubelet.conf
-        max-pods: "220"
-        read-only-port: "0"
-        resolv-conf: /etc/kubernetes/resolv.conf
-        rotate-server-certificates: "true"
-        tls-cipher-suites: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256
+        - name: config
+          value: /etc/kubernetes/kubelet/config.yaml
+        - name: node-ip
+          value: {{ $host.privateIP | quote }}
+        - name: anonymous-auth
+          value: "false"
+        - name: authentication-token-webhook
+          value: "true"
+        - name: authorization-mode
+          value: Webhook
+        - name: cloud-provider
+          value: external
+        - name: event-qps
+          value: "5"
+        - name: kubeconfig
+          value: /etc/kubernetes/kubelet.conf
+        - name: max-pods
+          value: "220"
+        - name: read-only-port
+          value: "0"
+        - name: resolv-conf
+          value: /etc/kubernetes/resolv.conf
+        - name: rotate-server-certificates
+          value: "true"
+        - name: tls-cipher-suites
+          value: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256
   preKubeadmCommands:
     - set -x
 
