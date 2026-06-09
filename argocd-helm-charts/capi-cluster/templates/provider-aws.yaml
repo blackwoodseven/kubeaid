@@ -1,14 +1,10 @@
 {{- if (.Values.provider).aws }}
 
-{{- /* For non Obmondo users, no customerid is needed. */ -}}
 {{- $name := "aws" }}
-{{- $namespace := "capi-cluster" }}
-
-{{- /* For obmondo customers. */ -}}
-{{- if .Values.global.customerid }}
-{{- $name = printf "%s-%s" $name .Values.global.customerid }}
-{{- $namespace = printf "%s-%s" $namespace .Values.global.customerid }}
-{{- end }}
+{{- /* Namespace defaults to "capi-cluster". Existing deployments that
+       used the old per-customer suffix (e.g. capi-cluster-enableit) can
+       opt back in by setting global.capiClusterNamespace in values. */ -}}
+{{- $namespace := default "capi-cluster" .Values.global.capiClusterNamespace }}
 
 apiVersion: operator.cluster.x-k8s.io/v1alpha2
 kind: InfrastructureProvider
