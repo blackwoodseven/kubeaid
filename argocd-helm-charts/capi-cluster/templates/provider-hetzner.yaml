@@ -36,14 +36,14 @@ spec:
       kind: Deployment
       metadata:
         name: caph-controller-manager
-        namespace: capi-cluster
+        namespace: {{ $namespace }}
       spec:
         template:
           spec:
             containers:
             - args:
                 - --leader-elect=true
-                - --namespace=capi-cluster
+                - --namespace={{ $namespace }}
               command:
                 - /manager
               image: {{ $image }}
