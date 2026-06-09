@@ -51,7 +51,6 @@ spec:
             hard:
               pods: {{ $defaults.resourceQuota.pods | quote }}
               requests.cpu: {{ $defaults.resourceQuota.cpu.request | quote }}
-              limits.cpu: {{ $defaults.resourceQuota.cpu.limit | quote }}
               requests.memory: {{ $defaults.resourceQuota.memory.request | quote }}
               limits.memory: {{ $defaults.resourceQuota.memory.limit | quote }}
               persistentvolumeclaims: {{ $defaults.resourceQuota.storage.persistentVolumeClaims | quote }}
@@ -84,7 +83,6 @@ spec:
             hard:
               pods: {{ (($override.resourceQuota).pods) | default $defaults.resourceQuota.pods | quote }}
               requests.cpu: {{ ((($override.resourceQuota).cpu).request) | default $defaults.resourceQuota.cpu.request | quote }}
-              limits.cpu: {{ ((($override.resourceQuota).cpu).limit) | default $defaults.resourceQuota.cpu.limit | quote }}
               requests.memory: {{ ((($override.resourceQuota).memory).request) | default $defaults.resourceQuota.memory.request | quote }}
               limits.memory: {{ ((($override.resourceQuota).memory).limit) | default $defaults.resourceQuota.memory.limit | quote }}
               persistentvolumeclaims: {{ ((($override.resourceQuota).storage).persistentVolumeClaims) | default $defaults.resourceQuota.storage.persistentVolumeClaims | quote }}
@@ -141,14 +139,11 @@ spec:
                   cpu: {{ $defaults.limitRange.container.cpu.defaultRequest | quote }}
                   memory: {{ $defaults.limitRange.container.memory.defaultRequest | quote }}
                 default:
-                  cpu: {{ $defaults.limitRange.container.cpu.default | quote }}
                   memory: {{ $defaults.limitRange.container.memory.default | quote }}
                 max:
-                  cpu: {{ $defaults.limitRange.container.cpu.max | quote }}
                   memory: {{ $defaults.limitRange.container.memory.max | quote }}
               - type: Pod
                 max:
-                  cpu: {{ $defaults.limitRange.pod.cpu.max | quote }}
                   memory: {{ $defaults.limitRange.pod.memory.max | quote }}
               - type: PersistentVolumeClaim
                 max:
@@ -182,14 +177,11 @@ spec:
                   cpu: {{ (((($override.limitRange).container).cpu).defaultRequest) | default $defaults.limitRange.container.cpu.defaultRequest | quote }}
                   memory: {{ (((($override.limitRange).container).memory).defaultRequest) | default $defaults.limitRange.container.memory.defaultRequest | quote }}
                 default:
-                  cpu: {{ (((($override.limitRange).container).cpu).default) | default $defaults.limitRange.container.cpu.default | quote }}
                   memory: {{ (((($override.limitRange).container).memory).default) | default $defaults.limitRange.container.memory.default | quote }}
                 max:
-                  cpu: {{ (((($override.limitRange).container).cpu).max) | default $defaults.limitRange.container.cpu.max | quote }}
                   memory: {{ (((($override.limitRange).container).memory).max) | default $defaults.limitRange.container.memory.max | quote }}
               - type: Pod
                 max:
-                  cpu: {{ (((($override.limitRange).pod).cpu).max) | default $defaults.limitRange.pod.cpu.max | quote }}
                   memory: {{ (((($override.limitRange).pod).memory).max) | default $defaults.limitRange.pod.memory.max | quote }}
               - type: PersistentVolumeClaim
                 max:

@@ -10,7 +10,6 @@ resourceQuotaLimitRangeGenerator:
 
       cpu:
         request: "100"
-        limit: "200"
 
       memory:
         request: 200Gi
@@ -28,8 +27,6 @@ resourceQuotaLimitRangeGenerator:
       container:
         cpu:
           defaultRequest: 100m
-          default: 200m
-          max: "2"
 
         memory:
           defaultRequest: 128Mi
@@ -37,9 +34,6 @@ resourceQuotaLimitRangeGenerator:
           max: 4Gi
 
       pod:
-        cpu:
-          max: "8"
-
         memory:
           max: 16Gi
 
@@ -50,6 +44,4 @@ resourceQuotaLimitRangeGenerator:
   overrides:
     rook-ceph:
       limitRange:
-        container:
-          cpu:
-            default: 500m
+        container: {}
