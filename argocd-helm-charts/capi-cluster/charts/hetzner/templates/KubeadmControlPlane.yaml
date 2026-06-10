@@ -336,9 +336,21 @@ spec:
       */}}
       {{- if eq .Values.mode "bare-metal" }}
       - |
+        # Fail loudly if the storagectl download (or the planner itself) fails.
+        # Previously the block ran with no `set -e`, so a 404 on the release URL
+        # (typical on dev builds before kubeaid-storagectl has a tagged release)
+        # left a 0-byte binary on disk, every subsequent line errored, cloud-init
+        # noted "runcmd entry failed" and moved on, and kubeadm-init succeeded
+        # against a node that never carved its ZFS pool — silently degrading the
+        # storage layout (containerd + pod logs + ephemeral all on the OS root LVM
+        # instead of ZFS). Now: any wget/empty-file/planner failure aborts the
+        # node bootstrap so the operator sees the failure instead of the result.
+        set -euo pipefail
         STORAGECTL_ARCH="$(uname -m)"
         case "$STORAGECTL_ARCH" in aarch64) STORAGECTL_ARCH=arm64 ;; esac
-        wget -O kubeaid-storagectl https://github.com/Obmondo/kubeaid-cli/releases/{{ if $.Values.global.kubeaidStoragectl.version }}download/{{ $.Values.global.kubeaidStoragectl.version }}{{ else }}latest/download{{ end }}/kubeaid-storagectl_Linux_${STORAGECTL_ARCH}
+        STORAGECTL_URL="https://github.com/Obmondo/kubeaid-cli/releases/{{ if $.Values.global.kubeaidStoragectl.version }}download/{{ $.Values.global.kubeaidStoragectl.version }}{{ else }}latest/download{{ end }}/kubeaid-storagectl_Linux_${STORAGECTL_ARCH}"
+        wget -O kubeaid-storagectl "$STORAGECTL_URL" || { echo "ERROR: kubeaid-storagectl download failed from $STORAGECTL_URL" >&2; exit 1; }
+        [ -s kubeaid-storagectl ] || { echo "ERROR: kubeaid-storagectl downloaded empty (likely 404) from $STORAGECTL_URL" >&2; exit 1; }
         chmod +x ./kubeaid-storagectl
         ./kubeaid-storagectl plan execute --os-size {{ $.Values.bareMetal.installImage.vg0.size }} --zfs-pool-size {{ $.Values.controlPlane.bareMetal.zfs.size }}
       {{- end }}
