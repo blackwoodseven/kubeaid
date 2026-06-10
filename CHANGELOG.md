@@ -2,6 +2,26 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.5.0
+
+### Bug Fixes
+
+- 6a992e23a fix(hetzner): fail loudly when kubeaid-storagectl download or planner fails
+- ae48efe1c fix(capi-cluster/hetzner): use templated $namespace in CAPH manifestPatches
+- 559c7e18a fix(capi-cluster/hetzner): convert KubeadmConfig kubeletExtraArgs to array form
+- 260c60887 fix(capi-cluster/hetzner): drop undefined $host from CP MachineTemplate selector
+
+### Configuration Changes
+
+- c73b500bd chore(update): netbird operator to 0.6.0
+
+### Other Changes
+
+- 75306f23c remove cpu limits enforced by  kyverno policy
+- b49fa3a84 refactor(capi-cluster): drop per-customer namespace suffix
+- 6bfc136cc Fixed the cpu high alert since it was considering iowait too
+- 9ad1c11f9 update rolling update traefik according to docs
+
 ## KubeAid Release Version 29.4.0
 
 ### Minor Version Upgrades
