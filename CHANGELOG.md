@@ -2,6 +2,16 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.6.0
+
+### Features
+
+- 5dd54ff38 feat(kubeaid-agent): updated kubeaid-agent to read additional extra secrets
+
+### Bug Fixes
+
+- dfd93d56e fix(hetzner): subshell the storagectl strict-mode block
+
 ## KubeAid Release Version 29.5.0
 
 ### Bug Fixes
