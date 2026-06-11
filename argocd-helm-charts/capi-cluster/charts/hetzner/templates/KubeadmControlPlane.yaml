@@ -649,6 +649,31 @@ spec:
           | kubectl apply -f -
       {{- end }}
 
+      {{- if and (eq .Values.mode "bare-metal") .Values.controlPlane.bareMetal.endpoint.isFailoverIP }}
+      # Install hetzner-robot — a CronJob that probes CP health via the
+      # apiserver and moves the Robot failover IP back to whichever
+      # node is currently the leader. Without this running, a CP
+      # reboot leaves the failover IP pointing at a node that no
+      # longer holds the apiserver, and every external client (kubectl,
+      # ArgoCD CLI, monitoring) hitting failover-IP:6443 fails until
+      # an operator manually re-points the IP in Robot.
+      #
+      # Same `helm template | kubectl apply` pattern as Cilium /
+      # CCM / csr-approver — ArgoCD adopts the resources on first
+      # sync, after which subsequent updates flow via ArgoCD.
+      #
+      # Installing in postKubeadm (rather than relying solely on the
+      # ArgoCD-managed Application from kubeaid-cli) means the failover
+      # logic is active from the first kubeadm-init onward, including
+      # the window before ArgoCD itself is fully reconciled.
+      - |
+        helm template hetzner-robot kubeaid/argocd-helm-charts/hetzner-robot \
+          --namespace kube-system \
+          --values kubeaid/argocd-helm-charts/hetzner-robot/values.yaml \
+          --set failoverIP={{ .Values.controlPlane.bareMetal.endpoint.host }} \
+          | kubectl apply -f -
+      {{- end }}
+
       - apt-get -y install socat mtr
       - apt-get -y autoremove && apt-get -y clean all
     {{- if and ($.Values.global.additionalUsers) (gt (len $.Values.global.additionalUsers) 0) }}
