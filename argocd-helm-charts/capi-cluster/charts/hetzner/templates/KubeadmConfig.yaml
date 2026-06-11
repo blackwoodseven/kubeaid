@@ -28,6 +28,8 @@ spec:
             enabled: false
           webhook:
             enabled: true
+          x509:
+            clientCAFile: /etc/kubernetes/pki/ca.crt
         authorization:
           mode: Webhook
         eventRecordQPS: 5
@@ -224,11 +226,11 @@ spec:
     {{/*
       User provided commands used to setup the disk layout.
       We recommend the following :
-          
+
         (1) If NVMe, then create a ZPool out of the available storage space.
             That ZPool will be used by Kubernetes ephemeral volumes, pod logs and OpenEBS ZFS
             LocalPV provisioner.
-              
+
         (2) If HDD / regular SSD, then create a partition out of the available storage space,
             allocating it to Rook Ceph.
     */}}
