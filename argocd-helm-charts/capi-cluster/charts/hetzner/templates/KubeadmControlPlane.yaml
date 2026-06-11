@@ -92,6 +92,14 @@ spec:
         rotateCertificates: true
         serverTLSBootstrap: true
         staticPodPath: /etc/kubernetes/manifests
+        {{- if and (eq .Values.mode "bare-metal") .Values.bareMetal.vSwitch }}
+        {{/* CPs share this KubeadmConfigSpec across every Machine the KCP
+             creates, so the per-host privateIP can't be baked in at chart-
+             render time. The placeholder below is sed-replaced at boot by
+             the preKubeadm vSwitch block with the IP from the DMI chassis-
+             serial lookup. */}}
+        nodeIP: __KUBEAID_NODE_IP__
+        {{- end }}
         tlsCipherSuites:
           - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
           - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
@@ -445,6 +453,16 @@ spec:
         EOF
         chmod 0600 /etc/netplan/60-vlan.yaml
         netplan apply
+
+        # Substitute the nodeIP placeholder in the shared KubeletConfiguration
+        # file (written by the files: block above) with this host's vSwitch
+        # privateIP. Workers set the equivalent --node-ip via kubeletExtraArgs
+        # at chart-render time because they have a per-host KubeadmConfig;
+        # the CP KubeadmConfigSpec is shared, so the field stays as the
+        # placeholder until boot. kubelet reads the file when kubeadm
+        # init/join starts it for the first time, so its first registration
+        # already carries the vSwitch IP as InternalIP.
+        sed -i "s|__KUBEAID_NODE_IP__|${MY_PRIVATE_IP}|" /etc/kubernetes/kubelet/config.yaml
       {{- end }}
 
       - sed -i '/swap/d' /etc/fstab
