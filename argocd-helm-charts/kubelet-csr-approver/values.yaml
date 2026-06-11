@@ -1,0 +1,8 @@
+kubelet-csr-approver:
+  # Permits to specify a comma-separated list of IP (v4 or/and v6) subnets/prefixes, that CSR IP
+  # addresses shall fall into. Left unspecified, all IP addresses are allowed.
+  # You should set this to the network CIDR being used for your Kubernetes cluster.
+  providerIpPrefixes: "10.0.0.0/16"
+
+  # Permits to bypass DNS resolution check.
+  bypassDnsResolution: true
