@@ -394,6 +394,59 @@ spec:
           cp /run/kubeadm/kubeadm-join-config.yaml /kubeadm-join-config.yaml
       {{- end }}
 
+      {{- if and (eq .Values.mode "bare-metal") .Values.bareMetal.vSwitch }}
+      {{/* Bring up the vSwitch VLAN sub-interface for inter-CP / CP-to-
+           worker private traffic. Without it the node advertises no
+           InternalIP, kubelet's serving-cert SAN list doesn't cover the
+           dial path the apiserver falls through to (ExternalIP), and
+           every apiserver→kubelet streaming call (port-forward, exec,
+           logs) fails with "SPDY upgrade failed: 401 Unauthorized" from
+           the apiserver's streamtunnel. Pure bare-metal previously
+           lacked this block entirely — only hybrid mode set it up on
+           the matching worker template, leaving CPs unconfigured.
+
+           CPs share a single KubeadmConfigSpec across all Machines,
+           so per-host privateIP can't be templated at chart-render
+           time. The script below looks the host up at boot via DMI
+           chassis-serial-number (Hetzner populates this with the
+           server ID) and falls back to public-IP-based detection. */}}
+      - |
+        set -eu
+        # Build the serverID -> privateIP map at chart-render time.
+        declare -A PRIVATE_IP_BY_SERVER_ID
+        {{- range $i, $host := .Values.controlPlane.bareMetal.bareMetalHosts }}
+        PRIVATE_IP_BY_SERVER_ID["{{ $host.serverID }}"]="{{ $host.privateIP }}"
+        {{- end }}
+
+        MY_SERVER_ID="$(cat /sys/class/dmi/id/chassis_serial 2>/dev/null || true)"
+        MY_PRIVATE_IP="${PRIVATE_IP_BY_SERVER_ID[$MY_SERVER_ID]:-}"
+
+        if [ -z "$MY_PRIVATE_IP" ]; then
+          echo "ERROR: no privateIP mapping for chassis_serial=$MY_SERVER_ID" >&2
+          echo "Available mappings:" >&2
+          for k in "${!PRIVATE_IP_BY_SERVER_ID[@]}"; do
+            echo "  serverID=$k -> privateIP=${PRIVATE_IP_BY_SERVER_ID[$k]}" >&2
+          done
+          exit 1
+        fi
+
+        NETWORK_INTERFACE="$(ip route get 8.8.8.8 | awk '{print $5; exit}')"
+        cat <<EOF > /etc/netplan/60-vlan.yaml
+        network:
+          version: 2
+          renderer: networkd
+          vlans:
+            ${NETWORK_INTERFACE}.{{ .Values.bareMetal.vSwitch.vlanID }}:
+              id: {{ .Values.bareMetal.vSwitch.vlanID }}
+              link: ${NETWORK_INTERFACE}
+              mtu: 1400
+              addresses:
+                - ${MY_PRIVATE_IP}/24
+        EOF
+        chmod 0600 /etc/netplan/60-vlan.yaml
+        netplan apply
+      {{- end }}
+
       - sed -i '/swap/d' /etc/fstab
       - swapoff -a
       - modprobe overlay && modprobe br_netfilter && sysctl --system
