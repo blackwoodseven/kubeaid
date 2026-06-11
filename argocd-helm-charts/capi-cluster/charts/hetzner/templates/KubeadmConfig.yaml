@@ -174,9 +174,24 @@ spec:
 
     - export NETWORK_INTERFACE=$(ip route get 8.8.8.8 | awk '{print $5; exit}')
 
-    {{- if (eq $.Values.mode "hybrid") -}}
-    {{/* Attach the Hetzner Bare Metal server to the Hetzner Network using VSwitch.
-         And, route egress traffic to the internet, to the NAT gateway. */}}
+    {{- if or (eq $.Values.mode "hybrid") (and (eq $.Values.mode "bare-metal") $.Values.bareMetal.vSwitch) }}
+    {{/* Bring up the VLAN sub-interface for the Hetzner vSwitch.
+         Required for both hybrid (vSwitch bridges bare-metal nodes onto
+         the HCloud network) and pure bare-metal with vSwitch (inter-
+         node private path). Without this address the node has no
+         InternalIP — kubelet only advertises Hostname + ExternalIP,
+         which means every apiserver→kubelet call (port-forward, exec,
+         logs) is dialled via the worker's public IP and lands on
+         kubelet's serving cert whose SAN doesn't cover that path.
+         Pure-bare-metal previously skipped this block entirely; the
+         resulting node has no 10.0.1.x address and kubeaid-cli's
+         workload-cluster steps (ArgoCD install in particular) fail
+         with "SPDY upgrade failed: 401 Unauthorized" coming from
+         the apiserver's streamtunnel.
+
+         The NAT-gateway-egress routes (10.0.0.0/16 + default via
+         10.0.1.1) belong only to hybrid — pure bare-metal nodes
+         keep their default route on the public NIC. */}}
     - |
       cat <<'EOF' > /etc/netplan/60-vlan.yaml
       network:
@@ -189,6 +204,7 @@ spec:
             mtu: 1400
             addresses:
               - {{ $host.privateIP }}/24
+      {{- if (eq $.Values.mode "hybrid") }}
             routes:
               - to: 10.0.0.0/16
                 via: 10.0.1.1
@@ -199,6 +215,7 @@ spec:
               addresses:
                 - 185.12.64.1
                 - 185.12.64.2
+      {{- end }}
       EOF
       chmod 0600 /etc/netplan/60-vlan.yaml
       netplan apply
