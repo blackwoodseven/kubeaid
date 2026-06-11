@@ -27,6 +27,16 @@ spec:
           # and is harmless for clusters that do have a public IP.
           - name: kubelet-preferred-address-types
             value: InternalIP,ExternalIP,Hostname,InternalDNS,ExternalDNS
+        {{- /* Operator-supplied apiserver flags rendered by kubeaid-cli into
+             controlPlane.apiServer.extraArgs from the typed
+             cluster.apiServer.oidc block (--authentication-config) and the
+             audit-logging block (--audit-log-*). kubeaid-cli emits these as a
+             map; CAPI v1beta2 wants a {name,value} list, so convert here.
+             Empty / absent → nothing emitted. */}}
+        {{- range $name, $value := ((.Values.controlPlane).apiServer).extraArgs }}
+          - name: {{ $name }}
+            value: {{ $value | quote }}
+        {{- end }}
         {{/* certSANs lets clients reach kube-apiserver under names other
              than controlPlaneEndpoint.host without tripping x509 errors.
              Includes the LB endpoint hostname plus any operator-supplied
@@ -37,6 +47,14 @@ spec:
           {{- range .Values.controlPlane.extraCertSANs }}
           - {{ . }}
           {{- end }}
+        {{- end }}
+        {{- /* Operator-supplied host-path mounts into the apiserver static
+             pod — e.g. the OIDC AuthenticationConfiguration file and audit
+             policy/log mounts. kubeaid-cli's HostPathMountConfig already
+             matches kubeadm's HostPathMount shape (name/hostPath/mountPath/
+             readOnly/pathType), so pass it through. */}}
+        {{- with ((.Values.controlPlane).apiServer).extraVolumes }}
+        extraVolumes: {{- . | toYaml | nindent 10 }}
         {{- end }}
       controllerManager:
         # Mirrors upstream CAPH — only `cloud-provider: external` (needed

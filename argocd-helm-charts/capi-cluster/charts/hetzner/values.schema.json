@@ -78,6 +78,17 @@
     "controlPlane": {
       "additionalProperties": false,
       "properties": {
+        "apiServer": {
+          "additionalProperties": true,
+          "default": "null",
+          "description": "Operator-supplied kube-apiserver customization, rendered by kubeaid-cli from the typed cluster.apiServer block (OIDC AuthenticationConfiguration, audit logging). Shape:\n  extraArgs: { <flag>: <value> }\n  extraVolumes: [{ name, hostPath, mountPath, readOnly, pathType }]\n  files: [{ path, content }]",
+          "required": [],
+          "title": "apiServer",
+          "type": [
+            "object",
+            "null"
+          ]
+        },
         "bareMetal": {
           "additionalProperties": true,
           "default": "null",
