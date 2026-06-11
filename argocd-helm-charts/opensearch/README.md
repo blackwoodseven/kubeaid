@@ -257,3 +257,122 @@ spec:
       targetRevision: HEAD
       ref: values
 ```
+
+## 📘 Graylog & MongoDB Upgrade Guide (v5.2.x to v7.1.2)
+
+### 📌 Overview
+This runbook walks you through the steps to upgrade a Graylog deployment from **v5.2.6** to **v7.1.2**. Upgrading to Graylog 7.x introduces a strict requirement for MongoDB 7.0. Because MongoDB requires sequential major version upgrades, a large part of this guide focuses on a safe, step-by-step database upgrade ladder.
+
+#### **Target Versions**
+* **Graylog:** `5.2.6` -> `6.3.13` -> `7.0.8` -> `7.1.2`
+* **Graylog Helm Chart:** `2.3.10` -> `3.0.21`
+* **MongoDB:** `5.0.14` -> `6.0.16` -> `7.0.11`
+* **OpenSearch:** Pinned at `2.19.2` (Fully compatible with Graylog 7.x)
+
+---
+
+### ⚠️ Phase 1: Transitioning to Graylog 6.3 & Database Cleanup
+
+Before touching the databases, it's best to move Graylog to the end of the 6.x release line.
+
+1. **Bump Graylog to 6.3.13:** Update the image tag in your configuration and sync your deployment (e.g., via ArgoCD).
+2. **Resolve Database Schema Issues (Jackson Deserialization Crash):**
+   If Graylog enters a crash-loop on 6.3.x and logs a Jackson deserialization error, it's usually caused by legacy, unencrypted inputs lingering in the database.
+   * `exec` into your primary MongoDB pod and start the mongo shell:
+     ```bash
+     kubectl exec -it <mongodb-primary-pod> -n graylog -- mongosh
+     ```
+   * Identify and remove the malformed configuration fields (e.g., an empty `tls_key_password` string) from the `inputs` collection:
+     ```javascript
+     use graylog;
+     // 1. Inspect your inputs to find the corrupted one
+     db.inputs.find().pretty();
+     
+     // 2. Unset the malformed field on that specific input
+     db.inputs.updateOne(
+       { _id: ObjectId("<INPUT_ID>") },
+       { $unset: { "configuration.<FIELD_NAME>": "" } }
+     );
+     ```
+   * Restart the Graylog pods to pick up the clean state.
+
+---
+
+### 🗄️ Phase 2: The MongoDB Upgrade Ladder (5.0 -> 6.0 -> 7.0)
+
+MongoDB requires sequential major version upgrades—you **cannot** skip directly from 5.0 to 7.0. Additionally, because Kubernetes StatefulSet `volumeClaimTemplates` are immutable, you'll need to use a neat workaround with orphan deletes to preserve your data during each step.
+
+#### Step 2.1: Upgrade to MongoDB 6.0
+1. **Update the Manifest:** Bump the MongoDB Operator `spec.version` to `6.0.16`. *(Tip: Avoid including OS suffixes like `-ubi8` if the operator automatically appends them, as this can trigger an `ImagePullBackOff`).*
+2. **Clear Immutable Wrappers:** The operator will fail to update the StatefulSet metadata. To get around this, perform an orphan-delete on the StatefulSet so it can be recreated without dropping your valuable data PVCs:
+   ```bash
+   kubectl delete statefulset mongodb-replica-set -n graylog --cascade=orphan
+   kubectl delete statefulset mongodb-replica-set-arb -n graylog --cascade=orphan
+   ```
+3. **Sync & Wait:** Apply your changes and wait for the `mongodb-replica-set-0` pod to reach a `Running` and `Ready` state.
+4. **Lock Feature Flags:** Because the MongoDB Community Operator manages the cluster, you must update the Feature Compatibility Version (FCV) via the Custom Resource to ensure the engine fully transitions to 6.0:
+   ```bash
+   kubectl patch mongodbcommunity mongodb-replica-set -n graylog --type='merge' -p='{"spec":{"version":"6.0.16", "featureCompatibilityVersion":"6.0"}}'
+   ```
+
+#### Step 2.2: Upgrade to MongoDB 7.0
+1. **Update the Manifest:** Bump the MongoDB version to `7.0.11`.
+2. **Clear Immutable Wrappers:** Just like before, run the orphan deletes:
+   ```bash
+   kubectl delete statefulset mongodb-replica-set -n graylog --cascade=orphan
+   kubectl delete statefulset mongodb-replica-set-arb -n graylog --cascade=orphan
+   ```
+3. **Sync & Wait:** Let your deployment tool cycle the database pods.
+4. **Lock Feature Flags:** Once back up, finalize the engine transition to 7.0 by patching the Custom Resource again:
+   ```bash
+   kubectl patch mongodbcommunity mongodb-replica-set -n graylog --type='merge' -p='{"spec":{"version":"7.0.11", "featureCompatibilityVersion":"7.0"}}'
+   ```
+
+---
+
+### 🛠️ Phase 3: Mitigating Helm Chart & ArgoCD Drift
+Upgrading the core Graylog Helm Chart to v3.x brings some architectural changes to its subcharts. Notably, the OpenSearch subchart might attempt to disconnect existing routing services by changing default labels from `graylog` to `opensearch`.
+
+#### The Fix: Pinning Legacy Labels
+To prevent OpenSearch from disconnecting from Graylog (or losing its HTTP security configurations), force the OpenSearch subchart to respect your existing labels within `values.yaml`:
+
+```yaml
+opensearch:
+  fullnameOverride: "opensearch-cluster-master"
+  # Force the new chart to map correctly to your existing pods
+  labels:
+    app.kubernetes.io/instance: "graylog"
+  
+  # Ensure HTTP Security remains enabled (the new chart defaults to false)
+  config:
+    opensearch.yml: |
+      plugins:
+        security:
+          http:
+            enabled: true
+```
+
+#### Clearing the OpenSearch Metadata Block
+Even with the labels fixed, tools like ArgoCD will trip over the immutable PVC templates when trying to update the `helm.sh/chart` version strings. 
+
+To solve this, run another orphan delete on the OpenSearch wrapper before you sync for the final time:
+
+```bash
+kubectl delete statefulset opensearch-cluster-master -n graylog --cascade=orphan
+```
+
+---
+
+### 🚀 Phase 4: Finalizing the Graylog 7.x Rollout
+With MongoDB safely running on v7.0 and the OpenSearch label drift handled, you are ready to bring the application tier home.
+
+1. **Update Your Configurations:** 
+   * Bump the Graylog image tag to `7.1.2` (or use `7.0.8` as an intermediate stepping stone).
+   * Ensure your Helm chart target is set to `3.0.21`.
+2. **Execute the Sync:** 
+   * Trigger a full application sync.
+   * *A quick heads-up:* Be careful with any "Prune" features if legacy resources are transitioning out of the chart's umbrella.
+3. **Validation:** 
+   * Monitor the rollout: `kubectl get pods -n graylog -w`
+   * Log into the Graylog Web UI and navigate to **System / Nodes**.
+   * Confirm that both MongoDB and OpenSearch show active, green connections. You're good to go!
