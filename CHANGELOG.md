@@ -2,6 +2,22 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.8.0
+
+### Features
+
+- 02d60db33 feat(hetzner): wire controlPlane.apiServer extraArgs + extraVolumes
+- 6d6a92551 feat(hetzner): install hetzner-robot in postKubeadm when failover IP is in use
+- a36a84458 feat(hetzner): install kubelet-csr-approver in postKubeadm on bare-metal/hybrid
+
+### Bug Fixes
+
+- 0fdb6a6f4 fix(hetzner): wire kubelet x509 clientCAFile on worker KubeletConfigurations
+
+### Other Changes
+
+- e150617d4 docs(kubelet-csr-approver): explain why default is intentionally narrow
+
 ## KubeAid Release Version 29.7.0
 
 ### Features
