@@ -617,6 +617,36 @@ spec:
           --set ccm-hetzner.networking.enabled=true \
           {{- end }}
           | kubectl apply -f -
+
+      # Install postfinance/kubelet-csr-approver. Same `helm template |
+      # kubectl apply` pattern — ArgoCD adopts on its first sync.
+      #
+      # WHY this lives in postKubeadm (and not as a regular ArgoCD-only
+      # app): CAPH's built-in CSR validator denies any kubelet-serving
+      # CSR whose SAN includes an IP not present in the HetznerBareMetal
+      # Host hardware inventory at provisioning time. That excludes
+      # vSwitch sub-interfaces (created by netplan in our preKubeadm),
+      # so without a permissive approver running before kubelet's first
+      # CSR submission, every node ends up with a stale serving cert
+      # and apiserver→kubelet streaming (port-forward, exec, logs)
+      # fails with "unable to upgrade connection: Unauthorized" —
+      # including the kubectl port-forward to argocd-server itself,
+      # which would otherwise be needed to bootstrap ArgoCD. Same
+      # bootstrap-paradox the Cilium and CCM blocks above solve.
+      #
+      # FOLLOW-UP REMOVAL: this whole block and the wrapper chart at
+      # argocd-helm-charts/kubelet-csr-approver should be deleted once
+      # https://github.com/syself/cluster-api-provider-hetzner/issues/2095
+      # lands in CAPH and kubeaid-cli's go.mod bumps to a CAPH version
+      # that includes the fix. CAPH's native CSR validator is genuinely
+      # stricter than postfinance's IP-prefix allow-list — we only
+      # replace it because of the structural vSwitch blind spot. Also
+      # remove the matching opt-out / TODO in kubeaid-cli at that point.
+      - |
+        helm template kubelet-csr-approver kubeaid/argocd-helm-charts/kubelet-csr-approver \
+          --namespace kube-system \
+          --values kubeaid/argocd-helm-charts/kubelet-csr-approver/values.yaml \
+          | kubectl apply -f -
       {{- end }}
 
       - apt-get -y install socat mtr
