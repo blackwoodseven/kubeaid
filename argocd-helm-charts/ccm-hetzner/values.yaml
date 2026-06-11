@@ -1,9 +1,63 @@
 ccm-hetzner:
-  secret:
-    name: cloud-credentials
+  # Match the syself-era resource name so an in-place chart switch
+  # replaces the existing Deployment + SA rather than leaving two CCMs
+  # racing for ownership of node.status. Upstream's helpers only
+  # define a .name template (no fullname), keyed off nameOverride.
+  # Deployment, ServiceAccount → "ccm-hetzner" (matches syself).
+  # ClusterRole, ClusterRoleBinding → "system:ccm-hetzner" /
+  # "system:ccm-hetzner:restricted" (renamed; the old
+  # "ccm-hetzner" → cluster-admin binding will be orphaned until
+  # ArgoCD prunes — bootstrap-time `kubectl apply` won't remove it
+  # on its own). Acceptable: the orphan grants the same SA, so no
+  # auth regression in the gap.
+  nameOverride: ccm-hetzner
 
-  privateNetwork:
+  # Upstream defaults gate Robot support behind this flag; off → CCM
+  # ignores Robot servers entirely (no labels, no providerID, no
+  # InternalIP forwarding for the --node-ip flag).
+  robot:
+    enabled: true
+
+  # Point every secretKeyRef at the existing kube-system/cloud-credentials
+  # secret that kubeaid-cli already provisions (see kubeaid-cli's
+  # pkg/core/hcloud_credentials.go). The keys are the names kubeaid-cli
+  # writes:
+  #   - hcloud         → HCloud API token
+  #   - robot-user
+  #   - robot-password
+  #   - network        → HCloud private network ID (hybrid only)
+  # Note the upstream chart defaults are `name: hcloud, key: token` for
+  # the HCloud token; we override both name and key so the existing
+  # secret works unmodified.
+  env:
+    HCLOUD_TOKEN:
+      valueFrom:
+        secretKeyRef:
+          name: cloud-credentials
+          key: hcloud
+    ROBOT_USER:
+      valueFrom:
+        secretKeyRef:
+          name: cloud-credentials
+          key: robot-user
+          optional: true
+    ROBOT_PASSWORD:
+      valueFrom:
+        secretKeyRef:
+          name: cloud-credentials
+          key: robot-password
+          optional: true
+
+  # Disabled by default; KubeadmControlPlane.yaml's postKubeadm flips
+  # this to true via --set in hybrid mode (HCloud private network
+  # routing through CCM).
+  networking:
     enabled: false
+    network:
+      valueFrom:
+        secretKeyRef:
+          name: cloud-credentials
+          key: network
 
   nodeSelector:
     node-role.kubernetes.io/control-plane: ""

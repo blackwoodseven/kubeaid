@@ -1,9 +1,10 @@
 apiVersion: v2
 name: ccm-hetzner
-description: Wrapper chart for Syself ccm-hetzner
+description: Wrapper chart for upstream Hetzner Cloud Controller Manager (hetznercloud/hcloud-cloud-controller-manager). Replaces the legacy syself/hetzner-cloud-controller-manager fork — upstream gained Robot support and forwards kubelet --node-ip to InternalIP as of v1.24.0, which the syself fork never did.
 type: application
 version: 1.0.0
 dependencies:
-  - name: ccm-hetzner
-    version: 2.0.6
-    repository: https://charts.syself.com
+  - name: hcloud-cloud-controller-manager
+    alias: ccm-hetzner
+    version: 1.31.1
+    repository: https://charts.hetzner.cloud
