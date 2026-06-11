@@ -2,6 +2,26 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.7.0
+
+### Features
+
+- c36e48bb1 feat(ccm-hetzner): migrate to upstream hcloud-cloud-controller-manager
+- 2cb5a80fd feat(kubelet-csr-approver): adding wrapper chart
+
+### Bug Fixes
+
+- 6f3387b62 fix(hetzner): pin CP kubelet nodeIP to vSwitch privateIP
+- 5fd0acc6b fix(hetzner): apply vSwitch netplan on pure bare-metal clusters too
+- bb58d98f1 fix(openvox): recreate puppetserver master rollouts
+- d70aee0e7 fix(kube-prometheus): enable soft podAntiAffinity for Prometheus replicas
+
+### Other Changes
+
+- db72d4b3b Exclude CNPG backups from ArgoCD tracking
+- 4f63753c9 enabled applications names in argoCD mixins
+- 4ae90d9d7 Add upgrade guide for graylog
+
 ## KubeAid Release Version 29.6.0
 
 ### Features
