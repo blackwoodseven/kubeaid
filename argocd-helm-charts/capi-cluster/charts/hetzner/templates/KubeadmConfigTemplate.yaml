@@ -29,6 +29,8 @@ spec:
                 enabled: false
               webhook:
                 enabled: true
+              x509:
+                clientCAFile: /etc/kubernetes/pki/ca.crt
             authorization:
               mode: Webhook
             eventRecordQPS: 5
