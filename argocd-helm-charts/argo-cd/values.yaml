@@ -169,6 +169,11 @@ argo-cd:
           - velero.io
           kinds:
           - Backup
+        ### CNPG : exclude the postgres backups
+        - apiGroups:
+          - postgresql.cnpg.io
+          kinds:
+          - Backup
 
 
 kubeaidAppProject:
