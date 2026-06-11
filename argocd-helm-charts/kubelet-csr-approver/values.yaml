@@ -1,8 +1,34 @@
 kubelet-csr-approver:
-  # Permits to specify a comma-separated list of IP (v4 or/and v6) subnets/prefixes, that CSR IP
-  # addresses shall fall into. Left unspecified, all IP addresses are allowed.
-  # You should set this to the network CIDR being used for your Kubernetes cluster.
+  # Comma-separated list of IPv4/IPv6 subnets that every SAN IP in a
+  # kubelet-serving CSR must fall into. kubelet always includes EVERY
+  # local interface IP in the SAN — both the private vSwitch/HCloud-
+  # network address AND the node's public IP assigned by Hetzner — so
+  # this list must cover BOTH or the approver denies every CSR with
+  # "One of the SAN IP addresses, X, is not part of the allowed IP
+  # Prefixes/Subnets, denying the CSR".
+  #
+  # The chart-default below covers only the kubeaid Robot vSwitch /
+  # HCloud private network CIDR. It is intentionally narrow: trusting
+  # broad Hetzner public ranges as a default would mean approving any
+  # CSR carrying any Hetzner-assigned IP, which erodes the trust
+  # boundary the approver is meant to enforce. Operators MUST override
+  # per-cluster (via kubeaid-config values overlay or kubeaid-cli's
+  # generated values template) with the specific per-node /32s their
+  # cluster actually uses, e.g.:
+  #
+  #   kubelet-csr-approver:
+  #     providerIpPrefixes: "10.0.0.0/16,135.181.21.154/32,135.181.21.153/32,..."
+  #
+  # Format note: single-line comma-separated, NO whitespace. The
+  # postfinance approver (internal/cmd/cmd.go) splits on `,` and feeds
+  # each entry directly to netip.ParsePrefix without TrimSpace — a
+  # stray space crashes the controller on startup. Do not refactor to
+  # a folded scalar (`>-`) or YAML list; both reintroduce whitespace.
   providerIpPrefixes: "10.0.0.0/16"
 
-  # Permits to bypass DNS resolution check.
+  # Permits to bypass DNS resolution check. kubelet's serving cert SANs
+  # include hostnames (the node name); resolving each via the cluster
+  # DNS would add a per-CSR DNS roundtrip and would fail when CoreDNS
+  # isn't ready yet during early bootstrap. The IP-prefix check above
+  # already gates the trust boundary; skip the DNS leg.
   bypassDnsResolution: true
