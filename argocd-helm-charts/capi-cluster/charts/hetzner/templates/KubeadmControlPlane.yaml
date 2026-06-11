@@ -601,13 +601,20 @@ spec:
 
       {{- if or (eq .Values.mode "bare-metal") (eq .Values.mode "hybrid") }}
       # Install Hetzner Bare Metal Cloud Controller Manager. Same
-      # `helm template | kubectl apply` pattern.
+      # `helm template | kubectl apply` pattern. The wrapper chart now
+      # depends on hetznercloud/hcloud-cloud-controller-manager
+      # (upstream — gained Robot support + --node-ip forwarding in
+      # v1.24.0) instead of the syself fork (itself a fork of the
+      # same upstream). The dep is aliased to `ccm-hetzner` so the
+      # values key path and this --set flag stay the same as before;
+      # privateNetwork.* → networking.* is the only key rename
+      # carried over from the schema difference.
       - |
         helm template ccm-hetzner kubeaid/argocd-helm-charts/ccm-hetzner \
           --namespace kube-system \
           --values kubeaid/argocd-helm-charts/ccm-hetzner/values.yaml \
           {{- if (eq .Values.mode "hybrid") }}
-          --set ccm-hetzner.privateNetwork.enabled=true \
+          --set ccm-hetzner.networking.enabled=true \
           {{- end }}
           | kubectl apply -f -
       {{- end }}
