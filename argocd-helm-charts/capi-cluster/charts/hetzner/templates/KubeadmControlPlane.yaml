@@ -39,11 +39,17 @@ spec:
         {{- end }}
         {{/* certSANs lets clients reach kube-apiserver under names other
              than controlPlaneEndpoint.host without tripping x509 errors.
-             Includes the LB endpoint hostname plus any operator-supplied
-             extras (e.g. the NetBird-mesh form like "netbird.k8s-api"). */}}
-        {{- if (.Values.controlPlane.endpoint).host }}
+             Includes the LB endpoint hostname (when set) plus any operator-
+             supplied extras (e.g. the NetBird-mesh form "kubernetes.<zone>").
+             Rendered whenever either is present — so the default
+             kubernetes.<netbird-dns-zone> SAN lands even on clusters where
+             CAPH (not kubeaid-cli) supplies the endpoint, and endpoint.host
+             is therefore unset here. */}}
+        {{- if or (.Values.controlPlane.endpoint).host .Values.controlPlane.extraCertSANs }}
         certSANs:
-          - {{ .Values.controlPlane.endpoint.host }}
+          {{- with (.Values.controlPlane.endpoint).host }}
+          - {{ . }}
+          {{- end }}
           {{- range .Values.controlPlane.extraCertSANs }}
           - {{ . }}
           {{- end }}
