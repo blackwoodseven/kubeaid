@@ -54,10 +54,10 @@ rook-ceph-cluster:
       mgr-sidecar:
         limits:
           cpu: "1000m"
-          memory: "40Mi"
+          memory: "100Mi"
         requests:
           cpu: "1000m"
-          memory: "40Mi"
+          memory: "100Mi"
       crashcollector:
         limits:
           cpu: "50m"
