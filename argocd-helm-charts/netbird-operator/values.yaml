@@ -1,0 +1,23 @@
+netbird-operator:
+  webhook:
+    # The operator ships a mutating webhook on EVERY pod CREATE in the
+    # cluster (mpod-v1.netbird.io) to inject mesh sidecars/DNS. On
+    # kubeaid workload clusters the operator deploys un-wired (no
+    # managementURL / API key until the post-bootstrap NetBird step),
+    # so the webhook has nothing useful to do at first — yet the
+    # subchart default failurePolicy=Fail meant a not-Ready operator
+    # (e.g. its TLS cert not issued yet) blocked EVERY pod creation
+    # cluster-wide: rook-ceph OSD provisioning, CSI, anything a
+    # control-plane roll needed. A mesh-injection convenience must
+    # degrade to "no injection", never veto unrelated workloads.
+    failurePolicy: Ignore
+
+    # Only namespaces that explicitly opt in are sent to the webhook
+    # at all. Un-labelled namespaces never round-trip through it, so
+    # an unhealthy operator can't even add latency to their pod
+    # creation. Label a namespace to enable injection:
+    #   kubectl label ns <ns> netbird.io/inject=true
+    namespaceSelectors:
+      - key: netbird.io/inject
+        operator: In
+        values: ["true"]
