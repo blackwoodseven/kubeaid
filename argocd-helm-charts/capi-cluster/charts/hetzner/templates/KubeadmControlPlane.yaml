@@ -710,6 +710,23 @@ spec:
         kind: HetznerBareMetalMachineTemplate
         name: {{ .Values.global.clusterName }}-control-plane
   replicas: {{ len .Values.controlPlane.bareMetal.bareMetalHosts }}
+  {{/* Bare-metal hosts are finite — every HetznerBareMetalHost is already
+       bound to a Machine, so KCP's default surge rollout (maxSurge 1)
+       deadlocks: the surge Machine sits in Provisioning with
+       "InfrastructureReady: no available host (all hosts are in use)"
+       and the rollout never starts. maxSurge 0 switches to a scale-in
+       rollout — KCP deletes one outdated control-plane Machine first
+       (deprovisioning frees its host), then provisions the replacement
+       onto it. During each swap the control plane runs n-1 replicas
+       (reduced etcd fault tolerance until the new member joins) — the
+       accepted trade-off on fixed hardware. HCloud control-planes keep
+       the default surge rollout: a temporary 4th server is cheap and
+       avoids the n-1 window entirely. */}}
+  rollout:
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
   {{- else }}
   machineTemplate:
     spec:
