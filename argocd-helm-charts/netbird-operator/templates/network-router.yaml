@@ -1,0 +1,21 @@
+{{- /* New-gen NetBird Networks wiring: the NetworkRouter is the mesh
+     routing peer for this cluster — the operator deploys NetBird
+     client pods that register as routing peers and route traffic for
+     every NetworkResource referencing this router. Replaces the
+     deprecated NBRoutingPeer.
+
+     dnsZoneRef must name an EXISTING NetBird DNS zone (created in the
+     Mgmt dashboard) — the operator publishes each exposed Service as
+     a record under that zone. */}}
+{{- if .Values.networkRouter.enabled }}
+apiVersion: netbird.io/v1alpha1
+kind: NetworkRouter
+metadata:
+  name: {{ .Values.networkRouter.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  dnsZoneRef:
+    name: {{ required "networkRouter.dnsZone is required when networkRouter.enabled=true — the domain of an existing NetBird DNS zone, e.g. staging.mesh.acme.com" .Values.networkRouter.dnsZone }}
+  workloadOverride:
+    replicas: {{ .Values.networkRouter.replicas }}
+{{- end }}

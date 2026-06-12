@@ -21,3 +21,30 @@ netbird-operator:
       - key: netbird.io/inject
         operator: In
         values: ["true"]
+
+# New-gen NetBird Networks wiring (NetworkRouter + NetworkResource,
+# netbird.io/v1alpha1) — the successor to the deprecated NBRoutingPeer.
+# The router is the cluster's mesh routing peer; each entry in
+# networkResources exposes one Kubernetes Service through it, published
+# as a DNS record under the router's zone. Opt-in per cluster: enable
+# and set the zone in the cluster's values overlay.
+networkRouter:
+  enabled: false
+  name: cluster-router
+  # Domain of an EXISTING NetBird DNS zone (create it in the Mgmt
+  # dashboard first), e.g. "staging.mesh.acme.com". required-checked by the
+  # template when enabled.
+  dnsZone: ""
+  # CRD default is 3 — heavy for small clusters; one routing peer is
+  # plenty until HA routing is actually needed.
+  replicas: 1
+
+# Each entry: name (CR name), namespace (MUST be the Service's own
+# namespace — serviceRef is name-only), service (the Service to
+# expose), groups (NetBird groups the resource joins; Mgmt policies
+# grant mesh access by targeting these).
+networkResources: []
+# - name: kube-api
+#   namespace: default
+#   service: kubernetes
+#   groups: ["k8s-my-cluster"]
