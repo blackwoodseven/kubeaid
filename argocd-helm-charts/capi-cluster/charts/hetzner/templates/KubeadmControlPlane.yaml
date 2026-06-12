@@ -128,12 +128,15 @@ spec:
           - TLS_RSA_WITH_AES_256_GCM_SHA384
           - TLS_RSA_WITH_AES_128_GCM_SHA256
 
-    {{- if or (eq .Values.mode "hybrid") (eq .Values.network.type "private") }}
-    {{/* NAT gateway script is only needed when nodes run on a private network.
+    {{- if and (ne .Values.mode "bare-metal") (or (eq .Values.mode "hybrid") (eq .Values.network.type "private")) }}
+    {{/* NAT gateway script is only needed when HCloud nodes run on a
+         private network (and the HCloud side of hybrid). Pure bare-metal
+         is excluded: those hosts have their own public connectivity and
+         no NAT gateway — network.type defaults to "private", so without
+         the mode guard they'd ship and run this script for nothing.
          Gateway IP + DNS resolver come from values so non-default private
          networks work; the interface name is discovered at runtime so the
-         script also works on bare-metal hosts (eno1, enp3s0, …) and isn't
-         pinned to HCloud's enp7s0. */}}
+         script isn't pinned to HCloud's enp7s0. */}}
     - content: |
         set -eu
         NAT_GATEWAY_IP="{{ .Values.hcloud.natGatewayIP }}"
@@ -331,22 +334,39 @@ spec:
     preKubeadmCommands:
       - set -x
 
-      {{- if or (eq .Values.mode "hybrid") (eq .Values.network.type "private") }}
+      {{/* The NAT-gateway hop only exists for HCloud machines on a
+           private network (and the HCloud side of hybrid). network.type
+           defaults to "private", so without the mode guard a pure
+           bare-metal node — which has its own public connectivity and
+           no 10.0.0.1 gateway — spent 5 minutes retrying an impossible
+           default route on every boot. */}}
+      {{- if and (ne .Values.mode "bare-metal") (or (eq .Values.mode "hybrid") (eq .Values.network.type "private")) }}
       - chmod +x /connect-nat-gateway.sh && /connect-nat-gateway.sh
       {{- end }}
 
       {{/* Give highest priority to the Network Card / Connection entry in the boot order.
            Otherwise, we cannot boot the servers into rescue mode, and need to reach out to the
-           Hetzner support team. */}}
+           Hetzner support team. Guarded: legacy-BIOS hosts have no EFI
+           variables (efibootmgr errors out), and an EFI host without a
+           network boot entry would otherwise call `efibootmgr -o` with
+           an empty argument. */}}
       {{- if eq .Values.mode "bare-metal" }}
       - |
-        NETBOOT=$(efibootmgr -v \
-          | grep -E "Network (Card|Connection)" \
-          | sed 's/Boot\([0-9A-F]*\).*/\1/' \
-          | head -n1)
-        CURRENT_ORDER=$(efibootmgr | grep "BootOrder:" | cut -d' ' -f2)
-        NEW_ORDER=$(echo "$CURRENT_ORDER" | sed "s/$NETBOOT,\?//g" | sed "s/^/$NETBOOT,/" | sed 's/,$//')
-        efibootmgr -o $NEW_ORDER
+        if [ ! -d /sys/firmware/efi ]; then
+          echo "legacy BIOS boot — skipping EFI boot-order adjustment"
+        else
+          NETBOOT=$(efibootmgr -v \
+            | grep -E "Network (Card|Connection)" \
+            | sed 's/Boot\([0-9A-F]*\).*/\1/' \
+            | head -n1)
+          if [ -z "$NETBOOT" ]; then
+            echo "no EFI network boot entry found — skipping boot-order adjustment"
+          else
+            CURRENT_ORDER=$(efibootmgr | grep "BootOrder:" | cut -d' ' -f2)
+            NEW_ORDER=$(echo "$CURRENT_ORDER" | sed "s/$NETBOOT,\?//g" | sed "s/^/$NETBOOT,/" | sed 's/,$//')
+            efibootmgr -o "$NEW_ORDER"
+          fi
+        fi
       {{- end }}
 
       {{/*
@@ -436,23 +456,30 @@ spec:
            time. The script below looks the host up at boot via DMI
            chassis-serial-number (Hetzner populates this with the
            server ID) and falls back to public-IP-based detection. */}}
+      {{/* POSIX sh ONLY in runcmd scripts: cloud-init shellifies every
+           entry into one script under #!/bin/sh (dash on Ubuntu).
+           Bashisms fail at runtime, not render time — `declare -A`
+           here once killed the whole runcmd with "declare: not found",
+           leaving the node without containerd/kubelet/kubeadm-join.
+           The serverID -> privateIP map is rendered as a case
+           statement instead. */}}
       - |
         set -eu
-        # Build the serverID -> privateIP map at chart-render time.
-        declare -A PRIVATE_IP_BY_SERVER_ID
-        {{- range $i, $host := .Values.controlPlane.bareMetal.bareMetalHosts }}
-        PRIVATE_IP_BY_SERVER_ID["{{ $host.serverID }}"]="{{ $host.privateIP }}"
-        {{- end }}
-
         MY_SERVER_ID="$(cat /sys/class/dmi/id/chassis_serial 2>/dev/null || true)"
-        MY_PRIVATE_IP="${PRIVATE_IP_BY_SERVER_ID[$MY_SERVER_ID]:-}"
+
+        MY_PRIVATE_IP=""
+        case "$MY_SERVER_ID" in
+        {{- range $i, $host := .Values.controlPlane.bareMetal.bareMetalHosts }}
+          "{{ $host.serverID }}") MY_PRIVATE_IP="{{ $host.privateIP }}" ;;
+        {{- end }}
+        esac
 
         if [ -z "$MY_PRIVATE_IP" ]; then
           echo "ERROR: no privateIP mapping for chassis_serial=$MY_SERVER_ID" >&2
           echo "Available mappings:" >&2
-          for k in "${!PRIVATE_IP_BY_SERVER_ID[@]}"; do
-            echo "  serverID=$k -> privateIP=${PRIVATE_IP_BY_SERVER_ID[$k]}" >&2
-          done
+          {{- range $i, $host := .Values.controlPlane.bareMetal.bareMetalHosts }}
+          echo "  serverID={{ $host.serverID }} -> privateIP={{ $host.privateIP }}" >&2
+          {{- end }}
           exit 1
         fi
 
