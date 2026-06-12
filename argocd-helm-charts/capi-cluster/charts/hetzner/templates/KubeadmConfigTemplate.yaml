@@ -17,7 +17,17 @@ spec:
              eventRecordQPS=5, readOnlyPort=0, serverTLSBootstrap=true,
              explicit cipher-suite allow-list). maxPods=220 because these
              are worker nodes. kubelet is pointed at this file via
-             --config in kubeletExtraArgs below. */}}
+             --config in kubeletExtraArgs below.
+
+             When --config points here, kubelet reads ONLY this file —
+             kubeadm's auto-generated config (and its defaults) is ignored
+             end-to-end, so every kubeadm-required field must be restated
+             (mirror KubeadmControlPlane.yaml's matching block). Omitting
+             clusterDNS made kubelet silently degrade ClusterFirst pods to
+             the node's resolvConf (1.1.1.1): cluster Service names stopped
+             resolving on workers, e.g. ArgoCD's app-controller failing with
+             "lookup argocd-redis on 1.1.1.1:53: no such host" and gRPC
+             dials to argocd-repo-server producing zero addresses. */}}
         - path: /etc/kubernetes/kubelet/config.yaml
           owner: "root:root"
           permissions: "0644"
@@ -33,10 +43,16 @@ spec:
                 clientCAFile: /etc/kubernetes/pki/ca.crt
             authorization:
               mode: Webhook
+            cgroupDriver: systemd
+            clusterDNS:
+              - 10.96.0.10
+            clusterDomain: cluster.local
+            containerRuntimeEndpoint: unix:///var/run/containerd/containerd.sock
             eventRecordQPS: 5
             maxPods: 220
             readOnlyPort: 0
             resolvConf: /etc/kubernetes/resolv.conf
+            rotateCertificates: true
             serverTLSBootstrap: true
             tlsCipherSuites:
               - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
