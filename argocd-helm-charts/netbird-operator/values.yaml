@@ -48,7 +48,3 @@ networkResources: []
 #   namespace: default
 #   service: kubernetes
 #   groups: ["k8s-my-cluster"]
-
-# DEPRECATED upstream — escape hatch only; see templates/routing-peers.yaml.
-legacyNBRoutingPeer:
-  enabled: false
