@@ -2,6 +2,13 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.8.1
+
+### Bug Fixes
+
+- aff3e03e2 fix(hetzner): scale-in KCP rollout for bare-metal control planes
+- ca42ebba5 fix(hetzner): restate kubeadm-required kubelet fields in worker configs
+
 ## KubeAid Release Version 29.8.0
 
 ### Features
