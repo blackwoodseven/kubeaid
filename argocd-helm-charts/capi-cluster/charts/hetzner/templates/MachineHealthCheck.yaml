@@ -33,7 +33,14 @@ metadata:
 spec:
   clusterName: {{ .Values.global.clusterName }}
   checks:
-    nodeStartupTimeoutSeconds: 900
+    {{/* A bare-metal provision (rescue boot -> install-image -> reboot ->
+         cloud-init -> kubeadm join) takes 20-40 minutes. The 900s HCloud
+         default declares every replacement Machine failed-to-start at the
+         15-minute mark, so KCP remediates it mid-install and the rollout
+         loops: reinstall -> reaped -> retry, re-imaging the same host
+         forever. One hour covers the slowest observed installs with
+         headroom while still catching genuinely dead hardware. */}}
+    nodeStartupTimeoutSeconds: 3600
     unhealthyNodeConditions:
     - status: Unknown
       timeoutSeconds: 180
