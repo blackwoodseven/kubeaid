@@ -4,6 +4,18 @@ cilium:
     rollOutPods: true
     priorityClassName: "system-node-critical"
   kubeProxyReplacement: "true"
+  # With kube-proxy replacement, full-coverage socket LB translates
+  # ClusterIPs only at connect() time. Packets a pod FORWARDS (the
+  # netbird-operator's NetworkRouter routing mesh traffic to a Service
+  # VIP, or any router/VPN-gateway pod) never touch a socket, leave the
+  # pod still addressed to the VIP, and blackhole on the node — SYNs
+  # visible leaving eth0, no reply ever. Hostns-only scopes socket LB
+  # to the host namespace so pod traffic, forwarded flows included,
+  # gets per-packet service translation. The cost is the socket-LB
+  # fast path for pod-originated connects; the win is that routing
+  # pods work at all.
+  socketLB:
+    hostNamespaceOnly: true
   ipam:
     mode: "kubernetes"
   rollOutCiliumPods: true
