@@ -32,7 +32,7 @@ networkRouter:
   enabled: false
   name: cluster-router
   # Domain of an EXISTING NetBird DNS zone (create it in the Mgmt
-  # dashboard first), e.g. "kbm.mesh.acme.com". required-checked by the
+  # dashboard first), e.g. "staging.mesh.acme.com". required-checked by the
   # template when enabled.
   dnsZone: ""
   # CRD default is 3 — heavy for small clusters; one routing peer is

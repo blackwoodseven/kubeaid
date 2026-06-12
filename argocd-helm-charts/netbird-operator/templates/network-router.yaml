@@ -15,7 +15,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   dnsZoneRef:
-    name: {{ required "networkRouter.dnsZone is required when networkRouter.enabled=true — the domain of an existing NetBird DNS zone, e.g. kbm.mesh.acme.com" .Values.networkRouter.dnsZone }}
+    name: {{ required "networkRouter.dnsZone is required when networkRouter.enabled=true — the domain of an existing NetBird DNS zone, e.g. staging.mesh.acme.com" .Values.networkRouter.dnsZone }}
   workloadOverride:
     replicas: {{ .Values.networkRouter.replicas }}
 {{- end }}
