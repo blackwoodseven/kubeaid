@@ -1,0 +1,26 @@
+{{- /* One NetworkResource per Kubernetes Service exposed into the
+     mesh. serviceRef is name-only in the CRD, so each CR must live in
+     the SAME namespace as the Service it exposes — hence the
+     per-entry namespace field. groups lists the NetBird groups the
+     resource joins; mesh access is then granted by policies targeting
+     those groups in the Mgmt dashboard. */}}
+{{- range .Values.networkResources }}
+---
+apiVersion: netbird.io/v1alpha1
+kind: NetworkResource
+metadata:
+  name: {{ .name }}
+  namespace: {{ .namespace | default $.Release.Namespace }}
+spec:
+  networkRouterRef:
+    name: {{ $.Values.networkRouter.name }}
+    namespace: {{ $.Release.Namespace }}
+  serviceRef:
+    name: {{ .service }}
+  {{- with .groups }}
+  groups:
+    {{- range . }}
+    - name: {{ . }}
+    {{- end }}
+  {{- end }}
+{{- end }}

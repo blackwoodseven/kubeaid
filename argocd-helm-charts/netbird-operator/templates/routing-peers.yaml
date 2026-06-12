@@ -1,3 +1,12 @@
+{{- /* DEPRECATED: NBRoutingPeer is the operator's legacy routing API —
+     upstream points at NetworkRouter + NetworkResource instead (see
+     network-router.yaml / network-resources.yaml). Kept behind an
+     opt-out-by-default flag purely as an escape hatch for any cluster
+     that wired the legacy CR manually before the new-gen templates
+     landed; no kubeaid cluster relied on it from this chart (the
+     operator only became startable once managementURL + the
+     netbird-mgmt-api-key Secret started being wired by kubeaid-cli). */}}
+{{- if .Values.legacyNBRoutingPeer.enabled }}
 apiVersion: netbird.io/v1
 kind: NBRoutingPeer
 metadata:
@@ -5,4 +14,4 @@ metadata:
   namespace: netbird
 spec:
   replicas: 1
-
+{{- end }}
