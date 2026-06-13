@@ -2,6 +2,29 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.8.2
+
+### Features
+
+- ac08c0027 feat(capi-cluster/hetzner): render certSANs whenever any SAN exists
+- 82d49ce46 feat(netbird-operator): NetworkRouter + NetworkResource wiring, retire NBRoutingPeer
+
+### Bug Fixes
+
+- 8454cb1a2 fix(hetzner-robot): tolerate control-plane taint so failover pod schedules
+- 71180c8d9 fix(rook-ceph): drop the Squid v19.2.3 pin, use Tentacle default
+- c8713f0ae fix(rook-ceph): pin Ceph to Squid v19.2.3
+- 471848550 fix(rook-ceph): raise mgr-sidecar memory to 100Mi
+- 6dd3bb17c fix(hetzner): POSIX-sh CP runcmd, and skip NAT/EFI steps where impossible
+- 558c95f8f fix(cilium): scope socket LB to the host namespace
+- c269c8ea6 fix(netbird-operator): stop the pod-mutation webhook vetoing the cluster
+- 2db3fc105 fix(hetzner): give bare-metal CP machines an hour to start
+
+### Configuration Changes
+
+- bb2f81cdd chore(netbird-operator): drop the deprecated NBRoutingPeer entirely
+- e0d19d6ce chore(netbird-operator): use a generic example zone in docs strings
+
 ## KubeAid Release Version 29.8.1
 
 ### Bug Fixes
