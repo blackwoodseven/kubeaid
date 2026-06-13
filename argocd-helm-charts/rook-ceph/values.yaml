@@ -10,6 +10,12 @@ rook-ceph:
       memory: 200Mi
 
 rook-ceph-cluster:
+  # Pinned to Squid v19.2.3: Ceph v20.2.x ("Tentacle") regressed ceph-volume `raw list`
+  # for raw OSDs on partitions (tracker.ceph.com/issues/52504) — OSDs prepare but get no
+  # daemons (Rook sees "0 devices"), so the cluster has no OSDs. Revert when fixed upstream.
+  cephImage:
+    repository: quay.io/ceph/ceph
+    tag: v19.2.3
   monitoring:
     enabled: false
 
