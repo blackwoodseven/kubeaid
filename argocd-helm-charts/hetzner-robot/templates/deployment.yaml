@@ -68,3 +68,13 @@ spec:
           failureThreshold: 3
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
+      # The failover pod is pinned to control-plane nodes (nodeSelector above),
+      # so it must also tolerate their NoSchedule taint — otherwise the
+      # scheduler filters out every eligible node and the pod stays Pending.
+      # "master" is the pre-1.24 spelling of the same taint, kept for older
+      # clusters that still carry it.
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
