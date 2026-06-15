@@ -43,7 +43,7 @@ localpv:
   image:
     registry: "docker.io/"
     repository: openebs/provisioner-localpv
-    tag: 4.5.0
+    tag: 4.5.1
     pullPolicy: IfNotPresent
   updateStrategy:
     type: RollingUpdate

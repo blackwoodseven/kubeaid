@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: 20260606.162833.0efc5f3
+appVersion: 20260608.145320.8ee84eb
 dependencies:
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
@@ -12,4 +12,4 @@ maintainers:
   url: https://devth.com
 name: yetibot
 type: application
-version: 1.0.191
+version: 1.0.196

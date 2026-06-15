@@ -2,7 +2,7 @@
 
 OpenCost and OpenCost UI
 
-![Version: 2.5.22](https://img.shields.io/badge/Version-2.5.22-informational?style=flat-square)
+![Version: 2.5.23](https://img.shields.io/badge/Version-2.5.23-informational?style=flat-square)
 ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 ![AppVersion: 1.120.3](https://img.shields.io/badge/AppVersion-1.120.3-informational?style=flat-square)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opencost)](https://artifacthub.io/packages/search?repo=opencost)
@@ -69,7 +69,7 @@ $ helm install opencost opencost/opencost
 | opencost.exporter.apiHttpRoute.hostnames | list | `[]` | Hostnames for the HTTPRoute |
 | opencost.exporter.apiHttpRoute.labels | object | `{}` | Labels for HTTPRoute resource |
 | opencost.exporter.apiHttpRoute.parentRefs | list | See [values.yaml](values.yaml) | Gateway API parent references |
-| opencost.exporter.apiHttpRoute.rules | list | See [values.yaml](values.yaml) | HTTPRoute rules |
+| opencost.exporter.apiHttpRoute.rules | list | See [values.yaml](values.yaml) | HTTPRoute rules. Each rule supports an optional `filters` list at the rule level and per-backendRef `filters` for Gateway API filter configuration (e.g. basic auth via `ExtensionRef`, header modification via `RequestHeaderModifier`, etc.). |
 | opencost.exporter.apiIngress.annotations | object | `{}` | Annotations for Ingress resource |
 | opencost.exporter.apiIngress.enabled | bool | `false` | Ingress for OpenCost API |
 | opencost.exporter.apiIngress.hosts | list | See [values.yaml](values.yaml) | A list of host rules used to configure the Ingress |
@@ -134,7 +134,7 @@ $ helm install opencost opencost/opencost
 | opencost.mcp.httpRoute.hostnames | list | `[]` | Hostnames for the HTTPRoute |
 | opencost.mcp.httpRoute.labels | object | `{}` | Labels for HTTPRoute resource |
 | opencost.mcp.httpRoute.parentRefs | list | See [values.yaml](values.yaml) | Gateway API parent references |
-| opencost.mcp.httpRoute.rules | list | See [values.yaml](values.yaml) | HTTPRoute rules |
+| opencost.mcp.httpRoute.rules | list | See [values.yaml](values.yaml) | HTTPRoute rules. Each rule supports an optional `filters` list at the rule level and per-backendRef `filters` for Gateway API filter configuration (e.g. basic auth via `ExtensionRef`, header modification via `RequestHeaderModifier`, etc.). |
 | opencost.mcp.ingress.annotations | object | `{}` | Annotations for Ingress resource |
 | opencost.mcp.ingress.enabled | bool | `false` | Ingress for MCP server |
 | opencost.mcp.ingress.hosts | list | See [values.yaml](values.yaml) | A list of host rules used to configure the Ingress |
@@ -219,7 +219,7 @@ $ helm install opencost opencost/opencost
 | opencost.ui.httpRoute.hostnames | list | `[]` | Hostnames for the HTTPRoute |
 | opencost.ui.httpRoute.labels | object | `{}` | Labels for HTTPRoute resource |
 | opencost.ui.httpRoute.parentRefs | list | See [values.yaml](values.yaml) | Gateway API parent references |
-| opencost.ui.httpRoute.rules | list | See [values.yaml](values.yaml) | HTTPRoute rules |
+| opencost.ui.httpRoute.rules | list | See [values.yaml](values.yaml) | HTTPRoute rules. Each rule supports an optional `filters` list at the rule level and per-backendRef `filters` for Gateway API filter configuration (e.g. basic auth via `ExtensionRef`, header modification via `RequestHeaderModifier`, etc.). |
 | opencost.ui.image.fullImageName | string | `nil` | Override the full image name for development purposes |
 | opencost.ui.image.pullPolicy | string | `"IfNotPresent"` | UI container image pull policy |
 | opencost.ui.image.registry | string | `"ghcr.io"` | UI container image registry |
