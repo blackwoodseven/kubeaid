@@ -12,7 +12,7 @@ tests:
     input_series:
       - series: obmondo_monitoring{certname="test.abc", alert_id="monitor::system::slurm::job_failed"}
         values: 1x200
-      - series: slurm_job_failed{certname="test.abc"}
+      - series: slurm_jobs_failed{certname="test.abc"}
         values: 1x200
 
     alert_rule_test:
@@ -24,8 +24,8 @@ tests:
               certname: test.abc
               alert_id: monitor::system::slurm::job_failed
             exp_annotations:
-              summary: "Slurm job failure detected on host **test.abc**"
-              description: "One or more Slurm jobs have failed on **test.abc**."
+              summary: "Slurm job failure detected"
+              description: "One or more Slurm jobs have failed."
 
   #
   # 2. Slurm nodes_down alert
@@ -34,8 +34,10 @@ tests:
     input_series:
       - series: obmondo_monitoring{certname="test.abc", alert_id="monitor::system::slurm::nodes_down"}
         values: 1x200
-      - series: slurm_nodes_down{certname="test.abc"}
-        values: 2x200
+      - series: slurm_node_status{certname="test.abc", node="node11", partition="batch*", status="down*"}
+        values: 1x200
+      - series: slurm_node_status{certname="test.abc", node="node11", partition="compute", status="down*"}
+        values: 1x200
 
     alert_rule_test:
       - alertname: monitor::system::slurm::nodes_down
@@ -45,9 +47,10 @@ tests:
               severity: critical
               certname: test.abc
               alert_id: monitor::system::slurm::nodes_down
+              node: node11
             exp_annotations:
-              summary: "Slurm nodes are down for **test.abc**"
-              description: "One or more Slurm nodes are reported as down on **test.abc**."
+              summary: "Slurm node **node11** is DOWN"
+              description: "Slurm node **node11** is reported as DOWN for more than 15 minutes."
 
   #
   # 3. Slurm jobs_pending alert (pending > 1 hour)
@@ -68,20 +71,22 @@ tests:
               certname: test.abc
               alert_id: monitor::system::slurm::jobs_pending
             exp_annotations:
-              summary: "Slurm jobs pending for more than 1 hour on host **test.abc**"
-              description: "One or more Slurm jobs have been in the PENDING state for more than **1 hour** on **test.abc**."
+              summary: "Slurm jobs pending for more than 1 hour"
+              description: "One or more Slurm jobs have been in the PENDING state for more than **1 hour**."
 
   #
-  # 4. Slurm node drain / draining alert
+  # 4. Slurm node drain alert (names node + reason)
   #
   - interval: 1m
     input_series:
       - series: obmondo_monitoring{certname="test.abc", alert_id="monitor::system::slurm::node_drain"}
         values: 1x200
-      - series: slurm_node_drain{certname="test.abc"}
+      - series: slurm_node_drain_reason_info{certname="test.abc", node="node05", reason="Kill task failed", since="2026-06-12T19:06:20"}
         values: 1x200
-      - series: slurm_node_draining{certname="test.abc"}
-        values: 0x200
+      - series: slurm_node_status{certname="test.abc", node="node05", partition="batch*", status="drained"}
+        values: 1x200
+      - series: slurm_node_status{certname="test.abc", node="node05", partition="compute", status="drained"}
+        values: 1x200
 
     alert_rule_test:
       - alertname: monitor::system::slurm::node_drain
@@ -91,6 +96,35 @@ tests:
               severity: warning
               certname: test.abc
               alert_id: monitor::system::slurm::node_drain
+              node: node05
+              reason: "Kill task failed"
+              since: "2026-06-12T19:06:20"
             exp_annotations:
-              summary: "Slurm node in DRAIN/DRAINING state on host **test.abc**"
-              description: "One or more Slurm nodes are in **DRAIN** or **DRAINING** state on **test.abc** for more than 10 minutes."
+              summary: "Slurm node **node05** in DRAIN state"
+              description: "Slurm node **node05** is in DRAIN state for more than 10 minutes. Reason: Kill task failed (since 2026-06-12T19:06:20)."
+
+  #
+  # 5. Slurm node error/fail alert
+  #
+  - interval: 1m
+    input_series:
+      - series: obmondo_monitoring{certname="test.abc", alert_id="monitor::system::slurm::node_error"}
+        values: 1x200
+      - series: slurm_node_status{certname="test.abc", node="node11", partition="batch*", status="error"}
+        values: 1x200
+      - series: slurm_node_status{certname="test.abc", node="node11", partition="compute", status="error"}
+        values: 1x200
+
+    alert_rule_test:
+      - alertname: monitor::system::slurm::node_error
+        eval_time: 10m
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              certname: test.abc
+              alert_id: monitor::system::slurm::node_error
+              node: node11
+              status: error
+            exp_annotations:
+              summary: "Slurm node **node11** in ERROR/FAIL state"
+              description: "Slurm node **node11** is in **error** state for more than 10 minutes."
