@@ -2,6 +2,60 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.9.0
+
+### Minor Version Upgrades
+
+- 1df9746b6 Updated aws-ebs-csi-driver from version 2.60.1 to 2.61.1
+- 1df9746b6 Updated aws-efs-csi-driver from version 4.2.0 to 4.3.0
+- 1df9746b6 Updated workload-identity-webhook from version 1.5.1 to 1.6.0
+- 1df9746b6 Updated hcloud-cloud-controller-manager from version 1.31.1 to 1.32.0
+- 1df9746b6 Updated plugin-barman-cloud from version 0.6.0 to 0.7.0
+- 1df9746b6 Updated keda from version 2.19.0 to 2.20.1
+- 1df9746b6 Updated mariadb-operator from version 26.3.0 to 26.6.0
+- 1df9746b6 Updated netbird-operator from version 0.4.1 to 0.6.0
+- 1df9746b6 Updated opensearch from version 3.6.0 to 3.7.0
+- 1df9746b6 Updated opensearch-dashboards from version 3.6.0 to 3.7.0
+- 1df9746b6 Updated opentelemetry-operator from version 0.114.1 to 0.115.0
+- 1df9746b6 Updated rook-ceph from version v1.19.6 to v1.20.0
+- 1df9746b6 Updated rook-ceph-cluster from version v1.19.6 to v1.20.0
+- 1df9746b6 Updated seaweedfs from version 4.31.0 to 4.34.0
+- 1df9746b6 Updated snapshot-controller from version 5.0.4 to 5.1.1
+- 1df9746b6 Updated traefik from version 40.2.0 to 40.3.0
+- 1df9746b6 Updated trivy-operator from version 0.32.1 to 0.33.1
+
+### Patch Version Upgrades
+
+- 1df9746b6 Updated argo-cd from version 9.5.15 to 9.5.21
+- 1df9746b6 Updated azuredisk-csi-driver from version 1.34.3 to 1.34.4
+- 1df9746b6 Updated cloudnative-pg from version 0.28.2 to 0.28.3
+- 1df9746b6 Updated crossplane from version 2.3.1 to 2.3.2
+- 1df9746b6 Updated erpnext from version 8.0.55 to 8.0.58
+- 1df9746b6 Updated fluent-bit from version 0.57.6 to 0.57.7
+- 1df9746b6 Updated funkwhale from version 3.0.1 to 3.0.2
+- 1df9746b6 Updated gitlab-runner from version 0.89.0 to 0.89.1
+- 1df9746b6 Updated harbor from version 1.19.0 to 1.19.1
+- 1df9746b6 Updated lemmy from version 0.6.13 to 0.6.14
+- 1df9746b6 Updated localpv-provisioner from version 4.5.0 to 4.5.1
+- 1df9746b6 Updated metrics-server from version 3.13.0 to 3.13.1
+- 1df9746b6 Updated opencost from version 2.5.22 to 2.5.23
+- 1df9746b6 Updated opentelemetry-collector from version 0.158.0 to 0.158.1
+- 1df9746b6 Updated peertube from version 1.7.4 to 1.7.5
+- 1df9746b6 Updated sonarqube from version 2026.3.0 to 2026.3.1
+- 1df9746b6 Updated teleport-cluster from version 18.8.2 to 18.8.3
+- 1df9746b6 Updated teleport-kube-agent from version 18.8.2 to 18.8.3
+- 1df9746b6 Updated velero from version 12.0.2 to 12.0.3
+- 1df9746b6 Updated yetibot from version 1.0.184 to 1.0.196
+- 1df9746b6 Updated zfs-localpv from version 2.10.0 to 2.10.1
+
+### Bug Fixes
+
+- 8209857e1 fix(kube-prometheus): allow kubeaid-agent in monitoring ns to reach prometheus
+
+### Other Changes
+
+- 7104cac13 Added and updated the slurm alerts
+
 ## KubeAid Release Version 29.8.2
 
 ### Features
