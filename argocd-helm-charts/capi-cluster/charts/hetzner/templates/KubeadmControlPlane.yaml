@@ -534,6 +534,11 @@ spec:
         # init/join starts it for the first time, so its first registration
         # already carries the vSwitch IP as InternalIP.
         sed -i "s|__KUBEAID_NODE_IP__|${MY_PRIVATE_IP}|" /etc/kubernetes/kubelet/config.yaml
+
+        # cloud-init folds every runcmd entry into ONE script, so the `set -eu`
+        # at the top of this block would otherwise leak into the post-kubeadm
+        # commands (e.g. the `$HOME` kubeconfig chain) and abort them. Reset it.
+        set +eu
       {{- end }}
 
       - sed -i '/swap/d' /etc/fstab
