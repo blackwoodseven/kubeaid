@@ -3,6 +3,11 @@ harborProxyCache:
 
 resourceQuotaLimitRangeGenerator:
   enabled: true
+  generateExisting: true
+  defaultResourceQuotaRuleEnabled: true
+  excludeNamespaces:
+    resourceQuota: []
+    limitRange: []
 
   defaults:
     resourceQuota:

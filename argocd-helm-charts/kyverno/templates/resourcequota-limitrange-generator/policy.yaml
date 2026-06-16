@@ -2,6 +2,16 @@
 
 {{- $defaults := .Values.resourceQuotaLimitRangeGenerator.defaults }}
 {{- $overrides := .Values.resourceQuotaLimitRangeGenerator.overrides }}
+{{- $generateExisting := true }}
+{{- if hasKey .Values.resourceQuotaLimitRangeGenerator "generateExisting" }}
+{{- $generateExisting = .Values.resourceQuotaLimitRangeGenerator.generateExisting }}
+{{- end }}
+{{- $defaultResourceQuotaRuleEnabled := true }}
+{{- if hasKey .Values.resourceQuotaLimitRangeGenerator "defaultResourceQuotaRuleEnabled" }}
+{{- $defaultResourceQuotaRuleEnabled = .Values.resourceQuotaLimitRangeGenerator.defaultResourceQuotaRuleEnabled }}
+{{- end }}
+{{- $resourceQuotaExcludeNamespaces := .Values.resourceQuotaLimitRangeGenerator.excludeNamespaces.resourceQuota | default (list) }}
+{{- $limitRangeExcludeNamespaces := .Values.resourceQuotaLimitRangeGenerator.excludeNamespaces.limitRange | default (list) }}
 
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
@@ -22,13 +32,14 @@ spec:
     # ──────────────────────
     # Default ResourceQuota
     # ──────────────────────
+    {{- if $defaultResourceQuotaRuleEnabled }}
     - name: generate-resourcequota-default
       match:
         any:
           - resources:
               kinds:
                 - Namespace
-      {{- if $overrides }}
+      {{- if or $overrides $resourceQuotaExcludeNamespaces }}
       exclude:
         any:
           {{- range $namespace, $override := $overrides }}
@@ -38,9 +49,14 @@ spec:
                 - {{ $namespace | quote }}
           {{- end }}
           {{- end }}
+          {{- range $namespace := $resourceQuotaExcludeNamespaces }}
+          - resources:
+              names:
+                - {{ $namespace | quote }}
+          {{- end }}
       {{- end }}
       generate:
-        generateExisting: true
+        generateExisting: {{ $generateExisting }}
         synchronize: true
         apiVersion: v1
         kind: ResourceQuota
@@ -57,6 +73,7 @@ spec:
               requests.storage: {{ $defaults.resourceQuota.storage.request | quote }}
               requests.ephemeral-storage: {{ $defaults.resourceQuota.ephemeralStorage.request | quote }}
               limits.ephemeral-storage: {{ $defaults.resourceQuota.ephemeralStorage.limit | quote }}
+    {{- end }}
 
     # ──────────────────────────────────
     # Per-namespace ResourceQuota overrides
@@ -72,7 +89,7 @@ spec:
               names:
                 - {{ $namespace | quote }}
       generate:
-        generateExisting: true
+        generateExisting: {{ $generateExisting }}
         synchronize: true
         apiVersion: v1
         kind: ResourceQuota
@@ -113,7 +130,7 @@ spec:
           - resources:
               kinds:
                 - Namespace
-      {{- if $overrides }}
+      {{- if or $overrides $limitRangeExcludeNamespaces }}
       exclude:
         any:
           {{- range $namespace, $override := $overrides }}
@@ -123,9 +140,14 @@ spec:
                 - {{ $namespace | quote }}
           {{- end }}
           {{- end }}
+          {{- range $namespace := $limitRangeExcludeNamespaces }}
+          - resources:
+              names:
+                - {{ $namespace | quote }}
+          {{- end }}
       {{- end }}
       generate:
-        generateExisting: true
+        generateExisting: {{ $generateExisting }}
         synchronize: true
         apiVersion: v1
         kind: LimitRange
@@ -163,7 +185,7 @@ spec:
               names:
                 - {{ $namespace | quote }}
       generate:
-        generateExisting: true
+        generateExisting: {{ $generateExisting }}
         synchronize: true
         apiVersion: v1
         kind: LimitRange
