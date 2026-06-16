@@ -410,6 +410,14 @@ local kp =
                     }],
                   },
                 },
+                {
+                  // kubeaid-agent deployed by helm chart runs in monitoring namespace
+                  podSelector: {
+                    matchLabels: {
+                      'app.kubernetes.io/name': 'kubeaid-agent',
+                    },
+                  },
+                },
               ],
               ports: [{
                 port: 9090,
