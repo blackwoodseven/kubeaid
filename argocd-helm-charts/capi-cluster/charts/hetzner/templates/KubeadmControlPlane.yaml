@@ -471,6 +471,13 @@ spec:
            statement instead. */}}
       - |
         set -eu
+        # Resolve this host's vSwitch privateIP. CP Machines share one
+        # KubeadmConfigSpec, so the node must self-identify at boot.
+        # Primary key: the Hetzner server ID in DMI chassis_serial. Many
+        # boards leave it as the placeholder "To Be Filled By O.E.M." (no
+        # DMI field carries the server ID), so fall back to matching the
+        # node's disk WWNs -- always present in the chart values and
+        # readable from /dev/disk/by-id.
         MY_SERVER_ID="$(cat /sys/class/dmi/id/chassis_serial 2>/dev/null || true)"
 
         MY_PRIVATE_IP=""
@@ -481,10 +488,23 @@ spec:
         esac
 
         if [ -z "$MY_PRIVATE_IP" ]; then
-          echo "ERROR: no privateIP mapping for chassis_serial=$MY_SERVER_ID" >&2
+          # chassis_serial unusable -- match by disk WWN instead.
+          DISK_IDS="$(ls /dev/disk/by-id/ 2>/dev/null || true)"
+        {{- range $i, $host := .Values.controlPlane.bareMetal.bareMetalHosts }}
+        {{- range $wwn := $host.wwns }}
+          if [ -z "$MY_PRIVATE_IP" ] && printf '%s\n' "$DISK_IDS" | grep -qiF "{{ $wwn }}"; then
+            MY_PRIVATE_IP="{{ $host.privateIP }}"
+          fi
+        {{- end }}
+        {{- end }}
+        fi
+
+        if [ -z "$MY_PRIVATE_IP" ]; then
+          echo "ERROR: could not resolve privateIP (chassis_serial=$MY_SERVER_ID; no DMI server ID and no matching disk WWN)" >&2
+          echo "Node disks: $(ls /dev/disk/by-id/ 2>/dev/null | tr '\n' ' ')" >&2
           echo "Available mappings:" >&2
           {{- range $i, $host := .Values.controlPlane.bareMetal.bareMetalHosts }}
-          echo "  serverID={{ $host.serverID }} -> privateIP={{ $host.privateIP }}" >&2
+          echo "  serverID={{ $host.serverID }} privateIP={{ $host.privateIP }} wwns=[{{ range $w := $host.wwns }}{{ $w }} {{ end }}]" >&2
           {{- end }}
           exit 1
         fi
