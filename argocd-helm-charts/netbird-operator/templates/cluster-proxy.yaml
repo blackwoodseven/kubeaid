@@ -5,7 +5,7 @@
      shared kubernetes Service ClusterIP (10.96.0.1, identical in every
      cluster). The chart also provisions the impersonation ServiceAccount +
      ClusterRole/Binding the proxy needs. Requires netbird-operator >= 0.7.0
-     (the apiserver-proxy controller and the ClusterProxy `groups` field).
+     (the apiserver-proxy controller).
 
      The proxy GRANTS nothing — it impersonates. Authorization still comes from
      your own RBAC bound to the NetBird users/groups the proxy stamps. */}}
@@ -52,10 +52,4 @@ spec:
   clusterName: {{ $name }}
   serviceAccountName: {{ $sa }}
   apiServer: {{ .Values.clusterProxy.apiServer }}
-  {{- with .Values.clusterProxy.groups }}
-  groups:
-    {{- range . }}
-    - name: {{ . }}
-    {{- end }}
-  {{- end }}
 {{- end }}

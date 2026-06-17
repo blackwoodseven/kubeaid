@@ -1,4 +1,9 @@
 netbird-operator:
+  # Pin the operator image to 0.7.0 — the ClusterProxy apiserver-proxy
+  # controller lives there (the vendored 0.6.0 subchart/CRDs are otherwise fine).
+  operator:
+    image:
+      tag: "v0.7.0"
   webhook:
     # The operator ships a mutating webhook on EVERY pod CREATE in the
     # cluster (mpod-v1.netbird.io) to inject mesh sidecars/DNS. On
@@ -69,6 +74,3 @@ clusterProxy:
   # In-cluster apiserver URL — the default sidesteps cert-SAN/hostname issues
   # since the proxy never leaves the cluster network to reach the apiserver.
   apiServer: https://kubernetes.default.svc.cluster.local
-  # NetBird groups the proxy peer joins; grant access via a Mgmt policy
-  # targeting these. Needs operator >= 0.7.0. Empty = none.
-  groups: []
