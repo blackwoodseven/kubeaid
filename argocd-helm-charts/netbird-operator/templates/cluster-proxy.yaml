@@ -52,4 +52,53 @@ spec:
   clusterName: {{ $name }}
   serviceAccountName: {{ $sa }}
   apiServer: {{ .Values.clusterProxy.apiServer }}
+{{- /* Convenience RBAC for the impersonated NetBird identities. The proxy
+     stamps the caller's NetBird user/groups as k8s subjects but grants nothing
+     itself — these bindings turn a subject into access. Each clusterProxy.rbac
+     entry: a group OR user subject, a ClusterRole, and optional namespaces —
+     omit namespaces for a cluster-wide ClusterRoleBinding, list them for a
+     per-namespace RoleBinding. Empty list renders nothing. */}}
+{{- range $i, $b := .Values.clusterProxy.rbac }}
+{{- $subjectKind := "Group" }}
+{{- $subjectName := $b.group }}
+{{- if $b.user }}
+{{- $subjectKind = "User" }}
+{{- $subjectName = $b.user }}
+{{- end }}
+{{- if not $subjectName }}{{ fail (printf "clusterProxy.rbac[%d]: set either 'group' or 'user'" $i) }}{{- end }}
+{{- $role := required (printf "clusterProxy.rbac[%d].clusterRole is required" $i) $b.clusterRole }}
+{{- $slug := regexReplaceAll "[^a-z0-9]+" (printf "%s-%s" $subjectName $role | lower) "-" | trimAll "-" }}
+{{- if $b.namespaces }}
+{{- range $ns := $b.namespaces }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: netbird-{{ $slug }}
+  namespace: {{ $ns }}
+subjects:
+  - kind: {{ $subjectKind }}
+    name: {{ $subjectName }}
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $role }}
+{{- end }}
+{{- else }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: netbird-{{ $slug }}
+subjects:
+  - kind: {{ $subjectKind }}
+    name: {{ $subjectName }}
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $role }}
+{{- end }}
+{{- end }}
 {{- end }}
