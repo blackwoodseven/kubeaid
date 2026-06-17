@@ -2,6 +2,25 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.9.1
+
+### Features
+
+- 5bc822554 feat(netbird): bump app images to 0.72.4
+- 783b895aa feat(netbird): vendor coturn 9.7.1 for hostNetwork STUN/TURN exposure
+- 1683066cd feat(netbird-operator): add ClusterProxy (apiserver proxy) support
+- ef86a8415 feat(kube-prometheus): make prometheus-adapter replicas configurable
+
+### Bug Fixes
+
+- da768a386 fix(netbird-operator): pin image to v0.7.0 and drop ClusterProxy groups
+- b66bf6eb7 fix: HOME variable missing in capi-cluster
+- 2e0ba3a72 fix: indentify the private IP of the node
+
+### Configuration Changes
+
+- c954a9b4a chore: replace bitnami images with soldevelo equivalents
+
 ## KubeAid Release Version 29.9.0
 
 ### Minor Version Upgrades
