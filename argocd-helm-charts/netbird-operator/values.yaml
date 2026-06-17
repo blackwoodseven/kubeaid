@@ -48,3 +48,27 @@ networkResources: []
 #   namespace: default
 #   service: kubernetes
 #   groups: ["k8s-my-cluster"]
+
+# NetBird API-server proxy (ClusterProxy + impersonation RBAC; requires
+# netbird-operator >= 0.7.0). Runs a mesh peer that proxies kubectl to the
+# IN-CLUSTER apiserver (kubernetes.default.svc) and stamps the caller's
+# NetBird identity via impersonation — so each cluster is reachable at a
+# unique proxy FQDN (clusterName.netbird-kubeapi-proxy.<domain>) instead of
+# colliding on the shared kubernetes Service ClusterIP (10.96.0.1) across
+# clusters. Reach it with: `netbird kubernetes write-kubeconfig <clusterName>`.
+# NOTE: k8s RBAC must bind your NetBird users/groups to roles — the proxy
+# impersonates, it does not itself grant any access.
+clusterProxy:
+  enabled: false
+  # Unique per cluster — becomes the proxy's mesh DNS label and kube-context.
+  # required-checked by the template when enabled.
+  clusterName: ""
+  # SA the proxy impersonates through; the chart also creates the matching
+  # ClusterRole + ClusterRoleBinding granting it impersonate on users/groups.
+  serviceAccountName: clusterproxy
+  # In-cluster apiserver URL — the default sidesteps cert-SAN/hostname issues
+  # since the proxy never leaves the cluster network to reach the apiserver.
+  apiServer: https://kubernetes.default.svc.cluster.local
+  # NetBird groups the proxy peer joins; grant access via a Mgmt policy
+  # targeting these. Needs operator >= 0.7.0. Empty = none.
+  groups: []

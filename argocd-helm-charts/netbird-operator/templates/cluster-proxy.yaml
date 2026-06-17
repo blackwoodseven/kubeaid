@@ -1,0 +1,61 @@
+{{- /* NetBird API-server proxy: a mesh peer that forwards kubectl traffic to
+     the in-cluster apiserver and impersonates the caller's NetBird identity,
+     so each cluster is reachable at a unique FQDN
+     (clusterName.netbird-kubeapi-proxy.<domain>) instead of fighting over the
+     shared kubernetes Service ClusterIP (10.96.0.1, identical in every
+     cluster). The chart also provisions the impersonation ServiceAccount +
+     ClusterRole/Binding the proxy needs. Requires netbird-operator >= 0.7.0
+     (the apiserver-proxy controller and the ClusterProxy `groups` field).
+
+     The proxy GRANTS nothing — it impersonates. Authorization still comes from
+     your own RBAC bound to the NetBird users/groups the proxy stamps. */}}
+{{- if .Values.clusterProxy.enabled }}
+{{- $name := required "clusterProxy.clusterName is required when clusterProxy.enabled=true — it becomes the proxy's mesh DNS label and kube-context" .Values.clusterProxy.clusterName }}
+{{- $sa := .Values.clusterProxy.serviceAccountName }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $sa }}
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $sa }}
+rules:
+  - apiGroups: [""]
+    resources: [users, groups]
+    verbs: [impersonate]
+  - apiGroups: [authentication.k8s.io]
+    resources: [userextras/*, uids]
+    verbs: [impersonate]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $sa }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $sa }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $sa }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: netbird.io/v1alpha1
+kind: ClusterProxy
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterName: {{ $name }}
+  serviceAccountName: {{ $sa }}
+  apiServer: {{ .Values.clusterProxy.apiServer }}
+  {{- with .Values.clusterProxy.groups }}
+  groups:
+    {{- range . }}
+    - name: {{ . }}
+    {{- end }}
+  {{- end }}
+{{- end }}
