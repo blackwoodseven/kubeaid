@@ -527,6 +527,7 @@ local kp =
         },
       },
       prometheusAdapter+: {
+        replicas: vars.prometheus_adapter_replicas,
         resources: vars.prometheus_adapter_resources,
         config+:: {
           rules+: vars.prometheus_adapter_additional_rules,

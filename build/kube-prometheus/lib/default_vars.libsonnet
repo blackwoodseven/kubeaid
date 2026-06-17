@@ -30,6 +30,7 @@
     requests: { cpu: '200m', memory: '1500Mi' },
   },
   prometheus_adapter_additional_rules: [],
+  prometheus_adapter_replicas: 2,
   grafana_resources: {
     limits: { memory: '250Mi' },
     requests: { cpu: '6m', memory: '200Mi' },
