@@ -228,7 +228,7 @@ netbird:
   dashboard:
     enabled: true
     image:
-      tag: v2.32.2
+      tag: v2.39.0
     envFromSecret:
       AUTH_CLIENT_ID: netbird/idpClientID
       AUTH_AUDIENCE: netbird/idpClientID
