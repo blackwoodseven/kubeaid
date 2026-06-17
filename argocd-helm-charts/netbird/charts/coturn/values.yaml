@@ -4,6 +4,12 @@ replicas: 1
 # -- different name for the helm release
 nameOverride: ""
 
+deployment:
+  type: Deployment
+  hostNetwork: false
+  # When hostNetwork is set to true, the dnsPolicy must be set to ClusterFirstWithHostNet so Cluster internal services are still resolvable
+  dnsPolicy: "ClusterFirst"
+
 service:
   # -- The type of service to deploy for routing Coturn traffic.
   #   ClusterIP: Recommended for DaemonSet configurations. This will create a
@@ -149,10 +155,9 @@ coturn:
   realm: "turn.example.com"
 
   # -- Extra environment variables to pass to the Coturn container
-  # example:
-  #   - name: STATIC_AUTH_SECRET_VAL_OPT
-  #     value: supersecretpassword123abcyes
   extraEnvVars: []
+  #  - name: STATIC_AUTH_SECRET_VAL_OPT
+  #    value: supersecretpassword123abcyes
 
   auth:
     # -- username for the main user of the turn server
