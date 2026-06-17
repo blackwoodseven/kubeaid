@@ -74,3 +74,19 @@ clusterProxy:
   # In-cluster apiserver URL — the default sidesteps cert-SAN/hostname issues
   # since the proxy never leaves the cluster network to reach the apiserver.
   apiServer: https://kubernetes.default.svc.cluster.local
+  # RBAC for the NetBird identities reached through the proxy. The proxy
+  # impersonates the caller's NetBird user + groups but grants nothing itself —
+  # each entry binds a subject to a ClusterRole so it actually gets access.
+  #   group: <name>        bind a NetBird group (k8s Group)   } set exactly
+  #   user:  <name>        bind one user (k8s User)           } one of these
+  #   clusterRole: <name>  ClusterRole to grant (cluster-admin, admin, edit, view, …)
+  #   namespaces: [ns…]    omit  -> cluster-wide ClusterRoleBinding
+  #                        listed -> a namespaced RoleBinding in each namespace
+  # Binding names are generated (netbird-<subject>-<role>). Empty list -> no
+  # bindings. Verify the exact subject string with `kubectl auth whoami`.
+  rbac: []
+  # - group: Operations
+  #   clusterRole: cluster-admin            # cluster-wide admin
+  # - group: Developers
+  #   clusterRole: edit
+  #   namespaces: [team-a, team-b]          # edit in specific namespaces only
