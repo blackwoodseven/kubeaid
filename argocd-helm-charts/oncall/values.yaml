@@ -37,6 +37,10 @@ oncall:
     enabled: false
   redis:
     enabled: true
+    # Oncall connects to -master only; Bitnami replication replicas are unused.
+    architecture: standalone
+    replica:
+      replicaCount: 0
     auth:
       enabled: true
       existingSecret: oncall-redis
