@@ -179,3 +179,31 @@ rook-ceph-cluster:
         parameters:
           # note: objectStoreNamespace and objectStoreName are configured by the chart
           region: us-east-1
+
+ceph-csi-drivers:
+  # Applied Rook's recommended ceph-csi-drivers values for v1.20).
+  # Source: https://raw.githubusercontent.com/rook/rook/master/deploy/charts/ceph-csi-drivers/values.yaml
+  operatorConfig:
+    namespace: rook-ceph
+    driverSpecDefaults:
+      imageSet:
+        name: rook-csi-operator-image-set-configmap
+      nodePlugin:
+        priorityClassName: system-node-critical
+      controllerPlugin:
+        priorityClassName: system-cluster-critical
+  drivers:
+    # The driver name prefix MUST be the rook operator namespace (rook-ceph).
+    # Rook v1.20 no longer deploys CSI drivers itself; the ceph-csi-drivers chart
+    # registers them under the ceph-csi-operator, and the storageClass provisioners
+    # from rook-ceph-cluster point at <operatorNamespace>.<driver>.csi.ceph.com.
+    rbd:
+      name: rook-ceph.rbd.csi.ceph.com
+    cephfs:
+      name: rook-ceph.cephfs.csi.ceph.com
+    nfs:
+      enabled: false
+      name: rook-ceph.nfs.csi.ceph.com
+    nvmeof:
+      enabled: false
+      name: rook-ceph.nvmeof.csi.ceph.com
