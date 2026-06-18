@@ -2,6 +2,26 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 29.9.2
+
+### Features
+
+- c9f976ab2 feat(netbird-operator): configurable ClusterProxy RBAC bindings
+- d722e9592 feat(netbird): bump dashboard image to v2.39.0
+
+### Bug Fixes
+
+- f5a9cac28 fix(hetzner-robot): wire NODE_NAME + nodes RBAC for failover-script v1.2.0
+- 699f57bf4 fix(hetzner-robot): bump failover image to v1.2.0
+
+### Configuration Changes
+
+- 97e7abc16 chore: Make quota generator behavior configurable in Kyverno chart
+
+### Other Changes
+
+- f574b8bf0 Added ceph-csi-drivers helm chart in rook-ceph to manage CSI drivers as per official documentation
+
 ## KubeAid Release Version 29.9.1
 
 ### Features
