@@ -19,6 +19,9 @@ spec:
       labels:
         app: {{ .Release.Name }}-failover
     spec:
+      # v1.2.0+ resolves this node's public ExternalIP via the Kubernetes API
+      # (GET nodes), so the pod runs as a ServiceAccount with that RBAC (rbac.yaml).
+      serviceAccountName: {{ .Release.Name }}-failover
       containers:
       - name: {{ .Release.Name }}-failover
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -27,10 +30,12 @@ spec:
           value: {{ .Values.failoverIP }}
         - name: CRON_TIME_INTERVAL
           value: {{ .Values.cronTimeInterval }}
-        - name: SERVER_IP
+        # v1.2.0 looks this node up by name to read its public ExternalIP from
+        # the Kubernetes API; it no longer uses the private status.hostIP.
+        - name: NODE_NAME
           valueFrom:
             fieldRef:
-              fieldPath: status.hostIP
+              fieldPath: spec.nodeName
         - name: HETZNER_ROBOT_USERNAME
           valueFrom:
             secretKeyRef:
