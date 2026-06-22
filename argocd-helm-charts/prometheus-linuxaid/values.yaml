@@ -72,7 +72,6 @@ prometheusRule:
   service_omsagent: true
   services: true
   ssacli: true
-  zfsExporter: true
   zfs: true
   smartmon: true
   gitlab_runner: true
