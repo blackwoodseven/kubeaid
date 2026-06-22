@@ -225,7 +225,7 @@ Example: quay.io/jetstack/trust-manager
 #### **defaultPackageImage.name** ~ `string`
 > Default value:
 > ```yaml
-> trust-pkg-debian-bookworm
+> trust-pkg-debian-trixie
 > ```
 
 The image name for trust-manager.  
@@ -233,7 +233,7 @@ This is used (together with `imageRegistry` and `imageNamespace`) to construct t
 
 #### **defaultPackageImage.tag** ~ `string`
 
-Override the image tag of the default package image. Is set at chart build time to the version specified in ./make/00_debian_bookworm_version.mk.
+Override the image tag of the default package image. Is set at chart build time to the version specified in ./make/00_debian_trixie_version.mk.
 
 #### **defaultPackageImage.digest** ~ `string`
 
@@ -588,6 +588,13 @@ The namespace in which cert-manager was installed. Only used if `app.webhook.tls
 > ```
 
 The name of cert-manager's Service Account. Only used if `app.webhook.tls.approverPolicy.enabled` is true.
+#### **app.webhook.tls.certificate.duration** ~ `string`
+> Default value:
+> ```yaml
+> ""
+> ```
+
+Certificate duration, if unset/empty the default from cert-manager will be used. Example configuration to set 1 year: duration: 8766h
 #### **app.webhook.tls.certificate.secretTemplate** ~ `object`
 > Default value:
 > ```yaml

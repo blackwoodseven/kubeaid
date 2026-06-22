@@ -131,9 +131,9 @@ defaultPackageImage:
   # This is used (together with `imageRegistry` and `imageNamespace`) to construct the full
   # image reference.
   # +docs:property
-  name: trust-pkg-debian-bookworm
+  name: trust-pkg-debian-trixie
   # Override the image tag of the default package image.
-  # Is set at chart build time to the version specified in ./make/00_debian_bookworm_version.mk.
+  # Is set at chart build time to the version specified in ./make/00_debian_trixie_version.mk.
   # +docs:property
   # tag: vX.Y.Z
 
@@ -145,7 +145,7 @@ defaultPackageImage:
 
   # WARNING: For internal use only, is overwritten before releasing the chart.
   # +docs:hidden
-  _defaultReference: :20230311-deb12u1.6
+  _defaultReference: :20250419.1
   # imagePullPolicy for the default package image.
   pullPolicy: IfNotPresent
 # Automounting API credentials for the trust-manager pod.
@@ -300,8 +300,10 @@ app:
         certManagerNamespace: "cert-manager"
         # The name of cert-manager's Service Account. Only used if `app.webhook.tls.approverPolicy.enabled` is true.
         certManagerServiceAccount: "cert-manager"
-      # Add labels/annotations to secrets created by Certificate resources when using cert-manager provisioned TLS certificate.
+      # Configure certificate duration and add labels/annotations to secrets created by Certificate resources when using cert-manager provisioned TLS certificate.
       certificate:
+        # Certificate duration, if unset/empty the default from cert-manager will be used. Example configuration to set 1 year: duration: 8766h
+        duration: ""
         secretTemplate: {}
         # For example:
         #   annotations:
