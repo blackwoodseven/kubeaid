@@ -1,0 +1,65 @@
+global:
+  postgresql:
+    enabled: true
+    instanceName: twenty
+    instances: 1
+    size: 10Gi
+    database: twenty
+    owner: twenty
+    monitoring:
+      enablePodMonitor: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+    backups:
+      enabled: false
+    logicalbackup:
+      enabled: false
+
+externalRedis:
+  enabled: true
+  mode: standalone
+  name: twenty-redis
+  storage: 2Gi
+  image: quay.io/opstree/redis:v7.2.6
+  imagePullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+twenty:
+  db:
+    enabled: false
+    external:
+      host: twenty-pgsql-rw
+      port: 5432
+      user: twenty
+      database: twenty
+      secretName: twenty-pgsql-app
+      passwordKey: password
+
+  redisInternal:
+    enabled: false
+
+  redis:
+    external:
+      host: twenty-redis
+      port: 6379
+
+  server:
+    ingress:
+      hosts:
+        - host: crm.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - secretName: twenty-tls
+          hosts:
+            - crm.example.com
