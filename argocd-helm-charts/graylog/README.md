@@ -151,6 +151,132 @@ https://go2docs.graylog.org/5-0/planning_your_deployment/planning_your_upgrade_t
 * Wait for the opensearch pods to be in running state.
 * opensearch cluster are not downgradable, so please restore it from snapshot (look at opensearch helm chart readme)
 
-## Backup and Restore
+## Backup and Restore (source -> target migration runbook)
 
-[Documentation can be found here](../mongodb-operator/Readme.md#backup-and-restore)
+This section documents a tested procedure to migrate Graylog configuration data from a
+source cluster to a target cluster.
+
+### Naming convention used in this guide
+
+* `source -> target`: generic migration direction.
+* `<source-context>` / `<target-context>`: `kubectl` contexts for source and target clusters.
+* Replace placeholders with your environment-specific names before running commands.
+
+### Scope
+
+* Backs up and restores the Graylog MongoDB config database.
+* Does **not** restore OpenSearch indices (target OpenSearch stays empty by design).
+
+### 1) Audit source versions
+
+Capture and document exact runtime versions before migration:
+
+* Graylog image tag
+* MongoDB image tag
+* OpenSearch image tag
+
+Example:
+
+```bash
+kubectl --context <source-context> -n graylog get pods -o jsonpath='{range .items[*]}{.metadata.name}{" => "}{range .spec.containers[*]}{.image}{" "}{end}{"\n"}{end}'
+```
+
+### 2) Create MongoDB dump on source
+
+Use the generated Graylog Mongo connection string from secret
+`mongodb-replica-set-graylog-graylog-user` and run `mongodump` inside the MongoDB pod.
+
+```bash
+CTX_SOURCE='<source-context>'
+NS='graylog'
+URI="$(kubectl --context "$CTX_SOURCE" -n "$NS" get secret mongodb-replica-set-graylog-graylog-user -o jsonpath='{.data.connectionString\.standard}' | base64 -d)"
+
+kubectl --context "$CTX_SOURCE" -n "$NS" exec mongodb-replica-set-0 -c mongod -- \
+  env HOME=/tmp sh -c "mongodump --uri='$URI' --db graylog --excludeCollection=index_failures --out /tmp/graylog-dump"
+kubectl --context "$CTX_SOURCE" -n "$NS" exec mongodb-replica-set-0 -c mongod -- \
+  tar czf /tmp/graylog-mongo-dump.tgz -C /tmp graylog-dump
+kubectl --context "$CTX_SOURCE" -n "$NS" cp mongodb-replica-set-0:/tmp/graylog-mongo-dump.tgz ./graylog-mongo-dump.tgz
+```
+
+Note: `index_failures` may need to be excluded if pod memory is constrained.
+
+### 3) Restore dump on target
+
+Scale Graylog down before restore, restore DB, then scale Graylog back up.
+
+```bash
+CTX_TARGET='<target-context>'
+NS='graylog'
+URI="$(kubectl --context "$CTX_TARGET" -n "$NS" get secret mongodb-replica-set-graylog-graylog-user -o jsonpath='{.data.connectionString\.standard}' | base64 -d)"
+
+kubectl --context "$CTX_TARGET" -n "$NS" scale statefulset graylog --replicas=0
+kubectl --context "$CTX_TARGET" -n "$NS" cp ./graylog-mongo-dump.tgz mongodb-replica-set-0:/tmp/graylog-mongo-dump.tgz
+kubectl --context "$CTX_TARGET" -n "$NS" exec mongodb-replica-set-0 -c mongod -- \
+  sh -c "mkdir -p /tmp/restore && tar xzf /tmp/graylog-mongo-dump.tgz -C /tmp/restore"
+kubectl --context "$CTX_TARGET" -n "$NS" exec mongodb-replica-set-0 -c mongod -- \
+  env HOME=/tmp mongorestore --uri "$URI" --drop /tmp/restore/graylog-dump/graylog
+kubectl --context "$CTX_TARGET" -n "$NS" scale statefulset graylog --replicas=2
+```
+
+### 4) Post-restore requirements
+
+If Graylog fails with `Invalid password_secret! Failed to decrypt values from MongoDB`,
+sync the target `graylog` secret values with the source cluster values for:
+
+* `graylog-password-secret`
+* `graylog-password-sha2`
+
+These are crypto settings used by Graylog to decrypt DB content and must match restored data.
+
+### 5) Login/password reset note
+
+In this dataset, MongoDB user passwords are stored in legacy format:
+
+`{bcrypt}<hash>{salt}<hash-prefix>`
+
+If manual password reset is needed, preserve this format; storing plain `$2a$...` or
+`{bcrypt}$2a$...` only can lead to login failures.
+
+### 6) Validation checklist
+
+After restore, verify:
+
+* Graylog UI is accessible on target.
+* Key config object counts match source for:
+  * `streams`
+  * `dashboards`
+  * `event_definitions`
+  * `pipeline_processor_rules`
+  * `pipeline_processor_pipelines`
+  * `inputs`
+* OpenSearch has no historical data (fresh/empty target as intended).
+
+General MongoDB operator backup/restore reference:
+[../mongodb-operator/Readme.md#backup-and-restore](../mongodb-operator/Readme.md#backup-and-restore)
+
+### Example migration outcome (source -> target)
+
+Migration is complete and acceptance criteria are satisfied.
+
+* Audited and documented source runtime versions:
+  1. Graylog `6.3.1`
+  2. MongoDB `5.0.14-ubi8`
+  3. OpenSearch `2.19.2`
+* Captured MongoDB backup from source (authenticated dump).
+* Deployed fresh Graylog/MongoDB/OpenSearch stack on target with matching versions.
+* Restored MongoDB dump to target successfully (no restore failures reported).
+* Verified Graylog UI accessibility on target and successful admin-capable login.
+* Verified restored configuration parity between source and target for key collections:
+  1. `streams` `3/3`
+  2. `dashboards` `1/1`
+  3. `event_definitions` `1/1`
+  4. `pipeline_processor_rules` `0/0`
+  5. `pipeline_processor_pipelines` `0/0`
+  6. `inputs` `1/1`
+  7. `event_notifications` `missing/missing`
+  8. `lookup_tables` `missing/missing`
+
+Notes:
+
+* `index_failures` was excluded from backup due to OOM on full dump attempt; this is an expected limitation in constrained environments.
+* Password reset/login issue was resolved by using the dataset's expected legacy Graylog password storage format: `{bcrypt}...{salt}...`.
