@@ -1,0 +1,10 @@
+apiVersion: v2
+name: mongodb-kubernetes
+type: application
+version: 1.8.1
+home: https://github.com/mongodb/mongodb-kubernetes
+icon: https://mongodb-images-new.s3.eu-west-1.amazonaws.com/leaf-green-dark.png
+dependencies:
+  - name: mongodb-kubernetes
+    version: 1.8.1
+    repository: https://mongodb.github.io/helm-charts
