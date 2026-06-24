@@ -45,3 +45,24 @@ issuer:
 
 networkpolicies: false
 enableCertificateOwnerRef: true
+
+global:
+  netpol:
+    # -- Master switch. Set to true to enable cert-manager CiliumNetworkPolicies.
+    enabled: false
+    traefik:
+      namespace: traefik
+      labels: {}
+
+  certmanager:
+    # -- Enable CiliumNetworkPolicies for controller, webhook, cainjector.
+    netpol: false
+    # -- Namespace where Prometheus runs (metrics scrape ingress rules).
+    prometheusNamespace: monitoring
+    # -- ACME endpoint FQDNs (egress from controller on port 443).
+    acmeFQDNs:
+      - acme-v02.api.letsencrypt.org
+      - acme-staging-v02.api.letsencrypt.org
+    # -- DNS-01 provider FQDNs (egress from controller on port 443).
+    dns01FQDNs:
+      - api.cloudflare.com
