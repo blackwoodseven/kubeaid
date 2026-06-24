@@ -1,5 +1,22 @@
 # OpenObserve Installation Guide
 
+## Log monitoring in KubeAid
+
+OpenObserve extends the KubeAid monitoring stack with log ingestion, search, and alerting. It uses the
+**OpenTelemetry** standard and integrates with
+[`kube-prometheus`](../../docs/kubeaid/prometheus-configuration.md).
+
+| | |
+| - | - |
+| **Scope** | Logs; can also pull metrics and alerts from Prometheus |
+| **Log collection** | OpenTelemetry Collector (`OTLP`) — deploy the collector before OpenObserve |
+| **Prometheus integration** | Pulls metrics and alerts from Prometheus; metric alerting still routed via Alertmanager |
+| **Alerting** | Log-based alerts in OpenObserve alongside Prometheus metric alerts |
+
+See [Monitoring](../../docs/monitoring.md) for how OpenObserve compares to
+Graylog and OpenSearch + Kibana. For collector architecture and receivers, see the
+[OpenObserve Collector reference](./charts/openobserve-collector/docs/README.md).
+
 > **Tip:** Before installing OpenObserve, you must deploy the **OpenTelemetry Collector**.  
 > Add it as a regular Argo CD application in your `kubeaid-config` repository.
 
