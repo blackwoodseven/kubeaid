@@ -1,3 +1,16 @@
+# hostNetworkPolicy configures the CiliumClusterwideNetworkPolicy that locks
+# down the host endpoint on every node. Enable on bare-metal clusters where
+# the public NIC needs an ingress filter; leave disabled on cloud clusters that
+# rely on cloud-provider security groups instead.
+hostNetworkPolicy:
+  enabled: false
+  allowSshFrom: []          # CIDRs or bare IPs (treated as /32); empty = SSH open to world
+  # publicPorts are the service ports allowed from the world (HTTP + HTTPS).
+  publicPorts: [80, 443]
+  # apiserverSourceCIDRs lists the CIDRs/IPs allowed to reach 6443/TCP.
+  # Empty by default; when empty, no 6443 rule is emitted (policy blocks it).
+  apiserverSourceCIDRs: []
+
 cilium:
   operator:
     replicas: 1

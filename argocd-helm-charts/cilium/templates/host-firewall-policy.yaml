@@ -1,0 +1,66 @@
+{{- if .Values.hostNetworkPolicy.enabled }}
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: kubeaid-host-firewall
+spec:
+  nodeSelector:
+    matchLabels: {}
+  ingress:
+    # Allow all cluster-internal traffic by identity: node↔node etcd/kubelet,
+    # pods, kube-apiserver probes, cilium health checks, and localhost.
+    # This rule must come first to prevent cluster-internal lockout.
+    - fromEntities:
+        - host
+        - remote-node
+        - health
+        - cluster
+        - kube-apiserver
+
+    {{- if .Values.hostNetworkPolicy.allowSshFrom }}
+    # SSH restricted to the listed CIDRs (bare IPs normalised to /32).
+    - fromCIDR:
+        {{- range .Values.hostNetworkPolicy.allowSshFrom }}
+        - {{ if contains "/" . }}{{ . }}{{ else }}{{ . }}/32{{ end }}
+        {{- end }}
+      toPorts:
+        - ports:
+            - port: "22"
+              protocol: TCP
+    {{- end }}
+
+    {{- if .Values.hostNetworkPolicy.apiserverSourceCIDRs }}
+    # Apiserver port 6443: reachable only from the listed node public IPs.
+    # Each bare-metal node's kubelet dials the public failover VIP, so every
+    # node IP must be present (rendered by kubeaid-cli from Robot main IPs).
+    # The in-cluster path (kubelet→localhost, pod→ClusterIP) is already covered
+    # by the identity rule above.
+    - fromCIDR:
+        {{- range .Values.hostNetworkPolicy.apiserverSourceCIDRs }}
+        - {{ if contains "/" . }}{{ . }}{{ else }}{{ . }}/32{{ end }}
+        {{- end }}
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+    {{- end }}
+
+    # Public world ingress: configured public ports (80/443), plus SSH when
+    # allowSshFrom is empty (empty list = SSH open to world).
+    - fromEntities:
+        - world
+      toPorts:
+        - ports:
+            {{- range .Values.hostNetworkPolicy.publicPorts }}
+            - port: {{ . | quote }}
+              protocol: TCP
+            {{- end }}
+            {{- if not .Values.hostNetworkPolicy.allowSshFrom }}
+            - port: "22"
+              protocol: TCP
+            {{- end }}
+      icmps:
+        - fields:
+            - type: 8
+              family: IPv4
+{{- end }}
