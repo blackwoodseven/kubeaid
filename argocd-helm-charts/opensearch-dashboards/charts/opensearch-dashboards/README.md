@@ -1,5 +1,27 @@
 # OpenSearch Dashboards Helm Chart
 
+## Log monitoring in KubeAid
+
+[OpenSearch Dashboards](https://github.com/opensearch-project/OpenSearch-Dashboards) is the Kibana-compatible UI for
+querying and visualizing logs stored in
+[OpenSearch](../../opensearch/README.md). Together they form an ELK-style log monitoring stack — an alternative to
+Graylog.
+
+| | |
+| - | - |
+| **Scope** | Log search and dashboards (logs only) |
+| **Requires** | An OpenSearch cluster |
+| **Prometheus integration** | None — metrics stay in [`kube-prometheus`](../../../../docs/kubeaid/prometheus-configuration.md) |
+| **Kibana (Elastic)** | Not packaged in KubeAid; OpenSearch Dashboards is the supported equivalent |
+
+**Deployment status:** KubeAid includes this chart, but OpenSearch Dashboards has not been deployed as a standalone log
+UI stack to date. OpenSearch is commonly deployed as Graylog's storage backend instead.
+
+See [Monitoring](../../../../docs/monitoring.md) for how this compares to
+OpenObserve and Graylog.
+
+---
+
  This Helm chart installs [OpenSearch Dashboards](https://github.com/opensearch-project/OpenSearch-Dashboards) with configurable TLS, RBAC and much more configurations. This chart caters to a number of different use cases and setups.
 
 - [Requirements](#requirements)

@@ -56,6 +56,7 @@ Guides for ongoing cluster management:
 
 | Guide | Description |
 | ------- | ------------- |
+| [Monitoring](./monitoring.md) | kube-prometheus metrics stack and log monitoring options (OpenObserve, Graylog, OpenSearch + Kibana) |
 | [Pod Autoscaling](./operations/monitoring/pod-autoscaling.md) | HPA and VPA configuration |
 | [Prometheus Namespaces](./operations/monitoring/prometheus-namespaces.md) | Namespace-level monitoring |
 
@@ -83,6 +84,7 @@ Guides for ongoing cluster management:
 | [Features Technical Details](./kubeaid/features-technical-details.md) | In-depth feature documentation |
 | [Helm Umbrella Pattern](./kubeaid/helm-umbrella-pattern.md) | How KubeAid manages applications |
 | [Prometheus Configuration](./kubeaid/prometheus-configuration.md) | Configuring monitoring with kube-prometheus |
+| [Monitoring](./monitoring.md) | Metrics and log monitoring overview |
 | [GitOps Drift Detection](./kubeaid/gitops-drift-detection.md) | ArgoCD sync status and alerting |
 
 ## Support

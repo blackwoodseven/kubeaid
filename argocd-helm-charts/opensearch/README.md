@@ -1,5 +1,31 @@
 # Opensearch Cluster
 
+## Log monitoring in KubeAid
+
+OpenSearch is a log storage and search engine in KubeAid. It is used in two ways:
+
+1. **As Graylog's backend** — stores indexed logs written by Graylog (common deployment pattern)
+2. **As a standalone ELK-style stack** — paired with
+   [OpenSearch Dashboards](../opensearch-dashboards/charts/opensearch-dashboards/README.md) for direct log search
+   and visualization; an alternative to Graylog
+
+In both cases, [`kube-prometheus`](../../docs/kubeaid/prometheus-configuration.md) remains responsible for metrics and
+metric-based alerts. OpenSearch handles logs only.
+
+| | |
+| - | - |
+| **Scope** | Log storage, search, and (with Dashboards) visualization |
+| **Log collection** | Fluent Bit, Fluentd, OpenTelemetry Collector, or via Graylog |
+| **Prometheus integration** | None for logs; cluster health metrics can be scraped via ServiceMonitor |
+| **Kibana** | Not packaged in KubeAid — use the OpenSearch Dashboards chart instead |
+
+See [Monitoring](../../docs/monitoring.md) for a comparison of all log
+monitoring options. When used with Graylog, see also the [Graylog chart docs](../graylog/README.md).
+
+The sections below cover cluster operations.
+
+---
+
 ## How to increase the ES index limit
 
 ### Sample issue which you see in graylog logs

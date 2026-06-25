@@ -1,6 +1,25 @@
 # Graylog docs
 
-## Add the graylog username and password into sealed secret
+## Log monitoring in KubeAid
+
+Graylog is a **log-only** monitoring option in KubeAid. It runs alongside
+[`kube-prometheus`](../../docs/kubeaid/prometheus-configuration.md) (Prometheus, Alertmanager, Grafana), which
+continues to handle metrics and metric-based alerts.
+
+| | |
+| - | - |
+| **Scope** | Log ingestion, search, pipelines, and log-based alerting |
+| **Log collection** | Fluent Bit, Fluentd, Beats, Syslog, GELF, and other Graylog inputs |
+| **Prometheus integration** | None — Graylog does not pull metrics or alerts from Prometheus |
+| **Storage** | OpenSearch (indexed logs) and MongoDB (Graylog metadata) |
+
+See [Monitoring](../../docs/monitoring.md) for how Graylog compares to
+OpenObserve and OpenSearch + Kibana.
+
+The sections below cover installation, configuration, and operations.
+
+---
+
 
 ```sh
 # pwgen 20 1 | tr -d '\n' > graylog-password

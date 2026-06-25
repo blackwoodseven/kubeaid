@@ -271,7 +271,8 @@ kubectl exec -it $GrafanaPod -n monitoring -- grafana-cli admin reset-admin-pass
 
 ## See Also
 
+- [Monitoring](../monitoring.md)
 - [kube-prometheus Build Documentation](../../build/kube-prometheus/README.md)
-- [Pod Autoscaling Guide](../operations/monitoring/pod-autoscaling.md)
-- [Prometheus Namespace Configuration](../operations/monitoring/prometheus-namespaces.md)
+- [Pod Autoscaling Guide](./operations/monitoring/pod-autoscaling.md)
+- [Prometheus Namespace Configuration](./operations/monitoring/prometheus-namespaces.md)
 - [Upstream kube-prometheus](https://github.com/prometheus-operator/kube-prometheus)

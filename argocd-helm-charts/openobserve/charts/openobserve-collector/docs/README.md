@@ -1,5 +1,18 @@
 # OpenObserve Collector — Data Collection Reference
 
+## Role in KubeAid monitoring
+
+The OpenObserve Collector is the **OpenTelemetry ingestion layer** for OpenObserve in KubeAid. It collects logs,
+metrics, traces, and Kubernetes object state from the cluster and ships them to OpenObserve over OTLP.
+
+It also scrapes Prometheus-compatible targets (cadvisor, kube-state-metrics, CoreDNS, annotated pods, etc.), which is
+how OpenObserve pulls cluster metrics alongside logs. Metric alerting in Prometheus/Alertmanager is unchanged — see
+[Monitoring](../../../../docs/monitoring.md).
+
+For OpenObserve installation and configuration, see the [OpenObserve chart README](../../README.md).
+
+---
+
 This chart deploys an OpenTelemetry Collector stack (agent DaemonSet + gateway StatefulSet) that collects logs, metrics, traces, and Kubernetes object state from your cluster and ships them to OpenObserve.
 
 ## Architecture
