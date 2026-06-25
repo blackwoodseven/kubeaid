@@ -59,6 +59,13 @@ spec:
             - port: "22"
               protocol: TCP
             {{- end }}
+
+    # ICMP echo (ping) from the world. This MUST be its own rule: Cilium rejects
+    # any rule that sets both toPorts and icmps ("the ICMPs block may only be
+    # present without ToPorts"), and a single invalid rule invalidates the whole
+    # policy — the host endpoint then silently falls back to default-allow.
+    - fromEntities:
+        - world
       icmps:
         - fields:
             - type: 8
