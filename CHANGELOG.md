@@ -2,6 +2,32 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 30.1.0
+
+### Features
+
+- e7beeb3b4 feat(hcloud-fip-controller): add wrapper chart for HCloud Floating IP failover
+- 39a671150 feat(cilium): add host-firewall CiliumClusterwideNetworkPolicy
+- 52bda637d feat(twenty): add postgres & redis standalone config to KubeAid chart
+- 969b8d34f feat: add twenty crm in kubeaid.
+- 08797d900 feat(cert-manager): add Cilium network policies for ISO 27K compliance
+
+### Bug Fixes
+
+- a08f5c784 fix(cilium): split host-firewall ICMP into its own ingress rule
+
+### Configuration Changes
+
+- 32e21b34c chore(twenty): upgrade appVersion to v2.8.3
+- 92c6f7931 chore(twenty): add podSecurityContext to redis standalone for correct permissions
+
+### Other Changes
+
+- 126f53ae0 docs: document kube-prometheus + OpenObserve monitoring model with OTel log ingestion and alerting
+- 99363c140 Add mongodb-kubernetes chart
+- b72932dec docs(graylog): add migration validation checklist and outcomes
+- f2a3e054b update prom query for velero unsuccessful backup
+
 ## KubeAid Release Version 30.0.0
 
 ### Major Version Upgrades
