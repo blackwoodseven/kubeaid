@@ -61,3 +61,19 @@ groups:
       annotations:
         summary: "Slurm node **{{ .Labels.node }}** in ERROR/FAIL state"
         description: "Slurm node **{{ .Labels.node }}** is in **{{ .Labels.status }}** state for more than 10 minutes."
+
+    - alert: monitor::system::slurm::version_mismatch
+      expr: |
+        (
+          slurm_node_version_info
+          unless on (cluster, version)
+          (slurm_node_version_info and on (certname) slurm_info{type="general"})
+        )
+        and on (cluster) (slurm_node_version_info and on (certname) slurm_info{type="general"})
+      for: 15m
+      labels:
+        severity: warning
+        alert_id: monitor::system::slurm::version_mismatch
+      annotations:
+        summary: "Slurm node **{{ .Labels.certname }}** version mismatch in cluster **{{ .Labels.cluster }}**"
+        description: "Slurm node **{{ .Labels.certname }}** is running version **{{ .Labels.version }}**, which differs from the controller in cluster **{{ .Labels.cluster }}**."

@@ -128,3 +128,49 @@ tests:
             exp_annotations:
               summary: "Slurm node **node11** in ERROR/FAIL state"
               description: "Slurm node **node11** is in **error** state for more than 10 minutes."
+
+  #
+  # 6. Slurm version mismatch between controller and workers
+  #
+  - interval: 1m
+    input_series:
+      # Controller (has slurm_info) and worker1 on 24.11.6, worker2 lagging on 24.05.0 -> skew
+      - series: slurm_info{certname="ctld.abc", type="general", version="24.11.6"}
+        values: 1x200
+      - series: slurm_node_version_info{certname="ctld.abc", cluster="ctld", version="24.11.6"}
+        values: 1x200
+      - series: slurm_node_version_info{certname="worker1.abc", cluster="ctld", version="24.11.6"}
+        values: 1x200
+      - series: slurm_node_version_info{certname="worker2.abc", cluster="ctld", version="24.05.0"}
+        values: 1x200
+
+    alert_rule_test:
+      - alertname: monitor::system::slurm::version_mismatch
+        eval_time: 15m
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              alert_id: monitor::system::slurm::version_mismatch
+              certname: worker2.abc
+              cluster: ctld
+              version: 24.05.0
+            exp_annotations:
+              summary: "Slurm node **worker2.abc** version mismatch in cluster **ctld**"
+              description: "Slurm node **worker2.abc** is running version **24.05.0**, which differs from the controller in cluster **ctld**."
+
+  #
+  # 7. Slurm versions all aligned -> no alert
+  #
+  - interval: 1m
+    input_series:
+      - series: slurm_info{certname="ctld.abc", type="general", version="24.11.6"}
+        values: 1x200
+      - series: slurm_node_version_info{certname="ctld.abc", cluster="ctld", version="24.11.6"}
+        values: 1x200
+      - series: slurm_node_version_info{certname="worker1.abc", cluster="ctld", version="24.11.6"}
+        values: 1x200
+
+    alert_rule_test:
+      - alertname: monitor::system::slurm::version_mismatch
+        eval_time: 15m
+        exp_alerts: []
