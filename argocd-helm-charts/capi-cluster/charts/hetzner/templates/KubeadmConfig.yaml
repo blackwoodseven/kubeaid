@@ -219,7 +219,7 @@ spec:
          10.0.1.1) belong only to hybrid — pure bare-metal nodes
          keep their default route on the public NIC. */}}
     - |
-      cat <<'EOF' > /etc/netplan/60-vlan.yaml
+      cat <<EOF > /etc/netplan/60-vlan.yaml
       network:
         version: 2
         renderer: networkd
