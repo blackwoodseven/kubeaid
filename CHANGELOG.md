@@ -2,6 +2,24 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 30.1.1
+
+### Features
+
+- 3e06fdf02 feat(capi-cluster): bind HCloud Floating IPs on control-plane nodes via netplan
+- a56da6adc feat: add rustfs Helm chart wrapper v0.8.0
+
+### Bug Fixes
+
+- 1abc7b048 fix(capi-cluster): expand $NETWORK_INTERFACE in the vSwitch netplan heredoc
+- 58dbd9770 fix(capi-cluster): guard efibootmgr against an empty boot order on bare-metal
+- 66dbdeec4 fix(capi-cluster): persist the NAT-gateway default route + DNS via netplan
+
+### Other Changes
+
+- 233206c63 Add slurm version skew alert
+- 4f156676c Add backup exporter chart to KubeAid
+
 ## KubeAid Release Version 30.1.0
 
 ### Features
