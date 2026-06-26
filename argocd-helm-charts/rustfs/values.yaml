@@ -1,0 +1,18 @@
+rustfs:
+  replicaCount: 4
+  mode:
+    standalone:
+      enabled: false
+    distributed:
+      enabled: true
+  config:
+    rustfs:
+      log_level: info
+      region: us-east-1
+  storageclass:
+    name: local-path
+    dataStorageSize: 256Mi
+    logStorageSize: 256Mi
+  ingress:
+    enabled: true
+    className: nginx
