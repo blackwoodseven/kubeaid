@@ -149,6 +149,15 @@
         "hcloud": {
           "additionalProperties": false,
           "properties": {
+            "floatingIPs": {
+              "description": "Floating IPs to bind (/32) on every control-plane node's primary network interface via netplan, so a host-network service stays reachable at a stable public IP across CP failures (e.g. NetBird Coturn fronted by hcloud-fip-controller, which moves the API-level assignment but not the OS interface). Empty (default) = no binding.",
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "title": "floatingIPs",
+              "type": "array"
+            },
             "loadBalancer": {
               "additionalProperties": false,
               "properties": {
