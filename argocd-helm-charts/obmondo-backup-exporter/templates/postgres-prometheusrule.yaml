@@ -1,0 +1,56 @@
+{{- if and .Values.prometheusRule.enabled (hasKey .Values.prometheusRule "postgres") ( .Values.prometheusRule.postgres.enabled ) }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "obmondo-backup-exporter.fullname" . }}-postgres
+  namespace: {{ .Values.prometheusRule.postgres.namespace | default "monitoring" }}
+  labels:
+    {{- include "obmondo-backup-exporter.labels" . | nindent 4 }}
+    {{- if .Values.prometheusRule.postgres.labels }}
+    {{- toYaml .Values.prometheusRule.postgres.labels | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: {{ include "obmondo-backup-exporter.name" . }}-postgres
+      rules:
+        - alert: PostgresBackupExporterJobFailed
+          expr: max by (namespace, cluster_name, backup, type) (backup_exporter_postgres_error == 1) > 0
+          for: {{ .Values.prometheusRule.postgres.alertForDuration | default "5m" }}
+          labels:
+            severity: {{ .Values.prometheusRule.postgres.severity | default "critical" }}
+          annotations:
+            summary: 'Postgres backup exporter error'
+            description: 'Postgres backup exporter error for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }} (backup: {{ `{{ $labels.backup }}` }}, error: {{ `{{ $labels.type }}` }})'
+        - alert: PostgresLogicalBackupExceededRPO
+          expr: postgres_latest_logical_backup_age > {{ include "obmondo-backup-exporter.durationToSeconds" .Values.exporter.postgres.max_rpo }}
+          for: {{ .Values.prometheusRule.postgres.alertForDuration | default "5m" }}
+          labels:
+            severity: {{ .Values.prometheusRule.postgres.severity | default "critical" }}
+          annotations:
+            summary: 'PostgreSQL logical backup exceeded RPO'
+            description: 'Logical backup for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }} exceeded RPO (age: {{ `{{ $value }}` }})'
+        - alert: PostgresCNPGWALBackupExceededRPO
+          expr: postgres_latest_cnpg_wal_backup_age > {{ include "obmondo-backup-exporter.durationToSeconds" .Values.exporter.postgres.max_rpo }}
+          for: {{ .Values.prometheusRule.postgres.alertForDuration | default "5m" }}
+          labels:
+            severity: {{ .Values.prometheusRule.postgres.severity | default "critical" }}
+          annotations:
+            summary: 'PostgreSQL CNPG WAL backup exceeded RPO'
+            description: 'WAL backup for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }} exceeded RPO (age: {{ `{{ $value }}` }})'
+        - alert: PostgresLogicalBackupMissing
+          expr: postgres_latest_logical_backup_age == 0
+          for: {{ .Values.prometheusRule.postgres.alertForDuration | default "5m" }}
+          labels:
+            severity: {{ .Values.prometheusRule.postgres.severity | default "critical" }}
+          annotations:
+            summary: 'PostgreSQL logical backup missing'
+            description: 'No logical backup found for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }}'
+        - alert: PostgresWALBackupMissing
+          expr: postgres_latest_cnpg_wal_backup_age == 0
+          for: {{ .Values.prometheusRule.postgres.alertForDuration | default "5m" }}
+          labels:
+            severity: {{ .Values.prometheusRule.postgres.severity | default "critical" }}
+          annotations:
+            summary: 'PostgreSQL WAL backup missing'
+            description: 'No WAL backup found for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }}'
+{{- end }}

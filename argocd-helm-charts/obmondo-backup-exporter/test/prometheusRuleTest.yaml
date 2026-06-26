@@ -1,0 +1,92 @@
+rule_files:
+  - /tmp/prometheusRule.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_postgres_error{backup="logical",namespace="test",cluster_name="pg1",type="process"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: PostgresBackupExporterJobFailed
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: PostgresBackupExporterJobFailed
+              severity: critical
+              backup: logical
+              namespace: test
+              cluster_name: pg1
+              type: process
+            exp_annotations:
+              summary: 'Postgres backup exporter error'
+              description: 'Postgres backup exporter error for test/pg1 (backup: logical, error: process)'
+
+  - interval: 1m
+    input_series:
+      - series: 'postgres_latest_logical_backup_age{namespace="test",cluster_name="pg1"}'
+        values: '95000x6'
+    alert_rule_test:
+      - alertname: PostgresLogicalBackupExceededRPO
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: PostgresLogicalBackupExceededRPO
+              cluster_name: pg1
+              namespace: test
+              severity: critical
+            exp_annotations:
+              summary: 'PostgreSQL logical backup exceeded RPO'
+              description: 'Logical backup for test/pg1 exceeded RPO (age: 95000)'
+
+  - interval: 1m
+    input_series:
+      - series: 'postgres_latest_cnpg_wal_backup_age{namespace="test",cluster_name="pg1"}'
+        values: '95000x6'
+    alert_rule_test:
+      - alertname: PostgresCNPGWALBackupExceededRPO
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: PostgresCNPGWALBackupExceededRPO
+              cluster_name: pg1
+              namespace: test
+              severity: critical
+            exp_annotations:
+              summary: 'PostgreSQL CNPG WAL backup exceeded RPO'
+              description: 'WAL backup for test/pg1 exceeded RPO (age: 95000)'
+
+  - interval: 1m
+    input_series:
+      - series: 'postgres_latest_logical_backup_age{namespace="test",cluster_name="pg1"}'
+        values: '0x6'
+    alert_rule_test:
+      - alertname: PostgresLogicalBackupMissing
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: PostgresLogicalBackupMissing
+              cluster_name: pg1
+              namespace: test
+              severity: critical
+            exp_annotations:
+              summary: 'PostgreSQL logical backup missing'
+              description: 'No logical backup found for test/pg1'
+
+  - interval: 1m
+    input_series:
+      - series: 'postgres_latest_cnpg_wal_backup_age{namespace="test",cluster_name="pg1"}'
+        values: '0x6'
+    alert_rule_test:
+      - alertname: PostgresWALBackupMissing
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: PostgresWALBackupMissing
+              cluster_name: pg1
+              namespace: test
+              severity: critical
+            exp_annotations:
+              summary: 'PostgreSQL WAL backup missing'
+              description: 'No WAL backup found for test/pg1'

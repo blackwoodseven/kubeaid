@@ -1,0 +1,165 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "obmondo-backup-exporter.fullname" . }}
+  labels:
+    {{- include "obmondo-backup-exporter.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "obmondo-backup-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "obmondo-backup-exporter.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "obmondo-backup-exporter.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          env:
+            - name: POSTGRES_EXPORTER_MAX_RPO
+              value: {{ .Values.exporter.postgres.max_rpo | default "26h" | quote }}
+            - name: POSTGRES_EXPORTER_INTERVAL_RATE
+              value: {{ .Values.exporter.postgres.interval_rate | default "0.25" | quote }}
+            - name: VELERO_EXPORTER_MAX_RPO
+              value: {{ .Values.exporter.velero.max_rpo | default "26h" | quote }}
+            - name: VELERO_EXPORTER_INTERVAL_RATE
+              value: {{ .Values.exporter.velero.interval_rate | default "0.25" | quote }}
+            {{- with .Values.exporter.velero.s3.url }}
+            - name: VELERO_S3_ENDPOINT
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.exporter.velero.s3.secretName }}
+            - name: VELERO_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ . }}
+                  key: access-key-id
+            - name: VELERO_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ . }}
+                  key: secret-access-key
+            - name: VELERO_S3_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: {{ . }}
+                  key: region
+            - name: VELERO_S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ . }}
+                  key: bucket
+            {{- else }}
+            {{- with .Values.exporter.velero.s3.accessKeyId }}
+            - name: VELERO_S3_ACCESS_KEY_ID
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.exporter.velero.s3.secretAccessKey }}
+            - name: VELERO_S3_SECRET_ACCESS_KEY
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.exporter.velero.s3.region }}
+            - name: VELERO_S3_REGION
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.exporter.velero.s3.bucket }}
+            - name: VELERO_S3_BUCKET
+              value: {{ . | quote }}
+            {{- end }}
+            {{- end }}
+            {{- $logicalSecret := .Values.exporter.postgres.logical.s3.secretName }}
+            {{- $walSecret := .Values.exporter.postgres.wal.s3.secretName }}
+            {{- if $logicalSecret }}
+            - name: POSTGRES_S3_LOGICAL_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $logicalSecret }}
+                  key: access-key-id
+            - name: POSTGRES_S3_LOGICAL_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $logicalSecret }}
+                  key: secret-access-key
+            {{- end }}
+            {{- if $walSecret }}
+            - name: POSTGRES_S3_WAL_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $walSecret }}
+                  key: access-key-id
+            - name: POSTGRES_S3_WAL_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $walSecret }}
+                  key: secret-access-key
+            {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /utils/config
+              readOnly: true
+            {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        - name: config
+          configMap:
+            name: {{ include "obmondo-backup-exporter.fullname" . }}-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
