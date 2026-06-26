@@ -1,0 +1,9 @@
+apiVersion: v2
+name: hcloud-fip-controller
+description: Wrapper chart for cbeneke/hcloud-fip-controller — keeps a Hetzner Cloud Floating IP attached to the active (leader-elected) node so a host-network workload such as NetBird Coturn (STUN/TURN) stays reachable at a stable public IP across node failures.
+type: application
+version: 1.0.0
+dependencies:
+  - name: hcloud-fip-controller
+    version: 0.6.0
+    repository: oci://registry-1.docker.io/cbeneke

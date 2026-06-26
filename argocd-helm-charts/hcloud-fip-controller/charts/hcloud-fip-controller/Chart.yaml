@@ -1,0 +1,16 @@
+apiVersion: v2
+appVersion: 0.6.0
+description: Controller to assign Hetzner Cloud Floating IPs to Kubernetes nodes
+home: https://github.com/cbeneke/hcloud-fip-controller
+keywords:
+- hetzner
+- hcloud
+- floating-ip
+- kubernetes
+maintainers:
+- name: cbeneke
+name: hcloud-fip-controller
+sources:
+- https://github.com/cbeneke/hcloud-fip-controller
+type: application
+version: 0.6.0

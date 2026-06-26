@@ -1,0 +1,20 @@
+hcloud-fip-controller:
+  # Floating IP(s) this controller keeps attached to the active node.
+  # REQUIRED — leave empty here and set per-cluster in the values overlay.
+  # Typically the IP NetBird Coturn's STUN_SERVER / TURN_SERVER resolve to, e.g.:
+  #   floatingIPs:
+  #     - 204.168.160.120
+  floatingIPs: []
+
+  # Name of an existing Secret carrying an HCLOUD_API_TOKEN key. kubeaid keeps
+  # cloud credentials in a SealedSecret — reference it here rather than inlining
+  # the token via hcloudApiToken. Set per-cluster in the values overlay.
+  existingSecretName: ""
+
+  # The controller only REASSIGNS the Floating IP via the hcloud API on failover;
+  # it does NOT configure node networking. The IP must already be bound on every
+  # candidate node's NIC (cloud-init / netplan), or the node won't answer for it
+  # once the IP lands there. See the chart README.
+  config:
+    # Floating IPs are public — match against the node's external address.
+    NODE_ADDRESS_TYPE: external
