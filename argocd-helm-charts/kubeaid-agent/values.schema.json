@@ -29,6 +29,19 @@
               "type": "integer"
             }
           }
+        },
+        "kubeaidUpdate": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "When true, the service-window ArgoCD sync cron job is scheduled. Default false (opt-in per cluster).",
+              "type": "boolean"
+            },
+            "checkInterval": {
+              "description": "How often the agent polls Obmondo API for an active KubeAid update service window.",
+              "type": "string"
+            }
+          }
         }
       }
     },
