@@ -274,11 +274,6 @@ spec:
       owner: root:root
       path: /etc/systemd/system/containerd.service
       permissions: "0744"
-    {{/*
-      TODO : We need to apply the netplan config, only when using a Floating IP.
-             Otherwise, when using a single master node for the control-plane, we just provide
-             that master node's IP.
-    */}}
     {{- if eq .Values.mode "bare-metal" }}
     {{/*
       Netplan is the default network configuration utility on Ubuntu. It configures network
@@ -539,6 +534,35 @@ spec:
         # at the top of this block would otherwise leak into the post-kubeadm
         # commands (e.g. the `$HOME` kubeconfig chain) and abort them. Reset it.
         set +eu
+      {{- end }}
+
+      {{- if and (ne .Values.mode "bare-metal") .Values.controlPlane.hcloud.floatingIPs }}
+      {{/* Bind the HCloud Floating IP(s) on every control-plane node's primary
+           interface. hcloud-fip-controller moves the *API-level* assignment
+           between nodes on failover, but the kernel only answers for an IP that
+           is actually configured on an interface (Hetzner: "you must configure
+           the Floating IP inside the OS of the server"). Every CP binds it;
+           hcloud routes it (L3) only to the assigned node, so there is no
+           conflict between CPs. Used for NetBird Coturn (host-network STUN/TURN)
+           to survive CP failures at a stable public IP. This is NOT the
+           apiserver endpoint (that is the pre-provisioned LB), so (unlike the
+           bare-metal floating IP above) it needs no first-master-only /
+           loopback handling. */}}
+      - |
+        NETWORK_INTERFACE="$(ip route get 8.8.8.8 | awk '{print $5; exit}')"
+        cat <<EOF > /etc/netplan/60-hcloud-floating-ip.yaml
+        network:
+          version: 2
+          renderer: networkd
+          ethernets:
+            ${NETWORK_INTERFACE}:
+              addresses:
+        {{- range .Values.controlPlane.hcloud.floatingIPs }}
+                - {{ . }}/32
+        {{- end }}
+        EOF
+        chmod 0600 /etc/netplan/60-hcloud-floating-ip.yaml
+        netplan apply
       {{- end }}
 
       - sed -i '/swap/d' /etc/fstab
