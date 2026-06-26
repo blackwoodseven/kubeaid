@@ -1,0 +1,6 @@
+dependencies:
+- name: hcloud-fip-controller
+  repository: oci://registry-1.docker.io/cbeneke
+  version: 0.6.0
+digest: sha256:c8a4f0e1bfd096c454269f28e86c95a003e3bc0de59f0f244880c44596012829
+generated: "2026-06-26T09:57:19.513596393+05:30"

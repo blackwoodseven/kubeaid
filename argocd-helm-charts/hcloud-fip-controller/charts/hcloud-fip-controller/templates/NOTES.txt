@@ -1,0 +1,15 @@
+{{ .Chart.Name }} {{ .Chart.AppVersion }} has been deployed as a {{ .Values.kind }}.
+
+Release:   {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+
+API token secret: {{ include "hcloud-fip-controller.secretName" . }}
+{{ if .Values.floatingIPs -}}
+Managing {{ len .Values.floatingIPs }} floating IP(s) from the chart configuration.
+{{- else -}}
+Floating IPs are auto-discovered from the Hetzner Cloud API.
+{{- end }}
+
+Check the controller status with:
+
+  kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/instance={{ .Release.Name }}
