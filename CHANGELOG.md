@@ -2,6 +2,16 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 31.0.1
+
+### Features
+
+- 392eafffa feat(capi-cluster/hetzner): CAPH v1.1.7, Ubuntu 26.04, hrobot provider IDs
+
+### Other Changes
+
+- 283c150cf removed obsolet chart of ccm-hcloud, since ccm-hetzner is the one we are keeping and both are same
+
 ## KubeAid Release Version 31.0.0
 
 ### Major Version Upgrades
