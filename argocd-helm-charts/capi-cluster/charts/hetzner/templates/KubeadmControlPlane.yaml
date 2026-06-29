@@ -706,45 +706,38 @@ spec:
 
       - kubectl -n cilium rollout status daemonset/cilium --timeout=5m
 
-      {{- if or (eq .Values.mode "hcloud") (eq .Values.mode "hybrid") }}
-      # Install HCloud Cloud Controller Manager. Same `helm template |
-      # kubectl apply` pattern as cilium — ArgoCD adopts cleanly.
-      # No rollout wait here: CCM Ready isn't on postKubeadm's critical
-      # path; kubeaid-cli's downstream WaitForMainClusterToBeProvisioned
-      # waits for the Cluster's overall Provisioned+Ready condition, by
-      # which time CCM is up.
-      - |
-        helm template ccm-hcloud kubeaid/argocd-helm-charts/ccm-hcloud \
-          --namespace kube-system \
-          --values kubeaid/argocd-helm-charts/ccm-hcloud/values.yaml \
-          --set hcloud-cloud-controller-manager.additionalTolerations[0].key=node.kubernetes.io/not-ready \
-          --set hcloud-cloud-controller-manager.additionalTolerations[0].operator=Exists \
-          --set hcloud-cloud-controller-manager.additionalTolerations[0].effect=NoSchedule \
-          --set hcloud-cloud-controller-manager.env.HCLOUD_LOAD_BALANCERS_NETWORK_ZONE.value={{ .Values.hcloud.zone }} \
-          --set hcloud-cloud-controller-manager.networking.enabled=true \
-          --set hcloud-cloud-controller-manager.networking.network.valueFrom.secretKeyRef.name=cloud-credentials \
-          --set hcloud-cloud-controller-manager.networking.network.valueFrom.secretKeyRef.key=network \
-          | kubectl apply -f -
-      {{- end }}
-
-      {{- if or (eq .Values.mode "bare-metal") (eq .Values.mode "hybrid") }}
-      # Install Hetzner Bare Metal Cloud Controller Manager. Same
-      # `helm template | kubectl apply` pattern. The wrapper chart now
-      # depends on hetznercloud/hcloud-cloud-controller-manager
-      # (upstream — gained Robot support + --node-ip forwarding in
-      # v1.24.0) instead of the syself fork (itself a fork of the
-      # same upstream). The dep is aliased to `ccm-hetzner` so the
-      # values key path and this --set flag stay the same as before;
-      # privateNetwork.* → networking.* is the only key rename
-      # carried over from the schema difference.
+      # Install the Hetzner Cloud Controller Manager — a SINGLE instance
+      # for every mode (hcloud / bare-metal / hybrid). The wrapper chart
+      # depends on the upstream hetznercloud/hcloud-cloud-controller-manager
+      # (Robot support + --node-ip→InternalIP forwarding since v1.24.0),
+      # aliased to `ccm-hetzner`.
+      #
+      # Robot support assigns providerIDs (hrobot://<id>) to bare-metal
+      # (Robot) nodes; it's left on by default (the chart's ROBOT_* env is
+      # optional) and disabled only for pure-hcloud, which has no Robot
+      # servers. The route controller stays OFF (networking.enabled is the
+      # chart default of false) on purpose: Cilium runs in tunnel mode so
+      # no hcloud routes are needed, and hccm cannot run its route
+      # controller and Robot support at the same time — running both was
+      # exactly why bare-metal nodes never got a providerID.
+      #
+      # Same `helm template | kubectl apply` pattern as cilium — ArgoCD
+      # adopts cleanly. No rollout wait: CCM Ready isn't on postKubeadm's
+      # critical path (kubeaid-cli's WaitForMainClusterToBeProvisioned
+      # gates on the Cluster's Provisioned+Ready, by which time it's up).
       - |
         helm template ccm-hetzner kubeaid/argocd-helm-charts/ccm-hetzner \
           --namespace kube-system \
           --values kubeaid/argocd-helm-charts/ccm-hetzner/values.yaml \
-          {{- if (eq .Values.mode "hybrid") }}
-          --set ccm-hetzner.networking.enabled=true \
+          --set ccm-hetzner.additionalTolerations[0].key=node.kubernetes.io/not-ready \
+          --set ccm-hetzner.additionalTolerations[0].operator=Exists \
+          --set ccm-hetzner.additionalTolerations[0].effect=NoSchedule \
+          {{- if eq .Values.mode "hcloud" }}
+          --set ccm-hetzner.robot.enabled=false \
           {{- end }}
           | kubectl apply -f -
+
+      {{- if or (eq .Values.mode "bare-metal") (eq .Values.mode "hybrid") }}
 
       # Install postfinance/kubelet-csr-approver. Same `helm template |
       # kubectl apply` pattern — ArgoCD adopts on its first sync.

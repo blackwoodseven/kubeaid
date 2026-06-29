@@ -31,6 +31,18 @@ cilium:
     hostNamespaceOnly: true
   ipam:
     mode: "kubernetes"
+
+  # Pin tunnel (VXLAN) routing explicitly. Pod-to-pod traffic is
+  # encapsulated over node IPs, so Cilium programs NO routes in the
+  # Hetzner Cloud network. That is what lets us drop the hcloud-ccm route
+  # controller (networking.enabled) and run a single robot-enabled CCM —
+  # hccm cannot run its route controller and Robot support at the same
+  # time, and Robot support is what assigns providerIDs to bare-metal
+  # (Robot) nodes. Relying on the chart default here would make that
+  # removal silently fragile, so the mode is fixed.
+  routingMode: tunnel
+  tunnelProtocol: vxlan
+
   rollOutCiliumPods: true
   priorityClassName: "system-node-critical"
   hubble:
