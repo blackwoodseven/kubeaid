@@ -94,7 +94,7 @@ hcloud:
   # minLength: 1
   # description: HCloud image name used when provisioning HCloud machines.
   # @schema
-  imageName: ubuntu-24.04
+  imageName: ubuntu-26.04
 
 bareMetal:
   # @schema
@@ -118,7 +118,7 @@ bareMetal:
     # minLength: 1
     # description: Path on the rescue system to the OS image tarball.
     # @schema
-    imagePath: /root/.oldroot/nfs/images/Ubuntu-2404-noble-amd64-base.tar.gz
+    imagePath: /root/.oldroot/nfs/images/Ubuntu-2604-resolute-amd64-base.tar.zst
     vg0:
       # @schema
       # type: integer
