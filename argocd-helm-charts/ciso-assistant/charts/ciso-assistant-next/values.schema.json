@@ -308,7 +308,7 @@
             "type": "string"
         },
         "global": {
-            "additionalProperties": false,
+            "additionalProperties": true,
             "properties": {
                 "clusterDomain": {
                     "type": "string"
