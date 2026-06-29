@@ -4,6 +4,16 @@ metadata:
   name: {{ .Values.global.clusterName }}
   labels:
     cluster.x-k8s.io/name: {{ .Values.global.clusterName }}
+  {{- if or (eq .Values.mode "bare-metal") (eq .Values.mode "hybrid") }}
+  annotations:
+    # Use the canonical hrobot://<server-id> provider-ID format for bare-metal
+    # nodes instead of the legacy hcloud://bm-<id>. This matches what the
+    # upstream Hetzner CCM (robot support) writes to Node.spec.providerID, so
+    # each CAPI Machine binds to its Node. Affects only newly-provisioned
+    # machines; existing machines keep their provider-ID (CAPH never changes a
+    # ProviderID once set).
+    capi.syself.com/use-hrobot-provider-id-for-baremetal: "true"
+  {{- end }}
 
 spec:
   controlPlaneEndpoint:
