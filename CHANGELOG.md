@@ -2,6 +2,24 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 31.0.2
+
+### Features
+
+- c2de2d207 feat(hetzner): single robot CCM + pin Cilium tunnel routing
+
+### Configuration Changes
+
+- 3a2806151 chore(cilium): trim tunnel-mode comment to just describe VXLAN
+
+### Other Changes
+
+- 88ec504a9 (doc): how to setup ciso assistant
+- 1883f2728 (fix): fix cpu unit for ciso assisstant
+- c575fff8c (chore): update schema rules to allow global values
+- ae3a56e26 (chore): remove redundant netpols from ciso assistant templates
+- dca74e8db (remove): unwanted details from ciso assisstant
+
 ## KubeAid Release Version 31.0.1
 
 ### Features
