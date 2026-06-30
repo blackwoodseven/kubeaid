@@ -423,8 +423,10 @@ spec:
         # exits non-zero on `$HOME`. The whole block lives in a subshell so
         # the set options stay scoped to OUR strict-mode requirement and
         # don't punish unrelated entries.
+        # We put a 10 seconds sleep timer to wait for networking to fully setup during fresh server setups
         (
           set -euo pipefail
+          sleep 10s
           STORAGECTL_ARCH="$(uname -m)"
           case "$STORAGECTL_ARCH" in aarch64) STORAGECTL_ARCH=arm64 ;; esac
           STORAGECTL_URL="https://github.com/Obmondo/kubeaid-cli/releases/{{ if $.Values.global.kubeaidStoragectl.version }}download/{{ $.Values.global.kubeaidStoragectl.version }}{{ else }}latest/download{{ end }}/kubeaid-storagectl_Linux_${STORAGECTL_ARCH}"
