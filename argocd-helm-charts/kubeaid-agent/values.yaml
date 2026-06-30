@@ -33,6 +33,11 @@ appConfig:
     runKubeAidPuppetSync: false
 
   kubeaidUpdate:
+    # -- When true, the agent schedules the service-window ArgoCD sync cron job.
+    # Default is false (opt-in per cluster). Other features (node count, kube
+    # version, etc.) are unaffected.
+    enabled: false
+
     # -- Cadence at which the agent polls Obmondo API for an active KubeAid update
     # service window. Short enough to react inside a window's granularity, long
     # enough not to thrash the API when no window is open.
