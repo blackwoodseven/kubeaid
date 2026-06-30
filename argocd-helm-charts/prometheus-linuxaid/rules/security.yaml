@@ -5,7 +5,7 @@ groups:
       # Fires a single alert when any node's security exporter scan has been
       # failing. The annotation lists all affected certnames.
       expr: count(security_exporter_scan_up == 0) > 0
-      for: 1h
+      for: 24h
       labels:
         alert_id: 'monitor::security::scan::failing'
         severity: warning
