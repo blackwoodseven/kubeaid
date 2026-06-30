@@ -31,6 +31,12 @@ cilium:
     hostNamespaceOnly: true
   ipam:
     mode: "kubernetes"
+
+  # VXLAN tunnel mode: pod-to-pod traffic is encapsulated over the node
+  # network, so no pod routes are programmed in the underlying cloud network.
+  routingMode: tunnel
+  tunnelProtocol: vxlan
+
   rollOutCiliumPods: true
   priorityClassName: "system-node-critical"
   hubble:
