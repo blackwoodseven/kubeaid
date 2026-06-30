@@ -708,25 +708,40 @@ spec:
 
       - kubectl -n cilium rollout status daemonset/cilium --timeout=5m
 
-      # Install the Hetzner Cloud Controller Manager — a SINGLE instance
-      # for every mode (hcloud / bare-metal / hybrid). The wrapper chart
-      # depends on the upstream hetznercloud/hcloud-cloud-controller-manager
-      # (Robot support + --node-ip→InternalIP forwarding since v1.24.0),
-      # aliased to `ccm-hetzner`.
+      # Hetzner Cloud Controller Manager(s). Both apps install the SAME
+      # upstream chart (argocd-helm-charts/ccm-hetzner) with a different
+      # nameOverride + values, because hccm cannot run its route controller
+      # (networking) and Robot support at the same time — so the two node
+      # types each get their own CCM:
       #
-      # Robot support assigns providerIDs (hrobot://<id>) to bare-metal
-      # (Robot) nodes; it's left on by default (the chart's ROBOT_* env is
-      # optional) and disabled only for pure-hcloud, which has no Robot
-      # servers. The route controller stays OFF (networking.enabled is the
-      # chart default of false) on purpose: Cilium runs in tunnel mode so
-      # no hcloud routes are needed, and hccm cannot run its route
-      # controller and Robot support at the same time — running both was
-      # exactly why bare-metal nodes never got a providerID.
+      #   ccm-hcloud  (networking=true,  robot=false) — owns HCloud nodes:
+      #     their private InternalIP (a private-only HCloud control-plane has
+      #     NO other source for it; without it the apiserver can't reach the
+      #     kubelet and CP scale-up stalls on etcd health), hcloud:// IDs,
+      #     LoadBalancers, routes.
+      #   ccm-hetzner (robot=true, networking=false) — owns bare-metal nodes:
+      #     hrobot://<id> providerIDs.
       #
-      # Same `helm template | kubectl apply` pattern as cilium — ArgoCD
-      # adopts cleanly. No rollout wait: CCM Ready isn't on postKubeadm's
-      # critical path (kubeaid-cli's WaitForMainClusterToBeProvisioned
-      # gates on the Cluster's Provisioned+Ready, by which time it's up).
+      # hcloud -> ccm-hcloud only. bare-metal -> ccm-hetzner only.
+      # hybrid -> BOTH (it has both node types); there the robot CCM is scoped
+      # to the node controllers so it doesn't also fight ccm-hcloud over
+      # LoadBalancers. Same `helm template | kubectl apply` as cilium.
+
+      {{- if or (eq .Values.mode "hcloud") (eq .Values.mode "hybrid") }}
+      - |
+        helm template ccm-hcloud kubeaid/argocd-helm-charts/ccm-hetzner \
+          --namespace kube-system \
+          --values kubeaid/argocd-helm-charts/ccm-hetzner/values.yaml \
+          --set ccm-hetzner.nameOverride=ccm-hcloud \
+          --set ccm-hetzner.networking.enabled=true \
+          --set ccm-hetzner.robot.enabled=false \
+          --set ccm-hetzner.additionalTolerations[0].key=node.kubernetes.io/not-ready \
+          --set ccm-hetzner.additionalTolerations[0].operator=Exists \
+          --set ccm-hetzner.additionalTolerations[0].effect=NoSchedule \
+          | kubectl apply -f -
+      {{- end }}
+
+      {{- if or (eq .Values.mode "bare-metal") (eq .Values.mode "hybrid") }}
       - |
         helm template ccm-hetzner kubeaid/argocd-helm-charts/ccm-hetzner \
           --namespace kube-system \
@@ -734,10 +749,11 @@ spec:
           --set ccm-hetzner.additionalTolerations[0].key=node.kubernetes.io/not-ready \
           --set ccm-hetzner.additionalTolerations[0].operator=Exists \
           --set ccm-hetzner.additionalTolerations[0].effect=NoSchedule \
-          {{- if eq .Values.mode "hcloud" }}
-          --set ccm-hetzner.robot.enabled=false \
+          {{- if eq .Values.mode "hybrid" }}
+          --set-string 'ccm-hetzner.args.controllers=cloud-node\,cloud-node-lifecycle' \
           {{- end }}
           | kubectl apply -f -
+      {{- end }}
 
       {{- if or (eq .Values.mode "bare-metal") (eq .Values.mode "hybrid") }}
 
