@@ -30,7 +30,7 @@ spec:
     {{- end }}
 
     {{- if .Values.hostNetworkPolicy.apiserverSourceCIDRs }}
-    # Apiserver port 6443: reachable only from the listed node public IPs.
+    # Apiserver port 6443, ETCD port 2379 and 2380: reachable only from the listed node public IPs.
     # Each bare-metal node's kubelet dials the public failover VIP, so every
     # node IP must be present (rendered by kubeaid-cli from Robot main IPs).
     # The in-cluster path (kubelet→localhost, pod→ClusterIP) is already covered
@@ -42,6 +42,10 @@ spec:
       toPorts:
         - ports:
             - port: "6443"
+              protocol: TCP
+            - port: "2379"
+              protocol: TCP
+            - port: "2380"
               protocol: TCP
     {{- end }}
 
