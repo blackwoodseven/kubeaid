@@ -9,17 +9,17 @@ tests:
   - interval: 1m
     input_series:
       - series: 'security_exporter_scan_up{certname="web01.enableit"}'
-        values: 0x120
+        values: 0x1560
       - series: 'security_exporter_scan_up{certname="web02.enableit"}'
-        values: 0x120
+        values: 0x1560
       - series: 'security_exporter_scan_up{certname="web03.enableit"}'
-        values: 0x120
+        values: 0x1560
       - series: 'security_exporter_scan_up{certname="db01.enableit"}'
-        values: 1x120
+        values: 1x1560
 
     alert_rule_test:
       - alertname: 'monitor::security::scan::failing'
-        eval_time: 2h
+        eval_time: 25h
         exp_alerts:
           - exp_labels:
               severity: warning
