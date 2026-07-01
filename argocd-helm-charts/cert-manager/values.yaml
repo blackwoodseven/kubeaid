@@ -41,7 +41,7 @@ issuer:
     - type: http
       http01:
         ingress:
-          ingressClassName: traefik-cert-manager
+          ingressClassName: traefik
 
 networkpolicies: false
 enableCertificateOwnerRef: true
