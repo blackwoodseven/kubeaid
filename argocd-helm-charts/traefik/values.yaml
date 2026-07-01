@@ -23,10 +23,8 @@ traefik:
   deployment:
     replicas: 2
     revisionHistoryLimit: 0
-  logs:
-    access:
-      enabled: true
-
+  log:
+    level: INFO
   ports:
     web:
       http:
