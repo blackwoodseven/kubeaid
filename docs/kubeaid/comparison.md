@@ -6,7 +6,11 @@ KubeAid on GitOps + Cluster API + ArgoCD.
 This document explains what makes KubeAid different, why we did not go
 those other routes, and what we learned from years of running Terraform,
 Ansible, and Puppet in
-[LinuxAid](https://github.com/Obmondo/LinuxAid).
+[LinuxAid](https://github.com/Obmondo/LinuxAid). For server-level
+comparisons (Puppet vs Ansible vs Terraform vs Chef vs SaltStack),
+see the
+[LinuxAid comparisons doc](https://github.com/Obmondo/LinuxAid/blob/master/docs/comparisons.md)
+— many of the same lessons apply here at the Kubernetes level.
 
 ---
 
@@ -104,11 +108,14 @@ of it. Here is why.
 ### The Statefile Problem
 
 Terraform keeps a statefile - a JSON blob that says "this is what I
-think exists in the cloud right now." The moment someone makes a manual
-change (and they will - during incidents, during debugging, during that
-2am production fire where nobody has time to write HCL), the statefile
-goes stale. Terraform has **no idea** this happened. It cannot even
-tell you someone made that mistake.
+think exists in the cloud right now." This is a critical design flaw
+we also documented in our
+[LinuxAid comparisons](https://github.com/Obmondo/LinuxAid/blob/master/docs/comparisons.md):
+`terraform plan` compares your configuration against **its own state
+file**, not the actual infrastructure. If someone (a person, a script,
+or another tool) changes resources outside Terraform, the state file
+silently goes stale. Terraform has **no idea** this happened. It
+cannot even tell you someone made that mistake.
 
 What happens next is worse:
 
@@ -192,6 +199,14 @@ But Ansible is **imperative and run-once**. You execute a playbook,
 it makes changes, it is done. If someone changes something after
 Ansible ran, Ansible does not know and does not care until you run
 it again. There is no continuous reconciliation loop.
+
+We documented this in detail in our
+[LinuxAid comparisons](https://github.com/Obmondo/LinuxAid/blob/master/docs/comparisons.md):
+Ansible's check mode shows "what commands would run" rather than
+verifying current system state. Not all modules support check mode
+(particularly shell/command modules), and each module author
+implements it differently, so coverage is inconsistent. This makes
+it fundamentally unreliable for drift detection at scale.
 
 There is also the abstraction mismatch. Ansible thinks in terms of
 SSH connections, hosts, and tasks. Kubernetes thinks in terms of API
