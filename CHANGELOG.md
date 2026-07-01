@@ -2,6 +2,24 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 31.0.3
+
+### Features
+
+- 97e60b831 feat(kubeaid-agent): add kubeaidUpdate.enabled helm default
+- 87a3c49e8 feat(hetzner): two CCMs for hybrid (ccm-hcloud networking + ccm-hetzner robot)
+
+### Bug Fixes
+
+- 1e0a7981b fix: logs.level structure change in newer traefik
+- 29683fa73 fix(tests): update security test eval time to match 24h alert duration
+- 6e29177d2 fix(security): change scan failing alert duration from 1h to 24h
+
+### Other Changes
+
+- ca9eedb6d breaking(fix): removed unwanted extra ingressclass, since ingressclass gets created by traefik by default, so lets just use this
+- be0dc40da Allow etcd ports within the nodes and add sleep in preKubeadmCommands
+
 ## KubeAid Release Version 31.0.2
 
 ### Features
