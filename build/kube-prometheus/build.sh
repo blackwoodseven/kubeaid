@@ -65,6 +65,7 @@ function show_compatibility_table() {
     echo "v0.13.0|✓|✓|✓|✗|✗|✗|✗"
     echo "v0.16.0|✗|✗|✗|✓|✓|✓|✗"
     echo "v0.17.0|✗|✗|✗|✗|✓|✓|✓"
+    echo "v0.18.0|✗|✗|✗|✗|✓|✓|✓"
   } | column -t -s '|'
   echo ""
   echo "Note: In CI we test only the last two releases on a regular basis."
