@@ -25,3 +25,48 @@ tests:
             exp_annotations:
               summary: 'ZFS Pool is Degraded.'
               description: 'The zfs pool **mypool** is degraded on htzhel1-ax41a.enableit.dk'
+
+  - interval: 1m
+    input_series:
+      - series: 'obmondo_monitoring{certname="source.example.com", alert_id="monitor::system::zfs::snapshot_missing_on_replica"}'
+        values: 1x120
+      - series: 'zfs_dataset_creation_timestamp{certname="source.example.com", replication_pair="source-to-replica", replication_role="source", pool="slow", type="snapshot", name="slow/projects@sanoid_hourly_2026-06-30_0100"}'
+        values: 3600x120
+
+    alert_rule_test:
+      - alertname: 'monitor::system::zfs::snapshot_missing_on_replica'
+        eval_time: 40m
+        exp_alerts:
+          - exp_labels:
+              severity: 'critical'
+              certname: 'source.example.com'
+              replication_pair: 'source-to-replica'
+              replication_role: 'source'
+              pool: 'slow'
+              type: 'snapshot'
+              name: 'slow/projects@sanoid_hourly_2026-06-30_0100'
+              alert_id: 'monitor::system::zfs::snapshot_missing_on_replica'
+            exp_annotations:
+              summary: 'ZFS snapshot is missing on replica for **slow**'
+              description: 'Snapshot **slow/projects@sanoid_hourly_2026-06-30_0100** from replication pair **source-to-replica** exists on source **source.example.com** but is missing on the replica.'
+
+  - interval: 1m
+    input_series:
+      - series: 'obmondo_monitoring{certname="replica.example.com", alert_id="monitor::system::zfs::replica_snapshot_stale"}'
+        values: 1x240
+      - series: 'zfs_dataset_creation_timestamp{certname="replica.example.com", replication_pair="source-to-replica", replication_role="replica", pool="slow", type="snapshot", name="slow/projects@sanoid_hourly_2026-06-30_0100"}'
+        values: 0x240
+
+    alert_rule_test:
+      - alertname: 'monitor::system::zfs::replica_snapshot_stale'
+        eval_time: 3h
+        exp_alerts:
+          - exp_labels:
+              severity: 'critical'
+              certname: 'replica.example.com'
+              pool: 'slow'
+              dataset: 'slow/projects'
+              alert_id: 'monitor::system::zfs::replica_snapshot_stale'
+            exp_annotations:
+              summary: 'ZFS replica snapshots are stale for **slow/projects**'
+              description: 'The newest replicated snapshot for **slow/projects** on **replica.example.com** is older than 2 hours.'
