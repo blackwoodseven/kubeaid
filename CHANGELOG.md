@@ -2,6 +2,12 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 31.0.4
+
+### Features
+
+- a6d4c643a feat(kube-prometheus): add v0.18.0 support
+
 ## KubeAid Release Version 31.0.3
 
 ### Features
