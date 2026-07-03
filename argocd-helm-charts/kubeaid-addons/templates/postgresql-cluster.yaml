@@ -71,7 +71,7 @@ spec:
     {{- else }}
     initdb:
       database: {{ .Values.global.postgresql.instanceName }}
-      owner: {{ .Values.global.postgresql.instanceName }}
+      owner: {{ .Values.global.postgresql.owner | default .Values.global.postgresql.instanceName }}
     {{- end }}
 
   {{- if $postgresql.recover.enabled }}
