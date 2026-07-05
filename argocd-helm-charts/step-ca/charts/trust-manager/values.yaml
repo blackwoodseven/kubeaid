@@ -3,6 +3,9 @@ global:
   rbac:
     # Create required ClusterRoles, Roles, ClusterRoleBindings and RoleBindings for trust-manager.
     create: true
+    # Aggregate read access to Bundles into the "cluster-reader" ClusterRole, mirroring how cert-manager aggregates its cluster-scoped ClusterIssuers. Bundle is a cluster-scoped resource, so this only takes effect for subjects bound via a ClusterRoleBinding.
+    # For more information, see [User-facing roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles).
+    aggregateClusterRoles: true
 # +docs:section=CRDs
 crds:
   # This option decides if the CRDs should be installed
@@ -105,6 +108,17 @@ defaultPackage:
   #      cpu: 100m
   #      memory: 128Mi
   resources: {}
+  # Security Context to be set on the trust-manager default package init container. For more information, see [Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+  # +docs:property
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
 defaultPackageImage:
   # Target image registry. This value is prepended to the target image repository, if set.
   # For example:
@@ -189,6 +203,8 @@ secretTargets:
 #      cpu: 100m
 #      memory: 128Mi
 resources: {}
+# Security Context to be set on the trust-manager Pod. For more information, see [Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+podSecurityContext: {}
 # Configure the priority class of the pod. For more information, see [PriorityClass](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#priorityclass).
 priorityClassName: ""
 # Configure the nodeSelector; defaults to any Linux node (trust-manager doesn't support Windows nodes)
@@ -262,9 +278,18 @@ app:
   # List of target namespaces that trust-manager can write to. By default, trust-manager can write targets in any namespace.
   # +docs:property
   # targetNamespaces: ["ns-1", "ns-2"]
+
+  # Security Context to be set on the trust-manager app container. For more information, see [Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+  # +docs:property
   securityContext:
-    # If false, disables the default seccomp profile, which might be required to run on certain platforms.
-    seccompProfileEnabled: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
   # Pod labels to add to trust-manager pods.
   podLabels: {}
   # Pod annotations to add to trust-manager pods.
