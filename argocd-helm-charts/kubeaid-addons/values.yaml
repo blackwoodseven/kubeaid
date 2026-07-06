@@ -319,6 +319,8 @@ global:
   harbor:
     # Enable Harbor network policies
     netpol: false
+    # -- FQDN for Harbor egress (e.g. grafana plugin pull); set in your private values file
+    url: ""
 
   # sonarqube
   sonarqube:
