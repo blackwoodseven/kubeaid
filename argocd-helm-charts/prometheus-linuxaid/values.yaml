@@ -49,6 +49,7 @@ prometheusRule:
   cpu: true
   dellhw: true
   disk: true
+  mount: true
   docker: true
   drbd: true
   elasticsearch: true

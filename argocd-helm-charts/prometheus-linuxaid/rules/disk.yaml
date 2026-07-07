@@ -99,3 +99,34 @@ groups:
       annotations:
         summary: "NFS mount {{ $labels.mountpoint }} is not reachable on **{{ $labels.certname }}**"
         description: "NFS mount `{{ $labels.mountpoint }}` (device: {{ $labels.device }}) is not reachable on **{{ $labels.certname }}**. This indicates a network or server issue with the NFS export."
+
+    # NOTE: Added after a Samba/CIFS mount silently disappeared on a customer
+    # server. node_filesystem_mount_info just stops being exported when a
+    # mount goes away, so we use last_over_time(...) unless ... to catch it.
+    - alert: monitor::system::disk::mount
+      expr: |
+        (
+          max by (certname, instance, device, mountpoint) (
+            last_over_time(
+              node_filesystem_mount_info{
+                mountpoint!~"^/(run|tmp|boot)(/.*)?$",
+                mountpoint!~".*/\\.snapshot(/.*)?$"
+              }[1h]
+            )
+          )
+          unless
+          max by (certname, instance, device, mountpoint) (
+            node_filesystem_mount_info{
+              mountpoint!~"^/(run|tmp|boot)(/.*)?$",
+              mountpoint!~".*/\\.snapshot(/.*)?$"
+            }
+          )
+        )
+        and on(certname) obmondo_monitoring{alert_id="monitor::system::disk::mount"} > 0
+      for: 5m
+      labels:
+        severity: critical
+        alert_id: monitor::system::disk::mount
+      annotations:
+        summary: "Filesystem mount {{ $labels.mountpoint }} disappeared on {{ $labels.certname }}"
+        description: "The filesystem {{ $labels.mountpoint }} (device: {{ $labels.device }}) was present within the last hour but is no longer mounted on {{ $labels.certname }}."

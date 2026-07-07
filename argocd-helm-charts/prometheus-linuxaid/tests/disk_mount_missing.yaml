@@ -1,0 +1,27 @@
+---
+evaluation_interval: 1m
+
+rule_files:
+  - ../rules/disk.yaml
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: obmondo_monitoring{certname="test.example", alert_id="monitor::system::disk::mount"}
+        values: 1x100
+      - series: node_filesystem_mount_info{certname="test.example", instance="test.example:9100", device="/dev/sdb1", mountpoint="/data"}
+        values: "1x10 _x60"
+    alert_rule_test:
+      - alertname: monitor::system::disk::mount
+        eval_time: 40m
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              certname: test.example
+              instance: test.example:9100
+              device: /dev/sdb1
+              mountpoint: /data
+              alert_id: monitor::system::disk::mount
+            exp_annotations:
+              summary: "Filesystem mount /data disappeared on test.example"
+              description: "The filesystem /data (device: /dev/sdb1) was present within the last hour but is no longer mounted on test.example."
