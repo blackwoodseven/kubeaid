@@ -85,12 +85,15 @@
     addressType: 'IPv4',
     endpoints: [],
   },
+  grafana_blackbox_probe_enabled: true,
   grafana_ingress_annotations: {
     'cert-manager.io/cluster-issuer': 'letsencrypt',
   },
+  prometheus_blackbox_probe_enabled: true,
   prometheus_ingress_annotations: {
     'cert-manager.io/cluster-issuer': 'letsencrypt',
   },
+  alertmanager_blackbox_probe_enabled: true,
   alertmanager_ingress_annotations: {
     'cert-manager.io/cluster-issuer': 'letsencrypt',
   },
