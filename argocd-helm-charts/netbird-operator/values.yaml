@@ -31,12 +31,10 @@ netbird-operator:
 networkRouter:
   enabled: false
   name: cluster-router
-  # Shared NetBird group the cluster's exposed resources join by default.
-  # The chart creates it (Group CR); networkResources[] entries that omit
-  # their own `groups` land here, so one Mgmt policy targeting it grants
-  # access to the whole cluster. Empty -> networkRouter.name. On a shared
-  # NetBird (one Mgmt, many clusters) set this per-cluster so the default
-  # "cluster-router" doesn't collide across clusters.
+  # NetBird group this cluster's exposed resources join. The chart creates
+  # the group; every networkResources[] entry without its own `groups`
+  # joins it. Grant access by pointing one NetBird policy at this group.
+  # Defaults to networkRouter.name — set a unique name per cluster.
   group: ""
   # Domain of an EXISTING NetBird DNS zone (create it in the Mgmt
   # dashboard first), e.g. "staging.mesh.acme.com". required-checked by the
@@ -46,20 +44,17 @@ networkRouter:
   # plenty until HA routing is actually needed.
   replicas: 1
 
-# Each entry: name (CR name), namespace (MUST be the Service's own
-# namespace — serviceRef is name-only), service (the Service to
-# expose), groups (OPTIONAL — NetBird groups the resource joins; omit to
-# default into the shared networkRouter.group). Mgmt policies grant mesh
-# access by targeting these groups.
+# One entry per Service to expose. Fields: name (CR name), namespace (the
+# Service's own namespace), service (the Service name), groups (optional
+# NetBird groups to join — omit to join the shared networkRouter.group).
 networkResources: []
 # - name: kube-api
 #   namespace: default
 #   service: kubernetes
-#   # groups omitted -> joins the shared networkRouter.group
 # - name: special
 #   namespace: default
 #   service: special-svc
-#   groups: ["k8s-special"]   # explicit -> overrides the shared-group default
+#   groups: ["k8s-special"]
 
 # NetBird API-server proxy (ClusterProxy + impersonation RBAC; requires
 # netbird-operator >= 0.7.0). Runs a mesh peer that proxies kubectl to the
