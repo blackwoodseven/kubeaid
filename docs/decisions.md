@@ -62,6 +62,7 @@ Choices are great - but when you combine these choices into a platform - you end
 We have been there - done that.
 
 We've documented each of the decisions we've made and why:
-- [Ingress](decisions/ingress.md)
-
-- [Databases](decisions/databases.md)
+- [Ingress](decisions/ingress.md) - How to ingest traffic - with safety and reliability
+- [Operators](decisions/operators.md) - How to operate advanced stuff - such as Databases.
+- [Databases](decisions/databases.md) - Postgres, MongoDB, OpenSearch, Elasticsearch, Redis etc.
+- [Policy](decisions/policy.md) - Kyverno and OPA/Gatekeeper
