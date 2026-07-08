@@ -61,6 +61,10 @@ Choices are great - but when you combine these choices into a platform - you end
 
 We have been there - done that.
 
+All of our choices - started with trying to compare the options and trying to find arguments that made the choice easier. But not every choice was easy. Many choices are equally good - and simply comes down to personal taste. For those cases - the evaluated community size and activity and made the best choie we could. Sometimes we decided to support multiple options (like Graylog, Loki, OpenObserve and Opensearch/ELK stack for log monitoring) - and in other cases, we learned from our mistakes and had to change our choice (like switching from Zalando pgsql operator to Cloudnative-PG).
+
+The biggest benefit with KubeAid - is that you get a platform that supports everything you need - with curated choices, and configurations for how to achieve the same legislation and compliance needs, that everyone using IT has.
+
 We've documented each of the decisions we've made and why:
 - [GitOps](decisions/gitops.md) - Why Gitops with Argocd and not Pulimi, Terraform or Ansible?
 - [RemoteAccess](decisions/remoteaccess.md) - How to access services you do not want open to the internet - VPN, SSH etc.
