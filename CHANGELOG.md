@@ -2,6 +2,33 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 31.1.1
+
+### Features
+
+- ad6c9879f feat(netbird-operator): put ClusterProxy in the shared cluster group
+- 44dfdbb22 feat(netbird-operator): default NetworkResources into a shared cluster group
+- d0701c579 feat: restructured doc
+- d516c413c feat: Add KubeAid comparison document
+
+### Bug Fixes
+
+- 2b2e73361 fix fluentbit netpol
+- 7a5d1e1cf fix(openvox): increase wait-puppetserver init container cpu limit from 20m to 50m
+- ea453ce64 fix(capi-cluster/hetzner): retry when creating cilium namespace
+- 1cdd54661 fix: proper references to linuxaid doc
+- 6093eafba fix: lint
+
+### Configuration Changes
+
+- b828f0ba4 chore: netbird-operator chart upgrade to v0.7.0
+
+### Other Changes
+
+- 46c0ded61 docs(netbird-operator): make chart comments instructional
+- a631d8506 kube-prometheus: allow disabling blackbox probes per component
+- 7743a625d network-policies: allow grafana egress to harbor FQDN
+
 ## KubeAid Release Version 31.1.0
 
 ### Minor Version Upgrades
