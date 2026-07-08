@@ -57,7 +57,7 @@ Example configuration:
   cluster_domain: 'example.com',
   
   // kube-prometheus version to use
-  kube_prometheus_version: 'v0.14.0',
+  kube_prometheus_version: 'v0.18.0',
   
   // Prometheus configuration
   prometheus_replicas: 2,
@@ -89,6 +89,7 @@ Example configuration:
     etcd: true,
     velero: true,
     'cert-manager': true,
+    'orphan-pvc': true,
   },
 }
 ```
@@ -230,7 +231,7 @@ To upgrade to a new version:
 1. Update `kube_prometheus_version` in your vars file:
 
 ```jsonnet
-kube_prometheus_version: 'v0.14.0',  // Update this
+kube_prometheus_version: 'v0.18.0',  // Update this
 ```
 
 1. Run the build script:

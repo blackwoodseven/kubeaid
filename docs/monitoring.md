@@ -2,8 +2,8 @@
 
 KubeAid monitoring has two layers:
 
-1. **Metrics** — `kube-prometheus` (Prometheus, Alertmanager, Grafana)
-2. **Logs** — one of OpenObserve, Graylog, or OpenSearch + Kibana
+1. **Metrics** - `kube-prometheus` (Prometheus, Alertmanager, Grafana)
+2. **Logs** - one of OpenObserve, Graylog, or OpenSearch + Kibana
 
 Per-stack setup and operations are documented in each application's Helm chart README (linked below).
 
@@ -11,9 +11,9 @@ Per-stack setup and operations are documented in each application's Helm chart R
 
 [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus) is the default monitoring stack. It provides:
 
-- **Prometheus** — scrapes metrics from ServiceMonitors, PodMonitors, and exporters across the cluster
-- **Alertmanager** — routes metric-based alerts to notification channels
-- **Grafana** — dashboards for metrics visualization
+- **Prometheus** - scrapes metrics from ServiceMonitors, PodMonitors, and exporters across the cluster
+- **Alertmanager** - routes metric-based alerts to notification channels
+- **Grafana** - dashboards for metrics visualization
 
 Configuration is managed per cluster via Jsonnet (`<cluster-name>-vars.jsonnet`) and built into Kubernetes manifests.
 See [Prometheus Configuration](./kubeaid/prometheus-configuration.md) for details.
@@ -40,7 +40,7 @@ flowchart LR
 ## Log monitoring
 
 Log monitoring runs alongside `kube-prometheus`. Each option handles log ingestion, search, and log-based alerting on
-its own — none of them replace Prometheus for metrics.
+its own - none of them replace Prometheus for metrics.
 
 | Option | Scope | Log collection | Prometheus integration | Application docs |
 | ------ | ----- | -------------- | ---------------------- | ---------------- |
@@ -98,13 +98,60 @@ flowchart LR
 
 ## Alerting strategy
 
-- **Metric alerts** — Prometheus rules evaluated by Prometheus, routed by Alertmanager
-- **Log alerts** — evaluated by the log stack (OpenObserve, Graylog, or OpenSearch)
+- **Metric alerts** - Prometheus rules evaluated by Prometheus, routed by Alertmanager
+- **Log alerts** - evaluated by the log stack (OpenObserve, Graylog, or OpenSearch)
 
 Metrics tell you that something is unhealthy; logs help explain why.
 
+## Additional monitoring capabilities
+
+### Orphan PVC detection
+
+<!-- markdownlint-disable MD013 -->
+The `orphan-pvc` kube-prometheus mixin (in `build/kube-prometheus/mixins/orphan-pvc/`) fires the
+`KubeDetectOrphanPvc` alert when one or more PersistentVolumeClaims are `Bound` but not mounted by
+any running Pod for over 1 hour. This helps catch orphaned volumes consuming storage unnecessarily.
+<!-- markdownlint-enable MD013 -->
+
+Enable it in your cluster's Jsonnet vars:
+
+```jsonnet
+addMixins: {
+  'orphan-pvc': true,
+},
+```
+
+### ZFS snapshot replication alerts
+
+<!-- markdownlint-disable MD013 -->
+The `prometheus-linuxaid` chart includes alerts for ZFS snapshot replication health on bare-metal
+nodes:
+<!-- markdownlint-enable MD013 -->
+
+| Alert | Fires When |
+| ----- | ---------- |
+| `monitor::system::zfs::snapshot_missing_on_replica` | A snapshot exists on the source but is missing on the replica |
+| `monitor::system::zfs::replica_snapshot_stale` | The newest replicated snapshot for a dataset is older than 2 hours |
+
+Both alerts fire at `critical` severity after 30 minutes.
+
+### Backup exporter
+
+<!-- markdownlint-disable MD013 -->
+The [obmondo-backup-exporter](../argocd-helm-charts/obmondo-backup-exporter/) chart monitors Velero
+and PostgreSQL backup health via dedicated Prometheus metrics and alerts. See the
+[Backup Exporter guide](./guides/backup-exporter.md) for details.
+<!-- markdownlint-enable MD013 -->
+
+### Security scan alert duration
+
+The `SecurityScanFailing` alert duration was changed from 1 hour to **24 hours** (commit `6e29177d2`)
+to reduce noise from transient scan failures. Adjust in your values if you need a different threshold.
+
 ## Further reading
 
-- [Prometheus Configuration](./kubeaid/prometheus-configuration.md) — kube-prometheus setup and Jsonnet build
-- [Prometheus Namespaces](./operations/monitoring/prometheus-namespaces.md) — namespace scrape scope
-- [Pod Autoscaling](./operations/monitoring/pod-autoscaling.md) — HPA with custom metrics from Prometheus
+- [Prometheus Configuration](./kubeaid/prometheus-configuration.md) - kube-prometheus setup and Jsonnet build
+- [Prometheus Namespaces](./operations/monitoring/prometheus-namespaces.md) - namespace scrape scope
+- [Pod Autoscaling](./operations/monitoring/pod-autoscaling.md) - HPA with custom metrics from Prometheus
+- [Backup Exporter](./guides/backup-exporter.md) - Velero and PostgreSQL backup monitoring
+
