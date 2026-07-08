@@ -1,0 +1,67 @@
+# Decisions made
+
+In this document we've documented the decisions we have made and why.
+These are based on decades of experience with large scale operations by our senior staff - and hopefully helps others to understand the experience from real world issues - that these decisions are based on.
+
+## Everybody hates Yaml
+
+Everybody hates Yaml because:
+- It is verbose 
+- It is lacking typesafety
+  You easily type in the wrong value or something - and it just goes ahead and ignores your mistake
+- It relies on indentation
+  If you wrongly indent - it'll just ignore that entire section - not even tell you
+
+BUT its what Kubernetes choose - so its the end result you need to deliver to Kubernetes.
+
+## Helm sucks
+
+Helm is golang style templating on Yaml.
+So yes - just as Yaml sucks - Helm kinda sucks too :)
+
+It does not fix Yamls problems with lack of type safety or indentation.
+
+For this reason some prefer to choose tools that allows for more modern protections against silly mistakes, such as Pulimi or KCL.
+
+Pulimi allows you to write your Infrastructure as Code in Golang. Nice. But when you use a complete programming language for doing so - you easily end up having to deal with all the issues of Programming.. That you really wasn't supposed to bother with for Infrastructure definitions.
+
+Therefore someone invented KCL - https://www.kcl-lang.io/
+KCL was built for this purpose and its a very good solution for replacing Helm charts for your own applications.
+
+In reality many actually wanted to simplify the choices for the users of their apps. Helm allows this with values - but still has all the drawbacks. KCL removes the drawbacks, but its still a programming language - giving "way too many options" for simplifying.
+
+For this reason many tend to write a Custom Resource Definition - defining types in Kubernetes - that can then be used with very short Yaml - with type safety and simplicity. It allows your users to define the things you want to allow them - with ACLs and everything you need to limit their choices supported by Kubernetes.
+
+To make this easier, someone invented KRO - https://kro.run/docs/overview/
+
+So for your own applications on Kubernetes - we recommend using KCL or KRO.
+
+## Open Source community wins - every time
+
+If Yaml and Helm is so lacking, why is KubeAid supported open source applications mainly managed by Helm charts?
+
+Because the reality of open source - is that the ways, the majority chooses to solve their challenges, becomes the best way to for everyone to benefit and enjoy the hard work of the open source community. If you go your own route - you have to handle all the challenges yourself - gaining nothing from the collective experience of the entire community that uses and develops the application you want to benefit from using.
+
+With Kubernetes - everything changes - constantly. There are changes with every major k8s release - and those happens every 3 months. After 3 major releases, you no longer have security updates - so you better keep upgrading :)
+This means you have to change your Yaml - and ensure its still realiable and safe - every 3 months.
+Doing that for every application you use - that others wrote and shared as Open source to save you time - would be a major load of constant work.
+
+So the fact is - if you want the fewest problems - you follow the community - and communicate and work with them to resolve issues you identify in the route they're taking. This benefits everyone, and saves you a lot of time in the long run.
+
+This is why KubeAid has mainly Helm Charts to manage the open source applications - because those are the officially supported ways for each community - to run and manage their application.
+
+## Soo many choices
+
+When using Open Source, you have soo many choices for everything. 
+- Ingress can be done in 10+ ways.. 
+  NGINX, Traefik, Haproxy and so on.
+<more >
+
+Choices are great - but when you combine these choices into a platform - you end up with your own personal combination - and all the problems that can come when those choices don't play well with the other choices - because your personal combination turned out to not be so well used in the community - can give you real grief.
+
+We have been there - done that.
+
+We've documented each of the decisions we've made and why:
+- [Ingress](decisions/ingress.md)
+
+- [Databases](decisions/databases.md)
