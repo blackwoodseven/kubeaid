@@ -63,7 +63,7 @@ We have been there - done that.
 
 We've documented each of the decisions we've made and why:
 - [GitOps](decisions/gitops.md) - Why Gitops with Argocd and not Pulimi, Terraform or Ansible?
-- [RemoteAccess](decisions/remoteaccess.md) - How to access services you do not want open to the internet - VPN etc.
+- [RemoteAccess](decisions/remoteaccess.md) - How to access services you do not want open to the internet - VPN, SSH etc.
 - [Ingress](decisions/ingress.md) - How to ingest traffic - with safety and reliability
 - [Operators](decisions/operators.md) - How to operate advanced stuff - such as Databases.
 - [Databases](decisions/databases.md) - Postgres, MongoDB, OpenSearch, Elasticsearch, Redis etc.
