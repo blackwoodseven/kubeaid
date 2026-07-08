@@ -1,6 +1,6 @@
 {{- /* One NetworkResource per exposed Service. Each lives in its
      Service's namespace. With no `groups`, the resource joins the
-     shared networkRouter.group. */}}
+     shared cluster group. */}}
 {{- range .Values.networkResources }}
 ---
 apiVersion: netbird.io/v1alpha1
@@ -20,8 +20,8 @@ spec:
     - name: {{ . }}
     {{- end }}
   {{- else }}
-  {{- /* No groups set: join the shared networkRouter.group. */}}
+  {{- /* No groups set: join the shared cluster group. */}}
   groups:
-    - name: {{ $.Values.networkRouter.group | default $.Values.networkRouter.name }}
+    - name: {{ include "kubeaid.netbirdClusterGroup" $ }}
   {{- end }}
 {{- end }}

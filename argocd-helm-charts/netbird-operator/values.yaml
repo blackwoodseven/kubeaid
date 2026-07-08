@@ -22,6 +22,14 @@ netbird-operator:
         operator: In
         values: ["true"]
 
+# NetBird group representing access to this cluster. The ClusterProxy and
+# every NetworkResource without its own `groups` join it, so one NetBird
+# policy targeting this group grants a user the cluster's kube-API proxy
+# and exposed Services. The chart creates the group. Empty defaults to
+# clusterProxy.clusterName, else networkRouter.name — keep it unique per
+# cluster.
+group: ""
+
 # New-gen NetBird Networks wiring (NetworkRouter + NetworkResource,
 # netbird.io/v1alpha1) — the successor to the deprecated NBRoutingPeer.
 # The router is the cluster's mesh routing peer; each entry in
@@ -31,11 +39,6 @@ netbird-operator:
 networkRouter:
   enabled: false
   name: cluster-router
-  # NetBird group this cluster's exposed resources join. The chart creates
-  # the group; every networkResources[] entry without its own `groups`
-  # joins it. Grant access by pointing one NetBird policy at this group.
-  # Defaults to networkRouter.name — set a unique name per cluster.
-  group: ""
   # Domain of an EXISTING NetBird DNS zone (create it in the Mgmt
   # dashboard first), e.g. "staging.mesh.acme.com". required-checked by the
   # template when enabled.
@@ -46,7 +49,7 @@ networkRouter:
 
 # One entry per Service to expose. Fields: name (CR name), namespace (the
 # Service's own namespace), service (the Service name), groups (optional
-# NetBird groups to join — omit to join the shared networkRouter.group).
+# NetBird groups to join — omit to join the shared cluster `group`).
 networkResources: []
 # - name: kube-api
 #   namespace: default

@@ -52,6 +52,8 @@ spec:
   clusterName: {{ $name }}
   serviceAccountName: {{ $sa }}
   apiServer: {{ .Values.clusterProxy.apiServer }}
+  groups:
+    - name: {{ include "kubeaid.netbirdClusterGroup" . }}
 {{- /* Convenience RBAC for the impersonated NetBird identities. The proxy
      stamps the caller's NetBird user/groups as k8s subjects but grants nothing
      itself — these bindings turn a subject into access. Each clusterProxy.rbac

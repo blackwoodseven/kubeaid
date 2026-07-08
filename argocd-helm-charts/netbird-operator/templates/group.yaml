@@ -1,12 +1,12 @@
-{{- /* Creates the shared NetBird group named by networkRouter.group.
-     Every NetworkResource without its own groups joins it. Grant access
-     by pointing a NetBird policy at this group. */}}
-{{- if .Values.networkRouter.enabled }}
+{{- /* Creates the shared cluster group. The ClusterProxy and every
+     NetworkResource without its own groups join it. Grant access by
+     pointing a NetBird policy at this group. */}}
+{{- if or .Values.networkRouter.enabled .Values.clusterProxy.enabled }}
 apiVersion: netbird.io/v1alpha1
 kind: Group
 metadata:
-  name: {{ .Values.networkRouter.group | default .Values.networkRouter.name }}
+  name: {{ include "kubeaid.netbirdClusterGroup" . }}
   namespace: {{ .Release.Namespace }}
 spec:
-  name: {{ .Values.networkRouter.group | default .Values.networkRouter.name }}
+  name: {{ include "kubeaid.netbirdClusterGroup" . }}
 {{- end }}
