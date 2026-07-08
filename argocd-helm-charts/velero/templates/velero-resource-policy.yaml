@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cnpg-skip-volumes
+  namespace: velero
+  labels:
+    argocd.argoproj.io/instance: velero
+data:
+  # Skip Velero volume backups for CloudNativePG PVCs (covered by CNPG's own WAL/base backups).
+  policy.yaml: |
+    version: v1
+    volumePolicies:
+      - conditions:
+          pvcLabels:
+            app.kubernetes.io/managed-by: cloudnative-pg
+        action:
+          type: skip
