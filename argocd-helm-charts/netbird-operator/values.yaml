@@ -22,6 +22,14 @@ netbird-operator:
         operator: In
         values: ["true"]
 
+# NetBird group representing access to this cluster. The ClusterProxy and
+# every NetworkResource without its own `groups` join it, so one NetBird
+# policy targeting this group grants a user the cluster's kube-API proxy
+# and exposed Services. The chart creates the group. Empty defaults to
+# clusterProxy.clusterName, else networkRouter.name — keep it unique per
+# cluster.
+group: ""
+
 # New-gen NetBird Networks wiring (NetworkRouter + NetworkResource,
 # netbird.io/v1alpha1) — the successor to the deprecated NBRoutingPeer.
 # The router is the cluster's mesh routing peer; each entry in
@@ -39,15 +47,17 @@ networkRouter:
   # plenty until HA routing is actually needed.
   replicas: 1
 
-# Each entry: name (CR name), namespace (MUST be the Service's own
-# namespace — serviceRef is name-only), service (the Service to
-# expose), groups (NetBird groups the resource joins; Mgmt policies
-# grant mesh access by targeting these).
+# One entry per Service to expose. Fields: name (CR name), namespace (the
+# Service's own namespace), service (the Service name), groups (optional
+# NetBird groups to join — omit to join the shared cluster `group`).
 networkResources: []
 # - name: kube-api
 #   namespace: default
 #   service: kubernetes
-#   groups: ["k8s-my-cluster"]
+# - name: special
+#   namespace: default
+#   service: special-svc
+#   groups: ["k8s-special"]
 
 # NetBird API-server proxy (ClusterProxy + impersonation RBAC; requires
 # netbird-operator >= 0.7.0). Runs a mesh peer that proxies kubectl to the
