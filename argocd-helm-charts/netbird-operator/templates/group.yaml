@@ -1,0 +1,14 @@
+{{- /* Shared NetBird group for this cluster's exposed resources: the
+     operator provisions it in Mgmt (Group CR -> real group), and every
+     NetworkResource without its own groups joins it, so one Mgmt policy
+     targeting this group covers the whole cluster. The policy itself is
+     out-of-band — netbird.io/v1alpha1 has no Policy CRD. */}}
+{{- if .Values.networkRouter.enabled }}
+apiVersion: netbird.io/v1alpha1
+kind: Group
+metadata:
+  name: {{ .Values.networkRouter.group | default .Values.networkRouter.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  name: {{ .Values.networkRouter.group | default .Values.networkRouter.name }}
+{{- end }}

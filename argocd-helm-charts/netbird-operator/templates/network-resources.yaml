@@ -17,10 +17,16 @@ spec:
     namespace: {{ $.Release.Namespace }}
   serviceRef:
     name: {{ .service }}
-  {{- with .groups }}
+  {{- if .groups }}
   groups:
-    {{- range . }}
+    {{- range .groups }}
     - name: {{ . }}
     {{- end }}
+  {{- else }}
+  {{- /* Default into the shared cluster group; by name (NetBird group
+       names are global) so it resolves in whatever namespace this
+       NetworkResource lives in. */}}
+  groups:
+    - name: {{ $.Values.networkRouter.group | default $.Values.networkRouter.name }}
   {{- end }}
 {{- end }}

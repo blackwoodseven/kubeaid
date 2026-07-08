@@ -31,6 +31,13 @@ netbird-operator:
 networkRouter:
   enabled: false
   name: cluster-router
+  # Shared NetBird group the cluster's exposed resources join by default.
+  # The chart creates it (Group CR); networkResources[] entries that omit
+  # their own `groups` land here, so one Mgmt policy targeting it grants
+  # access to the whole cluster. Empty -> networkRouter.name. On a shared
+  # NetBird (one Mgmt, many clusters) set this per-cluster so the default
+  # "cluster-router" doesn't collide across clusters.
+  group: ""
   # Domain of an EXISTING NetBird DNS zone (create it in the Mgmt
   # dashboard first), e.g. "staging.mesh.acme.com". required-checked by the
   # template when enabled.
@@ -41,13 +48,18 @@ networkRouter:
 
 # Each entry: name (CR name), namespace (MUST be the Service's own
 # namespace — serviceRef is name-only), service (the Service to
-# expose), groups (NetBird groups the resource joins; Mgmt policies
-# grant mesh access by targeting these).
+# expose), groups (OPTIONAL — NetBird groups the resource joins; omit to
+# default into the shared networkRouter.group). Mgmt policies grant mesh
+# access by targeting these groups.
 networkResources: []
 # - name: kube-api
 #   namespace: default
 #   service: kubernetes
-#   groups: ["k8s-my-cluster"]
+#   # groups omitted -> joins the shared networkRouter.group
+# - name: special
+#   namespace: default
+#   service: special-svc
+#   groups: ["k8s-special"]   # explicit -> overrides the shared-group default
 
 # NetBird API-server proxy (ClusterProxy + impersonation RBAC; requires
 # netbird-operator >= 0.7.0). Runs a mesh peer that proxies kubectl to the
