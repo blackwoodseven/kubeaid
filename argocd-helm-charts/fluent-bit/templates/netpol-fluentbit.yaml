@@ -11,25 +11,35 @@ spec:
   types:
   - Egress
   egress:
+  # Graylog GELF output
   - action: Allow
     protocol: TCP
     destination:
       ports:
       - 5555
-  # Connect to kube2iam, and allow filebeat to get k8s node metadata
-  - action: Allow
-    protocol: TCP
-    destination:
-      ports:
-      - 8181
-      - 443
-      selector: kubernetes.io/role in { 'node', 'master' }
-      namespaceSelector: global()
+  # DNS UDP 
   - action: Allow
     protocol: UDP
     destination:
       ports:
       - 53
+      namespaceSelector: projectcalico.org/name == 'kube-system'
+      selector: k8s-app == 'kube-dns'
+  # DNS TCP 
+  - action: Allow
+    protocol: TCP
+    destination:
+      ports:
+      - 53
+      namespaceSelector: projectcalico.org/name == 'kube-system'
+      selector: k8s-app == 'kube-dns'
+  # Kubernetes API server (kubernetes.default.svc.cluster.local:443) for filters
+  - action: Allow
+    protocol: TCP
+    destination:
+      services:
+        name: kubernetes
+        namespace: default
   # Allow access to EC2 metadata endpoint
   - action: Allow
     protocol: TCP
