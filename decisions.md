@@ -92,12 +92,12 @@ The biggest benefit with KubeAid - is that you get a platform that supports ever
 choices, and configurations for how to achieve the same legislation and compliance needs, that everyone using
 IT has.
 
-We've documented each of the decisions we've made and why:
+We are working on documenting each of the decisions we've made and why:
 
 - [GitOps](decisions/gitops.md) - Why Gitops with Argocd and not Pulimi, Terraform or Ansible?
 - [RemoteAccess](decisions/remoteaccess.md) - How to access services you do not want open to the internet -
-  VPN, SSH etc.
-- [Ingress](decisions/ingress.md) - How to ingest traffic - with safety and reliability
-- [Operators](decisions/operators.md) - How to operate advanced stuff - such as Databases.
-- [Databases](decisions/databases.md) - Postgres, MongoDB, OpenSearch, Elasticsearch, Redis etc.
-- [Policy](decisions/policy.md) - Kyverno and OPA/Gatekeeper
+  VPN, SSH etc. (TODO)
+- [Ingress](decisions/ingress.md) - How to ingest traffic - with safety and reliability (TODO)
+- [Operators](decisions/operators.md) - How to operate advanced stuff - such as Databases. (TODO)
+- [Databases](decisions/databases.md) - Postgres, MongoDB, OpenSearch, Elasticsearch, Redis etc. (TODO)
+- [Policy](decisions/policy.md) - Kyverno and OPA/Gatekeeper (TODO)
