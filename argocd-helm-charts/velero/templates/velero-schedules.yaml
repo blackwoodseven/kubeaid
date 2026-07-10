@@ -9,6 +9,9 @@ spec:
   schedule: '0 {{ .Values.schedule.dailyHour | default 3 }} * * 1-6'
   template:
     hooks: {}
+    resourcePolicy:
+      kind: configmap
+      name: cnpg-skip-volumes
     csiSnapshotTimeout: 40m
     itemOperationTimeout: 300m
     includedNamespaces: 
@@ -37,6 +40,9 @@ spec:
   schedule: '0 0 * * 0'
   template:
     hooks: {}
+    resourcePolicy:
+      kind: configmap
+      name: cnpg-skip-volumes
     csiSnapshotTimeout: 40m
     itemOperationTimeout: 300m
     includedNamespaces: 
@@ -66,6 +72,9 @@ spec:
   schedule: '0 6,12,18 * * *'
   template:
     hooks: {}
+    resourcePolicy:
+      kind: configmap
+      name: cnpg-skip-volumes
     csiSnapshotTimeout: 40m
     itemOperationTimeout: 300m
     includedNamespaces: 
