@@ -10,13 +10,16 @@ data:
   policy.yaml: |
     version: v1
     volumePolicies:
+    {{- if .Values.skipVolumePolicies }}
+    {{- range .Values.skipVolumePolicies }}
       - conditions:
           pvcLabels:
-            app: rabbitmq
-            redis_setup_type: cluster
-            redis_setup_type: standalone
-            app: mongodb-replica-set-svc
-            app.kubernetes.io/name: opensearch
-            app.kubernetes.io/managed-by: cloudnative-pg
+            {{- range $key, $value := . }}
+            {{ $key }}: {{ $value | quote }}
+            {{- end }}
         action:
           type: skip
+    {{- end }}
+    {{- else }}
+      []
+    {{- end }}
