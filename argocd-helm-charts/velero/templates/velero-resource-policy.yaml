@@ -12,6 +12,11 @@ data:
     volumePolicies:
       - conditions:
           pvcLabels:
+            app: rabbitmq
+            redis_setup_type: cluster
+            redis_setup_type: standalone
+            app: mongodb-replica-set-svc
+            app.kubernetes.io/name: opensearch
             app.kubernetes.io/managed-by: cloudnative-pg
         action:
           type: skip
