@@ -1,6 +1,9 @@
 apiVersion: v2
 name: filebeat
-version: 1.0.0
+version: 1.0.1
+# Deprecated: use the OpenTelemetry Collector (or Fluent Bit) shipping to OpenObserve.
+# See README.md and docs/monitoring.md.
+deprecated: true
 dependencies:
   - name: filebeat
     version: 8.5.1
