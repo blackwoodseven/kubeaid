@@ -1,0 +1,14 @@
+tetragon:
+  # Upstream defaults are kept as-is.
+  # See https://github.com/cilium/tetragon/blob/main/install/kubernetes/tetragon/values.yaml
+  #
+  # Notes:
+  # - Tetragon runs as a DaemonSet on the host network; every node needs a
+  #   Linux kernel with BTF and eBPF support (kernel >= 5.4, CONFIG_DEBUG_INFO_BTF=y).
+  # - Out of the box Tetragon is observability-only: it exports process,
+  #   network and file events as JSON. It ships no TracingPolicy by default.
+  # - Runtime enforcement (SIGKILL / Override actions) is opt-in — apply your
+  #   own TracingPolicy / TracingPolicyNamespaced CRs after install.
+  # - The gRPC and JSON event exporters feed hubble/tetra and can be scraped
+  #   by the existing observability stack.
+  {}

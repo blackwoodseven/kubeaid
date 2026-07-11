@@ -1,0 +1,9 @@
+apiVersion: v2
+name: tetragon
+version: 1.0.0
+# See latest chart versions here: https://helm.cilium.io/index.yaml
+# (upstream: https://github.com/cilium/tetragon)
+dependencies:
+  - name: tetragon
+    version: 1.7.0
+    repository: https://helm.cilium.io/
