@@ -1,0 +1,9 @@
+apiVersion: v2
+name: kubearmor
+version: 1.0.0
+# See latest chart versions here: https://kubearmor.github.io/charts/index.yaml
+# (upstream: https://github.com/kubearmor/KubeArmor)
+dependencies:
+  - name: kubearmor-operator
+    version: v1.7.4
+    repository: https://kubearmor.github.io/charts

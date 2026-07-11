@@ -1,0 +1,41 @@
+# KubeArmor is deployed through its operator: this chart installs the operator,
+# which then rolls out KubeArmor (DaemonSet + relay + controller) from a
+# KubeArmorConfig CR. Values for the operator live under the `kubearmor-operator`
+# key below. Upstream defaults are kept except where noted.
+#
+# Notes:
+# - KubeArmor uses eBPF for observability and Linux Security Modules (AppArmor,
+#   BPF-LSM, SELinux) for INLINE enforcement. Unlike Tetragon (kill-after-detect),
+#   KubeArmor can deny an operation at the LSM hook before it runs. See the
+#   tetragon chart for the observability-first sibling; the two are complementary.
+# - Every node needs a working LSM. BPF-LSM needs kernel >= 5.7 with lsm=bpf
+#   enabled; otherwise KubeArmor falls back to AppArmor/SELinux where present.
+#
+# Shipping events to OpenObserve (see README.md):
+# - enableStdOutAlerts prints policy-violation alerts to the relay pod's stdout,
+#   so the openobserve-collector agent DaemonSet (tails /var/log/pods) ships them
+#   to the in-cluster OpenObserve. Enable enableStdOutLogs for full visibility
+#   telemetry (much higher volume). No collector change is needed for the default.
+
+kubearmor-operator:
+  # Roll out KubeArmor automatically via a KubeArmorConfig (post-install hook).
+  autoDeploy: true
+
+  kubearmorConfig:
+    # Observability-first defaults: "audit" logs violations but does NOT block.
+    # Switch a posture to "block" for inline enforcement once policies are tuned.
+    defaultFilePosture: audit
+    defaultNetworkPosture: audit
+    defaultCapabilitiesPosture: audit
+    defaultVisibility: process,network
+
+    # Send alerts to stdout so the OpenObserve collector picks them up.
+    enableStdOutAlerts: true
+    enableStdOutLogs: false
+    enableStdOutMsgs: false
+
+    # Alert throttling (upstream defaults).
+    alertThrottling: true
+    maxAlertPerSec: 10
+    throttleSec: 30
+    matchArgs: true
