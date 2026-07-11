@@ -11,4 +11,13 @@ tetragon:
   #   own TracingPolicy / TracingPolicyNamespaced CRs after install.
   # - The gRPC and JSON event exporters feed hubble/tetra and can be scraped
   #   by the existing observability stack.
+  #
+  # Shipping events to OpenObserve (see README.md):
+  # - export.mode defaults to "stdout": the export-stdout sidecar prints JSON events
+  #   to stdout, so the openobserve-collector agent DaemonSet (which tails
+  #   /var/log/pods) ships them to the in-cluster OpenObserve by default. No config
+  #   needed here.
+  # - To route events to a different or internet-facing OpenObserve, add a second
+  #   exporter + pipeline in the openobserve-collector values (filter on the Tetragon
+  #   namespace) — Tetragon itself is unchanged.
   {}
