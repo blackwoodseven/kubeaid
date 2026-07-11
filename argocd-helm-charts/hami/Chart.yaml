@@ -1,0 +1,9 @@
+apiVersion: v2
+name: hami
+version: 1.0.0
+# See latest chart versions here: https://project-hami.github.io/HAMi/index.yaml
+# (upstream: https://github.com/Project-HAMi/HAMi)
+dependencies:
+  - name: hami
+    version: 2.9.0
+    repository: https://project-hami.github.io/HAMi/

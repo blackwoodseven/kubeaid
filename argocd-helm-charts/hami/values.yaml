@@ -1,0 +1,13 @@
+hami:
+  # Upstream defaults are kept as-is.
+  # See https://github.com/Project-HAMi/HAMi/blob/master/charts/hami/values.yaml
+  #
+  # Notes:
+  # - The device plugin only runs on nodes labelled gpu=on:
+  #     kubectl label node <gpu-node> gpu=on
+  # - The HAMi scheduler runs as an extender alongside kube-scheduler;
+  #   pods request fractional GPUs via resources like:
+  #     nvidia.com/gpu: 1
+  #     nvidia.com/gpumem: 3000        # MiB
+  #     nvidia.com/gpucores: 30        # percent of SM
+  {}
