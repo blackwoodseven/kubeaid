@@ -10,4 +10,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: prometheus-k8s
-  namespace: monitoring-{{ .Values.customerid }}
+  namespace: monitoring-{{ .Values.customerid | default "linuxaid" }}
