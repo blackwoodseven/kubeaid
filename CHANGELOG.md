@@ -2,6 +2,64 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 31.2.0
+
+### Minor Version Upgrades
+
+- a90090461 Updated cert-manager from version v1.20.3 to v1.21.0
+- a90090461 Updated gatekeeper from version 3.22.2 to 3.23.0
+- a90090461 Updated hcloud-csi from version 2.21.2 to 2.22.0
+- a90090461 Updated openobserve from version 0.80.3 to 0.91.1
+- a90090461 Updated opentelemetry-operator from version 0.118.0 to 0.119.0
+- a90090461 Updated opentelemetry-collector from version 0.162.0 to 0.165.0
+- a90090461 Updated seaweedfs from version 4.37.0 to 4.39.0
+- a90090461 Updated teleport-cluster from version 18.9.2 to 18.10.0
+- a90090461 Updated teleport-kube-agent from version 18.9.2 to 18.10.0
+- a90090461 Updated trivy-operator from version 0.33.2 to 0.34.0
+
+### Patch Version Upgrades
+
+- a90090461 Updated argo-cd from version 10.1.2 to 10.1.3
+- a90090461 Updated fluent-bit from version 0.57.8 to 0.57.9
+- a90090461 Updated garage from version 0.7.0 to 0.7.1
+- a90090461 Updated graylog from version 3.0.24 to 3.0.25
+- a90090461 Updated keycloakx from version 7.2.0 to 7.2.2
+- a90090461 Updated kyverno from version 3.8.1 to 3.8.2
+- a90090461 Updated metal3 from version 0.15.0 to 0.15.1
+- a90090461 Updated openobserve-collector from version 0.4.4 to 0.4.5
+- a90090461 Updated rook-ceph from version v1.20.1 to v1.20.2
+- a90090461 Updated rook-ceph-cluster from version v1.20.1 to v1.20.2
+- a90090461 Updated ceph-csi-drivers from version 1.0.3 to 1.0.4
+- a90090461 Updated traefik from version 41.0.1 to 41.0.2
+
+### Features
+
+- 724e370f3 feat(hami): add HAMi chart for GPU sharing
+- 811dbb088 feat(velero): skip CloudNativePG PVC volumes in backups
+
+### Bug Fixes
+
+- def000c43 fix(openvox): default customerid to linuxaid in puppet-agent RoleBinding
+
+### Other Changes
+
+- 3df91b503 Add kubearmor chart (eBPF + LSM runtime enforcement)
+- 965dcef21 Document Tetragon -> OpenObserve export flow
+- d402fb484 Add tetragon chart for eBPF security observability
+- 6301a50c9 Default openobserve-collector exporter to in-cluster router
+- b12366cef Deprecate filebeat and loki-stack charts
+- adb006f76 Fix velero resource policy and add exclude resources from fs backup
+- fb8c2e2f6 added opensearch, rabbitmq, redis and mongodb
+- 2683c50f0 change to upcoming and mark it with cursive
+- a3b6f9c4b mark clearly whats not done
+- fed9531c4 docs(decisions): add gitops decision doc with real incident and ArgoCD examples
+- c10697801 move decisions out and add details about choices
+- 2a13758a0 add remote access - ssh
+- 28711b843 add remote access
+- 6977a93a3 gitops talk
+- 53373be0f added a bit more sections
+- ea53ad230 initial doc of decisions
+
 ## KubeAid Release Version 31.1.1
 
 ### Features
