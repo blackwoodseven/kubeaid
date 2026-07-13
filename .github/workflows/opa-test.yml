@@ -1,25 +1,36 @@
-name: OPA Test
+name: Test OPA Policies
 
-"on":
+on:
   pull_request:
     types:
       - opened
       - synchronize
+      - reopened
+    paths:
+      - 'argocd-helm-charts/gatekeeper/policies/**'
+
+permissions:
+  contents: read
+
+# This will only allow a single markdownlint action to run per PR.
+# Any github action running on the older commits will be aborted.
+concurrency:
+  group: test-opa-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  opa-test:
-    runs-on: ubuntu-latest
+  test-opa:
+    runs-on: ubuntu-24.04
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v7
 
-    - name: Install OPA
-      run: |
-        wget https://github.com/open-policy-agent/opa/releases/download/v0.43.0/opa_linux_amd64_static -O /usr/local/bin/opa
-        chmod +x /usr/local/bin/opa
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2.2.0
+        with:
+          version: "1.6.0"
+          static: true
 
-    - name: Run OPA tests
-      if: ${{ github.event_name == 'pull_request' }}
-      run: |
-        opa test ./argocd-helm-charts/gatekeeper/policies -v
+      - name: Run OPA tests
+        run: opa test ./argocd-helm-charts/gatekeeper/policies -v

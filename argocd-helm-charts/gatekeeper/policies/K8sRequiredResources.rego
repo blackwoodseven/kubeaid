@@ -1,6 +1,7 @@
 # package k8srequiredresources handles compliance of containers and initContainers
 # having a predefined resource limits and requests of cpu and memory.
 # Objects that do not specify the resource limits and requests show up as violators of the policy.
+# Test comment
 
 package k8srequiredresources
 
