@@ -7,4 +7,4 @@ maintainers:
   url: https://github.com/hetznercloud
 name: hcloud-csi
 type: application
-version: 2.21.2
+version: 2.22.0
