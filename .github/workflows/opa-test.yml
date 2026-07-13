@@ -33,4 +33,4 @@ jobs:
           static: true
 
       - name: Run OPA tests
-        run: opa test ./argocd-helm-charts/gatekeeper/policies -v
+        run: opa test ./argocd-helm-charts/gatekeeper/policies -v --v0-compatible
