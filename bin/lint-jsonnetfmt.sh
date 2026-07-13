@@ -6,6 +6,7 @@
 # Note: Avoid using pipes (|) for loops if you need to persist state.
 # In POSIX sh, each command in a pipeline executes in a subshell, 
 # meaning variable assignments won't propagate back to the parent process.
+# Test comment
 
 EXIT_CODE=0
 
