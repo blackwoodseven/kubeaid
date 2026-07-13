@@ -21,7 +21,7 @@
 
 set -uo pipefail
 
-cd "$(git rev-parse --show-toplevel)"
+cd "$(git rev-parse --show-toplevel)" || exit
 
 CHARTS_ROOT="argocd-helm-charts"
 
