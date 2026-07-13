@@ -1,30 +1,58 @@
 name: yamllint
 
-"on":
+on:
   pull_request:
     types:
       - opened
       - synchronize
+      - reopened
+    paths:
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '.yamllint'
+
+permissions:
+  contents: read
+
+# This will only allow a single markdownlint action to run per PR.
+# Any github action running on the older commits will be aborted.
+concurrency:
+  group: yamllint-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   yamllint:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          # Sparse checkout will only pull the specified files instead of the entire repo
+          # This saves around 4s per run.
+          # Sparse checkout sometimes pulls all files
+          # https://github.com/actions/checkout/issues/1550
 
-    - name: Setup Python3 and Pip3
-      run: |
-        apt-get update
-        apt-get install python3 python3-pip -y
-        python3 --version
-        pip3 --version
+          # Add a new step to test sparse-checkout if it fails as mentioned in the above issue
+          # - name: Temp
+          #   working-directory: .
+          #   run: ls -la .server
+          #   shell: bash
 
-    - name: Install yamllint
-      run: python3 -m pip install yamllint
+          sparse-checkout: |
+            '**/*.yml'
+            '**/*.yaml'
+            .yamllint
+          sparse-checkout-cone-mode: false
 
-    - name: Run yamllint
-      if: ${{ github.event_name == 'pull_request' }}
-      run: |
-        yamllint --strict --config-file .yamllint .
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install yamllint
+        run: pip install --disable-pip-version-check yamllint==1.38.0
+
+      - name: Run yamllint
+        run: yamllint --strict --config-file .yamllint .
