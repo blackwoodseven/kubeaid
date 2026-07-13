@@ -1,4 +1,4 @@
-name: markdownlint
+name: Lint Markdown
 
 on:
   pull_request:

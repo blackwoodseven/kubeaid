@@ -1,4 +1,4 @@
-name: yamllint
+name: Lint YAML
 
 on:
   pull_request:
@@ -47,9 +47,9 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: '3.14'
 
       - name: Install yamllint
         run: pip install --disable-pip-version-check yamllint==1.38.0
