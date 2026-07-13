@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Run markdownlint
-        uses: docker://davidanson/markdownlint-cli2:v0.23.0
+        uses: docker://davidanson/markdownlint-cli2:v0.23.0@sha256:97996d59837fa7cc27fc5f0e16d72eae71d0cefee15c437ee1d7cdbccb5552be
         with:
           entrypoint: markdownlint-cli2
           args: '"**/*.md" --config .markdownlint-cli2.yaml'
