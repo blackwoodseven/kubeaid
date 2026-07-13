@@ -13,6 +13,8 @@ on:
 permissions:
   contents: read
 
+# This will only allow a single markdownlint action to run per PR.
+# Any github action running on the older commits will be aborted.
 concurrency:
   group: markdownlint-${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -26,15 +28,21 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
+          # Sparse checkout will only pull the specified files instead of the entire repo
+          # This saves around 4s per run.
+          # Sparse checkout sometimes pulls all files
+          # https://github.com/actions/checkout/issues/1550
+
+          # Add a new step to test sparse-checkout if it fails as mentioned in the above issue
+          # - name: Temp
+          #   working-directory: .
+          #   run: ls -la .server
+          #   shell: bash
+
           sparse-checkout: |
             **/*.md
             .markdownlint-cli2.yaml
           sparse-checkout-cone-mode: false
-
-      - name: Temp
-        working-directory: .
-        run: ls -alh .
-        shell: bash
 
       - name: Run markdownlint
         uses: docker://davidanson/markdownlint-cli2:v0.23.0@sha256:97996d59837fa7cc27fc5f0e16d72eae71d0cefee15c437ee1d7cdbccb5552be
