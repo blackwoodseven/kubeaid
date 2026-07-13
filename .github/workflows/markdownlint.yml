@@ -24,6 +24,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            **/*.md
+            .markdownlint-cli2.yaml
+          sparse-checkout-cone-mode: false
+
+      - name: Temp
+        working-directory: .
+        run: ls -alh .
+        shell: bash
 
       - name: Run markdownlint
         uses: docker://davidanson/markdownlint-cli2:v0.23.0@sha256:97996d59837fa7cc27fc5f0e16d72eae71d0cefee15c437ee1d7cdbccb5552be
