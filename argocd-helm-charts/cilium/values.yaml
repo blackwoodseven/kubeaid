@@ -11,6 +11,11 @@ hostNetworkPolicy:
   # Empty by default; when empty, no 6443 rule is emitted (policy blocks it).
   apiserverSourceCIDRs: []
 
+# loadBalancerIPPool is a list of CIDRs rendered into a CiliumLoadBalancerIPPool
+# so Cilium LB-IPAM hands them to type=LoadBalancer services. Use on bare-metal
+# clusters that have no cloud LB. Empty list = no pool is created.
+loadBalancerIPPool: []
+
 cilium:
   operator:
     replicas: 1
