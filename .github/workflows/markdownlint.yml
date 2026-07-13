@@ -1,27 +1,32 @@
 name: markdownlint
 
-"on":
+on:
   pull_request:
     types:
       - opened
       - synchronize
+      - reopened
+    paths:
+      - '**/*.md'
+      - '.markdownlint-cli2.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: markdownlint-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   markdownlint:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v7
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-
-    - name: Install dependencies
-      run: npm install -g markdownlint-cli2@0.21.0
-
-    - name: Run markdownlint
-      if: ${{ github.event_name == 'pull_request' }}
-      run: markdownlint-cli2 "**/*.md" --config .markdownlint-cli2.yaml
+      - name: Run markdownlint
+        uses: docker://davidanson/markdownlint-cli2:v0.23.0
+        with:
+          entrypoint: markdownlint-cli2
+          args: '"**/*.md" --config .markdownlint-cli2.yaml'
