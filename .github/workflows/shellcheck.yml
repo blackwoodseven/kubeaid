@@ -1,26 +1,37 @@
-name: shellcheck
+name: Check Shell scripts
 
-"on":
+on:
   pull_request:
     types:
       - opened
       - synchronize
+      - reopened
+    paths:
+      - '**/*.sh'
+      - '**/*.bash'
+
+permissions:
+  contents: read
+
+# This will only allow a single markdownlint action to run per PR.
+# Any github action running on the older commits will be aborted.
+concurrency:
+  group: shellcheck-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   shellcheck:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v7
 
-    - name: Setup shellcheck
-      run: |
-        apt-get update
-        apt-get install shellcheck
-        shellcheck --version
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends shellcheck=0.9.0-1
+          shellcheck --version
 
-    - name: Run shelllcheck
-      if: ${{ github.event_name == 'pull_request' }}
-      run: |
-        find . -not -path './argocd-helm-charts/*' -a -not -path './build/kube-prometheus/libraries/*' -a -not -path './build/vendor/*' -name '*.sh' -o -name '*.bash' | xargs shellcheck
+      - name: Run shellcheck
+        run: find . \( -path './argocd-helm-charts' -o -path './build/kube-prometheus/libraries' -o -path './build/vendor' \) -prune -o -type f \( -name '*.sh' -o -name '*.bash' \) -print | xargs shellcheck

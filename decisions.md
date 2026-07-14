@@ -72,13 +72,24 @@ officially supported ways for each community - to run and manage their applicati
 
 Many handle security, as if its something you just enable - now or later.
 
-We know that its not. Security requires attention to detail and a layered, well designed approach, as the attackers will otherwise only need to find one mistake in the 1000's of components in our systems, to gain access and can often stay in your systems, waiting for just the right time to strike.
+We know that its not. Security requires attention to detail and a layered, well designed approach,
+as the attackers will otherwise only need to find one mistake in the 1000's of components in our systems,
+to gain access and can often stay in your systems, waiting for just the right time to strike.
 
-In KubeAid we try to constantly improve our layered design of everything and keeping attention to small, but important details - following "principle of least privilege" in the right places. 
+In KubeAid we try to constantly improve our layered design of everything and keeping attention to small,
+but important details - following "principle of least privilege" in the right places.
 
-One example is that we switched to to RustFS for S3 backup storage - because the S3 standard does not allow for a "add only, no read" access - which is needed to minimize the risk of the backup user. In most setups backups are pushed to S3 and any attacker who successfully compromised just 1 service - would have access to overwriting all your backups (often the same backup user is shared amongst many services) and also to accessing sensitive data by reading previous backups as well.
+One example is that we switched to to RustFS for S3 backup storage - because the S3 standard does not
+allow for a "add only, no read" access - which is needed to minimize the risk of the backup user.
+In most setups backups are pushed to S3 and any attacker who successfully compromised just 1 service - would
+have access to overwriting all your backups (often the same backup user is shared amongst many services) and
+also to accessing sensitive data by reading previous backups as well.
 
-The same can be said about reliability. We implemented airgapped support - which too few use - but everybody should, to actually be prepared and ready to handle common problems, with sources going missing from the internet or being down shortly - ensuring that your services are not affected by this. Its also the best way to improve your Supply chain security - as it helps you ensure you have the complete overview over your supply chain dependencies and vulnerabilities.
+The same can be said about reliability. We implemented airgapped support - which too few use - but everybody should,
+to actually be prepared and ready to handle common problems, with sources going missing from the internet
+or being down shortly - ensuring that your services are not affected by this. Its also the best way to improve your
+Supply chain security - as it helps you ensure you have the complete overview over your supply chain
+dependencies and vulnerabilities.
 
 ## Soo many choices
 

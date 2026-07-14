@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Keep the markdownlint-cli2 Docker image tag current
+  - package-ecosystem: "docker"
+    directory: "/.github/workflows"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+
+  # Keep actions/checkout and other Actions current
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "dependabot"
