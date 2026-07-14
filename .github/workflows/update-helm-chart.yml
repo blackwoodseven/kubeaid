@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.0
         with:
           # Don't set this to 1, the script script does 
           # git switch -c "$GIT_BRANCH_NAME" --track origin/master - this
