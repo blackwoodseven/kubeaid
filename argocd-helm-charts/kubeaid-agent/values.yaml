@@ -30,6 +30,7 @@ appConfig:
       - domain
       - obmondo_customer
       - obmondo_system
+      - snapshot
     runKubeAidPuppetSync: false
 
   kubeaidUpdate:
