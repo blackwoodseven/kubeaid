@@ -1,0 +1,12 @@
+{{- /* Extra groups this cluster owns, one Group CR each — the entry is used
+     verbatim as both the object and NetBird group name. */}}
+{{- range .Values.groups }}
+---
+apiVersion: netbird.io/v1alpha1
+kind: Group
+metadata:
+  name: {{ . }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  name: {{ . | quote }}
+{{- end }}

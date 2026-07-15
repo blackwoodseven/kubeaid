@@ -22,13 +22,14 @@ netbird-operator:
         operator: In
         values: ["true"]
 
-# NetBird group representing access to this cluster. The ClusterProxy and
-# every NetworkResource without its own `groups` join it, so one NetBird
-# policy targeting this group grants a user the cluster's kube-API proxy
-# and exposed Services. The chart creates the group. Empty defaults to
-# clusterProxy.clusterName, else networkRouter.name — keep it unique per
-# cluster.
-group: ""
+# This cluster's identity on the NetBird Management — unique, lowercase DNS label
+# (e.g. kbm-acme-com). Names the router + proxy and derives the two chart-created
+# groups: k8s-<clusterName> (peers/resources) and k8s-<clusterName>-access (users).
+clusterName: ""
+
+# Extra NetBird groups this cluster OWNS — one Group CR each, rare. Declare a
+# group from ONE cluster only — a duplicate wedges the operator on HTTP 409.
+groups: []
 
 # New-gen NetBird Networks wiring (NetworkRouter + NetworkResource,
 # netbird.io/v1alpha1) — the successor to the deprecated NBRoutingPeer.
@@ -38,7 +39,6 @@ group: ""
 # and set the zone in the cluster's values overlay.
 networkRouter:
   enabled: false
-  name: cluster-router
   # Domain of an EXISTING NetBird DNS zone (create it in the Mgmt
   # dashboard first), e.g. "staging.mesh.acme.com". required-checked by the
   # template when enabled.
@@ -49,7 +49,7 @@ networkRouter:
 
 # One entry per Service to expose. Fields: name (CR name), namespace (the
 # Service's own namespace), service (the Service name), groups (optional
-# NetBird groups to join — omit to join the shared cluster `group`).
+# NetBird groups to join — omit to join the cluster group k8s-<clusterName>).
 networkResources: []
 # - name: kube-api
 #   namespace: default
@@ -70,15 +70,17 @@ networkResources: []
 # impersonates, it does not itself grant any access.
 clusterProxy:
   enabled: false
-  # Unique per cluster — becomes the proxy's mesh DNS label and kube-context.
-  # required-checked by the template when enabled.
-  clusterName: ""
   # SA the proxy impersonates through; the chart also creates the matching
   # ClusterRole + ClusterRoleBinding granting it impersonate on users/groups.
   serviceAccountName: clusterproxy
   # In-cluster apiserver URL — the default sidesteps cert-SAN/hostname issues
   # since the proxy never leaves the cluster network to reach the apiserver.
   apiServer: https://kubernetes.default.svc.cluster.local
+  # On-call access. When enabled, binds the k8s Group `oncall` (the impersonated
+  # NetBird `oncall` group) to cluster-admin, cluster-wide. Standing full write —
+  # intended for a tiny, fully-trusted on-call rotation (1-2 people).
+  oncall:
+    enabled: false
   # RBAC for the NetBird identities reached through the proxy. The proxy
   # impersonates the caller's NetBird user + groups but grants nothing itself —
   # each entry binds a subject to a ClusterRole so it actually gets access.

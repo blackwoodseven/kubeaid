@@ -1,12 +1,22 @@
-{{- /* Creates the shared cluster group. The ClusterProxy and every
-     NetworkResource without its own groups join it. Grant access by
-     pointing a NetBird policy at this group. */}}
+{{- /* The cluster's two derived groups. k8s-<clusterName>: this cluster's peers +
+     resources (policy destination). k8s-<clusterName>-access: the humans allowed
+     to reach them (policy source) — add users + point a dashboard policy at it. */}}
 {{- if or .Values.networkRouter.enabled .Values.clusterProxy.enabled }}
+{{- $cluster := include "kubeaid.netbirdClusterGroup" . }}
+{{- $access := printf "%s-access" $cluster }}
 apiVersion: netbird.io/v1alpha1
 kind: Group
 metadata:
-  name: {{ include "kubeaid.netbirdClusterGroup" . }}
+  name: {{ $cluster }}
   namespace: {{ .Release.Namespace }}
 spec:
-  name: {{ include "kubeaid.netbirdClusterGroup" . }}
+  name: {{ $cluster | quote }}
+---
+apiVersion: netbird.io/v1alpha1
+kind: Group
+metadata:
+  name: {{ $access }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  name: {{ $access | quote }}
 {{- end }}

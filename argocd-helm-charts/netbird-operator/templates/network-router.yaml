@@ -11,7 +11,7 @@
 apiVersion: netbird.io/v1alpha1
 kind: NetworkRouter
 metadata:
-  name: {{ .Values.networkRouter.name }}
+  name: {{ include "kubeaid.netbirdClusterName" . }}
   namespace: {{ .Release.Namespace }}
 spec:
   dnsZoneRef:
