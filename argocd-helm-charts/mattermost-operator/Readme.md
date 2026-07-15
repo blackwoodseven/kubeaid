@@ -43,34 +43,28 @@ This guide outlines the steps to restore a Mattermost instance or migrate it to 
    ```sh
    psql -h 172.20.36.240 -p 5432 -d mattermost -U mattermost < <backupfile>.sql
    ```
-   Note:
-   If you are using Mattermost version 10.11.4, the database connection string (DB_CONNECTION_STRING) 
-      is stored inside the database configuration.
-   After restoring, you must update it with the new PostgreSQL credentials.
-   
-   ```sh
-   # Connect to PostgreSQL
-   psql -h 172.20.36.240 -p 5432 -d mattermost -U mattermost
+    > **Important:** Mattermost (v10.11+) stores the database connection string (`DataSource`)
+    > inside the `configurations` table in the database itself. After restoring a backup, this
+    > value will contain the **old** hostname and password from the source cluster, causing
+    > Mattermost pods to crash with `password authentication failed` or `no such host` errors.
+    >
+    > You **must** update it after every restore.
 
-   # Fetch the current connection string
-   mattermost=> SELECT ("value"::jsonb)->'SqlSettings'->>'DataSource' AS "DataSource"
-   FROM "configurations"
-   WHERE "active" = true;
-   
-   # Example output:
-   # postgres://mattermost:zPWjYqmdpRSb01psy4p1uqTHGmT0WVehvm3nHyuDg7eb9K2WhvJNKBOFjo3USKJK@mattermost-pgsql-rw:5432/mattermost
-   
-   # Update the connection string using the new credentials
-   UPDATE configurations
-   SET "value" = jsonb_set(
-     "value"::jsonb,
-     '{SqlSettings,DataSource}',
-     to_jsonb('postgres://mattermost:P3abi2rHJqGzYaCXyaw9BdDoCAulMnqGUIDdjgA6fQSA21Yc4HNVcjSn6tQ8J3vf@mattermost-pgsql-rw:5432/mattermost'::text),
-     false
-   )
-   WHERE "active" = true;
+    Run this one-liner to automatically fetch the current password from the Kubernetes secret
+    and patch the `configurations` table:
 
-   ```
+    ```sh
+    DB_PASS=$(kubectl get secret mattermost-operator-pgsql-app -n mattermost-operator -o jsonpath='{.data.password}' | base64 -d) && \
+    kubectl run psql-fix --rm -i --restart=Never --image=postgres:15 -n mattermost-operator --env="PGPASSWORD=$DB_PASS" -- \
+      psql -h mattermost-operator-pgsql-rw -U mattermost -d mattermost \
+      -c "UPDATE configurations SET value = jsonb_set(value::jsonb, '{SqlSettings,DataSource}', to_jsonb('postgres://mattermost:'||'${DB_PASS}'||'@mattermost-operator-pgsql-rw.mattermost-operator:5432/mattermost?sslmode=disable'::text), false) WHERE active = true;"
+    ```
+
+    Then restart the Mattermost pods to pick up the corrected config:
+
+    ```sh
+    kubectl delete pod -l app=mattermost -n mattermost-operator
+    ```
 
 7. **Copy PVC files to the new S3 bucket to restore file storage.**
 

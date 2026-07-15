@@ -80,7 +80,7 @@ global:
     instanceName: ""
 
     # -- Number of PostgreSQL instances in the cluster
-    instance: 1
+    instances: 1
 
     # -- Primary database name created during initdb
     database: app
