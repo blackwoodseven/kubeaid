@@ -255,6 +255,8 @@ netbird:
               pathType: ImplementationSpecific
 
 coturn:
+  image:
+    tag: 4.14.0
   coturn:
     realm: "turn.vpn.example.com"
   service:
