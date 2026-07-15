@@ -42,7 +42,9 @@ spec:
   mattermostEnv:
 {{ toYaml .Values.mattermost.mattermostEnv | indent 4 }}
   {{- end }}
-  licenseSecret: {{ .Values.mattermost.licenseSecret | default "null" }}
+  {{- if .Values.mattermost.licenseSecret }}
+  licenseSecret: {{ .Values.mattermost.licenseSecret | quote }}
+  {{- end }}
   database:
     external:
       secret: {{ .Values.mattermost.database.external.secret | default "db-credentials" }}
