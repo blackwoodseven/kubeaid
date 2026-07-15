@@ -1,0 +1,37 @@
+{{- if and ((.Values.global).netpol).enabled ((.Values.global).openobserve).netpol ((.Values.global.openobserve.opentelemetryOperator).enabled) }}
+---
+# OpenTelemetry Operator (admission webhooks + controller; separate Argo app, same namespace)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ .Values.global.netpol.releaseName | default .Release.Name }}-opentelemetry-operator-networkpolicy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: cilium-networkpolicy
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-operator
+      app.kubernetes.io/instance: {{ .Values.global.openobserve.opentelemetryOperator.instance | default "opentelemetry-operator" | quote }}
+
+  ingress:
+    # Kubernetes API server → mutating/validating webhooks
+    - fromEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.openobserve.opentelemetryOperator.webhookPort | default "9443" | quote }}
+              protocol: TCP
+            - port: {{ .Values.global.openobserve.opentelemetryOperator.metricsPort | default "8443" | quote }}
+              protocol: TCP
+
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "6443"
+              protocol: TCP
+{{- end }}

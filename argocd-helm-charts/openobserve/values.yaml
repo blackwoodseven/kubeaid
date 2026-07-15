@@ -1,16 +1,14 @@
 global:
+  netpol:
+    enabled: false
+
+  openobserve:
+    netpol: false
+
   postgresql:
-    enabled: true
+    enabled: false
     instanceName: openobserve
-    instances: 1
-    monitoring:
-      enablePodMonitor: true
-    backups:
-      enabled: false
-      # cloud: aws
-      # destinationPath: ""
-      # endpointURL: ""
-      # secretName: ""
+    netpol: false
     logicalbackup:
       enabled: false
 

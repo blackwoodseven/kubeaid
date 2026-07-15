@@ -1,0 +1,52 @@
+{{- if and ((.Values.global).netpol).enabled ((.Values.global).openobserve).netpol }}
+{{- range $index, $ingestor := (.Values.global.openobserve.ingestors | default list) }}
+---
+# Ingestor egress (e.g. OpenTelemetry collector → OpenObserve router)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ $.Values.global.netpol.releaseName | default $.Release.Name }}-ingestor-{{ $ingestor.name | default $index }}-networkpolicy
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: cilium-networkpolicy
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- range $key, $value := ($ingestor.labels | default dict) }}
+      {{ $key }}: {{ $value | quote }}
+      {{- end }}
+
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ $.Release.Namespace }}
+            app.kubernetes.io/name: openobserve
+            app.kubernetes.io/instance: {{ $.Values.global.netpol.releaseName | default $.Release.Name }}
+      toPorts:
+        - ports:
+            - port: {{ $.Values.global.openobserve.httpPort | default "5080" | quote }}
+              protocol: TCP
+            - port: {{ $.Values.global.openobserve.grpcPort | default "5081" | quote }}
+              protocol: TCP
+    {{- if (($ingestor).allowTraefikEgress) }}
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ $.Values.global.netpol.traefik.namespace }}
+            {{- range $key, $value := ($.Values.global.netpol.traefik.labels | default dict) }}
+            {{ $key }}: {{ $value | quote }}
+            {{- end }}
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    {{- end }}
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "6443"
+              protocol: TCP
+{{- end }}
+{{- end }}

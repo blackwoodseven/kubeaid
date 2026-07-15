@@ -1,0 +1,218 @@
+{{- if and ((.Values.global).netpol).enabled ((.Values.global).openobserve).netpol }}
+---
+# Core OpenObserve workloads (router, ingester, querier, compactor, alertmanager, dex, …)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ .Values.global.netpol.releaseName | default .Release.Name }}-openobserve-networkpolicy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: cilium-networkpolicy
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: openobserve
+      app.kubernetes.io/instance: {{ .Values.global.netpol.releaseName | default .Release.Name }}
+
+  ingress:
+    # UI/API and Dex via Traefik
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Values.global.netpol.traefik.namespace }}
+            {{- range $key, $value := (.Values.global.netpol.traefik.labels | default dict) }}
+            {{ $key }}: {{ $value | quote }}
+            {{- end }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.openobserve.httpPort | default "5080" | quote }}
+              protocol: TCP
+            - port: {{ .Values.global.openobserve.dexPort | default "5556" | quote }}
+              protocol: TCP
+
+    # In-cluster ingestion (collector, apps, operators, …)
+    {{- range .Values.global.openobserve.ingestors | default list }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .namespace | default $.Release.Namespace | quote }}
+            {{- range $key, $value := (.labels | default dict) }}
+            {{ $key }}: {{ $value | quote }}
+            {{- end }}
+      toPorts:
+        - ports:
+            - port: {{ $.Values.global.openobserve.httpPort | default "5080" | quote }}
+              protocol: TCP
+            - port: {{ $.Values.global.openobserve.grpcPort | default "5081" | quote }}
+              protocol: TCP
+            {{- range .extraPorts | default list }}
+            - port: {{ .port | quote }}
+              protocol: {{ .protocol | default "TCP" }}
+            {{- end }}
+    {{- end }}
+
+    # Inter-component traffic (same release)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            app.kubernetes.io/name: openobserve
+            app.kubernetes.io/instance: {{ .Values.global.netpol.releaseName | default .Release.Name }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.openobserve.httpPort | default "5080" | quote }}
+              protocol: TCP
+            - port: {{ .Values.global.openobserve.grpcPort | default "5081" | quote }}
+              protocol: TCP
+
+    # Prometheus metrics scrape (global.netpol.prometheus)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ (.Values.global.netpol.prometheus | default dict).namespace | default "monitoring" | quote }}
+            {{- range $key, $value := ((.Values.global.netpol.prometheus | default dict).labels | default dict) }}
+            {{ $key }}: {{ $value | quote }}
+            {{- end }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.openobserve.httpPort | default "5080" | quote }}
+              protocol: TCP
+
+    {{- if .Values.global.blackbox.enabled }}
+    # Blackbox exporter synthetic probes (global.blackbox)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ (.Values.global.blackbox.namespace | default "monitoring") | quote }}
+            app.kubernetes.io/name: blackbox-exporter
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.openobserve.httpPort | default "5080" | quote }}
+              protocol: TCP
+            - port: {{ .Values.global.openobserve.dexPort | default "5556" | quote }}
+              protocol: TCP
+    {{- end }}
+
+  egress:
+    # DNS (required before every toFQDNs rule)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: "*"
+
+    # PostgreSQL (CNPG) — set global.openobserve.postgres.cnpgCluster to match Cluster metadata.name
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            cnpg.io/cluster: {{ .Values.global.openobserve.postgres.cnpgCluster | default (printf "%s-postgres" (.Values.global.netpol.releaseName | default .Release.Name)) | quote }}
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+
+    # NATS
+    {{- if ((.Values.global.openobserve.nats).enabled) }}
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            app.kubernetes.io/name: nats
+            app.kubernetes.io/instance: {{ .Values.global.netpol.releaseName | default .Release.Name | quote }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.openobserve.nats.port | default "4222" | quote }}
+              protocol: TCP
+    {{- end }}
+
+    # OpenFGA (enterprise)
+    {{- if ((.Values.global.openobserve.openfga).enabled) }}
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            app: openfga
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.openobserve.openfga.httpPort | default "8080" | quote }}
+              protocol: TCP
+            - port: {{ .Values.global.openobserve.openfga.grpcPort | default "8081" | quote }}
+              protocol: TCP
+    {{- end }}
+
+    {{- if ((.Values.global.openobserve.etcd).enabled) }}
+    # In-cluster Bitnami etcd (openobserve chart subchart, same namespace — not kube-system)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            app.kubernetes.io/name: etcd
+            app.kubernetes.io/instance: {{ .Values.global.netpol.releaseName | default .Release.Name }}
+      toPorts:
+        - ports:
+            - port: "2379"
+              protocol: TCP
+            - port: "2380"
+              protocol: TCP
+    {{- end }}
+
+    # Inter-component traffic
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            app.kubernetes.io/name: openobserve
+            app.kubernetes.io/instance: {{ .Values.global.netpol.releaseName | default .Release.Name }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.openobserve.httpPort | default "5080" | quote }}
+              protocol: TCP
+            - port: {{ .Values.global.openobserve.grpcPort | default "5081" | quote }}
+              protocol: TCP
+
+    # Kubernetes API
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "6443"
+              protocol: TCP
+
+    {{- if ((.Values.global.openobserve.azure).enabled) }}
+    # Azure Blob Storage (ZO_S3_PROVIDER=azure)
+    - toFQDNs:
+        {{- range .Values.global.openobserve.azure.storageFQDNs | default list }}
+        - matchName: {{ . | quote }}
+        {{- end }}
+        {{- if not (.Values.global.openobserve.azure.storageFQDNs | default list) }}
+        - matchPattern: "*.blob.core.windows.net"
+        {{- end }}
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    {{- end }}
+
+    {{- if ((.Values.global.openobserve.s3).enabled) }}
+    # S3-compatible object storage (ZO_S3_PROVIDER=s3)
+    - toFQDNs:
+        {{- range .Values.global.openobserve.s3.storageFQDNs | default list }}
+        - matchName: {{ . | quote }}
+        {{- end }}
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    {{- end }}
+
+    {{- if ((.Values.global.openobserve.dex).keycloakFQDNs) }}
+    # Dex → Keycloak (OIDC)
+    - toFQDNs:
+        {{- range .Values.global.openobserve.dex.keycloakFQDNs }}
+        - matchName: {{ . | quote }}
+        {{- end }}
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    {{- end }}
+{{- end }}
