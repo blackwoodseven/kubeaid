@@ -4,6 +4,8 @@ global:
     instanceName: netbird
     instances: 1
     revision: 1
+    database: netbird
+    owner: netbird
     size: 8Gi
     monitoring:
       enablePodMonitor: true
