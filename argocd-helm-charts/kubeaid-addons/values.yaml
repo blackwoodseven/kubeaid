@@ -297,6 +297,65 @@ global:
       # -- SMTP port (default 587).
       port: "587"
 
+  # openobserve
+  # CiliumNetworkPolicies for OpenObserve (router, data plane, dex, NATS, OpenFGA).
+  # Requires global.netpol.enabled: true. Rendered from the openobserve parent chart
+  # (kubeaid-addons subchart). Enable global.postgresql.netpol for CNPG rules.
+  openobserve:
+    # -- Enable OpenObserve CiliumNetworkPolicies
+    netpol: false
+
+    # -- HTTP/gRPC ports (defaults match upstream openobserve chart config)
+    httpPort: "5080"
+    grpcPort: "5081"
+    dexPort: "5556"
+
+    # -- In-cluster sources allowed to send logs/metrics/traces to OpenObserve
+    ingestors: []
+    # - namespace: openobserve
+    #   labels:
+    #     app.kubernetes.io/name: opentelemetry-collector
+    #   extraPorts:
+    #     - port: "4317"
+    #       protocol: TCP
+
+    postgres:
+      # -- cnpg.io/cluster label on Postgres pods (must match CNPG Cluster metadata.name)
+      cnpgCluster: ""
+      cnpgOperator:
+        enabled: false
+        namespace: cloudnative-pg
+        labels: {}
+
+    s3:
+      enabled: false
+      storageFQDNs: []
+
+    nats:
+      enabled: true
+      port: "4222"
+
+    etcd:
+      enabled: false
+
+    opentelemetryOperator:
+      enabled: false
+      instance: opentelemetry-operator
+      webhookPort: "9443"
+      metricsPort: "8443"
+
+    openfga:
+      enabled: false
+      httpPort: "8080"
+      grpcPort: "8081"
+
+    dex:
+      keycloakFQDNs: []
+
+    azure:
+      enabled: false
+      storageFQDNs: []
+
   graylog:
     # -- Enable CiliumNetworkPolicy for Graylog.
     netpol: false

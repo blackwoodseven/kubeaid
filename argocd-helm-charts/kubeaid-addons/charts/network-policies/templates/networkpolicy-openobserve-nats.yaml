@@ -1,0 +1,51 @@
+{{- if and ((.Values.global).netpol).enabled ((.Values.global).openobserve).netpol ((.Values.global.openobserve.nats).enabled) }}
+---
+# NATS
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ .Values.global.netpol.releaseName | default .Release.Name }}-nats-networkpolicy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: cilium-networkpolicy
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: nats
+      app.kubernetes.io/instance: {{ .Values.global.netpol.releaseName | default .Release.Name | quote }}
+
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            app.kubernetes.io/name: openobserve
+            app.kubernetes.io/instance: {{ .Values.global.netpol.releaseName | default .Release.Name }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.openobserve.nats.port | default "4222" | quote }}
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            app.kubernetes.io/name: nats
+            app.kubernetes.io/instance: {{ .Values.global.netpol.releaseName | default .Release.Name | quote }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.openobserve.nats.port | default "4222" | quote }}
+              protocol: TCP
+            - port: "6222"
+              protocol: TCP
+
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            app.kubernetes.io/name: nats
+            app.kubernetes.io/instance: {{ .Values.global.netpol.releaseName | default .Release.Name | quote }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.openobserve.nats.port | default "4222" | quote }}
+              protocol: TCP
+            - port: "6222"
+              protocol: TCP
+{{- end }}

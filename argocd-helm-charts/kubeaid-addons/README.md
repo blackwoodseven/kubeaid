@@ -17,6 +17,7 @@ here rather than being scattered across individual application charts.
 | Argo CD baseline policy | `CiliumNetworkPolicy` | `global.netpol.enabled` + `global.argocd.netpol` |
 | Harbor network policies | `CiliumNetworkPolicy` | `global.netpol.enabled` + `global.harbor.netpol` |
 | SonarQube network policy | `CiliumNetworkPolicy` | `global.netpol.enabled` + `global.sonarqube.netpol` |
+| OpenObserve network policy | `CiliumNetworkPolicy` | `global.netpol.enabled` + `global.openobserve` |
 
 Everything is **nil-safe** - if a key is missing from values, the template renders nothing rather
 than panicking. New operator types (MariaDB, MongoDB, etc.) can be added by dropping a new
@@ -176,10 +177,27 @@ global:
   harbor:
     netpol: true  
   sonarqube:
-    netpol: true  
+    netpol: true
+  openobserve:
+    netpol: true
+    postgres:
+      cnpgCluster: openobserve-postgres  
+    ingestors:
+      - name: collector
+        namespace: openobserve
+        labels:
+          app.kubernetes.io/name: openobserve-collector
+    azure:
+      enabled: true
+    openfga:
+      enabled: true
 ```
 
-Argo CD baseline policy is configured under **`global.argocd`** plus shared **`global.netpol.traefik`** / **`global.netpol.prometheus`** (same pattern as whoami/oncall). Render it via a parent chart (for example `argo-cd`) that includes `kubeaid-addons` as a dependency; Helm only passes `global` into subcharts.
+**OpenObserve** (`networkpolicy-openobserve*.yaml`) renders policies across separate template files: core workloads (`networkpolicy-openobserve.yaml`), ingestor egress (`networkpolicy-openobserve-ingestor.yaml`), OpenFGA, NATS, CNPG postgres, and OpenTelemetry operator. Postgres is provisioned by the openobserve chart, not kubeaid-addons — set `global.openobserve.postgres.cnpgCluster` if the cluster name differs, and do not enable `global.postgresql.enabled` for OpenObserve.
+
+Policies are rendered by the **`openobserve` parent chart**, which includes `kubeaid-addons` as a Helm dependency (`openobserve/Chart.yaml` + `charts/kubeaid-addons` symlink — same pattern as `harbor` / `sonarqube`). Enable them from the OpenObserve Argo CD app values via `global.netpol.enabled` and `global.openobserve.netpol`. Default-deny for the namespace still comes from the standalone `kubeaid-addons` Argo app (§1).
+
+Argo CD baseline policy is configured under **`global.argocd`** plus shared **`global.netpol.traefik`** / **`global.netpol.prometheus`**. Render it via a parent chart (for example `argo-cd`) that includes `kubeaid-addons` as a dependency; Helm only passes `global` into subcharts.
 
 ```yaml
 global:

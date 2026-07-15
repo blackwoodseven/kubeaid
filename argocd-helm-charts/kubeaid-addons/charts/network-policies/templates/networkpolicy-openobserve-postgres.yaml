@@ -1,0 +1,61 @@
+{{- if and ((.Values.global).netpol).enabled ((.Values.global).openobserve).netpol }}
+---
+# CNPG postgres (provisioned by openobserve chart, not kubeaid-addons postgresql operator)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ .Values.global.netpol.releaseName | default .Release.Name }}-postgres-networkpolicy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: cilium-networkpolicy
+spec:
+  endpointSelector:
+    matchLabels:
+      k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+      cnpg.io/cluster: {{ .Values.global.openobserve.postgres.cnpgCluster | default (printf "%s-postgres" (.Values.global.netpol.releaseName | default .Release.Name)) | quote }}
+
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            app.kubernetes.io/name: openobserve
+            app.kubernetes.io/instance: {{ .Values.global.netpol.releaseName | default .Release.Name }}
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    {{- if ((.Values.global.openobserve.openfga).enabled) }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            app: openfga
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    {{- end }}
+    {{- if ((.Values.global.openobserve.postgres).cnpgOperator).enabled }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Values.global.openobserve.postgres.cnpgOperator.namespace | default "cloudnative-pg" | quote }}
+            {{- range $key, $value := (.Values.global.openobserve.postgres.cnpgOperator.labels | default dict) }}
+            {{ $key }}: {{ $value | quote }}
+            {{- end }}
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+            - port: "8000"
+              protocol: TCP
+    {{- end }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            cnpg.io/cluster: {{ .Values.global.openobserve.postgres.cnpgCluster | default (printf "%s-postgres" (.Values.global.netpol.releaseName | default .Release.Name)) | quote }}
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+            - port: "8000"
+              protocol: TCP
+{{- end }}

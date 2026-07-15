@@ -1,0 +1,38 @@
+{{- if and ((.Values.global).netpol).enabled ((.Values.global).openobserve).netpol ((.Values.global.openobserve.openfga).enabled) }}
+---
+# OpenFGA (separate pod labels: app=openfga)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ .Values.global.netpol.releaseName | default .Release.Name }}-openfga-networkpolicy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: cilium-networkpolicy
+spec:
+  endpointSelector:
+    matchLabels:
+      app: openfga
+
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            app.kubernetes.io/name: openobserve
+            app.kubernetes.io/instance: {{ .Values.global.netpol.releaseName | default .Release.Name }}
+      toPorts:
+        - ports:
+            - port: {{ .Values.global.openobserve.openfga.httpPort | default "8080" | quote }}
+              protocol: TCP
+            - port: {{ .Values.global.openobserve.openfga.grpcPort | default "8081" | quote }}
+              protocol: TCP
+
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .Release.Namespace }}
+            cnpg.io/cluster: {{ .Values.global.openobserve.postgres.cnpgCluster | default (printf "%s-postgres" (.Values.global.netpol.releaseName | default .Release.Name)) | quote }}
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+{{- end }}
