@@ -10,7 +10,7 @@ metadata:
   namespace: {{ .namespace | default $.Release.Namespace }}
 spec:
   networkRouterRef:
-    name: {{ $.Values.networkRouter.name }}
+    name: {{ include "kubeaid.netbirdClusterName" $ }}
     namespace: {{ $.Release.Namespace }}
   serviceRef:
     name: {{ .service }}

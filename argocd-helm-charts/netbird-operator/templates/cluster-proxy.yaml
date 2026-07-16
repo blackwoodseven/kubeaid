@@ -10,7 +10,7 @@
      The proxy GRANTS nothing — it impersonates. Authorization still comes from
      your own RBAC bound to the NetBird users/groups the proxy stamps. */}}
 {{- if .Values.clusterProxy.enabled }}
-{{- $name := required "clusterProxy.clusterName is required when clusterProxy.enabled=true — it becomes the proxy's mesh DNS label and kube-context" .Values.clusterProxy.clusterName }}
+{{- $name := include "kubeaid.netbirdClusterName" . }}
 {{- $sa := .Values.clusterProxy.serviceAccountName }}
 apiVersion: v1
 kind: ServiceAccount

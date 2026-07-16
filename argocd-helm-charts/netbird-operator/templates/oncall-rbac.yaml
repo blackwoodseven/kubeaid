@@ -1,0 +1,19 @@
+{{- /* On-call access. When enabled, binds the k8s Group `oncall` (the impersonated
+     NetBird oncall group) to cluster-admin, cluster-wide — standing full write,
+     secrets and exec included. Intended for a tiny, fully-trusted rotation. */}}
+{{- with .Values.clusterProxy.oncall }}
+{{- if and $.Values.clusterProxy.enabled .enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oncall
+subjects:
+  - kind: Group
+    name: oncall
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+{{- end }}
+{{- end }}
