@@ -7,8 +7,12 @@ rustfs:
       enabled: true
   config:
     rustfs:
-      log_level: info
+      log_level: warn
       region: us-east-1
+      log_rotation:
+        size: 100 # unit is MB
+        time: day
+        keep_files: 30 # Our compliance suggests 30d retention for daily backups
   storageclass:
     name: local-path
     dataStorageSize: 256Mi
