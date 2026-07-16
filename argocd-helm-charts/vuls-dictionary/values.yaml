@@ -81,7 +81,7 @@ vulsServer:
   enabled: true
   image:
     repository: vuls/vuls
-    tag: "v0.38.6"
+    tag: "v0.39.3"
     pullPolicy: IfNotPresent
   port: 5515
   resources:
