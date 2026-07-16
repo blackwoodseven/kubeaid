@@ -2,6 +2,54 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 31.2.1
+
+### Features
+
+- f486632e0 feat(netbird): derive the cluster + access groups from clusterName
+- 50a29754a feat: Add Cilium network policies for OpenObserve
+
+### Bug Fixes
+
+- 15bcad8ff fix: update netbird database and owner values
+- 69b2f1f91 fix: show out of sync argocd apps in newlines
+- 81f407568 fix: wrap licenseSecret in quotes and make it conditional in Mattermost installation template
+- a5a6c4266 fix shellcheck lint on verify helm chart script
+- 0ac2570c5 fix args to allow v0 rego policies in opa gatekeeper
+- 13a167c4f fix lint errors in decisions.md again
+- c99232abd fix lint errors in decisions.md
+- 15fa25b70 fix markdownlint github action
+
+### Configuration Changes
+
+- ba76e06e0 chore: pin coturn to version 4.14.0
+- e6cf7f77c chore: update netbird signal, relay, managament to 0.74.6 and dashboard to v2.90.4
+
+### Other Changes
+
+- ea3d8478c Update mattermost recovery step and fix value file default values
+- c8ea3681d (doc): Update Keycloak readme for 2FA support with TOTP/Yubikey
+- a5f0d0b64 kubeaid-agent: collect packagesign snapshot fact
+- 627567ae9 dependabot: bump the github-actions group with 4 updates
+- 44398dce6 ci(helm): add helm chart update workflow with auto-updating PR
+- e79f3ff1d revert test code for shellcheck
+- 3f21ba426 test a shell script
+- 5b0089427 ci(shellcheck): fix broken exclusions, extract runner into shared script
+- 4f895daac revert changes to rego policy
+- 8706bc243 ci(opa): migrate to setup-opa action, pin runner and OPA version
+- ac56822d9 Update yamllint deps
+- 798cadd7e Add yamllint CI
+- 261d920e6 Improve markdownlint ci and add docs on sparse checkout
+- a0ed671e1 test markdownlint changes
+- b35bd501f test markdownlint changes
+- c37585124 remove test changes
+- df0c4ca16 test markdownlint changes
+- d2e12f366 lint: add EOF to files
+- a5963db07 Add dependabot for updating Docker images in Github Actions
+- 1c979b679 describe how security and reliability is also a big part
+- 8a2eba8c6 cilium: optional CiliumLoadBalancerIPPool via loadBalancerIPPool list value
+- 05beef1a4 release fix(chore): send the release tags to internal gitea
+
 ## KubeAid Release Version 31.2.0
 
 ### Minor Version Upgrades
