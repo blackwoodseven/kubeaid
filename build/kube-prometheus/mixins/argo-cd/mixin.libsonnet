@@ -46,7 +46,7 @@
               summary: 'ArgoCD Application is Out Of Sync.',
               description: |||
                 The following applications under project '{{ .Labels.project }}' are out of sync (status: {{ .Labels.sync_status }}):
-                {{ range query (printf "sum by (name, project) (argocd_app_info{project='%s', sync_status='%s'}) and on(name, project) kubeaidManagedApps" .Labels.project .Labels.sync_status) -}}
+                {{- range query (printf "sum by (name, project) (argocd_app_info{project='%s', sync_status='%s'}) and on(name, project) kubeaidManagedApps" .Labels.project .Labels.sync_status) }}
                 - {{ .Labels.name }}
                 {{- end }}
               |||,
@@ -63,7 +63,7 @@
               summary: 'ArgoCD Application is not healthy.',
               description: |||
                 The following applications under project '{{ .Labels.project }}' are not healthy (status: {{ .Labels.health_status }}):
-                {{ range query (printf "sum by (name, project) (argocd_app_info{project='%s', health_status='%s'}) and on(name, project) kubeaidManagedApps" .Labels.project .Labels.health_status) -}}
+                {{- range query (printf "sum by (name, project) (argocd_app_info{project='%s', health_status='%s'}) and on(name, project) kubeaidManagedApps" .Labels.project .Labels.health_status) }}
                 - {{ .Labels.name }}
                 {{- end }}
               |||,
