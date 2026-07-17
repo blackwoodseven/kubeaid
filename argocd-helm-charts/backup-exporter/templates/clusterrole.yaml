@@ -1,0 +1,46 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "backup-exporter.fullname" . }}
+  labels:
+    {{- include "backup-exporter.labels" . | nindent 4 }}
+# The exporter only reads. It never creates, mutates or deletes anything, in the
+# cluster or in object storage, so no rule below carries a write verb. It also
+# runs no informers -- it lists on a cron tick -- so none needs watch.
+rules:
+  # CNPG Cluster CRDs
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters"]
+    verbs: ["get", "list"]
+
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["scheduledbackups"]
+    verbs: ["get", "list"]
+
+  # CronJobs for logical backups
+  - apiGroups: ["batch"]
+    resources: ["cronjobs"]
+    verbs: ["get", "list"]
+
+  # Velero CRDs
+  - apiGroups: ["velero.io"]
+    resources: ["schedules"]
+    verbs: ["get", "list"]
+
+  # BarmanCloud ObjectStores for WAL S3 config
+  - apiGroups: ["barmancloud.cnpg.io"]
+    resources: ["objectstores"]
+    verbs: ["get", "list"]
+
+  # Namespaces for cross-namespace discovery
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list"]
+
+  # Velero backup targets. Listed through the dynamic client with a GVR built at
+  # runtime, so this rule has no matching PersistentVolumeClaims() call to grep
+  # for. Removing it fails silently: the lister swallows the error and reports no
+  # resources, leaving Velero monitoring blind but healthy-looking.
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list"]

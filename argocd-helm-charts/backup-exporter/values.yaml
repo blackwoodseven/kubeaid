@@ -1,4 +1,4 @@
-# Default values for obmondo-backup-exporter.
+# Default values for backup-exporter.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -7,11 +7,12 @@ replicaCount: 1
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
-  repository: obmondo-backup-exporter
+  repository: ghcr.io/obmondo/obmondo-backup-exporter
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "v1.0.0"
+  # Overrides the image tag. Left empty so it follows the chart appVersion, which
+  # keeps the deployed version in one place rather than two that can disagree.
+  tag: ""
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
@@ -40,15 +41,15 @@ podAnnotations: {}
 podLabels: {}
 
 podSecurityContext: {}
-# fsGroup: 2000
+  # fsGroup: 2000
 
 securityContext: {}
-# capabilities:
-#   drop:
-#   - ALL
-# readOnlyRootFilesystem: true
-# runAsNonRoot: true
-# runAsUser: 1000
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
 
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
@@ -58,16 +59,16 @@ service:
   port: 8080
 
 resources: {}
-# We usually recommend not to specify default resources and to leave this as a conscious
-# choice for the user. This also increases chances charts run on environments with little
-# resources, such as Minikube. If you do want to specify resources, uncomment the following
-# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-# limits:
-#   cpu: 100m
-#   memory: 128Mi
-# requests:
-#   cpu: 100m
-#   memory: 128Mi
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
 
 # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
 livenessProbe:
@@ -124,29 +125,16 @@ exporter:
     # not set
     interval_rate: 0.25
 
+    # S3 configuration common for both logical and WAL backups (except region).
+    s3:
+      secretName: ""
+      accessKeyId: ""
+      secretAccessKey: ""
     logical:
-      # Map of clusters to ignore for logical backups.
-      # Keys are namespace names, values are cluster names.
-      # For example:
-      #   mattermost:
-      #     - mattermost-staging
-      #     - mattermost-dev
-      # Leave empty to watch all clusters.
-      ignore_clusters: {}
-      # S3 configuration for logical backups (POSTGRES_S3_LOGICAL_*).
-      s3:
-        secretName: ""
-        accessKeyId: ""
-        secretAccessKey: ""
     wal:
-      # Map of clusters to ignore for WAL backups.
-      # Keys are namespace names, values are cluster names.
-      ignore_clusters: {}
-      # S3 configuration for WAL backups (POSTGRES_S3_WAL_*).
-      s3:
-        secretName: ""
-        accessKeyId: ""
-        secretAccessKey: ""
+      # Region for WAL backups (POSTGRES_S3_WAL_REGION).
+      # Logical backups get their region from the CronJob env map (LOGICAL_BACKUP_S3_REGION).
+      s3Region: ""
   velero:
     # Maximum acceptable Recovery Point Objective (RPO) for Velero backups.
     # Supported formats: "24h", "6h", "30m", "1d", "7d"
@@ -159,11 +147,6 @@ exporter:
     # Must be between 0 and 1. Defaults to 0.25 (every 25% of max_rpo) if
     # not set
     interval_rate: 0.25
-
-    # Namespaces to ignore in Velero backup checks.
-    # PVCs in these namespaces will not be checked.
-    # Example: ["kube-system", "velero"]
-    ignore_namespaces: []
 
     # S3 configuration.
     # Credentials can be provided either via a Kubernetes Secret (secretName)

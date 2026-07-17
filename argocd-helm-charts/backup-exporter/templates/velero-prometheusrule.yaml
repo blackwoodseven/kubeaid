@@ -2,16 +2,16 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ include "obmondo-backup-exporter.fullname" . }}-velero
+  name: {{ include "backup-exporter.fullname" . }}-velero
   namespace: {{ .Values.prometheusRule.velero.namespace | default "monitoring" }}
   labels:
-    {{- include "obmondo-backup-exporter.labels" . | nindent 4 }}
+    {{- include "backup-exporter.labels" . | nindent 4 }}
     {{- if .Values.prometheusRule.velero.labels }}
     {{- toYaml .Values.prometheusRule.velero.labels | nindent 4 }}
     {{- end }}
 spec:
   groups:
-    - name: {{ include "obmondo-backup-exporter.name" . }}-velero
+    - name: {{ include "backup-exporter.name" . }}-velero
       rules:
         - alert: VeleroBackupExporterJobFailed
           expr: max by (type) (backup_exporter_velero_error == 1) > 0
@@ -22,7 +22,7 @@ spec:
             summary: 'Velero backup exporter job failed'
             description: 'Velero backup exporter error (type: {{ `{{ $labels.type }}` }})'
         - alert: VeleroBackupExceededRPO
-          expr: backup_exporter_velero_latest_backup_age > {{ include "obmondo-backup-exporter.durationToSeconds" .Values.exporter.velero.max_rpo }}
+          expr: backup_exporter_velero_latest_backup_age > {{ include "backup-exporter.durationToSeconds" .Values.exporter.velero.max_rpo }}
           for: {{ .Values.prometheusRule.velero.alertForDuration | default "5m" }}
           labels:
             severity: {{ .Values.prometheusRule.velero.severity | default "critical" }}

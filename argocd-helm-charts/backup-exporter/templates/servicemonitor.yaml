@@ -2,9 +2,9 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "obmondo-backup-exporter.fullname" . }}
+  name: {{ include "backup-exporter.fullname" . }}
   labels:
-    {{- include "obmondo-backup-exporter.labels" . | nindent 4 }}
+    {{- include "backup-exporter.labels" . | nindent 4 }}
     {{- with .Values.serviceMonitor.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -15,7 +15,7 @@ spec:
       path: /metrics
   selector:
     matchLabels:
-      {{- include "obmondo-backup-exporter.selectorLabels" . | nindent 6 }}
+      {{- include "backup-exporter.selectorLabels" . | nindent 6 }}
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}
