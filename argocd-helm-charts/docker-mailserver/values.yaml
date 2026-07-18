@@ -1,0 +1,49 @@
+docker-mailserver:
+  deployment:
+    env:
+      OVERRIDE_HOSTNAME: ""   # required: set to mail.<yourdomain> in cluster values
+      LOG_LEVEL: info
+      ENABLE_IMAP: 1
+      ENABLE_RSPAMD: 1
+      ENABLE_RSPAMD_REDIS: 1
+      ENABLE_OPENDKIM: 1
+      ENABLE_OPENDMARC: 1
+      ENABLE_POLICYD_SPF: 1
+      ENABLE_FAIL2BAN: 0
+      ENABLE_CLAMAV: 0
+      SSL_TYPE: ""
+
+  # persistence keys match upstream named PVC map — do not use enabled/size shorthand
+
+  service:
+    type: ClusterIP
+    annotations: {}
+
+# Optional Cilium egress gateway for this instance's outbound traffic — gives
+# outbound SMTP a stable source IP so SPF/DNS records can be aligned to it. Disabled
+# by default: most users don't need this (e.g. internal-only relay, or providers that
+# don't enforce SPF), so nothing here is required unless you turn it on.
+#
+# Requires the cluster to already have cilium.egressGateway.enabled: true and
+# cilium.bpf.masquerade: true set (cluster-wide Cilium settings — not something this
+# chart can or should set for you).
+egressGateway:
+  enabled: false
+  # The only two things you actually need to provide when enabling this:
+  # egressIP should be a stable IP you control — ideally a cloud floating/elastic
+  # IP, not a specific node's own public IP (that breaks if the node is replaced).
+  egressIP: ""
+  podNamespace: "" # the namespace this mail instance runs in
+  # Sensible defaults for everything else — override only if you need to:
+  nodeSelector:
+    kubernetes.io/hostname: ""   # required: which node should own the egress IP
+  destinationCIDRs:
+    - "0.0.0.0/0"
+  # This chart's own pod template labels with `release`, not the more common
+  # `app.kubernetes.io/instance` - the policy matches pods by this label key,
+  # set to the release name. Only override if copying this template into a
+  # different chart that labels its pods differently - getting this wrong
+  # means the policy silently matches nothing, and traffic falls back to the
+  # node's normal masquerade IP instead (this exact mismatch caused a real
+  # SPF failure in production before it was caught).
+  podSelectorLabelKey: "release"

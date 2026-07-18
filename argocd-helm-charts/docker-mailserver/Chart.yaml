@@ -1,0 +1,7 @@
+apiVersion: v2
+name: docker-mailserver
+version: 1.0.0
+dependencies:
+  - name: docker-mailserver
+    version: 5.1.1
+    repository: https://docker-mailserver.github.io/docker-mailserver-helm
