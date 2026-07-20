@@ -7,7 +7,7 @@ replicaCount: 1
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 image:
-  repository: ghcr.io/obmondo/obmondo-backup-exporter
+  repository: ghcr.io/obmondo/backup-exporter
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag. Left empty so it follows the chart appVersion, which
