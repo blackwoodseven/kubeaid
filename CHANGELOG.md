@@ -2,6 +2,21 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 31.2.2
+
+### Configuration Changes
+
+- de63e78d0 chore(backup-exporter): point chart at obmondo/backup-exporter:v1.0.5
+- 824660ff5 chore(backup-exporter): adopt the chart from the app repo
+
+### Other Changes
+
+- 97df0965d Bumped the vuls exporter version
+- 2ccd86b49 ci: check and test backup-exporter alert rules
+- 40f0e9601 Updated the vuls image built on latest master
+- 86bd0e74b Enable log rotation and log retention period in rustfs to resolve PVC fill up issue
+- a20274fd0 Bump vuls server version to 0.39.3
+
 ## KubeAid Release Version 31.2.1
 
 ### Features
