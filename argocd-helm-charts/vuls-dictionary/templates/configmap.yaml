@@ -8,6 +8,6 @@ metadata:
 data:
   config.toml: |
     [vuls2]
-    Path = "/vuls/vuls.db"
+    Path = {{ .Values.vuls2.dbPath | quote }}
     SkipUpdate = true
 {{- end }}

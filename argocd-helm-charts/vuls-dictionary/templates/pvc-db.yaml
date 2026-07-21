@@ -1,0 +1,17 @@
+{{- if and .Values.vulsServer.enabled .Values.vuls2.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "vuls-dictionary.fullname" . }}-db-pvc
+  labels:
+    {{- include "vuls-dictionary.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.vulsServer.databaseStorage.accessMode | default "ReadWriteOnce" }}
+  resources:
+    requests:
+      storage: {{ .Values.vulsServer.databaseStorage.size | default "25Gi" }}
+{{- if .Values.vulsServer.databaseStorage.storageClass }}
+  storageClassName: "{{ .Values.vulsServer.databaseStorage.storageClass }}"
+{{- end }}
+{{- end }}

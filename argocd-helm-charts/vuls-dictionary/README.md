@@ -6,9 +6,11 @@ Helm chart for deploying [Vuls](https://github.com/future-architect/vuls), an ag
 
 Vuls uses a pre-built SQLite database ([vuls-nightly-db](https://github.com/vulsio/vuls-nightly-db)) that contains CVE, advisory, and detection data. The database (~7 GB uncompressed) is fetched once via init containers and cached on a PersistentVolume. The vuls server reads it locally at startup, so no outbound network access is needed at scan time.
 
-1. **Init containers** pull and decompress the database into `/vuls/vuls.db`
+1. **Init containers** pull and decompress the database into `/vuls-db/vuls.db`
 2. **Vuls server** starts on port 5515 with a config pointing at the local database
 3. **Clients** POST their installed package lists and receive vulnerability results
+
+The database is kept on its own PVC, separate from `/vuls/results`, so database refresh bursts do not consume result-storage headroom. Scan results can be pruned by an init container before the server starts. During migration from older chart versions, legacy `/vuls/vuls.db*` files are removed from the results PVC to reclaim space.
 
 ## Components
 
@@ -39,6 +41,8 @@ vulsServer:
 | `vuls2.image.repository` | Database OCI image | `ghcr.io/vulsio/vuls-nightly-db` |
 | `vuls2.image.tag` | Database image tag | `"0"` |
 | `vuls2.image.pullPolicy` | Image pull policy | `IfNotPresent` |
+| `vuls2.dbPath` | Path to the decompressed SQLite DB | `/vuls-db/vuls.db` |
+| `vuls2.minDbSizeBytes` | Minimum valid DB size before fetch/decompress is skipped | `"5368709120"` |
 
 When enabled, two init containers run before the vuls server starts:
 1. **fetch-vuls2-db** -- pulls the compressed database via `oras`
@@ -55,9 +59,15 @@ Both init containers skip work if a valid database (>5 GB) already exists on the
 | `vulsServer.image.tag` | Vuls server image tag | `v0.38.6` |
 | `vulsServer.port` | Listen port | `5515` |
 | `vulsServer.resources` | Resource requests/limits | 50m/100m CPU, 256Mi/512Mi |
-| `vulsServer.resultsStorage.size` | PVC size for scan results and database | `15Gi` |
-| `vulsServer.resultsStorage.accessMode` | PVC access mode | `ReadWriteOnce` |
-| `vulsServer.resultsStorage.storageClass` | Storage class (empty = default) | `""` |
+| `vulsServer.resultsDir` | Directory where Vuls writes scan results | `/vuls/results` |
+| `vulsServer.databaseStorage.size` | PVC size for the vuls2 database | `25Gi` |
+| `vulsServer.databaseStorage.accessMode` | Database PVC access mode | `ReadWriteOnce` |
+| `vulsServer.databaseStorage.storageClass` | Database storage class (empty = default) | `""` |
+| `vulsServer.resultsStorage.size` | PVC size for scan results | `15Gi` |
+| `vulsServer.resultsStorage.accessMode` | Results PVC access mode | `ReadWriteOnce` |
+| `vulsServer.resultsStorage.storageClass` | Results storage class (empty = default) | `""` |
+| `vulsServer.resultRetention.enabled` | Prune old scan result directories at startup | `true` |
+| `vulsServer.resultRetention.maxAgeDays` | Delete result directories older than this many days | `60` |
 
 ### Vuls exporter
 

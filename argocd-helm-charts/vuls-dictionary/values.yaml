@@ -76,6 +76,8 @@ vuls2:
     repository: ghcr.io/vulsio/vuls-nightly-db
     tag: "0"
     pullPolicy: IfNotPresent
+  dbPath: /vuls-db/vuls.db
+  minDbSizeBytes: "5368709120"
 
 # the latest release ATM i.e 0.39.3 doesn't have the report from NVD and other sources
 # But, its fixed in the latest master - so, we have built the image and pushed
@@ -94,7 +96,15 @@ vulsServer:
     limits:
       cpu: 100m
       memory: 512Mi
+  resultsDir: /vuls/results
+  databaseStorage:
+    storageClass: ""
+    size: 25Gi
+    accessMode: ReadWriteOnce
   resultsStorage:
     storageClass: ""
     size: 15Gi
     accessMode: ReadWriteOnce
+  resultRetention:
+    enabled: true
+    maxAgeDays: 60
