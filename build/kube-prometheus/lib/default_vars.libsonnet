@@ -97,6 +97,11 @@
   alertmanager_ingress_annotations: {
     'cert-manager.io/cluster-issuer': 'letsencrypt',
   },
+  // app.kubernetes.io/name carried by the Traefik pods that serve the
+  // monitoring ingresses. Clusters running Traefik under a differently-named
+  // Helm release (e.g. traefik-private) must override this, otherwise the
+  // NetworkPolicies below never match and requests time out with a 504.
+  traefik_pod_name: 'traefik',
   addMixins: {
     ceph: false,
     'argo-cd': true,
