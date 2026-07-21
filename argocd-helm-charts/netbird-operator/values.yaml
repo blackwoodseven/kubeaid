@@ -75,7 +75,7 @@ clusterProxy:
   serviceAccountName: clusterproxy
   # In-cluster apiserver URL — the default sidesteps cert-SAN/hostname issues
   # since the proxy never leaves the cluster network to reach the apiserver.
-  apiServer: https://kubernetes.default.svc.cluster.local
+  apiServer: https://kubernetes.default.svc.cluster.local/
   # On-call access. When enabled, binds the k8s Group `oncall` (the impersonated
   # NetBird `oncall` group) to cluster-admin, cluster-wide. Standing full write —
   # intended for a tiny, fully-trusted on-call rotation (1-2 people).
