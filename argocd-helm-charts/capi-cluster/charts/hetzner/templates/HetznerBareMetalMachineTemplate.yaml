@@ -38,29 +38,21 @@ spec:
         postInstallScript: |
           #!/bin/bash
 
-          {{/* Give highest priority to the Network Card / Connection entry in the boot order.
-               Otherwise, we cannot boot the servers into rescue mode, and need to reach out to the
-               Hetzner support team. */}}
-          if [ ! -d /sys/firmware/efi ]; then
-            echo "legacy BIOS boot — skipping EFI boot-order adjustment"
-          else
-            NETBOOT=$(efibootmgr -v \
-              | grep -E "Network (Card|Connection)" \
-              | sed 's/Boot\([0-9A-F]*\).*/\1/' \
-              | head -n1)
-            if [ -z "$NETBOOT" ]; then
-              echo "no EFI network boot entry found — skipping boot-order adjustment"
-            else
-              CURRENT_ORDER=$(efibootmgr | grep "BootOrder:" | cut -d' ' -f2)
-              NEW_ORDER=$(echo "$CURRENT_ORDER" | sed "s/$NETBOOT,\?//g" | sed "s/^/$NETBOOT,/" | sed 's/,$//')
-              efibootmgr -o "$NEW_ORDER"
-            fi
-          fi
+          {{- include "hetzner.efiBootOrderScript" . | nindent 10 }}
 
           mkdir -p /etc/cloud/cloud.cfg.d && touch /etc/cloud/cloud.cfg.d/99-custom-networking.cfg
           echo "network: { config: disabled }" > /etc/cloud/cloud.cfg.d/99-custom-networking.cfg
 
           apt-get update && apt-get install -y cloud-init apparmor apparmor-utils
+
+          {{/* Hetzner's OS images ship a prebuilt host-only dracut initramfs
+               from their image-build machine, whose devexists hooks are pinned
+               to THAT machine's ESP UUID. On UEFI hosts the initramfs then
+               waits ~3min for a partition that doesn't exist and drops to the
+               dracut emergency shell — the server looks dead from outside.
+               apt's update-initramfs run does not replace those hooks; only a
+               forced dracut rebuild against this host does. */}}
+          dracut --force --regenerate-all
 
           cloud-init clean --logs
         swraid: 1
