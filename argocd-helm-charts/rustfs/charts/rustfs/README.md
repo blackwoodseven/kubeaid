@@ -1,13 +1,51 @@
 # RustFS Helm Mode
 
-RustFS helm chart supports **standalone and distributed mode**. For standalone mode, there is only one pod and one pvc; for distributed mode, there are two styles, 4 pods and 16 pvcs(each pod has 4 pvcs), 16 pods and 16 pvcs(each pod has 1 pvc). You should decide which mode and style suits for your situation. You can specify the parameters `mode` and `replicaCount` to install different mode and style.
+RustFS helm chart supports **standalone** and **distributed** mode.
 
-- **For standalone mode**: Only one pod and one pvc acts as single node single disk; Specify parameters `mode.standalone.enabled="true",mode.distributed.enabled="false"` to install.
-- **For distributed mode**(**default**): Multiple pods and multiple pvcs, acts as multiple nodes multiple disks, there are two styles:
-    - 4 pods and each pods has 4 pvcs(**default**)
-    - 16 pods and each pods has 1 pvc: Specify parameters `replicaCount` with `--set replicaCount="16"` to install.
+- **Standalone mode**: one pod with one PVC (single node, single disk).
+- **Distributed mode** (**default**): multiple pods with multiple PVCs (multiple nodes, multiple disks).
 
-**NOTE**: Please make sure which mode suits for you situation and specify the right parameter to install rustfs on kubernetes.
+## Distributed topology
+
+The distributed topology is defined by two parameters:
+
+- `replicaCount` — number of pods (nodes) in the StatefulSet.
+- `drivesPerNode` — number of data PVCs mounted on each pod.
+
+Total drives in the cluster = `replicaCount * drivesPerNode`.
+
+When `drivesPerNode` is left unset, the chart automatically infers a
+backward-compatible value from each pool's replica count (with pools
+disabled there is a single pool driven by the top-level `replicaCount`):
+
+| `replicaCount` | Inferred `drivesPerNode` | Legacy equivalent |
+|----------------|--------------------------|-------------------|
+| 4              | 4                        | old default 4×4   |
+| anything else  | 1                        | old 16×1, etc.    |
+
+You can override the inference by setting `drivesPerNode` explicitly, e.g.
+`--set drivesPerNode=2` for an 8×2 cluster.
+
+**IMPORTANT**: Kubernetes does **not** allow changes to
+`volumeClaimTemplates` in an existing StatefulSet. If you want to change
+`drivesPerNode` after installation you must delete the StatefulSet
+(with `--cascade=orphan` to keep pods and PVCs) and recreate it, or perform a
+full reinstall.
+
+---
+
+## Upgrade notes
+
+Upgrading from chart versions that did **not** have `drivesPerNode` is safe
+without manual intervention:
+
+- Existing 4×4 deployments (default `replicaCount=4`) continue to receive 4
+  drives per node because the chart infers `drivesPerNode=4`.
+- Existing 16×1 deployments (`replicaCount=16`) continue to receive 1 drive
+  per node because the chart infers `drivesPerNode=1`.
+
+If you previously set `replicaCount=16` and now want a different topology,
+set both `replicaCount` and `drivesPerNode` explicitly.
 
 ---
 
@@ -18,6 +56,7 @@ RustFS helm chart supports **standalone and distributed mode**. For standalone m
 | affinity.nodeAffinity | object | `{}` |  |
 | affinity.podAntiAffinity.enabled | bool | `true` |  |
 | affinity.podAntiAffinity.topologyKey | string | `"kubernetes.io/hostname"` |  |
+| clusterDomain | string | `"cluster.local"` | Kubernetes cluster DNS domain used to build in-cluster FQDNs for `RUSTFS_VOLUMES` (distributed mode) and mTLS server certificate SANs. Override for clusters not using the default `cluster.local`. Provide the DNS root only, without a `svc.` prefix or leading/trailing dots. |
 | commonLabels | object | `{}` | Labels to add to all deployed objects. |
 | config.rustfs.address | string | `":9000"` |  |
 | config.rustfs.console_address | string | `":9001"` |  |
@@ -34,9 +73,22 @@ RustFS helm chart supports **standalone and distributed mode**. For standalone m
 | config.rustfs.metrics.enabled | bool | `false` | Toggle metrics export. |
 | config.rustfs.metrics.endpoint | string | `""` | Dedicated metrics endpoint. |
 | config.rustfs.scanner.speed | string | `""` | Scanner speed preset: `fastest`, `fast`, `default`, `slow`, `slowest`. |
+| config.rustfs.scanner.delay | string | `""` | Override scanner sleep multiplier with `RUSTFS_SCANNER_DELAY` (`0` through `10000`). |
+| config.rustfs.scanner.max_wait_secs | string | `""` | Override maximum scanner sleep in seconds with `RUSTFS_SCANNER_MAX_WAIT_SECS`. |
+| config.rustfs.scanner.cycle_secs | string | `""` | Override scanner cycle interval in seconds with `RUSTFS_SCANNER_CYCLE`. |
 | config.rustfs.scanner.start_delay_secs | string | `""` | Override scanner cycle interval in seconds with `RUSTFS_SCANNER_START_DELAY_SECS`. |
+| config.rustfs.scanner.cycle_max_duration_secs | string | `""` | Cap one scanner cycle's runtime in seconds with `RUSTFS_SCANNER_CYCLE_MAX_DURATION_SECS` (`0` disables). |
+| config.rustfs.scanner.cycle_max_objects | string | `""` | Cap objects processed by one scanner cycle with `RUSTFS_SCANNER_CYCLE_MAX_OBJECTS` (`0` disables). |
+| config.rustfs.scanner.cycle_max_directories | string | `""` | Cap directories entered by one scanner cycle with `RUSTFS_SCANNER_CYCLE_MAX_DIRECTORIES` (`0` disables). |
+| config.rustfs.scanner.bitrot_cycle_secs | string | `""` | Override periodic deep bitrot cycle with `RUSTFS_SCANNER_BITROT_CYCLE_SECS`; `false`, `off`, `no`, or `disabled` disables it. |
 | config.rustfs.scanner.idle_mode | string | `""` | Override scanner idle throttling flag (`RUSTFS_SCANNER_IDLE_MODE`). |
 | config.rustfs.scanner.cache_save_timeout_secs | string | `""` | Override scanner cache save timeout in seconds with `RUSTFS_SCANNER_CACHE_SAVE_TIMEOUT_SECS` (minimum `1`). |
+| config.rustfs.scanner.max_concurrent_set_scans | string | `""` | Cap concurrent scanner set tasks with `RUSTFS_SCANNER_MAX_CONCURRENT_SET_SCANS` (`0` keeps topology-derived concurrency). |
+| config.rustfs.scanner.max_concurrent_disk_scans | string | `""` | Cap concurrent scanner disk bucket walks per set with `RUSTFS_SCANNER_MAX_CONCURRENT_DISK_SCANS` (`0` keeps disk-count-derived concurrency). |
+| config.rustfs.scanner.yield_every_n_objects | string | `""` | Yield to the async runtime every N scanned objects with `RUSTFS_SCANNER_YIELD_EVERY_N_OBJECTS` (`0` disables extra yield). |
+| config.rustfs.scanner.alert_excess_versions | string | `""` | Set version count threshold for scanner alerts with `RUSTFS_SCANNER_ALERT_EXCESS_VERSIONS`. |
+| config.rustfs.scanner.alert_excess_version_size | string | `""` | Set retained version byte threshold for scanner alerts with `RUSTFS_SCANNER_ALERT_EXCESS_VERSION_SIZE`. |
+| config.rustfs.scanner.alert_excess_folders | string | `""` | Set direct subfolder threshold for scanner alerts with `RUSTFS_SCANNER_ALERT_EXCESS_FOLDERS`. |
 | config.rustfs.obs_endpoint.enabled | bool | `false` | Whether to send metrics/logs/traces/profilings to remote endpoint, eg, OLTP. |
 | config.rustfs.obs_endpoint.base_endpoint | string | `""` | Root OTLP/HTTP endpoint, e.g. http://otel-collector:4318. |
 | config.rustfs.obs_endpoint.use_stdout | bool | `false` | Whether to output logs to stdout in addition the OLTP. |
@@ -119,6 +171,8 @@ uer. `ClusterIssuer` or `Issuer`. |
 | pdb.maxUnavailable | string | `1` |  |
 | pdb.minAvailable | string | `""` |  |
 | podAnnotations | object | `{}` |  |
+| pools.enabled | bool | `false` | Enable multiple server pools (capacity expansion, distributed mode only). |
+| pools.list | list | `[]` | One entry per pool; entries may set `replicaCount` (>= 2) and `storageclass`, omitted fields inherit top-level values. Append-only. |
 | podLabels | object | `{}` |  |
 | podSecurityContext.fsGroup | int | `10001` |  |
 | podSecurityContext.runAsGroup | int | `10001` |  |
@@ -130,7 +184,8 @@ uer. `ClusterIssuer` or `Issuer`. |
 | readinessProbe.periodSeconds | int | `5` |  |
 | readinessProbe.successThreshold | int | `1` |  |
 | readinessProbe.timeoutSeconds | int | `3` |  |
-| replicaCount | int | `4` | Number of cluster nodes. |
+| replicaCount | int | `4` | Number of cluster nodes. Distributed mode requires >= 2. |
+| drivesPerNode | int | `null` | Number of data PVCs per pod. Inferred from replicaCount when unset (see Distributed topology above). |
 | resources.limits.cpu | string | `"200m"` |  |
 | resources.limits.memory | string | `"512Mi"` |  |
 | resources.requests.cpu | string | `"100m"` |  |
@@ -166,6 +221,12 @@ uer. `ClusterIssuer` or `Issuer`. |
 | gatewayApi.existingGateway.name | string | `""` |  The existing gateway name, instead of creating a new one. |
 | gatewayApi.existingGateway.namespace | string | `""` |  The namespace of the existing gateway, if not the local namespace. |
 
+Scanner values map directly to scanner environment variables. For tuning
+workflow and `/v3/scanner/status` interpretation, see
+[Scanner Runtime Controls](../docs/operations/scanner-runtime-controls.md). For
+repeatable scanner-pressure validation, see
+[Scanner Benchmark Runbook](../docs/operations/scanner-benchmark-runbook.md).
+
 ---
 
 **NOTE**:
@@ -195,6 +256,59 @@ Both approaches support pulling from private registries seamlessly and you can a
 - The default storageclass is [`local-path`](https://github.com/rancher/local-path-provisioner),if you want to specify your own storageclass, try to set parameter `storageclass.name`.
 
 - The default size for data and logs dir is **256Mi** which must satisfy the production usage,you should specify `storageclass.dataStorageSize` and `storageclass.logStorageSize` to change the size, for example, 1Ti for data and  1Gi for logs.
+
+# Server pools (capacity expansion)
+
+In distributed mode the chart can run multiple **server pools** — independent
+StatefulSets whose drives together form one cluster, the same expansion model
+the RustFS server already supports via space-separated `RUSTFS_VOLUMES`
+expressions (`rc admin pool ls` / `expand` / `rebalance` / `decommission`).
+
+With `pools.enabled=false` (default) the chart behaves exactly as before:
+one StatefulSet driven by the top-level `replicaCount`/`storageclass`.
+
+To expand an existing deployment, enable pools and describe the current
+layout as pool 0 plus your new capacity:
+
+```yaml
+pools:
+  enabled: true
+  list:
+    - {}                  # pool 0: inherits top-level values and keeps the
+                          # existing StatefulSet/pod/PVC names and data
+    - replicaCount: 4     # pool 1: new capacity
+      storageclass:
+        dataStorageSize: 10Gi
+```
+
+Each entry may set `replicaCount` (>= 2) and/or a `storageclass` block;
+omitted fields inherit the top-level values. Additional pools render as
+`<fullname>-pool<N>` StatefulSets; all pools share the headless service,
+the main service, the configuration and the credentials.
+
+Notes:
+
+* **Pools are append-only.** The list index determines the StatefulSet name —
+  never remove or reorder entries. Retire a pool with
+  `rc admin decommission` before removing it from the list.
+* During the expansion rollout, pods restart until every pod of every pool is
+  resolvable — the server refuses to start with unresolvable peers, so expect
+  a few crash/restart cycles before the cluster converges. This is harmless.
+* After the cluster converges, run `rc admin rebalance start <alias>` to
+  spread existing objects across the new pool.
+* Pod anti-affinity in pool mode is scoped per pool and **preferred**
+  (soft), not required: two pools can share nodes, and each pool's own pods
+  spread across distinct nodes when capacity allows. Soft affinity is
+  load-bearing for in-place expansion — with required rules, the
+  not-yet-rolled pods of the existing pool block the new pool's pods from
+  their nodes while the rolled pods crash on the unresolvable (Pending)
+  peers, deadlocking the rollout on any cluster with fewer nodes than the
+  total pod count. Single-pool deployments (`pools.enabled=false`) keep the
+  chart's existing required anti-affinity unchanged.
+* The PodDisruptionBudget spans all pools: with the default
+  `pdb.maxUnavailable: 1`, at most one pod of the whole cluster may be
+  evicted at a time. This is deliberately conservative — quorum safety
+  matters across the union of all pools.
 
 # Installation
 

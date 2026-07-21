@@ -12,7 +12,7 @@ debugLogs: false
 
 image:
   repository: public.ecr.aws/efs-csi-driver/amazon/aws-efs-csi-driver
-  tag: "v3.3.0"
+  tag: "v3.4.0"
   pullPolicy: IfNotPresent
 
 sidecars:
@@ -37,7 +37,7 @@ sidecars:
   csiProvisioner:
     image:
       repository: public.ecr.aws/csi-components/csi-provisioner
-      tag: v6.2.0-eksbuild.7
+      tag: v6.3.0-eksbuild.1
       pullPolicy: IfNotPresent
     resources: {}
     securityContext:
@@ -56,6 +56,15 @@ controller:
   name: efs-csi-controller
   # Number of replicas for the CSI controller service deployment
   replicaCount: 2
+  # enableMetrics enables the Prometheus metrics endpoint on the controller.
+  # When true, the driver exposes metrics on port 3301.
+  enableMetrics: false
+  # enablePrometheusAnnotations adds prometheus.io scrape annotations to the controller pod.
+  enablePrometheusAnnotations: true
+  # serviceMonitor controls creation of Prometheus Operator ServiceMonitor resources.
+  # Requires the Prometheus Operator CRDs to be installed.
+  serviceMonitor:
+    enabled: false
   # Number for the log level verbosity
   logLevel: 2
   # If set, add pv/pvc metadata to plugin create requests as parameters.

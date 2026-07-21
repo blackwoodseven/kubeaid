@@ -1,3 +1,14 @@
+## v0.91.0 (2026-07-16)
+
+### New features
+
+- Update GitLab Runner version to v19.2.0
+
+### Other changes
+
+- Add optional PodDisruptionBudget for the runner manager Deployment [!553](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/553)
+- Add optional startupProbe to the runner Deployment [!551](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/551)
+
 ## v0.90.1 (2026-06-25)
 
 ### New features
@@ -9,6 +20,12 @@
 ### New features
 
 - Update GitLab Runner version to v19.1.0
+
+## v0.89.2 (2026-06-29)
+
+### New features
+
+- Update GitLab Runner version to v19.0.2
 
 ## v0.89.1 (2026-06-02)
 
@@ -36,6 +53,12 @@
 ### Other changes
 
 - Add runners.configOverride mode to skip registration [!544](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/544)
+
+## v0.88.4 (2026-06-30)
+
+### New features
+
+- Update GitLab Runner version to v18.11.4
 
 ## v0.88.3 (2026-05-12)
 

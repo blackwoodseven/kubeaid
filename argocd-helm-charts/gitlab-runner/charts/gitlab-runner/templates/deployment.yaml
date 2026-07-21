@@ -99,6 +99,9 @@ spec:
           periodSeconds: {{ default 60 .Values.readinessProbe.periodSeconds }}
           successThreshold: {{ default 1 .Values.readinessProbe.successThreshold }}
           failureThreshold: {{ default 3 .Values.readinessProbe.failureThreshold }}
+        {{- with .Values.startupProbe }}
+        startupProbe: {{ toYaml . | nindent 10 }}
+        {{- end }}
         ports:
         - name: {{ .Values.metrics.portName | quote }}
           containerPort: {{ .Values.metrics.port }}

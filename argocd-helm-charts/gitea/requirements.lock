@@ -1,9 +1,9 @@
 dependencies:
 - name: gitea
   repository: https://dl.gitea.com/charts/
-  version: 12.6.0
+  version: 12.7.0
 - name: kubeaid-addons
   repository: file://../kubeaid-addons
   version: 0.1.0
-digest: sha256:8c17646d0d6bdd51dcda459950180a92986fe573cfc4e7403a3ad5d12522c74f
-generated: "2026-05-18T16:26:01.830951838+05:30"
+digest: sha256:139c0177b45cfc11e829bf7fe14a53bedbed85d0f271339dea1ad5616c93acf7
+generated: "2026-07-21T15:24:24.035605547+05:30"

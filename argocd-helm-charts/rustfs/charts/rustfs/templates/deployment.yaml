@@ -33,7 +33,12 @@ spec:
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
+      serviceAccountName: {{ include "rustfs.serviceAccountName" . }}
       {{- with include "chart.imagePullSecrets" . }}
       imagePullSecrets:
         {{- . | nindent 8 }}
@@ -126,7 +131,7 @@ spec:
               subPath: ca.crt
             - name: client-cert
               mountPath: /opt/tls/client_cert.pem
-              subPath: client_cert.pem 
+              subPath: client_cert.pem
             - name: client-cert
               mountPath: /opt/tls/client_key.pem
               subPath: client_key.pem
@@ -151,7 +156,7 @@ spec:
       {{- if .Values.mtls.enabled }}
         - name: server-cert
           secret:
-            secretName: rustfs-server-tls
+            secretName: {{ include "rustfs.fullname" . }}-server-tls
             items:
               - key: tls.crt
                 path: rustfs_cert.pem
@@ -161,7 +166,7 @@ spec:
                 path: ca.crt
         - name: client-cert
           secret:
-            secretName: rustfs-client-tls
+            secretName: {{ include "rustfs.fullname" . }}-client-tls
             items:
               - key: tls.crt
                 path: client_cert.pem
