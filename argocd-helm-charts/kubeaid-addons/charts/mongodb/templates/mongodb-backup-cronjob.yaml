@@ -1,4 +1,7 @@
-{{- if and .Values.global.mongodb.enabled .Values.global.mongodb.logicalbackup.enabled }}
+{{- /* Gated on logicalbackup.enabled alone so backups can target an EXISTING,
+       externally-managed MongoDBCommunity without this chart provisioning one
+       (global.mongodb.enabled stays false). */ -}}
+{{- if (((.Values.global).mongodb).logicalbackup).enabled }}
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -49,7 +52,9 @@ spec:
                   value: {{ .Values.global.mongodb.logicalbackup.s3region | default "us-east-1" | quote }}
                 - name: AWS_REGION
                   value: {{ .Values.global.mongodb.logicalbackup.s3region | default "us-east-1" | quote }}
-                - name: BACKUP_S3_ENDPOINT
+                # NOTE: the backup image reads AWS_S3_ENDPOINT (not BACKUP_S3_ENDPOINT)
+                # to pass --endpoint-url; without it uploads go to real AWS.
+                - name: AWS_S3_ENDPOINT
                   value: {{ .Values.global.mongodb.logicalbackup.s3endpoint | quote }}
                 - name: AWS_ACCESS_KEY_ID
                   valueFrom:
@@ -80,6 +85,9 @@ spec:
                     secretKeyRef:
                       name: {{ .Values.global.mongodb.logicalbackup.secretName }}
                       key: AZURE_STORAGE_CONTAINER
+              {{- end }}
+              {{- with (((.Values.global).mongodb).logicalbackup).extraEnv }}
+                {{- toYaml . | nindent 16 }}
               {{- end }}
               resources:
                 limits:
