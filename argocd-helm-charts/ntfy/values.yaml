@@ -1,0 +1,24 @@
+# General (non-secret) ntfy values live here in KubeAid.
+# Org-internal/cluster-specific values (baseURL, ingress host, auth,
+# storageClass) belong in kubeaid-config-enableit and are layered by ArgoCD.
+#
+# NOTE: the upstream chart is vendored as the `ntfy` dependency, so every
+# upstream value is nested one level under `ntfy:` here.
+ntfy:
+  # NetworkPolicy disabled (we don't run per-namespace netpol for this app).
+  networkPolicy:
+    enabled: false
+
+  # Persist ntfy's data dir (/data) so cached messages survive restarts — a
+  # phone that reconnects can then pull alerts it missed while offline.
+  persistence:
+    enabled: true
+
+  # ntfy's data dir is written by uid/gid 2000; fsGroup makes the PVC writable.
+  podSecurityContext:
+    fsGroup: 2000
+
+  ntfy:
+    # Keep the message cache on the persistent volume (default is in-memory).
+    cache:
+      file: /data/cache.db

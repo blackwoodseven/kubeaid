@@ -1,8 +1,3 @@
-# GoAlert values (chart is flattened & maintained in-tree).
-# General (non-secret) defaults live here in KubeAid; org-internal/secret values
-# (DB URL, data-encryption key, ingress hosts) come from kubeaid-config-enableit.
-
-## @section Image parameters
 image:
   repository: goalert/goalert
   pullPolicy: IfNotPresent
@@ -12,41 +7,30 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-## @section GoAlert parameters
-## GoAlert reads its DB URL + data-encryption key from an existing Secret.
-## Provide it (sealed) from kubeaid-config-enableit. See plan.md.
+# DB URL + data-encryption key come from a sealed Secret in kubeaid-config-enableit.
 goalert:
   existingSecret:
     name: goalert
     keys:
       GOALERT_DB_URL: "GOALERT_DB_URL"
       GOALERT_DATA_ENCRYPTION_KEY: "GOALERT_DATA_ENCRYPTION_KEY"
-  # Only used when existingSecret.name is empty (renders secrets as plaintext
-  # env — avoid). Kept for template compatibility.
   environment:
     GOALERT_DB_URL: ""
     GOALERT_DATA_ENCRYPTION_KEY: ""
 
-## @section PostgreSQL
-## Bundled Bitnami PostgreSQL is removed. GoAlert connects to a CloudNativePG
-## cluster (goalert-pgsql) provisioned by the kubeaid-addons chart, the same way
-## the oncall chart does. GOALERT_DB_URL is built from that cluster's credentials
-## and delivered via the existing Secret above.
+# Postgres is a CloudNativePG cluster (see global.postgresql), not the bundled one.
 postgresql:
   enabled: false
 
-## @section Service Account parameters
 serviceAccount:
   create: true
   annotations: {}
   name: ""
 
-## @section Service parameters
 service:
   type: ClusterIP
   port: 8081
 
-## @section Ingress parameters
 ingress:
   enabled: false
   className: ""
@@ -54,28 +38,30 @@ ingress:
   hosts: []
   tls: []
 
-## @section Autoscaling parameters
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
 
-## @section Pod Values
 nodeSelector: {}
 tolerations: []
 affinity: {}
-resources: {}
+
+# No CPU limit by policy; only memory is capped.
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+
 podAnnotations: {}
 podSecurityContext: {}
 securityContext: {}
 replicaCount: 1
 
-## @section Database (CloudNativePG via the kubeaid-addons subchart)
-## Provisions a CNPG Cluster `goalert-pgsql` (service `goalert-pgsql-rw`,
-## CNPG-generated secret `goalert-pgsql-app`, database/owner `goalert`), the same
-## way the oncall chart does. Cluster-specific bits (backups/S3, sizing, env)
-## are private — set them in kubeaid-config-enableit's goalert values.
+# CloudNativePG cluster (goalert-pgsql) provisioned via the kubeaid-addons subchart.
 global:
   postgresql:
     enabled: true
@@ -85,3 +71,4 @@ global:
     instances: 1
     size: 2Gi
     netpol: false
+    disableCpuLimit: true
