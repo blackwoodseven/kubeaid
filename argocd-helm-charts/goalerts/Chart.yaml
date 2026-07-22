@@ -1,0 +1,18 @@
+apiVersion: v2
+name: goalerts
+description: GoAlert - open source on-call scheduling, automated escalations and notifications.
+type: application
+# Chart is vendored and maintained in-tree (upstream tokens-studio/goalert is
+# unmaintained). We edit these templates directly; do NOT `helm dependency update`.
+version: 1.0.0
+appVersion: v0.32.0
+home: https://github.com/target/goalert
+sources:
+  - https://github.com/target/goalert
+keywords:
+  - on-call
+  - scheduling
+  - escalations
+  - notifications
+  - alerting
+  - incident-response
