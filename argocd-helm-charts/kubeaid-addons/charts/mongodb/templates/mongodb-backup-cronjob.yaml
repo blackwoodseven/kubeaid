@@ -52,7 +52,9 @@ spec:
                   value: {{ .Values.global.mongodb.logicalbackup.s3region | default "us-east-1" | quote }}
                 - name: AWS_REGION
                   value: {{ .Values.global.mongodb.logicalbackup.s3region | default "us-east-1" | quote }}
-                - name: BACKUP_S3_ENDPOINT
+                # NOTE: the backup image reads AWS_S3_ENDPOINT (not BACKUP_S3_ENDPOINT)
+                # to pass --endpoint-url; without it uploads go to real AWS.
+                - name: AWS_S3_ENDPOINT
                   value: {{ .Values.global.mongodb.logicalbackup.s3endpoint | quote }}
                 - name: AWS_ACCESS_KEY_ID
                   valueFrom:
