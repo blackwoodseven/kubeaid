@@ -97,6 +97,9 @@ spec:
                   value: {{ (((.Values.global).postgresql).logicalbackup).usePgDump | default false | quote }}
                 - name: POSTGRES_OPERATOR
                   value: cngp
+              {{- with (((.Values.global).postgresql).logicalbackup).extraEnv }}
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
               resources:
                 limits:
                   memory: 500Mi
