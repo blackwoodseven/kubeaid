@@ -1,4 +1,7 @@
-{{- if and .Values.global.mongodb.enabled .Values.global.mongodb.logicalbackup.enabled }}
+{{- /* Gated on logicalbackup.enabled alone so backups can target an EXISTING,
+       externally-managed MongoDBCommunity without this chart provisioning one
+       (global.mongodb.enabled stays false). */ -}}
+{{- if (((.Values.global).mongodb).logicalbackup).enabled }}
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -80,6 +83,9 @@ spec:
                     secretKeyRef:
                       name: {{ .Values.global.mongodb.logicalbackup.secretName }}
                       key: AZURE_STORAGE_CONTAINER
+              {{- end }}
+              {{- with (((.Values.global).mongodb).logicalbackup).extraEnv }}
+                {{- toYaml . | nindent 16 }}
               {{- end }}
               resources:
                 limits:

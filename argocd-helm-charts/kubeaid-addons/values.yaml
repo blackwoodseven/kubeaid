@@ -189,6 +189,30 @@ global:
     operator:
       selectorLabels: {}
 
+    # -- Logical backup (mongodump) via ghcr.io/obmondo/mongodb-backup.
+    # Renders on `logicalbackup.enabled` ALONE — it does NOT require
+    # `mongodb.enabled`, so it can back up an existing, externally-managed
+    # MongoDBCommunity without this chart provisioning one.
+    logicalbackup:
+      enabled: false
+      # schedule: "45 03 * * *"
+      # provider: s3                 # "s3" or "az"
+      # secretName: ""               # holds MONGO_URI, MONGO_COMPLETE, and (s3) AWS_SECRET_ACCESS_KEY / (az) AZURE_*
+      # awsAccessKeyIdSecretName: "" # (s3) secret holding AWS_ACCESS_KEY_ID
+      # s3bucket: ""
+      # s3backuppath: ""             # S3_PATH prefix within the bucket
+      # s3endpoint: ""               # custom endpoint (e.g. in-cluster s3proxy)
+      # s3region: us-east-1
+      # useiamrole: false
+      # -- Extra env vars appended to the backup container. Needed for
+      # S3-compatible stores that reject aws-cli v2 default checksums (s3proxy):
+      #   extraEnv:
+      #     - name: AWS_REQUEST_CHECKSUM_CALCULATION
+      #       value: when_required
+      #     - name: AWS_RESPONSE_CHECKSUM_VALIDATION
+      #       value: when_required
+      extraEnv: []
+
   # rabbitmq
   # Provisions a RabbitmqCluster resource.
   # Requires the rabbitmq-cluster-operator to be installed in the cluster.
