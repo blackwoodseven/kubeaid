@@ -43,6 +43,19 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+Render extra labels for the main Service resource.
+Merges (in order of increasing precedence):
+  - commonLabels
+  - service.labels
+*/}}
+{{- define "rustfs.serviceLabels" -}}
+{{- $labels := mergeOverwrite (dict) (default (dict) .Values.commonLabels) (default (dict) .Values.service.labels) }}
+{{- if $labels }}
+{{- toYaml $labels }}
+{{- end }}
+{{- end }}
+
+{{/*
 Selector labels
 */}}
 {{- define "rustfs.selectorLabels" -}}
@@ -160,21 +173,115 @@ Merges (in order of increasing precedence):
 {{- end }}
 
 {{/*
+Resolve the Kubernetes cluster DNS domain (defaults to cluster.local).
+Trims any leading/trailing dots so callers can safely append it after `svc.`,
+falling back to cluster.local when the value is empty or only dots.
+*/}}
+{{- define "rustfs.clusterDomain" -}}
+{{- .Values.clusterDomain | default "cluster.local" | trimAll "." | default "cluster.local" -}}
+{{- end -}}
+
+{{/*
+Return the fully qualified name of a server pool.
+Pool 0 keeps the legacy single-pool name so that existing deployments can be
+expanded in place without renaming their StatefulSet, pods or PVCs.
+Expects a dict with keys "root" (the chart root context) and "index".
+*/}}
+{{- define "rustfs.poolFullname" -}}
+{{- if eq (int .index) 0 -}}
+{{- include "rustfs.fullname" .root -}}
+{{- else -}}
+{{- /* Truncate the base name, not the suffix: the pool index must survive
+       truncation or two long-named pools could collide. */ -}}
+{{- $suffix := printf "-pool%d" (int .index) -}}
+{{- printf "%s%s" (include "rustfs.fullname" .root | trunc (int (sub 63 (len $suffix))) | trimSuffix "-") $suffix -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Return the number of data drives (PVCs) per pod for a pool.
+When .Values.drivesPerNode is set it applies to every pool. When unset the
+value is inferred per pool from its replica count so that rendered output
+stays identical to the pre-drivesPerNode chart: 4 replicas keep the legacy
+4-drive layout, everything else (16x1 and any new topology) gets one drive.
+Expects a dict with keys "root" (the chart root context) and "replicas".
+*/}}
+{{- define "rustfs.poolDrives" -}}
+{{- if kindIs "invalid" .root.Values.drivesPerNode -}}
+{{- if eq (int .replicas) 4 -}}
+4
+{{- else -}}
+1
+{{- end -}}
+{{- else -}}
+{{- $d := int .root.Values.drivesPerNode -}}
+{{- if lt $d 1 -}}
+{{- fail "drivesPerNode must be >= 1 when set" -}}
+{{- end -}}
+{{- $d -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Return the normalized list of server pools as JSON.
+With pools disabled this is a single pool built from the top-level
+replicaCount/storageclass values, which keeps all rendered output identical
+to the previous single-pool chart. With pools enabled, each entry of
+pools.list becomes one pool; omitted fields inherit the top-level values.
+Pools are strictly append-only: the index determines the StatefulSet name,
+so entries must never be removed or reordered.
+*/}}
+{{- define "rustfs.pools" -}}
+{{- $pools := list -}}
+{{- if and .Values.pools .Values.pools.enabled -}}
+{{- if not .Values.mode.distributed.enabled -}}
+{{- fail "pools.enabled requires mode.distributed.enabled=true" -}}
+{{- end -}}
+{{- if not .Values.pools.list -}}
+{{- fail "pools.enabled is true but pools.list is empty" -}}
+{{- end -}}
+{{- range $i, $p := .Values.pools.list -}}
+{{- $p = default (dict) $p -}}
+{{- $replicas := int (default $.Values.replicaCount $p.replicaCount) -}}
+{{- if lt $replicas 2 -}}
+{{- fail (printf "pools.list[%d].replicaCount must be >= 2, got %d" $i $replicas) -}}
+{{- end -}}
+{{- $sc := mergeOverwrite (deepCopy $.Values.storageclass) (default (dict) $p.storageclass) -}}
+{{- $drives := int (include "rustfs.poolDrives" (dict "root" $ "replicas" $replicas)) -}}
+{{- $pools = append $pools (dict "index" $i "fullname" (include "rustfs.poolFullname" (dict "root" $ "index" $i)) "replicaCount" $replicas "drives" $drives "storageclass" $sc) -}}
+{{- end -}}
+{{- else -}}
+{{- $drives := int (include "rustfs.poolDrives" (dict "root" $ "replicas" (int .Values.replicaCount))) -}}
+{{- $pools = append $pools (dict "index" 0 "fullname" (include "rustfs.fullname" .) "replicaCount" (int .Values.replicaCount) "drives" $drives "storageclass" .Values.storageclass) -}}
+{{- end -}}
+{{- toJson $pools -}}
+{{- end }}
+
+{{/*
 Render RUSTFS_VOLUMES
+One volume expression per server pool, joined with spaces (the server splits
+RUSTFS_VOLUMES on spaces, one pool per expression).
 */}}
 {{- define "rustfs.volumes" -}}
-
 {{- $protocol := "http" -}}
 {{- if .Values.mtls.enabled -}}
   {{- $protocol = "https" -}}
 {{- end -}}
-
-{{- if eq (int .Values.replicaCount) 4 }}
-{{- printf "%s://%s-{0...%d}.%s-headless.%s.svc.cluster.local:%d/data/rustfs{0...%d}" $protocol (include "rustfs.fullname" .) (sub (.Values.replicaCount | int) 1) (include "rustfs.fullname" . ) .Release.Namespace (.Values.service.endpoint.port | int) (sub (.Values.replicaCount | int) 1) }}
-{{- end }}
-{{- if eq (int .Values.replicaCount) 16 }}
-{{- printf "%s://%s-{0...%d}.%s-headless.%s.svc.cluster.local:%d/data" $protocol (include "rustfs.fullname" .) (sub (.Values.replicaCount | int) 1) (include "rustfs.fullname" .) .Release.Namespace (.Values.service.endpoint.port | int) }}
-{{- end }}
+{{- $headless := printf "%s-headless" (include "rustfs.fullname" .) -}}
+{{- $ns := .Release.Namespace -}}
+{{- $domain := include "rustfs.clusterDomain" . -}}
+{{- $port := .Values.service.endpoint.port | int -}}
+{{- $exprs := list -}}
+{{- range $pool := include "rustfs.pools" . | fromJsonArray -}}
+{{- $n := int $pool.replicaCount -}}
+{{- $d := int $pool.drives -}}
+{{- if gt $d 1 -}}
+{{- $exprs = append $exprs (printf "%s://%s-{0...%d}.%s.%s.svc.%s:%d/data/rustfs{0...%d}" $protocol $pool.fullname (sub $n 1) $headless $ns $domain $port (sub $d 1)) -}}
+{{- else -}}
+{{- $exprs = append $exprs (printf "%s://%s-{0...%d}.%s.%s.svc.%s:%d/data" $protocol $pool.fullname (sub $n 1) $headless $ns $domain $port) -}}
+{{- end -}}
+{{- end -}}
+{{- join " " $exprs -}}
 {{- end }}
 
 {{/*
@@ -183,12 +290,13 @@ Render RUSTFS_SERVER_DOMAINS
 
 {{- define "rustfs.serverDomains" -}}
 {{- $domains := list .Values.config.rustfs.domains -}}
-{{- $fullname := include "rustfs.fullname" . -}}
-{{- $replicaCount := int .Values.replicaCount -}}
+{{- $headless := printf "%s-headless" (include "rustfs.fullname" .) -}}
 {{- $servicePort := .Values.service.endpoint.port | default 9000 -}}
-{{- range $i := until $replicaCount -}}
-  {{- $podDomain := printf "%s-%d.%s-headless:%d" $fullname $i $fullname (int $servicePort) -}}
+{{- range $pool := include "rustfs.pools" . | fromJsonArray -}}
+{{- range $i := until (int $pool.replicaCount) -}}
+  {{- $podDomain := printf "%s-%d.%s:%d" $pool.fullname $i $headless (int $servicePort) -}}
   {{- $domains = append $domains $podDomain -}}
+{{- end -}}
 {{- end -}}
 {{- join "," $domains -}}
 {{- end -}}
