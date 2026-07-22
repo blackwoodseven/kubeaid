@@ -1,0 +1,144 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ntfy.fullname" . }}-env
+  annotations:
+    confighash: {{ .Values.ntfy | toYaml | sha256sum | trunc 32 }}
+  labels:
+    {{- include "ntfy.labels" . | nindent 4 }}
+data:
+  NTFY_BASE_URL: {{ .Values.ntfy.baseURL | quote }}
+
+  NTFY_LISTEN_HTTP: ":{{ .Values.service.http.port }}"
+  # listen httpS...
+
+  {{- with .Values.ntfy.firebaseKeyFile }}
+  NTFY_FIREBASE_KEY_FILE: {{ . | quote }}
+  {{- end }}
+
+  # cache
+  {{- with .Values.ntfy.cache.file }}
+  NTFY_CACHE_FILE: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.cache.duration }}
+  NTFY_CACHE_DURATION: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.cache.startupQueries }}
+  NTFY_CACHE_STARTUP_QUERIES: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.cache.batch.size }}
+  NTFY_CACHE_BATCH_SIZE: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.cache.batch.timeout }}
+  NTFY_CACHE_BATCH_TIMEOUT: {{ . | quote }}
+  {{- end }}
+
+  {{- with .Values.ntfy.auth.file }}
+  NTFY_AUTH_FILE: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.auth.startupQueries }}
+  NTFY_AUTH_STARTUP_QUERIES: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.auth.defaultAccess }}
+  NTFY_AUTH_DEFAULT_ACCESS: {{ . | quote }}
+  {{- end }}
+  NTFY_BEHIND_PROXY: {{ .Values.ntfy.behindProxy | quote }}
+
+  # attachment
+  {{- with .Values.ntfy.attachment.cacheDir }}
+  NTFY_ATTACHMENT_CACHE_DIR: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.attachment.sizeLimit.total }}
+  NTFY_ATTACHMENT_TOTAL_SIZE_LIMIT: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.attachment.sizeLimit.file }}
+  NTFY_ATTACHMENT_FILE_SIZE_LIMIT: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.attachment.expireDuration }}
+  NTFY_ATTACHMENT_EXPIRY_DURATION: {{ . | quote }}
+  {{- end }}
+
+  # smtp sender
+  {{- with .Values.ntfy.smtp.sender.addr }}
+  NTFY_SMTP_SENDER_ADDR: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.smtp.sender.user }}
+  NTFY_SMTP_SENDER_USER: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.smtp.sender.pass }}
+  NTFY_SMTP_SENDER_PASS: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.smtp.sender.from }}
+  NTFY_SMTP_SENDER_FROM: {{ . | quote }}
+  {{- end }}
+
+  # smtp server
+  {{- if .Values.service.smtp.enabled }}
+  NTFY_SMTP_SERVER_LISTEN: ":{{ .Values.service.smtp.port }}"
+  {{- with .Values.ntfy.smtp.server.domain }}
+  NTFY_SMTP_SERVER_DOMAIN: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.smtp.server.addrPrefix }}
+  NTFY_SMTP_SERVER_ADDR_PREFIX: {{ . | quote }}
+  {{- end }}
+  {{- end }}
+
+  # web-push
+  {{- with .Values.ntfy.webPush }}
+  {{- with .file }}
+  NTFY_WEB_PUSH_FILE: {{ . | quote }}
+  {{- end }}
+  {{- with .emailAddress }}
+  NTFY_WEB_PUSH_EMAIL_ADDRESS: {{ . | quote }}
+  {{- end }}
+  {{- end }}
+
+  {{- with .Values.ntfy.keepaliveInterval }}
+  NTFY_KEEPALIVE_INTERVAL: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.managerInterval }}
+  NTFY_MANAGER_INTERVAL: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.globalTopicLimit }}
+  NTFY_GLOBAL_TOPIC_LIMIT: {{ . | quote }}
+  {{- end }}
+  NTFY_UPSTREAM_BASE_URL: {{ .Values.ntfy.upstreamBaseURL | quote }}
+
+  # visitor - attachment
+  {{- with .Values.ntfy.visitor.attachment.totalSizeLimit }}
+  NTFY_VISITOR_ATTACHMENT_TOTAL_SIZE_LIMIT: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.visitor.attachment.dailyBandwidthLimit }}
+  NTFY_VISITOR_ATTACHMENT_DAILY_BANDWIDTH_LIMIT: {{ . | quote }}
+  {{- end }}
+
+  # visitor - email
+  {{- with .Values.ntfy.visitor.email.limitBurst }}
+  NTFY_VISITOR_EMAIL_LIMIT_BURST: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.visitor.email.limitReplenish }}
+  NTFY_VISITOR_EMAIL_LIMIT_REPLENISH: {{ . | quote }}
+  {{- end }}
+
+  # visitor - request
+  {{- with .Values.ntfy.visitor.request.limitBurst }}
+  NTFY_VISITOR_REQUEST_LIMIT_BURST: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.visitor.request.limitReplenish }}
+  NTFY_VISITOR_REQUEST_LIMIT_REPLENISH: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.ntfy.visitor.request.limitExemptHosts }}
+  NTFY_VISITOR_REQUEST_LIMIT_EXEMPT_HOSTS: {{ . | quote }}
+  {{- end }}
+
+  {{- with .Values.ntfy.visitor.subscriptionLimit }}
+  NTFY_VISITOR_SUBSCRIPTION_LIMIT: {{ . | quote }}
+  {{- end }}
+  NTFY_VISITOR_SUBSCRIBER_RATE_LIMITING: {{ .Values.ntfy.visitor.subscriberRateLimiting | quote }}
+
+  NTFY_WEB_ROOT: {{ .Values.ntfy.webRoot | quote }}
+  NTFY_ENABLE_SIGNUP: {{ .Values.ntfy.enableSignup | quote }}
+  NTFY_ENABLE_LOGIN: {{ .Values.ntfy.enableLogin | quote }}
+  NTFY_ENABLE_RESERVATIONS: {{ .Values.ntfy.enableReservations | quote }}
+  NTFY_ENABLE_METRICS: {{ .Values.ntfy.metrics.enable | quote }}
+  NTFY_METRICS_LISTEN_HTTP: ":{{ .Values.ntfy.metrics.port }}"

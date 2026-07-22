@@ -1,0 +1,9 @@
+apiVersion: v2
+name: ntfy
+description: ntfy - simple HTTP-based pub-sub notification service.
+type: application
+version: 1.0.0
+dependencies:
+  - name: ntfy
+    version: 0.5.19
+    repository: oci://codeberg.org/wrenix/helm-charts
