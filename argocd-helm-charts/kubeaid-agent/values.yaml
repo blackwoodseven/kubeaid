@@ -75,7 +75,7 @@ deployment:
 
   image:
     repository: ghcr.io/obmondo/kubeaid-agent
-    tag: v0.4.2
+    tag: v0.4.4
     pullPolicy: Always
 
   env: []
