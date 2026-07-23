@@ -1,0 +1,49 @@
+{{/*
+  Optional Cilium egress gateway policy for this mail instance's outbound traffic.
+
+  Why this exists: mail servers need a stable, known source IP for outbound SMTP so
+  SPF/DNS records can be aligned to it. Without this, outbound traffic goes out via
+  whatever the node's normal masquerade path happens to be, which isn't guaranteed
+  to be consistent — and mail providers that check SPF will start rejecting or
+  spam-flagging your mail the moment it doesn't.
+
+  docker-mailserver bundles its own Postfix for both inbound and outbound — there's
+  no separate relay chart needed, this is the one and only place mail leaves the
+  cluster for a deployment using this chart.
+
+  Requires cilium.egressGateway.enabled: true and cilium.bpf.masquerade: true on the
+  cluster already (this chart doesn't and can't set those — they're cluster-wide
+  Cilium settings, not something a single mail deployment should control).
+
+  egressIP should be a real, stable IP you control (ideally a cloud provider's
+  floating/elastic IP that survives a node being replaced) — not a specific node's
+  own public IP. Pointing this at a node's own IP works, but if that node is ever
+  replaced, this IP changes and SPF/DNS need a manual update to match.
+*/}}
+{{- if .Values.egressGateway.enabled }}
+apiVersion: cilium.io/v2
+kind: CiliumEgressGatewayPolicy
+metadata:
+  name: {{ .Release.Name }}-egress
+spec:
+  selectors:
+    - podSelector:
+        matchLabels:
+          io.cilium.k8s.namespace.labels.kubernetes.io/metadata.name: {{ required "egressGateway.podNamespace is required" .Values.egressGateway.podNamespace }}
+          # Defaults to `release`, since that's what THIS chart's own pod
+          # template actually labels with - not the more common
+          # `app.kubernetes.io/instance`. Matching the wrong label here
+          # means this policy silently never applies, and mail goes out via
+          # whatever IP the node's normal masquerade uses instead (this
+          # exact mismatch happened in production, causing a real SPF
+          # failure). Override podSelectorLabelKey if reusing this template
+          # for a chart that labels pods differently.
+          {{ .Values.egressGateway.podSelectorLabelKey | default "release" }}: {{ .Release.Name }}
+  destinationCIDRs:
+    {{- .Values.egressGateway.destinationCIDRs | toYaml | nindent 4 }}
+  egressGateway:
+    egressIP: {{ required "egressGateway.egressIP is required — a stable IP you control, ideally a cloud floating/elastic IP" .Values.egressGateway.egressIP | quote }}
+    nodeSelector:
+      matchLabels:
+        {{- .Values.egressGateway.nodeSelector | toYaml | nindent 8 }}
+{{- end }}
