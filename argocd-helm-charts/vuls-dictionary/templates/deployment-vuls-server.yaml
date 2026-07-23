@@ -34,18 +34,65 @@ spec:
       serviceAccountName: {{ include "vuls-dictionary.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if .Values.vuls2.enabled }}
+      {{- if or .Values.vuls2.enabled .Values.vulsServer.resultRetention.enabled }}
       initContainers:
+        {{- if .Values.vulsServer.resultRetention.enabled }}
+        - name: cleanup-vuls-results
+          image: alpine:3.21
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              RESULTS_DIR="{{ .Values.vulsServer.resultsDir }}"
+              MAX_AGE_DAYS="{{ .Values.vulsServer.resultRetention.maxAgeDays }}"
+              if [ ! -d "${RESULTS_DIR}" ]; then
+                echo "results directory ${RESULTS_DIR} does not exist, skipping cleanup"
+                exit 0
+              fi
+              for legacy_db_file in /vuls/vuls.db /vuls/vuls.db.zst /vuls/vuls.db.tmp; do
+                if [ -e "${legacy_db_file}" ]; then
+                  echo "removing legacy database file ${legacy_db_file} from results PVC"
+                  rm -f "${legacy_db_file}"
+                fi
+              done
+              echo "removing vuls result directories older than ${MAX_AGE_DAYS} days from ${RESULTS_DIR}"
+              find "${RESULTS_DIR}" -mindepth 1 -maxdepth 1 -type d -mtime +"${MAX_AGE_DAYS}" -print -exec rm -rf {} +
+          volumeMounts:
+            - name: results
+              mountPath: /vuls
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+        {{- end }}
+        {{- if .Values.vuls2.enabled }}
         - name: fetch-vuls2-db
           image: ghcr.io/oras-project/oras:v1.2.2
           command: ["sh", "-c"]
           args:
             - |
+              set -eu
+              DB_PATH="{{ .Values.vuls2.dbPath }}"
+              DB_DIR="$(dirname "${DB_PATH}")"
+              MIN_SIZE="{{ .Values.vuls2.minDbSizeBytes | int64 }}"
+              if [ -f "${DB_PATH}" ]; then
+                FILE_SIZE="$(stat -c%s "${DB_PATH}")"
+                if [ "${FILE_SIZE}" -gt "${MIN_SIZE}" ]; then
+                  echo "vuls2 db already exists ($(du -h "${DB_PATH}" | cut -f1)), skipping fetch"
+                  exit 0
+                fi
+                echo "vuls2 db exists but is too small (${FILE_SIZE} bytes), re-fetching"
+                rm -f "${DB_PATH}"
+              fi
               echo "pulling vuls2 nightly db..."
-              oras pull -o /vuls "{{ .Values.vuls2.image.repository }}:{{ .Values.vuls2.image.tag }}"
+              rm -f "${DB_PATH}.zst" "${DB_PATH}.tmp"
+              oras pull -o "${DB_DIR}" "{{ .Values.vuls2.image.repository }}:{{ .Values.vuls2.image.tag }}"
           volumeMounts:
-            - name: results
-              mountPath: /vuls
+            - name: vuls-db
+              mountPath: /vuls-db
           resources:
             requests:
               cpu: 50m
@@ -58,14 +105,31 @@ spec:
           command: ["sh", "-c"]
           args:
             - |
+              set -eu
+              DB_PATH="{{ .Values.vuls2.dbPath }}"
+              MIN_SIZE="{{ .Values.vuls2.minDbSizeBytes | int64 }}"
+              if [ -f "${DB_PATH}" ]; then
+                FILE_SIZE="$(stat -c%s "${DB_PATH}")"
+                if [ "${FILE_SIZE}" -gt "${MIN_SIZE}" ]; then
+                  echo "vuls2 db already decompressed ($(du -h "${DB_PATH}" | cut -f1))"
+                  exit 0
+                fi
+                echo "vuls2 db exists but is too small (${FILE_SIZE} bytes), re-decompressing"
+                rm -f "${DB_PATH}"
+              fi
+              if [ ! -f "${DB_PATH}.zst" ]; then
+                echo "compressed database ${DB_PATH}.zst not found"
+                exit 1
+              fi
               apk add --no-cache zstd
               echo "decompressing vuls.db.zst..."
-              unzstd -f /vuls/vuls.db.zst -o /vuls/vuls.db
-              rm -f /vuls/vuls.db.zst
-              ls -lh /vuls/vuls.db
+              unzstd -f "${DB_PATH}.zst" -o "${DB_PATH}.tmp"
+              mv "${DB_PATH}.tmp" "${DB_PATH}"
+              rm -f "${DB_PATH}.zst"
+              ls -lh "${DB_PATH}"
           volumeMounts:
-            - name: results
-              mountPath: /vuls
+            - name: vuls-db
+              mountPath: /vuls-db
           resources:
             requests:
               cpu: 100m
@@ -73,6 +137,7 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+        {{- end }}
       {{- end }}
       containers:
         - name: vuls-server
@@ -85,7 +150,7 @@ spec:
             - -listen
             - "0.0.0.0:{{ .Values.vulsServer.port }}"
             - -config=/vuls/config.toml
-            - -results-dir=/vuls/results
+            - -results-dir={{ .Values.vulsServer.resultsDir }}
             - -to-localfile
           ports:
             - name: http-vuls
@@ -104,6 +169,10 @@ spec:
           volumeMounts:
             - name: results
               mountPath: /vuls
+            {{- if .Values.vuls2.enabled }}
+            - name: vuls-db
+              mountPath: /vuls-db
+            {{- end }}
             - name: config
               mountPath: /vuls/config.toml
               subPath: config.toml
@@ -123,6 +192,11 @@ spec:
             - name: results
               mountPath: /vuls
               readOnly: true
+            {{- if .Values.vuls2.enabled }}
+            - name: vuls-db
+              mountPath: /vuls-db
+              readOnly: true
+            {{- end }}
             - name: vuls-exporter-config
               mountPath: /etc/vuls-exporter
               readOnly: true
@@ -136,6 +210,11 @@ spec:
         - name: results
           persistentVolumeClaim:
             claimName: {{ include "vuls-dictionary.fullname" . }}-results-pvc
+        {{- if .Values.vuls2.enabled }}
+        - name: vuls-db
+          persistentVolumeClaim:
+            claimName: {{ include "vuls-dictionary.fullname" . }}-db-pvc
+        {{- end }}
         - name: config
           configMap:
             name: {{ include "vuls-dictionary.fullname" . }}-vuls-config

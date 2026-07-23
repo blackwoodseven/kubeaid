@@ -56,33 +56,10 @@ echo ""
 # --- Default values ---
 run_test "default values render successfully"
 
-assert_present "default: CVE image tag is v0.16.0" "vuls/go-cve-dictionary:v0.16.0"
+assert_present "default: vuls DB PVC present" "db-pvc"
 assert_present "default: vuls-server deployment present" "vuls-server"
 assert_present "default: configmap present" "vuls-config"
 assert_present "default: results PVC present" "results-pvc"
-
-# --- PostgreSQL (CNPG) ---
-assert_present "postgresql: CNPG Cluster created" "kind: Cluster" \
-  --show-only templates/postgresql.yaml
-
-assert_present "postgresql: cluster name correct" "test-vuls-dictionary-pgsql"
-
-assert_present "postgresql: bootstrap database is vuls" "database: vuls"
-
-assert_present "postgresql: dbtype postgres in deployment" "dbtype" \
-  --show-only templates/deployment.yaml
-
-assert_present "postgresql: wait-for-postgres init container" "wait-for-postgres" \
-  --show-only templates/deployment.yaml
-
-assert_present "postgresql: pgsql-cve-app secret ref in deployment" "pgsql-cve-app" \
-  --show-only templates/deployment.yaml
-
-assert_present "postgresql: dbtype postgres in CVE cronjob" "dbtype" \
-  --show-only templates/cronjobs-cve.yaml
-
-assert_present "postgresql: dbtype postgres in CVE seed job" "dbtype" \
-  --show-only templates/job-cve-seed.yaml
 
 # --- vulsServer enabled ---
 run_test "vulsServer enabled renders successfully" \
@@ -100,15 +77,30 @@ assert_present "vulsServer: configmap created" "vuls-config" \
 assert_present "vulsServer: results PVC created" "results-pvc" \
   --set vulsServer.enabled=true
 
-assert_present "vulsServer: image is vuls/vuls:v0.38.6" "vuls/vuls:v0.38.6" \
+assert_present "vulsServer: db PVC created" "db-pvc" \
+  --set vulsServer.enabled=true
+
+assert_present "vulsServer: image is ghcr.io/obmondo/vuls:45714b6" "ghcr.io/obmondo/vuls:45714b6" \
   --set vulsServer.enabled=true
 
 assert_present "vulsServer: listens on port 5515" "containerPort: 5515" \
   --set vulsServer.enabled=true
 
-# --- config.toml URLs point to dictionary services ---
-assert_present "config.toml: CVE dict URL correct" "http://test-vuls-dictionary-dict-server:1323" \
-  --set vulsServer.enabled=true
+assert_present "vulsServer: vuls2 DB path is separate PVC" "Path = \"/vuls-db/vuls.db\"" \
+  --set vulsServer.enabled=true \
+  --show-only templates/configmap.yaml
+
+assert_present "vulsServer: cleanup init container present" "cleanup-vuls-results" \
+  --set vulsServer.enabled=true \
+  --show-only templates/deployment-vuls-server.yaml
+
+assert_present "vulsServer: legacy DB cleanup present" "removing legacy database file" \
+  --set vulsServer.enabled=true \
+  --show-only templates/deployment-vuls-server.yaml
+
+assert_present "vulsServer: DB fetch skips valid cache" "skipping fetch" \
+  --set vulsServer.enabled=true \
+  --show-only templates/deployment-vuls-server.yaml
 
 # --- Ingress variations ---
 run_test "ingress disabled (default)" \
@@ -198,14 +190,6 @@ assert_absent "vulsExporter no TLS: no cert_file in config" "cert_file" \
   --set vulsExporter.obmondo.url=https://api.obmondo.com \
   --show-only templates/configmap-vuls-exporter.yaml
 
-# --- Disable individual dictionaries ---
-run_test "CVE disabled renders successfully" \
-  --set cve.enabled=false
-
-assert_absent "CVE disabled: no CVE container in deployment" "vuls/go-cve-dictionary" \
-  --set cve.enabled=false \
-  --show-only templates/deployment.yaml
-
 # --- Custom values ---
 run_test "custom vuls-server port" \
   --set vulsServer.enabled=true \
@@ -222,6 +206,25 @@ run_test "custom results storage size" \
 assert_present "custom storage: 10Gi in results PVC" "storage: 10Gi" \
   --set vulsServer.enabled=true \
   --set vulsServer.resultsStorage.size=10Gi
+
+run_test "custom database storage size" \
+  --set vulsServer.enabled=true \
+  --set vulsServer.databaseStorage.size=30Gi
+
+assert_present "custom database storage: 30Gi in db PVC" "storage: 30Gi" \
+  --set vulsServer.enabled=true \
+  --set vulsServer.databaseStorage.size=30Gi \
+  --show-only templates/pvc-db.yaml
+
+run_test "vuls2 disabled renders without db PVC" \
+  --set vuls2.enabled=false
+
+assert_absent "vuls2 disabled: no db PVC" "db-pvc" \
+  --set vuls2.enabled=false
+
+assert_absent "vuls2 disabled: no vuls-db volume" "vuls-db" \
+  --set vuls2.enabled=false \
+  --show-only templates/deployment-vuls-server.yaml
 
 # --- Summary ---
 echo ""
