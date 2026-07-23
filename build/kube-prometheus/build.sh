@@ -27,7 +27,7 @@ basedir="$(dirname "$(realpath "${0}")")"
 
 function _exit() {
   if ! ((debug)); then
-    if [ -v tmpdir ] && [ -d "${tmpdir}" ]; then
+    if [ -n "${tmpdir+x}" ] && [ -d "${tmpdir}" ]; then
       rm -rf "${tmpdir}"
     fi
   fi
@@ -110,7 +110,6 @@ if ! [[ "${cluster_dir}" ]]; then
   exit 2
 fi
 
-
 # Find the vars.jsonnet file in the cluster directory
 # With CAPI, folder name can differ from cluster name
 cluster_jsonnet=$(find "${cluster_dir}" -maxdepth 1 -name "*-vars.jsonnet" -type f | head -n 1)
@@ -143,8 +142,8 @@ if ! ((ignore_pinned_version)); then
   argocd_app_file="${cluster_dir%/}/argocd-apps/templates/kube-prometheus.yaml"
   pinned_version=''
   if [[ -f "${argocd_app_file}" ]]; then
-    pinned_version=$(gojsontoyaml -yamltojson <"${argocd_app_file}" 2>/dev/null \
-      | jq -r '.metadata.labels["kubeaid.io/version"] // ""' 2>/dev/null || echo '')
+    pinned_version=$(gojsontoyaml -yamltojson <"${argocd_app_file}" 2>/dev/null |
+      jq -r '.metadata.labels["kubeaid.io/version"] // ""' 2>/dev/null || echo '')
   fi
 
   case "${pinned_version}" in

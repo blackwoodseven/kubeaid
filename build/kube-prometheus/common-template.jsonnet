@@ -234,7 +234,7 @@ local kp =
             from: [{
               podSelector: {
                 matchLabels: {
-                  'app.kubernetes.io/name': 'traefik',
+                  'app.kubernetes.io/name': vars.traefik_pod_name,
                 },
               },
               namespaceSelector: {
@@ -385,7 +385,7 @@ local kp =
                 },
                 podSelector: {
                   matchLabels: {
-                    'app.kubernetes.io/name': 'traefik',
+                    'app.kubernetes.io/name': vars.traefik_pod_name,
                   },
                 },
               }],
@@ -695,7 +695,7 @@ local kp =
                 },
                 podSelector: {
                   matchLabels: {
-                    'app.kubernetes.io/name': 'traefik',
+                    'app.kubernetes.io/name': vars.traefik_pod_name,
                   },
                 },
               }],
