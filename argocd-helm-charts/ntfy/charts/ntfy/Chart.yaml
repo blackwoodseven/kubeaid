@@ -1,0 +1,10 @@
+apiVersion: v2
+appVersion: 2.26.0
+description: A Helm chart for Kubernetes
+icon: https://github.com/binwiederhier/ntfy/raw/main/web/public/static/images/pwa-512x512.png
+maintainers:
+- name: WrenIX
+  url: https://wrenix.eu
+name: ntfy
+type: application
+version: 0.5.19

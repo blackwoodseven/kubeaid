@@ -1,0 +1,74 @@
+image:
+  repository: goalert/goalert
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# DB URL + data-encryption key come from a sealed Secret in kubeaid-config-enableit.
+goalert:
+  existingSecret:
+    name: goalert
+    keys:
+      GOALERT_DB_URL: "GOALERT_DB_URL"
+      GOALERT_DATA_ENCRYPTION_KEY: "GOALERT_DATA_ENCRYPTION_KEY"
+  environment:
+    GOALERT_DB_URL: ""
+    GOALERT_DATA_ENCRYPTION_KEY: ""
+
+# Postgres is a CloudNativePG cluster (see global.postgresql), not the bundled one.
+postgresql:
+  enabled: false
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+service:
+  type: ClusterIP
+  port: 8081
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# No CPU limit by policy; only memory is capped.
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+replicaCount: 1
+
+# CloudNativePG cluster (goalert-pgsql) provisioned via the kubeaid-addons subchart.
+global:
+  postgresql:
+    enabled: true
+    instanceName: goalert
+    database: goalert
+    owner: goalert
+    instances: 1
+    size: 2Gi
+    netpol: false
+    disableCpuLimit: true

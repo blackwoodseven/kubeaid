@@ -1,0 +1,24 @@
+# Upstream chart is vendored as the `ntfy` dependency, so values nest under `ntfy`.
+ntfy:
+  networkPolicy:
+    enabled: false
+
+  persistence:
+    enabled: true
+
+  # ntfy's data dir is owned by uid/gid 2000.
+  podSecurityContext:
+    fsGroup: 2000
+
+  # No CPU limit by policy; only memory is capped.
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+
+  ntfy:
+    # Keep the message cache on the PVC (default is in-memory).
+    cache:
+      file: /data/cache.db

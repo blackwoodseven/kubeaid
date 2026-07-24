@@ -1,0 +1,244 @@
+# Default values for ntfy.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: binwiederhier/ntfy
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+kubectl:
+  # -- image needed for setup (store generated VAPID / WebPush keys)
+  image:
+    registry: docker.io
+    repository: alpine/kubectl
+    pullPolicy: IfNotPresent
+    tag: 1.36.2
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+updateStrategy:
+  type: Recreate
+
+ntfy:
+  baseURL: "https://ntfy.example.org"
+  listen:
+    http: ":80"
+    https: null
+    unix: null
+    unixMode: null
+    keyFile: null
+    certFile: null
+  firebaseKeyFile: null
+  cache:
+    file: null
+    duration: "12h"
+    batch:
+      size: 0
+      timeout: 0s
+    startupQueries: null
+    # startupQueries: |
+    #   pragma journal_mode = WAL;
+    #   pragma synchronous = normal;
+    #   pragma temp_store = memory;
+    #   pragma busy_timeout = 15000;
+    #   vacuum;
+  auth:
+    file: null
+    startupQueries: null
+    defaultAccess: "read-write"
+  attachment:
+    cacheDir: null
+    sizeLimit:
+      total: "5G"
+      file: "15M"
+    expireDuration: "3h"
+  keepaliveInterval: "45s"
+  managerInterval: "1m"
+  webRoot: "app"
+  enableReservations: false
+  enableSignup: false
+  enableLogin: false
+  upstreamBaseURL: "https://ntfy.sh"
+  smtp:
+    sender:
+      addr: null
+      user: null
+      pass: null
+      from: null
+    server:
+      domain: null
+      addrPrefix: null
+  webPush:
+    keys:
+      create: false
+      public:
+      private:
+    file: "/data/webpush.db"
+    emailAddress: ""
+  globalTopicLimit: 15000
+  visitor:
+    subscriptionLimit: 30
+    attachment:
+      totalSizeLimit: "100M"
+      dailyBandwidthLimit: "500M"
+    request:
+      limitBurst: 60
+      limitReplenish: "5s"
+      limitExemptHosts: ""
+    # NTFY_VISITOR_MESSAGE_DAILY_LIMIT
+    email:
+      limitBurst: 16
+      limitReplenish: "1h"
+    subscriberRateLimiting: false
+  behindProxy: true
+  # NTFY_STRIPE_SECRET_KEY
+  # NTFY_STRIPE_WEBHOOK_KEY
+  # NTFY_BILLING_CONTACT
+  metrics:
+    enable: true
+    port: 9000
+
+## Enable persistence using Persistent Volume Claims
+## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+##
+persistence:
+  # Upload (/var/www/html)
+  enabled: false
+  annotations: {}
+  # -- data Persistent Volume Storage Class
+  # If defined, storageClassName: <storageClass>
+  # If set to "-", storageClassName: "", which disables dynamic provisioning
+  # If undefined (the default) or set to null, no storageClassName spec is
+  #   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  #   GKE, AWS & OpenStack)
+  storageClass:
+
+  # -- A manually managed Persistent Volume and Claim
+  # Requires persistence.enabled: true
+  # If defined, PVC must be created manually before volume will be bound
+  existingClaim:
+
+  # -- Create a PV on Node with given hostPath
+  # storageClass has to be manual
+  hostPath:
+  accessMode: ReadWriteOnce
+  size: 1Gi
+
+prometheus:
+  servicemonitor:
+    enabled: false
+    labels: {}
+  rules:
+    enabled: false
+    labels: {}
+    # current no default alertrules are provided
+    additionalRules: []
+
+grafana:
+  dashboards:
+    enabled: false
+    labels:
+      grafana_dashboard: "1"
+    annotations: {}
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podLabels: {}
+podAnnotations: {}
+
+# -- set env in container for usage Environment variables
+env: []
+# -- set envFrom in container for usage of ConfigMaps or Secrets as a bunch of Environment variables
+envFrom: []
+
+# -- set securityContext on pod level
+podSecurityContext: {}
+  # fsGroup: 2000
+
+# -- set securityContext on container level
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  http:
+    type: ClusterIP
+    port: 80
+
+  smtp:
+    enabled: false
+    type: LoadBalancer
+    port: 25
+
+networkPolicy:
+  enabled: false
+  ingress:
+    # -- ingress for http port (e.g. ingress-controller)
+    http: []
+    # -- ingress for metrics port (e.g. prometheus)
+    metrics: []
+    # -- ingress for smtp
+    smtp: []
+  egress:
+    # -- activate egress no networkpolicy
+    enabled: true
+    # -- egress rules
+    extra: []
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,65 @@
+{{- if .Values.ntfy.webPush.keys.create }}
+---
+{{- $fullname := (include "ntfy.fullname" .) }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $fullname }}-setup
+  labels:
+    {{- include "ntfy.labels" . | nindent 4 }}
+    app.kubernetes.io/component: setup-job
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "ntfy.labels" . | nindent 8 }}
+        app.kubernetes.io/component: setup-job
+    spec:
+      restartPolicy: "Never"
+      serviceAccount: {{ $fullname }}-setup
+      containers:
+        - name: upload-config
+          image: "{{ .Values.kubectl.image.registry }}/{{ .Values.kubectl.image.repository }}:{{ .Values.kubectl.image.tag }}"
+          command:
+            - sh
+            - -c
+            - |
+              # check if key already exists
+              key=$(kubectl get secret {{ $fullname }}-env -o jsonpath="{.data['NTFY_WEB_PUSH_PRIVATE_KEY']}" 2> /dev/null)
+              [ $? -ne 0 ] && echo "Failed to get existing secret" && exit 1
+              [ -n "$key" ] && echo "Config already created, exiting." && exit 0
+              # wait for config
+              while [ ! -f /data/output ]; do
+                echo "Waiting for config.."
+                sleep 5;
+              done
+              # update secret
+              public=$(grep -Po 'web-push-public-key: \K[^$]*' /data/output)
+              private=$(grep -Po 'web-push-private-key: \K[^$]*' /data/output)
+              kubectl patch secret {{ $fullname }}-env -p '{"data":{"NTFY_WEB_PUSH_PRIVATE_KEY":"'$(echo -n "$private" | base64 -w 0)'","NTFY_WEB_PUSH_PUBLIC_KEY":"'$(echo -n "$public" | base64 -w 0)'"}}'
+              [ $? -ne 0 ] && echo "Failed to update secret." && exit 1
+              echo "VAPID/WebPush successfully setup with public-key: ${public}"
+          volumeMounts:
+            - mountPath: /data/
+              name: data
+              readOnly: true
+        - name: generate-config
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s" .Chart.AppVersion) }}"
+          command:
+            - sh 
+            - -c
+            - ntfy webpush keys 2> /data/output
+          volumeMounts:
+            - mountPath: /data/
+              name: data
+      volumes:
+        - name: data
+          emptyDir: {}
+  parallelism: 1
+  completions: 1
+  backoffLimit: 1
+{{- end }}
