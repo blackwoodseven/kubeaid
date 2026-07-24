@@ -163,9 +163,10 @@ generate_sbom() {
   
   {
     echo "# KubeAid Project - Software Bill of Materials (SBOM)"
+    echo ""
     echo "**Date:** $(get_todays_date)"
     echo ""
-    echo "## Summary of Dependencies:"
+    echo "## Summary of Dependencies"
     echo ""
     
     # create the summary list showing ALL charts
@@ -190,14 +191,14 @@ generate_sbom() {
       if [[ "$has_images" == "true" ]]; then
         echo "### $chart_name"
         echo ""
-        echo "* **Images:**"
+        echo "- **Images:**"
         
         # convert the single-line images back to multiple lines
         # replace '§' with '\n'
-        # read each line and format as md buttel points
+        # read each line and format as md bullet points (2-space nest for MD007)
         echo "$images_line" | tr '§' '\n' | while IFS= read -r image; do
           if [[ -n "$image" ]]; then
-            echo "    - $image"
+            echo "  - $image"
           fi
         done
 
@@ -205,6 +206,9 @@ generate_sbom() {
       fi      
     done
   } > "$OUTPUT_FILE"
+
+  # Drop trailing consecutive blank lines (MD012)
+  sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$OUTPUT_FILE"
 }
 
 # create SBOM if we have chart data
