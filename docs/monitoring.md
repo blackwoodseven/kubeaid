@@ -154,4 +154,3 @@ to reduce noise from transient scan failures. Adjust in your values if you need 
 - [Prometheus Namespaces](./operations/monitoring/prometheus-namespaces.md) - namespace scrape scope
 - [Pod Autoscaling](./operations/monitoring/pod-autoscaling.md) - HPA with custom metrics from Prometheus
 - [Backup Exporter](./guides/backup-exporter.md) - Velero and PostgreSQL backup monitoring
-
