@@ -50,6 +50,7 @@ Guides for ongoing cluster management:
 | [Backup & Restore](./operations/backup-restore.md) | Disaster recovery procedures |
 | [Backup Exporter](./guides/backup-exporter.md) | Velero and PostgreSQL backup monitoring |
 | [Node Reboot](./operations/node-reboot.md) | Safe node maintenance |
+| [Node Disk Repair](./operations/fixing-a-k8s-node-disk.md) | Procedure to replace and fix corrupted node disks |
 | [AWS Private Link Setup](./operations/aws-private-link-setup.md) | Cross-account connectivity |
 | [Operations Tips](./operations/operations-tips.md) | Legacy operational procedures and debugging |
 
@@ -82,11 +83,19 @@ Guides for ongoing cluster management:
 | Guide | Description |
 | ------- | ------------- |
 | [Why KubeAid](./kubeaid/why-kubeaid.md) | The problem KubeAid solves |
+| [KubeAid Comparison](./kubeaid/comparison.md) | In-depth comparison with Terraform, Ansible, Puppet, and alternatives |
 | [Features Technical Details](./kubeaid/features-technical-details.md) | In-depth feature documentation |
 | [Helm Umbrella Pattern](./kubeaid/helm-umbrella-pattern.md) | How KubeAid manages applications |
 | [Prometheus Configuration](./kubeaid/prometheus-configuration.md) | Configuring monitoring with kube-prometheus |
 | [Monitoring](./monitoring.md) | Metrics and log monitoring overview |
 | [GitOps Drift Detection](./kubeaid/gitops-drift-detection.md) | ArgoCD sync status and alerting |
+
+### Architecture & Decisions
+
+| Guide | Description |
+| ------- | ------------- |
+| [Architecture Decisions](../decisions.md) | Technical choices and architectural evolution |
+| [GitOps Decision Record](../decisions/gitops.md) | Real-world GitOps patterns and incident lessons |
 
 ### Security & Compliance
 
