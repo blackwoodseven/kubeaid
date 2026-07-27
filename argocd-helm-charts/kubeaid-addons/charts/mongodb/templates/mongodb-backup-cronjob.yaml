@@ -7,6 +7,11 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ printf "%s-backup" .Values.global.mongodb.instanceName }}
+  labels:
+    # How backup-exporter finds this job. The value is fixed, unlike the
+    # per-instance "app" label on the pod template below, so one selector
+    # matches every mongodump CronJob in the cluster.
+    backup-exporter.io/backup: mongodb
 spec:
   concurrencyPolicy: Forbid
   failedJobsHistoryLimit: 1
