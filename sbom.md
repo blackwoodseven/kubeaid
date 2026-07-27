@@ -1,6 +1,6 @@
 # KubeAid Project - Software Bill of Materials (SBOM)
 
-**Date:** August 28, 2025
+**Date:** July 24, 2026
 
 ## Summary of Dependencies
 
@@ -10,10 +10,12 @@
 - aws-efs-csi-driver
 - azuredisk-csi-driver
 - azure-workload-identity-webhook
+- backup-exporter
+- calcom
 - capi-cluster
+- castopod
 - ccm-aws
 - ccm-azure
-- ccm-hcloud
 - ccm-hetzner
 - cerebro
 - cert-manager
@@ -27,57 +29,66 @@
 - crossplane
 - crossplane-compositions
 - crossplane-providers-and-functions
+- docker-mailserver
 - dokuwiki
 - erpnext
 - errbot
 - external-dns
 - filebeat
 - fluent-bit
+- friendica
+- garage
 - gatekeeper
 - gitea
 - gitea-runner
 - gitlab-runner
+- goalerts
 - grafana-operator
 - graylog
+- hami
 - haproxy
 - harbor
 - hcloud-csi-driver
-- hetzner-robot
 - ingress-nginx
 - k8s-event-logger
 - keda
 - keycloakx
 - kube2iam
+- kubeaid-addons
+- kubeaid-agent
 - kubeaid-custom-azure
 - kubeaid-security-config
-- kubernetes-dashboard
+- kubearmor
+- kubelet-csr-approver
+- kubescape-operator
 - kyverno
 - localpv-provisioner
 - loki-stack
 - mail
 - mariadb-operator
 - matomo
-- mattermost-operator
-- mattermost-team-edition
 - metal3
 - metallb
 - metrics-server
-- mongodb-operator
+- minio
+- mongodb-kubernetes
 - netbird
 - netbird-operator
+- ntfy
 - obmondo-k8s-agent
-- odoo
 - oncall
 - opencost
+- opendesk-coturn
 - openobserve
 - opensearch
 - opensearch-dashboards
 - opensearch-operator
 - opentelemetry-operator
+- openvox
+- opsbridge
 - postgres-operator
 - prometheus-adapter
 - prometheus-linuxaid
-- puppetserver
 - rabbitmq-operator
 - redis-operator
 - redmine
@@ -85,6 +96,7 @@
 - reloader
 - rook-ceph
 - sealed-secrets
+- seaweedfs
 - sftpgo
 - smartmon-exporter
 - snapshot-controller
@@ -93,10 +105,13 @@
 - strimzi-kafka-operator
 - teleport-cluster
 - teleport-kube-agent
+- tetragon
 - tigera-operator
 - traefik
 - traefik-forward-auth
+- trivy-operator
 - velero
+- version-checker
 - vuls-dictionary
 - whoami
 - yetibot
@@ -107,49 +122,69 @@
 ### argo-cd
 
 - **Images:**
-  - ecr-public.aws.com/docker/library/redis:7.2.8-alpine
-  - quay.io/argoproj/argocd:v3.0.12
+  - ecr-public.aws.com/docker/library/redis:8.2.3-alpine
+  - quay.io/argoproj/argocd:v3.4.5
 
 ### argocd-image-updater
 
 - **Images:**
-  - quay.io/argoprojlabs/argocd-image-updater:v0.16.0
+  - quay.io/argoprojlabs/argocd-image-updater:v1.2.2
 
 ### aws-ebs-csi-driver
 
 - **Images:**
-  - public.ecr.aws/csi-components/csi-attacher:v4.9.0-eksbuild.3
-  - public.ecr.aws/csi-components/csi-node-driver-registrar:v2.14.0-eksbuild.4
-  - public.ecr.aws/csi-components/csi-provisioner:v5.3.0-eksbuild.3
-  - public.ecr.aws/csi-components/csi-resizer:v1.14.0-eksbuild.3
-  - public.ecr.aws/csi-components/livenessprobe:v2.16.0-eksbuild.4
-  - public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.47.0
-  - us-central1-docker.pkg.dev/k8s-staging-test-infra/images/kubekins-e2e:v20250722-31ecdfb417-master
+  - public.ecr.aws/csi-components/csi-attacher:v4.12.0-eksbuild.2
+  - public.ecr.aws/csi-components/csi-node-driver-registrar:v2.17.0-eksbuild.2
+  - public.ecr.aws/csi-components/csi-provisioner:v6.3.0-eksbuild.1
+  - public.ecr.aws/csi-components/csi-resizer:v2.2.0-eksbuild.2
+  - public.ecr.aws/csi-components/livenessprobe:v2.19.0-eksbuild.2
+  - public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.62.0
+  - us-central1-docker.pkg.dev/k8s-staging-test-infra/images/kubekins-e2e:v20260615-b4199512ce-master
 
 ### aws-efs-csi-driver
 
 - **Images:**
-  - public.ecr.aws/efs-csi-driver/amazon/aws-efs-csi-driver:v2.1.10
-  - public.ecr.aws/eks-distro/kubernetes-csi/external-provisioner:v5.2.0-eks-1-33-3
-  - public.ecr.aws/eks-distro/kubernetes-csi/livenessprobe:v2.15.0-eks-1-33-3
-  - public.ecr.aws/eks-distro/kubernetes-csi/node-driver-registrar:v2.13.0-eks-1-33-3
+  - public.ecr.aws/csi-components/csi-node-driver-registrar:v2.17.0-eksbuild.2
+  - public.ecr.aws/csi-components/csi-provisioner:v6.3.0-eksbuild.1
+  - public.ecr.aws/csi-components/livenessprobe:v2.19.0-eksbuild.2
+  - public.ecr.aws/efs-csi-driver/amazon/aws-efs-csi-driver:v3.4.0
 
 ### azuredisk-csi-driver
 
 - **Images:**
-  - mcr.microsoft.com/oss/kubernetes-csi/azuredisk-csi:v1.33.2
-  - mcr.microsoft.com/oss/kubernetes-csi/azuredisk-csi:v1.33.2-windows-hp
-  - mcr.microsoft.com/oss/kubernetes-csi/csi-snapshotter:v8.3.0
-  - mcr.microsoft.com/oss/v2/kubernetes-csi/csi-attacher:v4.8.1
-  - mcr.microsoft.com/oss/v2/kubernetes-csi/csi-node-driver-registrar:v2.13.0
-  - mcr.microsoft.com/oss/v2/kubernetes-csi/csi-provisioner:v5.2.0
-  - mcr.microsoft.com/oss/v2/kubernetes-csi/csi-resizer:v1.13.2
-  - mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.15.0
+  - mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:v1.34.4
+  - mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:v1.34.4-windows-hp
+  - mcr.microsoft.com/oss/v2/kubernetes-csi/csi-attacher:v4.11.0
+  - mcr.microsoft.com/oss/v2/kubernetes-csi/csi-node-driver-registrar:v2.16.0
+  - mcr.microsoft.com/oss/v2/kubernetes-csi/csi-provisioner:v6.2.0
+  - mcr.microsoft.com/oss/v2/kubernetes-csi/csi-resizer:v2.1.0
+  - mcr.microsoft.com/oss/v2/kubernetes-csi/csi-snapshotter:v8.5.0
+  - mcr.microsoft.com/oss/v2/kubernetes-csi/livenessprobe:v2.18.0
 
 ### azure-workload-identity-webhook
 
 - **Images:**
-  - mcr.microsoft.com/oss/azure/workload-identity/webhook:v1.5.1
+  - mcr.microsoft.com/oss/v2/azure/workload-identity/webhook:v1.6.0
+
+### backup-exporter
+
+- **Images:**
+  - ghcr.io/obmondo/backup-exporter:v1.0.5
+
+### calcom
+
+- **Images:**
+  - busybox
+  - harbor.obmondo.com/obmondo/calcom:0.0.6
+
+### castopod
+
+- **Images:**
+  - busybox
+  - castopod/castopod:1.12.10
+  - mariadb:11.6.2-noble
+  - quay.io/opstree/redis-exporter:v1.44.0
+  - quay.io/opstree/redis:v7.2.6
 
 ### ccm-aws
 
@@ -159,18 +194,13 @@
 ### ccm-azure
 
 - **Images:**
-  - mcr.microsoft.com/oss/kubernetes/azure-cloud-controller-manager:v1.33.2
-  - mcr.microsoft.com/oss/kubernetes/azure-cloud-node-manager:v1.33.2
-
-### ccm-hcloud
-
-- **Images:**
-  - docker.io/hetznercloud/hcloud-cloud-controller-manager:v1.26.0 # x-releaser-pleaser-version
+  - mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-controller-manager:v1.36.0
+  - mcr.microsoft.com/oss/v2/kubernetes/azure-cloud-node-manager:v1.36.0
 
 ### ccm-hetzner
 
 - **Images:**
-  - ghcr.io/syself/hetzner-cloud-controller-manager:v2.0.1
+  - docker.io/hetznercloud/hcloud-cloud-controller-manager:v1.34.0 # x-releaser-pleaser-version
 
 ### cerebro
 
@@ -180,20 +210,20 @@
 ### cert-manager
 
 - **Images:**
-  - quay.io/jetstack/cert-manager-cainjector:v1.18.2
-  - quay.io/jetstack/cert-manager-controller:v1.18.2
-  - quay.io/jetstack/cert-manager-startupapicheck:v1.18.2
-  - quay.io/jetstack/cert-manager-webhook:v1.18.2
+  - quay.io/jetstack/cert-manager-cainjector:v1.21.0
+  - quay.io/jetstack/cert-manager-controller:v1.21.0
+  - quay.io/jetstack/cert-manager-startupapicheck:v1.21.0
+  - quay.io/jetstack/cert-manager-webhook:v1.21.0
 
 ### cilium
 
 - **Images:**
-  - quay.io/cilium/cilium-envoy:v1.34.4-1753677767-266d5a01d1d55bd1d60148f991b98dac0390d363@sha256:231b5bd9682dfc648ae97f33dcdc5225c5a526194dda08124f5eded833bf02bf
-  - quay.io/cilium/cilium:v1.18.0@sha256:dfea023972d06ec183cfa3c9e7809716f85daaff042e573ef366e9ec6a0c0ab2
-  - quay.io/cilium/hubble-relay:v1.18.0@sha256:c13679f22ed250457b7f3581189d97f035608fe13c87b51f57f8a755918e793a
-  - quay.io/cilium/hubble-ui-backend:v0.13.2@sha256:a034b7e98e6ea796ed26df8f4e71f83fc16465a19d166eff67a03b822c0bfa15
-  - quay.io/cilium/hubble-ui:v0.13.2@sha256:9e37c1296b802830834cc87342a9182ccbb71ffebb711971e849221bd9d59392
-  - quay.io/cilium/operator-generic:v1.18.0@sha256:398378b4507b6e9db22be2f4455d8f8e509b189470061b0f813f0fabaf944f51
+  - quay.io/cilium/cilium-envoy:v1.36.9-1782267392-edeb3f2af56c37c407efa1f63f0b32f595399bbc@sha256:767101fb8a5e38f055778cb43b7aa8eed80450b37f8121effac3d9de9e06dc99
+  - quay.io/cilium/cilium:v1.19.6@sha256:0df5b2750b64c49843aba1d649e9eaf61467cb0645ad3171db6f6962c095ac92
+  - quay.io/cilium/hubble-relay:v1.19.6@sha256:6782a49e3f28eba015701c4410a5ec7fa096fe9a562f879b4372dbecd827ea44
+  - quay.io/cilium/hubble-ui-backend:v0.13.5@sha256:fac0c300ae119274edca11fd89b1ad23c788792d8bc4ea2ba631c709e8d3c688
+  - quay.io/cilium/hubble-ui:v0.13.5@sha256:f7d514fc54d784ed6df9d58cf0e97648b143f92b766dd1780ed3fc845bd4c516
+  - quay.io/cilium/operator-generic:v1.19.6@sha256:0db4ca4e06969d8904ee036617795d0e9c3228cf7b8d902ba74fc2bb98d2d665
 
 ### circleci-runner
 
@@ -209,17 +239,23 @@
 ### cloudnative-pg
 
 - **Images:**
-  - ghcr.io/cloudnative-pg/cloudnative-pg:1.26.1
+  - ghcr.io/cloudnative-pg/cloudnative-pg:1.30.0
+  - ghcr.io/cloudnative-pg/plugin-barman-cloud:v0.13.0
 
 ### cluster-api-operator
 
 - **Images:**
-  - registry.k8s.io/capi-operator/cluster-api-operator:v0.22.0
+  - registry.k8s.io/capi-operator/cluster-api-operator:v0.28.0
 
 ### crossplane
 
 - **Images:**
-  - xpkg.crossplane.io/crossplane/crossplane:v2.0.2
+  - xpkg.crossplane.io/crossplane/crossplane:v2.3.3
+
+### docker-mailserver
+
+- **Images:**
+  - mailserver/docker-mailserver:15.1.0
 
 ### dokuwiki
 
@@ -230,7 +266,8 @@
 
 - **Images:**
   - busybox
-  - frappe/erpnext:v15.75.0
+  - docker.io/valkey/valkey:7.2
+  - frappe/erpnext:v16.28.0
   - mariadb:11.6.2-noble
   - quay.io/opstree/redis-exporter:v1.44.0
   - quay.io/opstree/redis:v7.2.6
@@ -244,7 +281,7 @@
 ### external-dns
 
 - **Images:**
-  - docker.io/bitnami/external-dns:0.18.0-debian-12-r3
+  - registry.k8s.io/external-dns/external-dns:v0.21.0
 
 ### filebeat
 
@@ -255,85 +292,101 @@
 
 - **Images:**
   - busybox:latest
-  - cr.fluentbit.io/fluent/fluent-bit:4.0.7
+  - cr.fluentbit.io/fluent/fluent-bit:5.0.9
+
+### friendica
+
+- **Images:**
+  - friendica:2024.12
+  - mariadb:11.6.2-noble
+
+### garage
+
+- **Images:**
+  - dxflrs/garage:v2.3.0
 
 ### gatekeeper
 
 - **Images:**
-  - curlimages/curl:8.12.0
-  - openpolicyagent/gatekeeper-crds:v3.20.0
-  - openpolicyagent/gatekeeper:v3.20.0
+  - curlimages/curl:8.20.0
+  - openpolicyagent/gatekeeper-crds:v3.23.0
+  - openpolicyagent/gatekeeper:v3.23.0
 
 ### gitea
 
 - **Images:**
   - busybox:latest
-  - docker.gitea.com/gitea:1.24.3-rootless
-  - docker.io/bitnami/pgpool:4.6.2-debian-12-r4
-  - docker.io/bitnami/postgresql-repmgr:17.5.0-debian-12-r16
-  - docker.io/bitnami/valkey-cluster:8.1.3-debian-12-r1
+  - docker.gitea.com/gitea:1.27.0-rootless
   - quay.io/opstree/redis-exporter:v1.44.0
   - quay.io/opstree/redis:v7.2.6
 
 ### gitea-runner
 
 - **Images:**
-  - vegardit/gitea-act-runner:dind-0.2.12
+  - vegardit/gitea-act-runner:dind-1.0.6
 
 ### gitlab-runner
 
 - **Images:**
-  - registry.gitlab.com/gitlab-org/gitlab-runner:alpine-v18.2.1
+  - registry.gitlab.com/gitlab-org/gitlab-runner:alpine-v19.2.0
+
+### goalerts
+
+- **Images:**
+  - busybox:1.37
+  - goalert/goalert:v0.32.0
 
 ### grafana-operator
 
 - **Images:**
-  - ghcr.io/grafana/grafana-operator:v5.6.0
+  - ghcr.io/grafana/grafana-operator:v5.20.0
 
 ### graylog
 
 - **Images:**
   - alpine
-  - graylog/graylog:6.3.1
+  - graylog/graylog:7.1.5
+
+### hami
+
+- **Images:**
+  - docker.io/liangjw/kube-webhook-certgen:v1.1.1
+  - docker.io/projecthami/hami:v2.9.0
+  - registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler:v1.36.0
 
 ### haproxy
 
 - **Images:**
-  - haproxytech/haproxy-alpine:3.1.5
+  - docker.io/haproxytech/haproxy-alpine:3.3.10
 
 ### harbor
 
 - **Images:**
   - docker.io/busybox:latest
-  - goharbor/harbor-core:v2.13.2
-  - goharbor/harbor-jobservice:v2.13.2
-  - goharbor/harbor-portal:v2.13.2
-  - goharbor/harbor-registryctl:v2.13.2
-  - goharbor/registry-photon:v2.13.2
-  - goharbor/trivy-adapter-photon:v2.13.2
+  - docker.io/goharbor/harbor-core:v2.15.1
+  - docker.io/goharbor/harbor-jobservice:v2.15.1
+  - docker.io/goharbor/harbor-portal:v2.15.1
+  - docker.io/goharbor/harbor-registryctl:v2.15.1
+  - docker.io/goharbor/registry-photon:v2.15.1
+  - docker.io/goharbor/trivy-adapter-photon:v2.15.1
   - quay.io/opstree/redis-exporter:v1.48.0
   - quay.io/opstree/redis:v8.0.2
 
 ### hcloud-csi-driver
 
 - **Images:**
-  - docker.io/hetznercloud/hcloud-csi-driver:v2.17.0 # x-releaser-pleaser-version
-  - registry.k8s.io/sig-storage/csi-attacher:v4.9.0
-  - registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.14.0
-  - registry.k8s.io/sig-storage/csi-provisioner:v5.3.0
-  - registry.k8s.io/sig-storage/csi-resizer:v1.14.0
-  - registry.k8s.io/sig-storage/livenessprobe:v2.16.0
-
-### hetzner-robot
-
-- **Images:**
-  - ghcr.io/obmondo/hetzner-failover-script:v1.1.0
+  - docker.io/hetznercloud/hcloud-csi-driver:v2.22.0 # x-releaser-pleaser-version
+  - registry.k8s.io/sig-storage/csi-attacher:v4.11.0
+  - registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.16.0
+  - registry.k8s.io/sig-storage/csi-provisioner:v6.2.0
+  - registry.k8s.io/sig-storage/csi-resizer:v2.1.0
+  - registry.k8s.io/sig-storage/livenessprobe:v2.18.0
 
 ### ingress-nginx
 
 - **Images:**
-  - registry.k8s.io/ingress-nginx/controller:v1.12.2@sha256:03497ee984628e95eca9b2279e3f3a3c1685dd48635479e627d219f00c8eefa9
-  - registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.5.4@sha256:7a38cf0f8480775baaee71ab519c7465fd1dfeac66c421f28f087786e631456e
+  - registry.k8s.io/ingress-nginx/controller:v1.15.1@sha256:594ceea76b01c592858f803f9ff4d2cb40542cae2060410b2c95f75907d659e1
+  - registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.6.9@sha256:01038e7de14b78d702d2849c3aad72fd25903c4765af63cf16aa3398f5d5f2dd
 
 ### k8s-event-logger
 
@@ -343,52 +396,71 @@
 ### keda
 
 - **Images:**
-  - ghcr.io/kedacore/keda:2.17.2
-  - ghcr.io/kedacore/keda-admission-webhooks:2.17.2
-  - ghcr.io/kedacore/keda-metrics-apiserver:2.17.2
+  - ghcr.io/kedacore/keda:2.20.1
+  - ghcr.io/kedacore/keda-admission-webhooks:2.20.1
+  - ghcr.io/kedacore/keda-metrics-apiserver:2.20.1
 
 ### keycloakx
 
 - **Images:**
-  - docker.io/busybox:1.32
-  - quay.io/keycloak/keycloak:25.0.5
+  - docker.io/busybox:1.37
+  - ghcr.io/obmondo/postgres-logical-backup:3.1.8
+  - quay.io/keycloak/keycloak:26.6.4
 
 ### kube2iam
 
 - **Images:**
   - jtblin/kube2iam:0.11.1
 
-### kubernetes-dashboard
+### kubeaid-agent
 
 - **Images:**
-  - docker.io/kubernetesui/dashboard-api:1.13.0
-  - docker.io/kubernetesui/dashboard-auth:1.3.0
-  - docker.io/kubernetesui/dashboard-metrics-scraper:1.2.2
-  - docker.io/kubernetesui/dashboard-web:1.7.0
-  - kong:3.8
+  - ghcr.io/obmondo/kubeaid-agent:v0.4.4
+
+### kubearmor
+
+- **Images:**
+  - docker.io/kubearmor/kubearmor-operator:v1.7.4
+
+### kubelet-csr-approver
+
+- **Images:**
+  - busybox
+  - ghcr.io/postfinance/kubelet-csr-approver:v1.2.14
+
+### kubescape-operator
+
+- **Images:**
+  - quay.io/kubescape/http-request:v0.2.19
+  - quay.io/kubescape/klamav:1.3.1-34_alpha
+  - quay.io/kubescape/kubescape:v4.0.8
+  - quay.io/kubescape/kubevuln:v0.3.142
+  - quay.io/kubescape/node-agent:v0.3.119
+  - quay.io/kubescape/operator:v0.2.142
+  - quay.io/kubescape/storage:v0.0.274
 
 ### kyverno
 
 - **Images:**
-  - bitnami/kubectl:1.32.3
-  - busybox:1.35
-  - reg.kyverno.io/kyverno/background-controller:v1.15.0
-  - reg.kyverno.io/kyverno/cleanup-controller:v1.15.0
-  - reg.kyverno.io/kyverno/kyverno-cli:v1.15.0
-  - reg.kyverno.io/kyverno/kyvernopre:v1.15.0
-  - reg.kyverno.io/kyverno/kyverno:v1.15.0
-  - reg.kyverno.io/kyverno/reports-controller:v1.15.0
+  - ghcr.io/kyverno/readiness-checker:latest
+  - ghcr.io/kyverno/readiness-checker:v1.18.2
+  - reg.kyverno.io/kyverno/background-controller:v1.18.2
+  - reg.kyverno.io/kyverno/cleanup-controller:v1.18.2
+  - reg.kyverno.io/kyverno/kyverno-cli:v1.18.2
+  - reg.kyverno.io/kyverno/kyvernopre:v1.18.2
+  - reg.kyverno.io/kyverno/kyverno:v1.18.2
+  - reg.kyverno.io/kyverno/reports-controller:v1.18.2
 
 ### localpv-provisioner
 
 - **Images:**
-  - openebs/provisioner-localpv:4.4.0-develop
+  - docker.io/openebs/provisioner-localpv:4.5.1
 
 ### loki-stack
 
 - **Images:**
-  - docker.io/grafana/promtail:2.9.3
-  - grafana/loki:2.6.1
+  - docker.io/grafana/promtail:3.5.1
+  - grafana/loki:2.9.15
 
 ### mail
 
@@ -398,136 +470,154 @@
 ### mariadb-operator
 
 - **Images:**
-  - docker-registry3.mariadb.com/mariadb-operator/mariadb-operator:25.8.3
+  - ghcr.io/mariadb-operator/mariadb-operator:26.6.0
 
 ### matomo
 
 - **Images:**
-  - docker.io/bitnami/matomo:5.1.1
+  - docker.io/bitnamilegacy/matomo:5.1.1
+  - ghcr.io/obmondo/mariadb-logical-backup:3.1.6
+  - ghcr.io/obmondo/mariadb-logical-backup:3.1.8
   - mariadb:latest
-
-### mattermost-operator
-
-- **Images:**
-  - mattermost/mattermost-enterprise-edition
-  - mattermost/mattermost-operator:v1.24.0
-
-### mattermost-team-edition
-
-- **Images:**
-  - bats/bats:v1.1.0
-  - mattermost/mattermost-team-edition:10.10.1@sha256:714be7be92339433c4f9c5ff9de6ebe6540247c6e2154889503a734f9bc9a100
 
 ### metal3
 
 - **Images:**
   - registry.opensuse.org/isv/suse/edge/containers/images/baremetal-operator:0.9.0
-  - registry.opensuse.org/isv/suse/edge/containers/images/ironic-ipa-downloader:3.0.7
-  - registry.opensuse.org/isv/suse/edge/metal3/containers/images/ironic:26.1.2.4
+  - registry.opensuse.org/isv/suse/edge/containers/images/ironic:35.0.0.1
+  - registry.opensuse.org/isv/suse/edge/containers/images/ironic-ipa-downloader:3.1.2
 
 ### metallb
 
 - **Images:**
-  - docker.io/bitnami/metallb-controller:0.15.2-debian-12-r6
-  - docker.io/bitnami/metallb-speaker:0.15.2-debian-12-r5
+  - docker.io/bitnami/metallb-controller:0.15.2-debian-12-r7
+  - docker.io/bitnami/metallb-speaker:0.15.2-debian-12-r6
 
 ### metrics-server
 
 - **Images:**
-  - registry.k8s.io/metrics-server/metrics-server:v0.8.0
+  - registry.k8s.io/metrics-server/metrics-server:v0.8.1
 
-### mongodb-operator
+### minio
 
 - **Images:**
-  - quay.io/mongodb/mongodb-kubernetes-operator:0.13.0
+  - quay.io/minio/mc:RELEASE.2024-11-21T17-21-54Z
+  - quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z
+
+### mongodb-kubernetes
+
+- **Images:**
+  - quay.io/mongodb/mongodb-kubernetes:1.9.1
 
 ### netbird
 
 - **Images:**
-  - coturn/coturn:4.7.0
-  - ghcr.io/obmondo/postgres-logical-backup:v1.0.7
+  - coturn/coturn:4.14.0
+  - ghcr.io/obmondo/postgres-logical-backup:3.1.8
   - mikefarah/yq:latest
-  - netbirdio/dashboard:v2.13.1
-  - netbirdio/management:0.46.0
-  - netbirdio/relay:0.46.0
-  - netbirdio/signal:0.46.0
+  - netbirdio/dashboard:v2.90.4
+  - netbirdio/management:0.74.6
+  - netbirdio/relay:0.74.6
+  - netbirdio/signal:0.74.6
 
 ### netbird-operator
 
 - **Images:**
-  - bitnami/kubectl:latest
-  - docker.io/netbirdio/kubernetes-operator:0.1.4
+  - ghcr.io/netbirdio/netbird-operator:v0.7.0
+
+### ntfy
+
+- **Images:**
+  - binwiederhier/ntfy:v2.26.0
+  - busybox
 
 ### obmondo-k8s-agent
 
 - **Images:**
-  - ghcr.io/obmondo/obmondo-k8s-agent:v1.1.5
-
-### odoo
-
-- **Images:**
-  - docker.io/bitnami/odoo:18.0.20250805-debian-12-r8
+  - ghcr.io/obmondo/obmondo-k8s-agent:v1.1.6
 
 ### oncall
 
 - **Images:**
+  - bitnamilegacy/rabbitmq:3.12.0-debian-11-r0
   - docker.io/bats/bats:v1.4.1
   - docker.io/bitnami/redis:6.2.7-debian-11-r11
   - docker.io/grafana/grafana:11.1.4
   - docker.io/library/busybox:1.31.1
-  - grafana/oncall:v1.16.4
+  - grafana/oncall:v1.16.5
 
 ### opencost
 
 - **Images:**
-  - ghcr.io/opencost/opencost:1.116.0@sha256:e4658c3be1119f2ab57c5a57c3e19b785d525de63f4cc57111d0da3e0a6654c0
-  - ghcr.io/opencost/opencost-ui:1.116.0@sha256:09253417a761ec2ee5d60d7d5db249d0be7b48506855152be5328906a45dbd33
+  - ghcr.io/opencost/opencost:1.120.4@sha256:5467eaac8d301be69cc4a3f69f063ad5da7d57130d1126a4eb75b0d8f79839e1
+  - ghcr.io/opencost/opencost-ui:1.120.4@sha256:a59d77750cda9eaf7a220855c0449a5bf929cbefdb17defa109d576acb545494
+
+### opendesk-coturn
+
+- **Images:**
+  - dockeri.io/coturn/coturn:4.6.2-alpine@sha256:cecbd85f5b27ce5bf00901192c9fe565c4be631f285411e5625427372a3a2f8b
 
 ### openobserve
 
 - **Images:**
-  - docker.io/bitnami/etcd:3.5.8-debian-11-r4
-  - nats:2.11.1-alpine
-  - natsio/nats-box:0.17.0-nonroot
-  - natsio/nats-server-config-reloader:0.17.1
+  - ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.138.0
+  - ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:v0.23.0
+  - nats:2.14.2-alpine
+  - natsio/nats-box:0.19.7
+  - natsio/nats-server-config-reloader:0.23.0
+  - natsio/prometheus-nats-exporter:0.20.1
+  - o2cr.ai/openobserve/openobserve-enterprise:v0.91.1
+  - o2cr.ai/openobserve/report-server:v0.11.2-88574bc
   - openfga/openfga:latest
   - public.ecr.aws/docker/library/busybox:1.36.1
-  - public.ecr.aws/zinclabs/openobserve-enterprise:v0.14.7
-  - public.ecr.aws/zinclabs/report-server:v0.11.0-70baf7a
-  - quay.io/minio/mc:RELEASE.2023-01-28T20-29-38Z
-  - quay.io/minio/minio:RELEASE.2023-02-10T18-48-39Z
+  - registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.15.0
 
 ### opensearch
 
 - **Images:**
   - busybox:latest
-  - opensearchproject/opensearch:3.1.0
+  - opensearchproject/opensearch:3.7.0
 
 ### opensearch-dashboards
 
 - **Images:**
-  - opensearchproject/opensearch-dashboards:3.1.0
+  - opensearchproject/opensearch-dashboards:3.7.0
 
 ### opensearch-operator
 
 - **Images:**
-  - gcr.io/kubebuilder/kube-rbac-proxy:v0.15.0
-  - opensearchproject/opensearch-operator:2.8.0
+  - opensearchproject/opensearch-operator:3.0.0-alpha
 
 ### opentelemetry-operator
 
 - **Images:**
   - busybox:latest
-  - ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.120.0
-  - otel/opentelemetry-collector-k8s:0.131.0
-  - quay.io/brancz/kube-rbac-proxy:v0.18.1
+  - ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.156.0
+  - otel/opentelemetry-collector-k8s:0.156.0
+
+### openvox
+
+- **Images:**
+  - camptocamp/prometheus-puppetdb-exporter:1.1.0
+  - curlimages/curl:8.11.1
+  - docker.io/busybox:1.37
+  - ghcr.io/obmondo/gfetch:v1.2.0
+  - ghcr.io/obmondo/puppet-agent-exporter:v0.0.1
+  - ghcr.io/openvoxproject/openvoxdb:8.11.0-main
+  - ghcr.io/openvoxproject/openvoxserver:8.11.0-main
+  - ghcr.io/voxpupuli/puppetboard:6.0.1
+
+### opsbridge
+
+- **Images:**
+  - harbor.obmondo.com/obmondo/opsbridge:v1.0.0
 
 ### postgres-operator
 
 - **Images:**
-  - ghcr.io/zalando/postgres-operator/logical-backup:v1.13.0
-  - ghcr.io/zalando/postgres-operator:v1.14.0
-  - ghcr.io/zalando/spilo-17:4.0-p2
+  - ghcr.io/zalando/postgres-operator/logical-backup:v1.15.1
+  - ghcr.io/zalando/postgres-operator:v1.15.1
+  - ghcr.io/zalando/spilo-17:4.0-p3
   - registry.opensource.zalan.do/acid/pgbouncer:master-32
 
 ### prometheus-adapter
@@ -538,58 +628,51 @@
 ### prometheus-linuxaid
 
 - **Images:**
-  - grafana/grafana:11.1.4
-
-### puppetserver
-
-- **Images:**
-  - camptocamp/prometheus-puppetdb-exporter:1.1.0
-  - curlimages/curl:8.7.1
-  - docker.io/busybox:1.36
-  - ghcr.io/obmondo/puppet-agent-exporter:v0.0.1
-  - ghcr.io/voxpupuli/container-puppetdb:7.18.0-v1.5.0
-  - ghcr.io/voxpupuli/container-puppetserver:7.17.0-v1.5.0
-  - ghcr.io/voxpupuli/puppetboard:6.0.1
-  - puppet/r10k:3.15.2
+  - grafana/grafana:12.2.0
 
 ### rabbitmq-operator
 
 - **Images:**
-  - docker.io/bitnami/rabbitmq-cluster-operator:2.16.0-debian-12-r1
-  - docker.io/bitnami/rmq-messaging-topology-operator:1.17.3-debian-12-r1
+  - docker.io/bitnamilegacy/rabbitmq-cluster-operator:2.16.1-debian-12-r0
+  - docker.io/bitnamilegacy/rmq-messaging-topology-operator:1.17.4-debian-12-r0
 
 ### redis-operator
 
 - **Images:**
-  - ghcr.io/ot-container-kit/redis-operator/redis-operator:v0.17.0
+  - quay.io/opstree/redis-operator:v0.25.0
 
 ### redmine
 
 - **Images:**
-  - docker.io/bitnami/redmine:6.0.6-debian-12-r4
+  - docker.io/bitnami/redmine:6.0.6-debian-12-r6
 
 ### relate
 
 - **Images:**
-  - registry.example.com/obmondo/dockerfiles/relate:latest
   - nginx:latest
+  - registry.example.com/obmondo/dockerfiles/relate:latest
 
 ### reloader
 
 - **Images:**
-  - ghcr.io/stakater/reloader:v1.4.6
+  - ghcr.io/stakater/reloader:v1.4.19
 
 ### rook-ceph
 
 - **Images:**
-  - docker.io/rook/ceph:v1.17.2
-  - quay.io/ceph/ceph:v19.2.3
+  - docker.io/rook/ceph:v1.20.2
+  - quay.io/ceph/ceph:v20.2.2
+  - quay.io/cephcsi/ceph-csi-operator:v1.0.4
 
 ### sealed-secrets
 
 - **Images:**
-  - docker.io/bitnami/sealed-secrets-controller:0.28.0
-  - ghcr.io/obmondo/backup-sealed-secrets-keys@sha256:7e409526cd68d09ccb7519cfbd92120e9425d6c459d11b2e6af1c20c7f177c17
+  - docker.io/bitnami/sealed-secrets-controller:0.37.0
+
+### seaweedfs
+
+- **Images:**
+  - chrislusf/seaweedfs:4.40
 
 ### sftpgo
 
@@ -604,49 +687,56 @@
 ### snapshot-controller
 
 - **Images:**
-  - registry.k8s.io/sig-storage/snapshot-controller:v8.3.0
+  - registry.k8s.io/sig-storage/snapshot-controller:v8.6.0
+  - registry.k8s.io/sig-storage/snapshot-conversion-webhook:v8.6.0
 
 ### sonarqube
 
 - **Images:**
-  - sonarqube:25.8.0.112029-community
+  - sonarqube:26.5.0.122743-community
 
 ### step-ca
 
 - **Images:**
   - alpine/curl:latest
   - busybox:latest
-  - cr.smallstep.com/smallstep/step-ca:0.28.4
+  - cr.smallstep.com/smallstep/step-ca:0.30.2
   - cr.smallstep.com/smallstep/step-ca-bootstrap:latest
-  - cr.step.sm/smallstep/step-issuer:0.9.9
-  - gcr.io/kubebuilder/kube-rbac-proxy:v0.15.0
-  - quay.io/jetstack/trust-manager:v0.19.0
-  - quay.io/jetstack/trust-pkg-debian-bookworm:20230311-deb12u1.0
+  - cr.step.sm/smallstep/step-issuer:0.11.0
+  - quay.io/jetstack/trust-manager:v0.24.0
+  - quay.io/jetstack/trust-pkg-debian-trixie:20250419.1
 
 ### strimzi-kafka-operator
 
 - **Images:**
-  - quay.io/strimzi/operator:0.47.0
+  - quay.io/strimzi/operator:1.1.0
 
 ### teleport-cluster
 
 - **Images:**
-  - public.ecr.aws/gravitational/teleport-distroless:18.1.4
+  - public.ecr.aws/gravitational/teleport-distroless:18.10.1
 
 ### teleport-kube-agent
 
 - **Images:**
-  - public.ecr.aws/gravitational/teleport-distroless:18.1.4
+  - public.ecr.aws/gravitational/teleport-distroless:18.10.1
+
+### tetragon
+
+- **Images:**
+  - quay.io/cilium/hubble-export-stdout:v1.1.1
+  - quay.io/cilium/tetragon-operator:v1.7.0
+  - quay.io/cilium/tetragon:v1.7.0
 
 ### tigera-operator
 
 - **Images:**
-  - quay.io/tigera/operator:v1.38.3
+  - quay.io/tigera/operator:v1.42.3
 
 ### traefik
 
 - **Images:**
-  - docker.io/traefik:v3.5.0
+  - docker.io/traefik:v3.7.6
 
 ### traefik-forward-auth
 
@@ -655,17 +745,28 @@
   - mesosphere/kubeaddons-addon-initializer:v0.5.1
   - mesosphere/traefik-forward-auth:3.1.0
 
+### trivy-operator
+
+- **Images:**
+  - mirror.gcr.io/aquasec/trivy:0.72.0
+  - mirror.gcr.io/aquasec/trivy-operator:0.32.0
+
 ### velero
 
 - **Images:**
-  - docker.io/bitnami/kubectl:1.33
-  - velero/velero:v1.16.2
+  - docker.io/velero/velero:v1.18.1
+
+### version-checker
+
+- **Images:**
+  - quay.io/jetstack/version-checker:v0.11.0
 
 ### vuls-dictionary
 
 - **Images:**
-  - vuls/go-cve-dictionary:v0.12.1
-  - vuls/goval-dictionary:v0.12.0
+  - alpine:3.21
+  - ghcr.io/obmondo/vuls:45714b6
+  - ghcr.io/oras-project/oras:v1.2.2
 
 ### whoami
 
@@ -678,12 +779,12 @@
 - **Images:**
   - busybox
   - docker.io/bitnami/postgresql:15.1.0-debian-11-r12
-  - yetibot/yetibot:20250217.155538.739211b
+  - yetibot/yetibot:20260608.145320.8ee84eb
 
 ### zfs-localpv
 
 - **Images:**
-  - openebs/zfs-driver:2.8.0
+  - docker.io/openebs/zfs-driver:2.10.1
   - registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.13.0
   - registry.k8s.io/sig-storage/csi-provisioner:v5.2.0
   - registry.k8s.io/sig-storage/csi-resizer:v1.13.2
