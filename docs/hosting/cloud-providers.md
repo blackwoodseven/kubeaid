@@ -150,7 +150,9 @@ Hetzner supports three deployment modes:
 
 All modes include:
 
-- [Cilium](https://cilium.io) CNI in [kube-proxyless mode](https://cilium.io/use-cases/kube-proxy/)
+- [Cilium](https://cilium.io) CNI in [kube-proxyless mode](https://cilium.io/use-cases/kube-proxy/) with **VXLAN tunnel
+  routing** (pod traffic is encapsulated over the node network - no routes programmed in HCloud)
+- [CAPH](https://github.com/syself/cluster-api-provider-hetzner) **v1.1.7** with default OS image **Ubuntu 26.04**
 - GitOps with [ArgoCD](https://argoproj.github.io/cd/), [Sealed
   Secrets](https://github.com/bitnami-labs/sealed-secrets), [ClusterAPI](https://cluster-api.sigs.k8s.io)
 - Monitoring with [KubePrometheus](https://prometheus-operator.dev)
@@ -196,6 +198,10 @@ Configure further via `diskLayoutSetupCommands`. Recommendations:
 - Allocate HDDs/SSDs to **Ceph**
 - Allocate NVMes to a **ZPool** (mirror mode) for ContainerD, logs, and OpenEBS ZFS LocalPV
 
+> **Provider IDs:** Bare-metal nodes use the canonical `hrobot://<server-id>` provider-ID format (enabled
+> via the `capi.syself.com/use-hrobot-provider-id-for-baremetal` annotation on the HetznerCluster). This
+> aligns CAPH's Machine providerID with the upstream Hetzner CCM robot provider.
+
 #### Bare Metal Setup
 
 ```bash
@@ -209,6 +215,30 @@ kubeaid-cli cluster bootstrap
 ### Hybrid Mode
 
 Combines HCloud control plane with mixed HCloud + Bare Metal workers.
+
+#### Hybrid Cloud Controller Manager (CCM) Architecture
+
+Hybrid clusters run **two CCM instances** from the same upstream chart, because the Hetzner CCM cannot
+enable its route controller (networking) and Robot bare-metal support at the same time:
+
+| CCM Instance | Purpose | Scope |
+| ------------ | ------- | ----- |
+| `ccm-hcloud` | Networking (`HCLOUD_NETWORK`), InternalIP assignment, LoadBalancers, routes | HCloud nodes only |
+| `ccm-hetzner` | Robot provider-ID (`hrobot://`), node lifecycle | Bare-metal nodes only (controllers: `cloud-node`, `cloud-node-lifecycle`) |
+
+The HCloud CCM provides the `InternalIP` for the private-only control-plane nodes - without it, the
+apiserver cannot reach the kubelet and control-plane scale-up stalls on etcd health checks. The robot
+CCM is scoped to `cloud-node` + `cloud-node-lifecycle` only so it does not fight `ccm-hcloud` over
+LoadBalancers.
+
+> **Pure HCloud or pure Bare Metal clusters** use a single CCM instance.
+
+#### Floating IPs on Control-Plane Nodes
+
+Control-plane nodes can bind HCloud **Floating IPs** via netplan for a stable public endpoint. The
+[hcloud-fip-controller](../../argocd-helm-charts/hcloud-fip-controller/README.md) chart handles IP
+failover across nodes (leader-elected, ~15 s failover). The node-side IP binding (cloud-init/netplan)
+is the operator's responsibility.
 
 #### Hybrid Prerequisites
 

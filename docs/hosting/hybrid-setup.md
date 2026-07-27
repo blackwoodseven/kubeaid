@@ -68,14 +68,22 @@ For detailed configuration, see the [Cilium Cluster Mesh documentation](https://
 
 ## Hetzner Hybrid Mode
 
-> **Note:** This is different from Cilium Cluster Mesh.
+> **Note:** This is different from Cilium Cluster Mesh. Hybrid mode creates a **single cluster**
+> with mixed node types, not a mesh of separate clusters.
 
-Hetzner's built-in hybrid mode creates a **single cluster** with mixed node types:
+Hetzner's built-in hybrid mode runs:
 
 - Control plane in HCloud (VMs)
-- Worker nodes in HCloud and/or Bare Metal
+- Worker nodes in HCloud and/or Bare Metal (Hetzner Robot)
 
-See [Cloud Providers - Hetzner Hybrid](./cloud-providers.md#hybrid-mode) for setup instructions.
+Hybrid clusters require **two Cloud Controller Manager (CCM) instances** - `ccm-hcloud` for networking
+and InternalIP assignment on HCloud nodes, and `ccm-hetzner` for bare-metal node lifecycle with
+`hrobot://` provider IDs. The Hetzner CCM cannot run its route controller and Robot support
+simultaneously, so they are split. Cilium uses **VXLAN tunnel mode** so pod networking works without
+routes programmed in the HCloud network.
+
+See [Cloud Providers - Hetzner Hybrid](./cloud-providers.md#hybrid-mode) for full architecture details
+and setup instructions.
 
 ## See Also
 
