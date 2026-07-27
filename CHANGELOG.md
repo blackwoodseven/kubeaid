@@ -2,6 +2,50 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 31.3.1
+
+### Features
+
+- fa9a7d583 feat(mongodb): label the backup CronJob for backup-exporter
+- 45ac87b26 feat: update vuls chart
+- 7f68d444f feat(new): add docker-mailserver helm chart v5.1.1
+
+### Bug Fixes
+
+- e7ba94a32 fix: set gfetch fsGroupChangePolicy to Always to ensure volume permissions are updated on pod startup
+- 9523c17c3 fix(cilium): add vswitch+ (used for Hetzner Bare Metal servers in hybrid scenario) to the list of network interface selectors
+- 6d083db2f fix(kube-prometheus): make command compatible with older version of bash installed in MacOS
+- 4acc980ee fix(kube-prometheus): have a variable for taking the Traefik pod name as input
+
+### Configuration Changes
+
+- c0620e96f chore(sbom): regenerate sbom.md and fix markdownlint output
+- e8bd4ba21 chore(sbom): regenerate sbom.md for current chart images
+- ce7836357 chore(kubeaid-agent): bump image tag to v0.4.4
+
+### Other Changes
+
+- 270eca569 dependabot: bump the github-actions group across 1 directory with 3 updates
+- 557543d7e (fix): pgsql logical backups name as a variable string
+- d7bb8844a Fix MD012 multiple consecutive blank lines in docs/monitoring.md
+- 18c25a373 Update README index with node disk repair, comparison doc, and decision records for v31.3.0
+- a2c34678c (chore): add a init container to make goalerts wait for pgsql and fix secrets
+- bc6d0f03e (chore): add a detailed readme for ntfy helm chart
+- 1434c7167 (chore): create a proper readme and chart.yaml
+- df19f44fa (chore): updated values file for ntfy chart with official chart as upstream dependency
+- a5df2d158 Added the AWS_S3_ENDPOINT
+- ba7a191dc Added the support for mongodb backup
+- 79e69ad5b kubeaid-addons: add extraEnv passthrough to postgres logical-backup
+- dbd96f499 (chore): added a new chart for ntfy (offical chart)
+- 45b405f95 (chore): add pgsql via kubeaid-addons and update values.yaml
+- 1ee51e573 (chore): added helm chart for goalerts
+- 782015d6d Hook up new guides and fix pre-existing broken git token links in README
+- 194820a6c Document new monitoring features including orphan PVC detection and ZFS replication alerts
+- 3012f4db6 Add a quick guide for using the new backup exporter
+- a98674361 Add setup instructions for the CISO Assistant GRC platform
+- 0ad389120 Add a guide on how to configure and enable the Cilium host firewall
+- ac4e72127 Update Hetzner hosting docs for the new dual-CCM architecture and v1.1.7 upgrades
+
 ## KubeAid Release Version 31.3.0
 
 ### Minor Version Upgrades
