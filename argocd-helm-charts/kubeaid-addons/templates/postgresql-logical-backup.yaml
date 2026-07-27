@@ -3,7 +3,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: postgres-logical-backup
+  name: {{ .Values.global.postgresql.instanceName }}-pgsql-logical-backup
 spec:
   concurrencyPolicy: Forbid
   suspend: false
