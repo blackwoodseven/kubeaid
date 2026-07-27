@@ -473,6 +473,21 @@ extraEnv: []
 #       key: S3_KEY
 
 # This is for router
+# Prometheus Operator ServiceMonitor to scrape OpenObserve's /metrics endpoint.
+# Requires the Prometheus Operator CRDs (monitoring.coreos.com/v1) to be installed.
+serviceMonitor:
+  enabled: false
+  # namespace: ""            # defaults to the release namespace
+  # additionalLabels: {}     # e.g. { release: kube-prometheus-stack } to match your Prometheus selector
+  interval: 30s
+  scrapeTimeout: 10s
+  path: /metrics
+  scheme: http
+  honorLabels: false
+  # tlsConfig: {}
+  relabelings: []
+  metricRelabelings: []
+
 service:
   type: ClusterIP
   # type: LoadBalancer
@@ -498,12 +513,27 @@ serviceIngester:
 certIssuer:
   enabled: false
 
+# blocked-metrics is a small nginx sidecar deployed when ingress is enabled (and the
+# gateway is not) to block public access to the /metrics endpoints.
+blockedMetrics:
+  # Resources for the blocked-metrics nginx container. Exposed because the previous
+  # hardcoded 32Mi limit could OOMKill the container in some environments.
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 128Mi
+
 ingress:
   enabled: false
   className: "nginx"
   # NOTE: /metrics and /api/metrics endpoints are always blocked for public access when ingress is enabled
   annotations:
-    cert-manager.io/issuer: letsencrypt
+    # NOTE: the cert-manager.io/issuer annotation is NOT set here. It is injected
+    # automatically by the ingress template when certIssuer.enabled=true. This lets you
+    # use your own cert-manager.io/cluster-issuer here without a conflicting issuer.
     kubernetes.io/tls-acme: "true"
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/proxy-http-version: "1.1" # Enable HTTP/1.1 for WebSockets
@@ -692,6 +722,7 @@ nodeSelector:
   dex: {}
   reportserver: {}
   o2ai: {}
+  openfga: {}
 
 tolerations:
   ingester: []
@@ -703,6 +734,7 @@ tolerations:
   dex: []
   reportserver: []
   o2ai: []
+  openfga: []
 
 affinity:
   ingester: {}
@@ -714,6 +746,7 @@ affinity:
   dex: {}
   reportserver: {}
   o2ai: {}
+  openfga: {}
 
 nats:
   enabled: true # if true then nats will be deployed as part of openobserve

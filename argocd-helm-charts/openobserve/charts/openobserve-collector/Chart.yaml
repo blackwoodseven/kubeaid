@@ -1,3 +1,11 @@
+annotations:
+  artifacthub.io/category: monitoring-logging
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://openobserve.ai/docs/
+    - name: Source
+      url: https://github.com/openobserve/openobserve-helm-chart
 apiVersion: v2
 appVersion: 0.137.0
 dependencies:
@@ -6,10 +14,19 @@ dependencies:
   repository: https://prometheus-community.github.io/helm-charts
   version: 5.*
 description: An opinionated installation of OTEL Collector for OpenObserve
+home: https://openobserve.ai
+icon: https://openobserve.ai/img/logo/logo.svg
+keywords:
+- openobserve
+- opentelemetry
+- otel-collector
+- observability
 maintainers:
 - email: hello@openobserve.ai
   name: OpenObserve
   url: https://openobserve.ai
 name: openobserve-collector
+sources:
+- https://github.com/openobserve/openobserve-helm-chart
 type: application
-version: 0.4.5
+version: 0.4.6

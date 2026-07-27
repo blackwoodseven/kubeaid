@@ -30,7 +30,7 @@ rules:
     resources: ["vulnerabilitymanifests", "vulnerabilitymanifestsummaries", "workloadconfigurationscans", "workloadconfigurationscansummaries", "openvulnerabilityexchangecontainers", "containerprofiles", "sbomsyfts"]
     verbs: ["get", "watch", "list", "delete"]
   - apiGroups: ["kubescape.io"]
-    resources: ["runtimerulealertbindings"]
+    resources: ["runtimerulealertbindings", "rules"]
     verbs: ["list", "watch", "get"]
   - apiGroups: ["kubescape.io"]
     resources: ["servicesscanresults"]
@@ -45,5 +45,24 @@ rules:
   - apiGroups: ["kubescape.io"]
     resources: ["securityexceptions", "clustersecurityexceptions"]
     verbs: ["get", "list", "watch"]
+  {{- end }}
+  {{- if eq .Values.capabilities.remediation "enable" }}
+  # Post-scan remediation (opt-in). These mutating verbs are granted only when
+  # capabilities.remediation is enabled; the default install stays read-only.
+  # Provisioned once for the whole action set so later phases need not reopen
+  # this ClusterRole:
+  #   - patch on apps workloads + pods backs annotate (active now);
+  #   - patch on nodes backs cordon (later phase) -- cluster-wide, as Kubernetes
+  #     has no field-level RBAC for spec.unschedulable;
+  #   - networkpolicies backs quarantine (later phase).
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["patch"]
+  - apiGroups: [""]
+    resources: ["pods", "nodes"]
+    verbs: ["patch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["create", "delete", "get", "list"]
   {{- end }}
 {{- end }}

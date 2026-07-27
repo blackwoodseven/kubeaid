@@ -56,10 +56,6 @@ Parameters:
   value: "{{ .Values.logger.level }}"
 - name: KS_LOGGER_NAME
   value: "{{ .Values.logger.name }}"
-{{- if .components.otelCollector.enabled }}
-- name: OTEL_COLLECTOR_SVC
-  value: "otel-collector:4318"
-{{- end }}
 {{- if .Values.configurations.otelUrl }}
 - name: OTEL_COLLECTOR_SVC
   value: {{ .Values.configurations.otelUrl }}
@@ -291,6 +287,24 @@ Parameters:
       value: "/sbom-comm/scanner.sock"
     - name: HOST_ROOT
       value: "/host"
+    {{- if .Values.configurations.otelUrl }}
+    - name: OTEL_COLLECTOR_SVC
+      value: {{ .Values.configurations.otelUrl }}
+    {{- end }}
+    - name: NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: CLUSTER_NAME
+      value: "{{ .Values.clusterName }}"
   {{- if .Values.nodeAgent.sbomScanner.volumeMounts }}
   volumeMounts:
     {{- toYaml .Values.nodeAgent.sbomScanner.volumeMounts | nindent 4 }}
@@ -425,7 +439,7 @@ kubescape.io/tier: "core"
 {{- if .autoscalerMode }}
 kubescape.io/node-group: "{{`{{ .NodeGroupLabel }}`}}"
 {{- end }}
-{{- if .components.otelCollector.enabled }}
+{{- if .Values.configurations.otelUrl }}
 otel: enabled
 {{- end }}
 {{- end -}}
@@ -491,7 +505,9 @@ containers:
 nodeSelector:
 {{- if .autoscalerMode }}
   kubernetes.io/os: linux
-  {{ .Values.nodeAgent.autoscaler.nodeGroupLabel }}: "{{`{{ .NodeGroupLabel }}`}}"
+{{`{{- if not .IsDefaultGroup }}`}}
+  {{`{{ .NodeGroupLabelKey }}`}}: "{{`{{ .NodeGroupLabel }}`}}"
+{{`{{- end }}`}}
 {{- else if .nodeSelector }}
 {{ toYaml .nodeSelector | nindent 2 }}
 {{- else if .Values.nodeAgent.nodeSelector }}
@@ -500,9 +516,29 @@ nodeSelector:
 {{ toYaml .Values.customScheduling.nodeSelector | nindent 2 }}
 {{- end }}
 affinity:
+{{- if .autoscalerMode }}
+{{- /* In autoscaler mode the default group (nodes missing the grouping label) must
+       be targeted with a "DoesNotExist" node affinity, since a nodeSelector cannot
+       match an absent label. Every other group's OS requirement is already enforced
+       by the nodeSelector, so non-default groups keep honouring any user-provided
+       affinity instead of being overridden. */}}
+{{`{{- if .IsDefaultGroup }}`}}
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: {{`{{ .NodeGroupLabelKey }}`}}
+          operator: DoesNotExist
+{{`{{- else }}`}}
 {{- if .Values.nodeAgent.affinity }}
 {{ toYaml .Values.nodeAgent.affinity | nindent 2 }}
-{{- else if and (not .autoscalerMode) .Values.customScheduling.affinity }}
+{{- else if .Values.customScheduling.affinity }}
+{{ toYaml .Values.customScheduling.affinity | nindent 2 }}
+{{- end }}
+{{`{{- end }}`}}
+{{- else if .Values.nodeAgent.affinity }}
+{{ toYaml .Values.nodeAgent.affinity | nindent 2 }}
+{{- else if .Values.customScheduling.affinity }}
 {{ toYaml .Values.customScheduling.affinity | nindent 2 }}
 {{- end }}
 tolerations:

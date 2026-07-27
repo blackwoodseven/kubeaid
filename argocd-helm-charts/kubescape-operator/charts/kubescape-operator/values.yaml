@@ -136,6 +136,28 @@ capabilities:
   # ====== Risk acceptance ======
   riskAcceptance: disable
 
+  # ====== Post-scan remediation ======
+  #
+  # Lets the operator perform reactive cluster operations on scan findings
+  # (annotate, and in later phases quarantine/cordon) when triggered via the
+  # Kubescape CLI or an OperatorCommand. This is an opt-in capability with an
+  # elevated security risk: enabling it grants the operator mutating RBAC. The
+  # default install keeps the operator read-only.
+  #
+  # Enabling provisions mutating RBAC for the whole remediation action set in one
+  # place -- annotate (active now) plus quarantine/cordon (later phases) --
+  # granted once so later releases need no ClusterRole change. Concretely it grants:
+  #   - patch on apps workloads (deployments/statefulsets/daemonsets) and pods
+  #     -- backs annotate;
+  #   - patch on nodes -- backs cordon; note this is cluster-wide (Kubernetes has
+  #     no field-level RBAC for spec.unschedulable), so it also permits mutating
+  #     node labels/taints/spec;
+  #   - create/delete/get/list on networkpolicies -- backs quarantine.
+  #
+  # Read the design before enabling:
+  # https://github.com/kubescape/designs-and-proposals/blob/main/proposals/cli-cluster-operations.md
+  remediation: disable
+
   # ====== Other capabilities ======
   #
   # This is an experimental capability with an elevated security risk. Read the
@@ -281,7 +303,7 @@ kubescape:
   image:
     # -- source code: https://github.com/kubescape/kubescape/tree/master/httphandler (public repo)
     repository: quay.io/kubescape/kubescape
-    tag: v4.0.8
+    tag: v4.0.11
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -343,7 +365,7 @@ operator:
   image:
     # -- source code: https://github.com/kubescape/operator
     repository: quay.io/kubescape/operator
-    tag: v0.2.142
+    tag: v0.2.159
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -418,7 +440,7 @@ kubevuln:
   image:
     # -- source code: https://github.com/kubescape/kubevuln
     repository: quay.io/kubescape/kubevuln
-    tag: v0.3.142
+    tag: v0.3.159
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -453,8 +475,13 @@ kubevuln:
     scanTimeout: 5m # set timeout for scanning an image
     grypeDbListingURL: "" # set the URL for the grype db listing, if empty the default URL will be used
     grypeDbPersistence: false # use a persistent volume for the grype db files
-    useDefaultMatchers: false # set to true to use the default matchers
+    useDefaultMatchers: false # Deprecated: use cveMatchingMode instead. Kept for backward compatibility (true -> "off", false -> "adaptive").
+    # -- CVE matching mode: "off" (Grype defaults), "on" (CPE matching everywhere), or "adaptive" (CPE matching everywhere except trusted-vendor images, which rely on the vendor's authoritative feed). Empty derives the mode from useDefaultMatchers for backward compatibility (true -> "off", false -> "adaptive").
+    cveMatchingMode: ""
+    # -- Distro identifiers treated as trusted vendors in adaptive mode. Empty uses kubevuln's built-in default set (echo, chainguard, wolfi, minimos).
+    trustedVendors: []
     storeFilteredSboms: false
+    proxyRegistryMap: {} # map of source registry -> mirror registry; kubevuln rewrites image pull references accordingly (useful for air-gapped/offline registry mirrors)
 
   env:
     - name: CA_MAX_VULN_SCAN_ROUTINES # TODO update the kubevuln
@@ -494,6 +521,7 @@ kubevuln:
 storage:
   # Values or the Aggregated APIServer
   name: "storage"
+  enabled: true
   mtls:
     enabled: true
     certificateValidityInDays: 730 # NOTE: only in effect when certificates.strategy is "template"
@@ -509,7 +537,7 @@ storage:
   image:
     # -- source code: https://github.com/kubescape/storage
     repository: quay.io/kubescape/storage
-    tag: v0.0.274
+    tag: v0.0.297
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -578,7 +606,7 @@ nodeAgent:
   image:
     # -- source code: https://github.com/kubescape/node-agent
     repository: quay.io/kubescape/node-agent
-    tag: v0.3.119
+    tag: v0.3.158
     pullPolicy: IfNotPresent
 
   config:
@@ -604,6 +632,8 @@ nodeAgent:
       ruleCooldownAfterCount: 1
       ruleCooldownOnProfileFailure: true
       ruleCooldownMaxSize: 20000
+    alertDeduplication:
+      bypass: false # DAST / security-testing only: disables ALL sensor-side dedup/cooldown
     # Host sensor configuration
     hostSensor:
       enabled: true
@@ -612,8 +642,13 @@ nodeAgent:
   # GKE Autopilot allowlist
   gke:
     allowlist:
+      # When enabled, the node-agent is labeled to match `name`, AND the chart installs an
+      # AllowlistSynchronizer that pulls that allowlist from Google's managed repo into the cluster.
       enabled: false
-      name: armo-kubescape-node-agent-1.29
+      name: armo-kubescape-node-agent-1.40-v2
+      # AllowlistSynchronizer path. Leave empty to derive it from `name`
+      # (ARMO/<name-without-version-suffix>/*); set explicitly to override.
+      path: ""
 
   # prometheus (operator) service monitor
   serviceMonitor:
@@ -719,6 +754,10 @@ nodeAgent:
         type: Directory
       name: host-filesystem
 
+  # Note: when the autoscaler is enabled, this affinity is honoured for normal
+  # (instance-type) node groups, but the synthetic "default" group of nodes
+  # missing the grouping label is targeted with an operator-managed
+  # "DoesNotExist" node affinity instead, so this value does not apply to it.
   affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -875,7 +914,7 @@ synchronizer:
   image:
     # -- source code: https://github.com/kubescape/synchronizer
     repository: quay.io/kubescape/synchronizer
-    tag: v0.0.147
+    tag: v0.0.155
     pullPolicy: IfNotPresent
   nodeSelector:
     kubernetes.io/os: linux
@@ -899,38 +938,6 @@ synchronizer:
 # -----------------------------------------------------------------------------------------
 # ------------------------ Microservice - helpers -----------------------------------------
 # -----------------------------------------------------------------------------------------
-
-# +++++++++++++++++++++++++++++++ OTEL-collector ++++++++++++++++++++++++++++++++++++++++++++++++
-
-# opentelemetry collector
-otelCollector:
-  disable: true
-  name: otel-collector
-
-  endpoint:
-    insecure: true
-    headers:
-      uptrace-dsn: ""
-
-  # -- enable/disable hostmetrics collection
-  hostmetrics:
-    enabled: true
-    scrapeInterval: 30s
-
-  image:
-    repository: quay.io/kubescape/opentelemetry-collector
-    tag: 0.108.0
-    pullPolicy: IfNotPresent
-
-  podAnnotations: {}
-  podLabels: {}
-  resources:
-    requests:
-      cpu: 100m
-      memory: 500Mi
-    limits:
-      cpu: 1
-      memory: 1Gi
 
 # +++++++++++++++++++++++++++++ GrypeOfflineDB ++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -988,7 +995,7 @@ prometheusExporter:
   name: "prometheus-exporter"
   image:
     repository: quay.io/kubescape/prometheus-exporter
-    tag: v0.2.18
+    tag: v0.2.22
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -1009,6 +1016,10 @@ prometheusExporter:
     port: 8080
     targetPort: 8080
     protocol: TCP
+
+  serviceMonitor:
+    # -- enable/disable service monitor for prometheus-exporter integration
+    enabled: false
 
   enableWorkloadMetrics: false
 
@@ -1090,7 +1101,7 @@ kubescapeScheduler:
   image:
     # -- source code: https://github.com/kubescape/http-request (public repo)
     repository: quay.io/kubescape/http-request
-    tag: v0.2.19
+    tag: v0.2.20
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -1138,7 +1149,7 @@ kubevulnScheduler:
   image:
     # source code - https://github.com/kubescape/http-request
     repository: quay.io/kubescape/http-request
-    tag: v0.2.19
+    tag: v0.2.20
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -1188,7 +1199,7 @@ registryScanScheduler:
   image:
     # -- source code: https://github.com/kubescape/http-request (public repo)
     repository: quay.io/kubescape/http-request
-    tag: v0.2.19
+    tag: v0.2.20
     pullPolicy: IfNotPresent
 
   nodeSelector:

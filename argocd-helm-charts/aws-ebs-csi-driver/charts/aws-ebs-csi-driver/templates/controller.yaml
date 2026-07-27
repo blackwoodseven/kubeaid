@@ -166,6 +166,8 @@ spec:
             {{- if .Values.fips }}
             - name: AWS_USE_FIPS_ENDPOINT
               value: "true"
+            - name: GODEBUG
+              value: "fips140=on"
             {{- end }}
           {{- with .Values.controller.envFrom }}
           envFrom:
@@ -481,6 +483,9 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+          {{- with .Values.sidecars.volumemodifier.volumeMounts }}
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- if .Values.controller.enableMetrics }}
           ports:
             - name: metrics-volmod

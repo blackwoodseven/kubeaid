@@ -14,9 +14,9 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 
 ## Default Versions
 
-SonarQube Server Version: `2026.3.1`
+SonarQube Server Version: `2026.4.0`
 
-SonarQube Community Build: `26.5.0.122743`. If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
+SonarQube Community Build: `26.7.0.124771`. If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
 
 ## Kubernetes and Openshift Compatibility
 
@@ -337,6 +337,21 @@ helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube \
 
 If you want to make your application publicly visible with Routes, you can set `OpenShift.route.enabled` to true. Please check the [configuration details](#openshift-1) to customize the Route base on your needs.
 
+### Defunct (zombie) processes from probes
+
+The default `readinessProbe` and `livenessProbe` are `exec` probes that fork short-lived processes inside the container on every invocation (the `readinessProbe` runs `curl` piped into `grep`, the `livenessProbe` runs `curl`). On some OpenShift / kubelet versions, when a probe exceeds its `timeoutSeconds` (default `1`) the kubelet kills the probe's parent shell before its child processes finish. Those children are then reparented to PID 1 (the SonarQube JVM, which does not reap them) and remain as defunct (`<defunct>` / zombie) processes. Because the probe runs throughout the pod's lifecycle, these can slowly accumulate and, in extreme cases, approach the pod's thread/process limit.
+
+If you observe a growing number of defunct processes on the application pods, increase the probe timeout to give the command enough time to complete before the kubelet kills it, for example:
+
+```yaml
+readinessProbe:
+  timeoutSeconds: 10
+livenessProbe:
+  timeoutSeconds: 10
+```
+
+A value comfortably above `1` second prevents the probe command from being killed mid-execution and stops the accumulation of defunct processes.
+
 ### Use custom `cacerts`
 
 In environments with air-gapped setup, especially with internal tooling (repos) and self-signed certificates it is required to provide an adequate `cacerts` which overrides the default one:
@@ -399,7 +414,7 @@ mcp:
   enabled: true
   image:
     repository: sonarsource/sonarqube-mcp
-    tag: "1.18.1.2664"
+    tag: "1.22.0.3040"
 ```
 
 **Accessing the MCP server locally:**
@@ -498,7 +513,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `annotations`           | SonarQube Pod annotations                                                                                             | `{}`               |
 | `edition`               | SonarQube Edition to use (`developer` or `enterprise`).                                                               | `None`             |
 | `community.enabled`     | Install SonarQube Community Build. When set to `true`, `edition` must not be set.                                     | `false`            |
-| `community.buildNumber` | The SonarQube Community Build number to install                                                                       | `26.5.0.122743`    |
+| `community.buildNumber` | The SonarQube Community Build number to install                                                                       | `26.7.0.124771`    |
 | `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.     | ``                 |
 | `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will supersede every other proxy variables            | ``                 |
 | `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will supersede initContainer specific http proxy variables  | ``                 |
@@ -784,7 +799,7 @@ and set `persistence.hostPath.path` and `persistence.hostPath.type`.
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `mcp.enabled`                          | Deploy the SonarQube MCP server alongside SonarQube                                                     | `false`                                                                |
 | `mcp.image.repository`                 | MCP container image repository                                                                           | `sonarsource/sonarqube-mcp`                                            |
-| `mcp.image.tag`                        | MCP container image tag                                                                                  | `"1.18.1.2664"`                                                        |
+| `mcp.image.tag`                        | MCP container image tag                                                                                  | `"1.22.0.3040"`                                                        |
 | `mcp.image.pullPolicy`                 | MCP image pull policy                                                                                    | `IfNotPresent`                                                         |
 | `mcp.image.pullSecrets`                | MCP image pull secrets                                                                                   | `[]`                                                                   |
 | `mcp.port`                             | Port the MCP server listens on                                                                           | `8080`                                                                 |
