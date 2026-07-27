@@ -695,7 +695,7 @@ spec:
           --set cilium.kubeProxyReplacement=true \
           --set cilium.k8sServiceHost=${API_SERVER_HOST} \
           --set cilium.k8sServicePort=${API_SERVER_PORT} \
-          --set-string cilium.extraArgs[0]="--devices=eth0\,enp+\,eno+" \
+          --set-string cilium.extraArgs[0]="--devices=vswitch+\,eth0\,enp+\,eno+" \
           | kubectl apply -f -
 
       - kubectl -n cilium rollout status daemonset/cilium --timeout=5m
