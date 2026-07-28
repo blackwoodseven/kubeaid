@@ -189,6 +189,37 @@ exporter:
       # Direct values for testing (used when secretName is empty).
       accessKeyId: ""
       secretAccessKey: ""
+  sealedSecrets:
+    # The sealed-secrets master key backup. Opt-in: a cluster whose
+    # sealed-secrets chart has backup.enabled=false has nothing to report.
+    #
+    # These keys decrypt every SealedSecret in git, and the backup CronJob is
+    # their only copy outside the cluster, so this is the backup with the least
+    # margin for error.
+    enabled: false
+
+    # Maximum acceptable Recovery Point Objective (RPO) for key backups.
+    # Supported formats: "24h", "6h", "30m", "1d", "7d"
+    max_rpo: 26h
+
+    # Rate at which the exporter checks backup health, expressed as a fraction
+    # of max_rpo. Must be between 0 and 1. Defaults to 0.25.
+    interval_rate: 0.25
+
+    s3:
+      # Bucket and endpoint the key archives are written to. Unlike the other
+      # exporters these cannot be discovered: the sealed-secrets chart templates
+      # them into the backup script, so the CronJob's env never carries them.
+      # They MUST match backup.s3Bucket and backup.s3Endpoint in that chart --
+      # a mismatch reports as a missing backup.
+      bucket: ""
+      endpoint: ""
+      # Read-only credentials for that bucket.
+      # Expected secret keys: access-key-id, secret-access-key
+      secretName: ""
+      # Direct values for testing (used when secretName is empty).
+      accessKeyId: ""
+      secretAccessKey: ""
 
 # PrometheusRule for alerting
 prometheusRule:
@@ -208,6 +239,13 @@ prometheusRule:
   mongodb:
     # Follows exporter.mongodb.enabled -- rules for an exporter that is not
     # running would alert on series that never appear.
+    enabled: false
+    labels: {}
+    severity: critical
+    alertForDuration: 5m
+    namespace: monitoring
+  sealedSecrets:
+    # Follows exporter.sealedSecrets.enabled.
     enabled: false
     labels: {}
     severity: critical
