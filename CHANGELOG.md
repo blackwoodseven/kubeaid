@@ -2,6 +2,32 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 31.4.0
+
+### Minor Version Upgrades
+
+- 39498b99c Updated argo-cd from version 10.1.4 to 10.2.1
+- 39498b99c Updated aws-ebs-csi-driver from version 2.62.0 to 2.63.0
+- 39498b99c Updated cluster-autoscaler from version 9.58.0 to 9.59.0
+- 39498b99c Updated peertube from version 1.7.6 to 1.8.0
+- 39498b99c Updated rustfs from version 0.10.0 to 0.11.0
+- 39498b99c Updated snapshot-controller from version 5.1.1 to 5.2.0
+- 39498b99c Updated sonarqube from version 2026.3.1 to 2026.4.0
+
+### Patch Version Upgrades
+
+- 39498b99c Updated aws-efs-csi-driver from version 4.4.0 to 4.4.1
+- 39498b99c Updated crossplane from version 2.3.3 to 2.3.4
+- 39498b99c Updated erpnext from version 8.0.67 to 8.0.68
+- 39498b99c Updated funkwhale from version 3.0.3 to 3.0.4
+- 39498b99c Updated kubescape-operator from version 1.40.2 to 1.40.3
+- 39498b99c Updated lemmy from version 0.6.14 to 0.6.15
+- 39498b99c Updated opencost from version 2.5.27 to 2.5.28
+- 39498b99c Updated openobserve from version 0.91.1 to 0.91.2
+- 39498b99c Updated openobserve-collector from version 0.4.4 to 0.4.6
+- 39498b99c Updated yetibot from version 1.0.196 to 1.0.202
+
+No changes in this release.
 ## KubeAid Release Version 31.3.1
 
 ### Features
