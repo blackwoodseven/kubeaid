@@ -1,19 +1,27 @@
 annotations:
   artifacthub.io/changes: |
     - kind: changed
-      description: "Upgrade Chart's version to 2026.3.1"
+      description: "Upgrade Chart's version to 2026.4.0"
     - kind: changed
-      description: "Upgrade SonarQube Server to 2026.3.1"
+      description: "Upgrade SonarQube Server to 2026.4.0"
+    - kind: changed
+      description: "Upgrade SonarQube Community build to 26.7.0.124771"
+    - kind: added
+      description: "Add CA certificate support with multi-cert bundling to install-plugins init container"
+    - kind: fixed
+      description: "Fix multi-cert CA bundle handling in install-oracle-jdbc-driver init container"
+    - kind: fixed
+      description: "Fix NetworkPolicy blocking IPv6 egress"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-community
-      image: sonarqube:26.5.0.122743-community
+      image: sonarqube:26.7.0.124771-community
     - name: sonarqube-developer
-      image: sonarqube:2026.3.1-developer
+      image: sonarqube:2026.4.0-developer
     - name: sonarqube-enterprise
-      image: sonarqube:2026.3.1-enterprise
+      image: sonarqube:2026.4.0-enterprise
     - name: sonarqube-mcp
-      image: sonarsource/sonarqube-mcp:1.18.1.2664
+      image: sonarsource/sonarqube-mcp:1.22.0.3040
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
@@ -21,7 +29,7 @@ annotations:
       url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
   charts.openshift.io/name: sonarqube
 apiVersion: v2
-appVersion: 2026.3.1
+appVersion: 2026.4.0
 dependencies:
 - condition: nginx.enabled,ingress-nginx.enabled
   name: ingress-nginx
@@ -64,4 +72,4 @@ sources:
 - https://github.com/SonarSource/docker-sonarqube
 - https://github.com/SonarSource/sonarqube
 type: application
-version: 2026.3.1
+version: 2026.4.0

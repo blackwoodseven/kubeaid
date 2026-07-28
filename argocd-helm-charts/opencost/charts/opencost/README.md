@@ -2,9 +2,9 @@
 
 OpenCost and OpenCost UI
 
-![Version: 2.5.27](https://img.shields.io/badge/Version-2.5.27-informational?style=flat-square)
+![Version: 2.5.28](https://img.shields.io/badge/Version-2.5.28-informational?style=flat-square)
 ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
-![AppVersion: 1.120.4](https://img.shields.io/badge/AppVersion-1.120.4-informational?style=flat-square)
+![AppVersion: 1.121.0](https://img.shields.io/badge/AppVersion-1.121.0-informational?style=flat-square)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opencost)](https://artifacthub.io/packages/search?repo=opencost)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opencost-oci)](https://artifacthub.io/packages/search?repo=opencost-oci)
 
@@ -97,12 +97,17 @@ $ helm install opencost opencost/opencost
 | opencost.exporter.extraArgs | list | `[]` | List of extra arguments for the command, e.g.: log-format=json |
 | opencost.exporter.extraEnv | object | `{}` | Any extra environment variables you would like to pass on to the pod |
 | opencost.exporter.extraVolumeMounts | list | `[]` | A list of volume mounts to be added to the pod |
-| opencost.exporter.image | object | `{"fullImageName":null,"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"opencost/opencost","tag":"1.120.4@sha256:5467eaac8d301be69cc4a3f69f063ad5da7d57130d1126a4eb75b0d8f79839e1"}` | This overrides the above defaultClusterId. Ensure the ConfigMap exists and contains the required CLUSTER_ID key. clusterIdConfigmap: cluster-id-configmap |
+| opencost.exporter.image | object | `{"fullImageName":null,"pullPolicy":"IfNotPresent","registry":"ghcr.io","repository":"opencost/opencost","tag":"1.121.0@sha256:2b0def286f343891b2cb2f10309d92bd614aab2f886e363cdc817dfd8595e472"}` | This overrides the above defaultClusterId. Ensure the ConfigMap exists and contains the required CLUSTER_ID key. clusterIdConfigmap: cluster-id-configmap |
 | opencost.exporter.image.fullImageName | string | `nil` | Override the full image name for development purposes |
 | opencost.exporter.image.pullPolicy | string | `"IfNotPresent"` | Exporter container image pull policy |
 | opencost.exporter.image.registry | string | `"ghcr.io"` | Exporter container image registry |
 | opencost.exporter.image.repository | string | `"opencost/opencost"` | Exporter container image name |
-| opencost.exporter.image.tag | string | `"1.120.4@sha256:5467eaac8d301be69cc4a3f69f063ad5da7d57130d1126a4eb75b0d8f79839e1"` | Exporter container image tag |
+| opencost.exporter.image.tag | string | `"1.121.0@sha256:2b0def286f343891b2cb2f10309d92bd614aab2f886e363cdc817dfd8595e472"` | Exporter container image tag |
+| opencost.exporter.inferenceCostTracking.collectionInterval | string | `"2m"` | Background collection interval |
+| opencost.exporter.inferenceCostTracking.enabled | bool | `false` | Enable inference cost tracking |
+| opencost.exporter.inferenceCostTracking.modelLabel | string | `"llm-d.ai/model"` | Pod label whose value is the vLLM model name. Must match the model_name label on vLLM Prometheus metrics |
+| opencost.exporter.inferenceCostTracking.sharedInfraLabel | string | `"llm-d.ai/inference-shared"` | Pod label key identifying shared infra pods (EPP, gateway) |
+| opencost.exporter.inferenceCostTracking.sharedInfraLabelValue | string | `"true"` | Label value that marks a pod as shared infra |
 | opencost.exporter.livenessProbe.enabled | bool | `true` | Whether probe is enabled |
 | opencost.exporter.livenessProbe.failureThreshold | int | `3` | Number of failures for probe to be considered failed |
 | opencost.exporter.livenessProbe.initialDelaySeconds | int | `10` | Number of seconds before probe is initiated |

@@ -3,22 +3,23 @@
 # Declare variables to be passed into your templates.
 
 exporters:
-  # Default to the in-cluster OpenObserve router so telemetry never leaves the cluster.
-  # Service DNS: <release>-router.<namespace>.svc.cluster.local:<ZO_HTTP_PORT> (default 5080),
-  # path /api/<org> (default org "default"). Override with your OpenObserve ingress URL if the
-  # collector runs outside the cluster. The otlphttp exporter appends /v1/logs|traces|metrics.
-  # Provide real credentials via the openobserve sealed secret, not inline here.
   otlphttp/openobserve:
-    endpoint: http://openobserve-router.openobserve.svc.cluster.local:5080/api/default
+    endpoint: https://api.openobserve.ai/api/default/
     headers:
       Authorization: Basic YOUR_BASE64_ENCODED_AUTH
   otlphttp/openobserve_k8s_events:
-    endpoint: http://openobserve-router.openobserve.svc.cluster.local:5080/api/default
+    endpoint: https://api.openobserve.ai/api/default/
     headers:
       Authorization: Basic CHANGEME_BASE64_ENCODED_AUTH
       stream-name: k8s_events
 
 k8sCluster: "cluster1"
+
+# managementState for the OpenTelemetryCollector CRs (agent & gateway).
+# "managed" (default) lets the opentelemetry-operator reconcile the collector.
+# Some operator versions require this field to be present on the v1beta1 CRD, so it
+# is always rendered. Set to "unmanaged" to have the operator stop reconciling.
+managementState: "managed"
 
 image:
   repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
@@ -111,6 +112,21 @@ agent:
   labels: {}
   # Annotations added to the generated collector pods.
   podAnnotations: {}
+  # securityContext applied to the agent collector container.
+  # Required on OpenShift (and other SELinux-enforcing distros) so the filelog
+  # receiver can read host pod logs under /var/log/pods. Without this the collector
+  # logs "open .: permission denied" and no container logs are collected.
+  # Also grant the privileged SCC to the agent's service account, e.g.:
+  #   oc adm policy add-scc-to-user privileged -z <agent-sa> -n <namespace>
+  # Example:
+  #   securityContext:
+  #     privileged: true
+  #     runAsUser: 0
+  #     seLinuxOptions:
+  #       type: spc_t
+  securityContext: {}
+  # podSecurityContext applied to the agent collector pod.
+  podSecurityContext: {}
   tolerations:
     - operator: Exists
   resources: {}
@@ -374,6 +390,11 @@ gateway:
   labels: {}
   # Annotations added to the generated collector pods.
   podAnnotations: {}
+  # securityContext applied to the gateway collector container (e.g. for OpenShift/SELinux).
+  # See agent.securityContext above for details.
+  securityContext: {}
+  # podSecurityContext applied to the gateway collector pod.
+  podSecurityContext: {}
   # Number of replicas when autoscaler is not used
   replicas: 1
   targetAllocator:

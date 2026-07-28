@@ -43,9 +43,6 @@ spec:
         {{- include "kubescape-operator.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "app" .Values.operator.name "tier" .Values.global.namespaceTier) | nindent 8 }}
         {{- with .Values.operator.podLabels }}{{- toYaml . | nindent 8 }}{{- end }}
         kubescape.io/tier: "core"
-      {{- if $components.otelCollector.enabled }}
-        otel: enabled
-      {{- end }}
     spec:
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -185,14 +182,6 @@ spec:
             - name: {{ .name }}
               value: "{{ .value }}"
             {{- end }}
-            {{- if $components.otelCollector.enabled }}
-            - name: OTEL_COLLECTOR_SVC
-              value: "otel-collector:4318"
-            {{- end }}
-            {{- if .Values.configurations.otelUrl }}
-            - name: OTEL_COLLECTOR_SVC
-              value: {{ .Values.configurations.otelUrl }}
-            {{- end }}
             {{- if ne .Values.global.httpsProxy "" }}
             - name: HTTPS_PROXY
               value: "{{ .Values.global.httpsProxy }}"
@@ -221,7 +210,7 @@ spec:
               mountPath: /etc/config/config.json
               readOnly: true
               subPath: "config.json"
-            {{- if .Values.nodeAgent.autoscaler.enabled }}
+            {{- if and $components.nodeAgent.enabled .Values.nodeAgent.autoscaler.enabled }}
             - name: node-agent-template
               mountPath: /etc/templates
               readOnly: true
@@ -313,7 +302,7 @@ spec:
             items:
               - key: "matchingRules.json"
                 path: "matchingRules.json"
-        {{- if .Values.nodeAgent.autoscaler.enabled }}
+        {{- if and $components.nodeAgent.enabled .Values.nodeAgent.autoscaler.enabled }}
         - name: node-agent-template
           configMap:
             name: node-agent-daemonset-template
