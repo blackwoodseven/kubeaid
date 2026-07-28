@@ -22,3 +22,17 @@ ntfy:
     # Keep the message cache on the PVC (default is in-memory).
     cache:
       file: /data/cache.db
+
+    # Topics are private by default. Upstream ships defaultAccess "read-write", which lets anyone
+    # who can reach the service subscribe to any topic or publish to it -- unacceptable where a
+    # topic carries one person's on-call pages.
+    #
+    # This alone locks everybody out, including publishers. An admin user has to be created once in
+    # the pod before anything can use the instance -- see "Users & tokens" in the readme.
+    auth:
+      file: /data/user.db
+      defaultAccess: deny-all
+
+    # Humans log into the mobile app with username + password, so this has to be on. Signup stays
+    # off (the upstream default): accounts are created by an admin, not self-registered.
+    enableLogin: true
