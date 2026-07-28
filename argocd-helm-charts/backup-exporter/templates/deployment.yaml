@@ -125,6 +125,43 @@ spec:
             {{- end }}
             {{- end }}
             {{- end }}
+            {{- if (.Values.exporter.sealedSecrets).enabled }}
+            - name: SEALED_SECRETS_BACKUP_ENABLED
+              value: "true"
+            - name: SEALED_SECRETS_EXPORTER_MAX_RPO
+              value: {{ .Values.exporter.sealedSecrets.max_rpo | default "26h" | quote }}
+            - name: SEALED_SECRETS_EXPORTER_INTERVAL_RATE
+              value: {{ .Values.exporter.sealedSecrets.interval_rate | default "0.25" | quote }}
+            {{- with .Values.exporter.sealedSecrets.s3.bucket }}
+            - name: SEALED_SECRETS_S3_BUCKET
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.exporter.sealedSecrets.s3.endpoint }}
+            - name: SEALED_SECRETS_S3_ENDPOINT
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.exporter.sealedSecrets.s3.secretName }}
+            - name: SEALED_SECRETS_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ . }}
+                  key: access-key-id
+            - name: SEALED_SECRETS_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ . }}
+                  key: secret-access-key
+            {{- else }}
+            {{- with .Values.exporter.sealedSecrets.s3.accessKeyId }}
+            - name: SEALED_SECRETS_S3_ACCESS_KEY_ID
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.exporter.sealedSecrets.s3.secretAccessKey }}
+            - name: SEALED_SECRETS_S3_SECRET_ACCESS_KEY
+              value: {{ . | quote }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
             {{- $s3 := .Values.exporter.postgres.s3 }}
             {{- with $s3.secretName }}
             - name: POSTGRES_S3_LOGICAL_ACCESS_KEY_ID
