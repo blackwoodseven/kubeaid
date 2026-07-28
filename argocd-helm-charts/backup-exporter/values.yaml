@@ -164,6 +164,31 @@ exporter:
       secretAccessKey: ""
       region: ""
       bucket: ""
+  mongodb:
+    # The MongoDB dump exporter is opt-in: the MongoDB Community operator ships
+    # no backup CRD, so a cluster without the Obmondo mongodump CronJob has
+    # nothing to report and should not be scheduled at all.
+    enabled: false
+
+    # Maximum acceptable Recovery Point Objective (RPO) for MongoDB dumps.
+    # Supported formats: "24h", "6h", "30m", "1d", "7d"
+    max_rpo: 26h
+
+    # Rate at which the exporter checks backup health, expressed as a fraction
+    # of max_rpo. Must be between 0 and 1. Defaults to 0.25.
+    interval_rate: 0.25
+
+    # Credentials for listing the dump bucket. Required when enabled: the
+    # exporter uses its own read-only keys and never reads the backup CronJob's
+    # Secret, which would need "get" on secrets in every namespace. Everything
+    # else -- bucket, prefix, endpoint -- is read off the discovered CronJob.
+    s3:
+      # Name of the Kubernetes Secret containing S3 credentials.
+      # Expected secret keys: access-key-id, secret-access-key
+      secretName: ""
+      # Direct values for testing (used when secretName is empty).
+      accessKeyId: ""
+      secretAccessKey: ""
 
 # PrometheusRule for alerting
 prometheusRule:
@@ -176,6 +201,14 @@ prometheusRule:
     namespace: monitoring
   velero:
     enabled: true
+    labels: {}
+    severity: critical
+    alertForDuration: 5m
+    namespace: monitoring
+  mongodb:
+    # Follows exporter.mongodb.enabled -- rules for an exporter that is not
+    # running would alert on series that never appear.
+    enabled: false
     labels: {}
     severity: critical
     alertForDuration: 5m

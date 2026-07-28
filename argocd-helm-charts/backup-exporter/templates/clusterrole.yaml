@@ -22,6 +22,13 @@ rules:
     resources: ["cronjobs"]
     verbs: ["get", "list"]
 
+  # MongoDBCommunity CRDs. Collection is driven by these: each names its own
+  # backup CronJob (<resource>-backup), and one with no such job reports
+  # no_backup.
+  - apiGroups: ["mongodbcommunity.mongodb.com"]
+    resources: ["mongodbcommunity"]
+    verbs: ["get", "list"]
+
   # Velero CRDs
   - apiGroups: ["velero.io"]
     resources: ["schedules"]
