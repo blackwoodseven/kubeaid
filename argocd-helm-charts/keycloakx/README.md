@@ -144,6 +144,10 @@ Details about setup if you are interested:
 
 ## Setup Keycloak as Identity Provider on a Keycloak
 
+> For the full walk-through — brokering with group sync into NetBird and
+> Kubernetes (ClusterProxy), without creating local groups — see
+> [Keycloak-to-Keycloak identity brokering](doc/keycloak-to-keycloak-idp.md).
+
 * Log into the keycloak server, using your personal admin account
 * Switch to the `<customer_name>` realm
 * Click on Identity Provider -> Add provider -> Keycloak OIDC
