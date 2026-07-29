@@ -39,6 +39,14 @@ rules:
     resources: ["objectstores"]
     verbs: ["get", "list"]
 
+  # Sealed-secrets controller Deployments. The namespace running the controller
+  # is the one holding the master keys, so it is the only namespace where a
+  # missing key backup means anything. Without this rule that namespace is never
+  # identified and the sealed-secrets stream goes silent everywhere.
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list"]
+
   # Namespaces for cross-namespace discovery
   - apiGroups: [""]
     resources: ["namespaces"]
