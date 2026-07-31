@@ -66,7 +66,6 @@ vulsExporter:
       cpu: 20m
       memory: 32Mi
     limits:
-      cpu: 50m
       memory: 64Mi
 
 # vuls2 unified database.
@@ -94,7 +93,8 @@ vulsServer:
       cpu: 50m
       memory: 256Mi
     limits:
-      cpu: 100m
+      # we don't set CPU limits because usage spike often times stays unpredictable
+      # as observed in one of our customers
       memory: 512Mi
   resultsDir: /vuls/results
   databaseStorage:
