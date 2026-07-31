@@ -43,6 +43,13 @@ buzz:
   # Public wss:// URL clients dial. Also derives the ingress host and media URL.
   relayUrl: wss://buzz.example.com
 
+  # Pinned rather than inherited from the chart's appVersion, which is still
+  # 0.1.0. That relay predates the startup migration step, so it silently leaves
+  # the schema uncreated and every query fails on a missing relation while the
+  # process looks healthy. See README.md.
+  image:
+    tag: "0.2.0"
+
   # Every relay env var is read from this one Secret, and DATABASE_URL is
   # mandatory, so the chart-managed Secret path is unusable under ArgoCD.
   # README.md lists the keys.

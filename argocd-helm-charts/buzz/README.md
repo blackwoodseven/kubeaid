@@ -130,6 +130,30 @@ operator's 64-char lowercase hex Nostr pubkey; the chart refuses to render witho
 fails rendering otherwise. Git state lives in object storage, so `ReadWriteOnce` volumes stay correct
 at any replica count — no ReadWriteMany storage is needed.
 
+## Relay image
+
+`image.tag` is pinned instead of inheriting `.Chart.AppVersion`. Chart 0.1.7 still declares
+`appVersion: 0.1.0`, and that relay predates the startup migration step: it never creates the schema,
+`_sqlx_migrations` is never written, and the relay then serves traffic while every query fails on a
+missing relation — it looks healthy and answers WebSockets, so the cause is not obvious.
+
+A relay that runs migrations logs either `Database migrations complete` or `Skipping database
+migrations because BUZZ_AUTO_MIGRATE is not enabled` right after `Postgres connected`. Neither line
+means the image is too old, whatever `BUZZ_AUTO_MIGRATE` is set to.
+
+Re-check the pin when bumping the chart — upstream may have realigned `appVersion` by then.
+
+Verify any new tag actually exists before pinning it. GHCR's `tags/list` for this repository returns
+incomplete and inconsistent pages, and upstream's GitHub releases run ahead of the published relay
+images — `v0.5.2` is tagged in git with no image behind it. Ask the registry about a specific tag
+instead:
+
+```sh
+crane manifest ghcr.io/block/buzz:<tag> >/dev/null && echo exists
+```
+
+`0.2.0` is the newest published release image; it shares a digest with `latest`.
+
 ## Git storage
 
 `persistence.git.enabled` is `false`, so git working space is an emptyDir. That is deliberate.
