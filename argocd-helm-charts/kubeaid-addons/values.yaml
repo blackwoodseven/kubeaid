@@ -88,6 +88,12 @@ global:
     # -- Database owner created during initdb
     owner: app
 
+    # -- Name of an existing kubernetes.io/basic-auth Secret holding the owner's
+    # credentials. Omit to let CNPG generate them into <instanceName>-pgsql-app.
+    # Set it when the password must be known ahead of time, e.g. an app that
+    # takes a full connection URL from a sealed Secret.
+    existingSecret: ""
+
     # -- PVC size for each PostgreSQL instance
     size: 2Gi
 

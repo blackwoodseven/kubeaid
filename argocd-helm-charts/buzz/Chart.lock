@@ -1,0 +1,9 @@
+dependencies:
+- name: buzz
+  repository: oci://ghcr.io/block/buzz/charts
+  version: 0.1.7
+- name: kubeaid-addons
+  repository: file://../kubeaid-addons
+  version: 0.1.0
+digest: sha256:e0027ff6cdaf43cc2721097e3b6f234dbee2831da24e427a905191e5876c9174
+generated: "2026-07-31T13:59:48.918787511+05:30"

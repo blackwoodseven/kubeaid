@@ -1,0 +1,17 @@
+buzz:
+  relayUrl: wss://buzz.example.com
+  ingress:
+    tls:
+      - hosts:
+          - buzz.example.com
+        secretName: buzz-tls
+  s3:
+    endpoint: https://buckets.example.com
+    bucket: buzz-media
+  persistence:
+    git:
+      size: 20Gi
+
+global:
+  postgresql:
+    size: 10Gi

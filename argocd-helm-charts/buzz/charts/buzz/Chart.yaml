@@ -1,0 +1,26 @@
+annotations:
+  artifacthub.io/changes: |
+    - kind: added
+      description: Generic init-container, volume, volume-mount, command, and args extension points for the relay Pod.
+  artifacthub.io/license: Apache-2.0
+apiVersion: v2
+appVersion: 0.1.0
+description: 'Buzz — a Nostr-based messaging platform for human–agent collaboration.  A
+  single relay binary serving WebSocket + REST + web UI, backed by PostgreSQL and
+  Redis. Configurable for single-node evaluation (subcharts on) and HA production
+  (external services, existingSecret). '
+home: https://github.com/block/buzz
+keywords:
+- nostr
+- relay
+- messaging
+- websocket
+- chat
+maintainers:
+- name: Block
+  url: https://github.com/block
+name: buzz
+sources:
+- https://github.com/block/buzz
+type: application
+version: 0.1.7
