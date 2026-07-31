@@ -57,10 +57,21 @@ it is unusable under ArgoCD.
 | `REDIS_URL` | at `replicaCount > 1` | `redis://buzz-redis:6379` |
 | `BUZZ_S3_ACCESS_KEY` | yes in practice | Access key for the bucket |
 | `BUZZ_S3_SECRET_KEY` | yes in practice | Secret key for the bucket |
-| `BUZZ_RELAY_PRIVATE_KEY` | no | 64-char hex relay identity. Generated on first install if absent — **back it up**, rotating it changes the relay's identity |
+| `BUZZ_RELAY_PRIVATE_KEY` | in practice yes | 64-char hex relay identity — see below |
 | `BUZZ_GIT_HOOK_HMAC_SECRET` | at `replicaCount > 1` | 32+ random characters |
 
 `<password>` is the same one sealed into `buzz-pgsql-credentials`.
+
+`BUZZ_RELAY_PRIVATE_KEY` is optional to the relay but should always be set here. Upstream generates
+one on first install, but only into the Secret the chart manages itself; with `existingSecret` set
+that Secret is never rendered, so nothing generates the key and **the relay takes a new identity on
+every restart**. Seal one and treat it as a backup — changing it changes who the relay is, and
+federation peers will not recognise it.
+
+```sh
+openssl rand -hex 32    # BUZZ_RELAY_PRIVATE_KEY
+openssl rand -hex 24    # BUZZ_GIT_HOOK_HMAC_SECRET
+```
 
 ```sh
 kubectl create secret generic buzz-secrets \
@@ -69,6 +80,7 @@ kubectl create secret generic buzz-secrets \
   --from-literal=REDIS_URL='redis://buzz-redis:6379' \
   --from-literal=BUZZ_S3_ACCESS_KEY='<access-key>' \
   --from-literal=BUZZ_S3_SECRET_KEY='<secret-key>' \
+  --from-literal=BUZZ_RELAY_PRIVATE_KEY='<64-hex>' \
   --dry-run=client -o yaml | kubeseal -o yaml > buzz-secrets.yaml
 ```
 
