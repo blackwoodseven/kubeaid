@@ -57,10 +57,21 @@ it is unusable under ArgoCD.
 | `REDIS_URL` | at `replicaCount > 1` | `redis://buzz-redis:6379` |
 | `BUZZ_S3_ACCESS_KEY` | yes in practice | Access key for the bucket |
 | `BUZZ_S3_SECRET_KEY` | yes in practice | Secret key for the bucket |
-| `BUZZ_RELAY_PRIVATE_KEY` | no | 64-char hex relay identity. Generated on first install if absent — **back it up**, rotating it changes the relay's identity |
+| `BUZZ_RELAY_PRIVATE_KEY` | in practice yes | 64-char hex relay identity — see below |
 | `BUZZ_GIT_HOOK_HMAC_SECRET` | at `replicaCount > 1` | 32+ random characters |
 
 `<password>` is the same one sealed into `buzz-pgsql-credentials`.
+
+`BUZZ_RELAY_PRIVATE_KEY` is optional to the relay but should always be set here. Upstream generates
+one on first install, but only into the Secret the chart manages itself; with `existingSecret` set
+that Secret is never rendered, so nothing generates the key and **the relay takes a new identity on
+every restart**. Seal one and treat it as a backup — changing it changes who the relay is, and
+federation peers will not recognise it.
+
+```sh
+openssl rand -hex 32    # BUZZ_RELAY_PRIVATE_KEY
+openssl rand -hex 24    # BUZZ_GIT_HOOK_HMAC_SECRET
+```
 
 ```sh
 kubectl create secret generic buzz-secrets \
@@ -69,6 +80,7 @@ kubectl create secret generic buzz-secrets \
   --from-literal=REDIS_URL='redis://buzz-redis:6379' \
   --from-literal=BUZZ_S3_ACCESS_KEY='<access-key>' \
   --from-literal=BUZZ_S3_SECRET_KEY='<secret-key>' \
+  --from-literal=BUZZ_RELAY_PRIVATE_KEY='<64-hex>' \
   --dry-run=client -o yaml | kubeseal -o yaml > buzz-secrets.yaml
 ```
 
@@ -86,6 +98,26 @@ tracks a newer chart version.
 
 The bucket must not be folded into `buzz.s3.endpoint`; the two are passed separately.
 
+## Ingress
+
+`buzz.ingress.className` and `buzz.ingress.annotations` are deliberately empty. Helm merges annotation
+maps, so a default here would appear on every install and could not be removed downstream — set both
+per cluster.
+
+Relay traffic is long-lived WebSockets. On NGINX raise the timeouts, or connections drop after the
+60s default:
+
+```yaml
+buzz:
+  ingress:
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+```
+
+Traefik proxies WebSockets without extra configuration.
+
 ## Relay membership
 
 `buzz.relay.requireRelayMembership` is `false` here, which runs an open relay and needs no operator
@@ -98,7 +130,25 @@ operator's 64-char lowercase hex Nostr pubkey; the chart refuses to render witho
 fails rendering otherwise. Git state lives in object storage, so `ReadWriteOnce` volumes stay correct
 at any replica count — no ReadWriteMany storage is needed.
 
+## Git storage
+
+`persistence.git.enabled` is `false`, so git working space is an emptyDir. That is deliberate.
+
+The upstream Deployment hardcodes `strategy.rollingUpdate.maxUnavailable: 0` and exposes no value to
+change it, so a rollout requires the replacement pod to be running before the old one exits. A
+ReadWriteOnce volume — which is what most block storage classes give you, rook-ceph-block included —
+cannot attach to two nodes at once, so **every rollout deadlocks on `Multi-Attach`** and the
+Deployment never converges.
+
+Nothing durable is lost. Git objects are rehydrated from object storage on each request and
+repo-name uniqueness lives in Postgres, which is why upstream dropped its ReadWriteMany requirement.
+The only cost is a cold cache after a restart.
+
+Enable the PVC only with a ReadWriteMany storage class, where both pods can hold the volume during a
+rollout.
+
 ## Backups
 
-Losing any of these is data loss: `BUZZ_RELAY_PRIVATE_KEY`, the PostgreSQL database, the S3 bucket,
-and the git PVC. Enable `global.postgresql.backups` / `logicalbackup` for the database.
+Losing any of these is data loss: `BUZZ_RELAY_PRIVATE_KEY`, the PostgreSQL database, and the S3
+bucket. Enable `global.postgresql.backups` / `logicalbackup` for the database. Git state lives in the
+bucket, not on disk, so the relay's local storage needs no backup.
