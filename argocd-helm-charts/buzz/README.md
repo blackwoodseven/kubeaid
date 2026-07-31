@@ -130,7 +130,25 @@ operator's 64-char lowercase hex Nostr pubkey; the chart refuses to render witho
 fails rendering otherwise. Git state lives in object storage, so `ReadWriteOnce` volumes stay correct
 at any replica count — no ReadWriteMany storage is needed.
 
+## Git storage
+
+`persistence.git.enabled` is `false`, so git working space is an emptyDir. That is deliberate.
+
+The upstream Deployment hardcodes `strategy.rollingUpdate.maxUnavailable: 0` and exposes no value to
+change it, so a rollout requires the replacement pod to be running before the old one exits. A
+ReadWriteOnce volume — which is what most block storage classes give you, rook-ceph-block included —
+cannot attach to two nodes at once, so **every rollout deadlocks on `Multi-Attach`** and the
+Deployment never converges.
+
+Nothing durable is lost. Git objects are rehydrated from object storage on each request and
+repo-name uniqueness lives in Postgres, which is why upstream dropped its ReadWriteMany requirement.
+The only cost is a cold cache after a restart.
+
+Enable the PVC only with a ReadWriteMany storage class, where both pods can hold the volume during a
+rollout.
+
 ## Backups
 
-Losing any of these is data loss: `BUZZ_RELAY_PRIVATE_KEY`, the PostgreSQL database, the S3 bucket,
-and the git PVC. Enable `global.postgresql.backups` / `logicalbackup` for the database.
+Losing any of these is data loss: `BUZZ_RELAY_PRIVATE_KEY`, the PostgreSQL database, and the S3
+bucket. Enable `global.postgresql.backups` / `logicalbackup` for the database. Git state lives in the
+bucket, not on disk, so the relay's local storage needs no backup.
