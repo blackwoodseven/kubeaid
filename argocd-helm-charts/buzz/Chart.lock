@@ -1,0 +1,6 @@
+dependencies:
+- name: buzz
+  repository: oci://ghcr.io/block/buzz/charts
+  version: 0.1.7
+digest: sha256:3d91286338db2ceffa9cdeb5d9067bffc86124493435d3a7e1a33a203844f7cc
+generated: "2026-07-31T13:56:08.272297736+05:30"
