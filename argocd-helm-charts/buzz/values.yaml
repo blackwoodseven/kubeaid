@@ -48,7 +48,7 @@ buzz:
   # the schema uncreated and every query fails on a missing relation while the
   # process looks healthy. See README.md.
   image:
-    tag: "0.3.20"
+    tag: "0.2.0"
 
   # Every relay env var is read from this one Secret, and DATABASE_URL is
   # mandatory, so the chart-managed Secret path is unusable under ArgoCD.
