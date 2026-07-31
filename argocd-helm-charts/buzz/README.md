@@ -8,6 +8,11 @@ This wrapper runs the upstream chart in its production profile and supplies the 
 KubeAid way: PostgreSQL from the CloudNativePG operator via `kubeaid-addons`, Redis from the Redis
 operator, and object storage from an external S3-compatible endpoint.
 
+Upstream's bundled `postgres` and `redis` subcharts are stripped from the vendored copy, so the
+evaluation profile is gone and `buzz.postgresql.enabled` / `buzz.redis.enabled` have to stay false.
+Re-vendoring with `bin/manage-helm-chart.sh --update-helm-chart buzz` pulls them back in, so the
+removal has to be repeated on every chart bump.
+
 ## Prerequisites
 
 - `cloudnative-pg` and `redis-operator` installed on the cluster.

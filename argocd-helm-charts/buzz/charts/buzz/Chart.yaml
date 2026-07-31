@@ -5,16 +5,6 @@ annotations:
   artifacthub.io/license: Apache-2.0
 apiVersion: v2
 appVersion: 0.1.0
-dependencies:
-- alias: postgresql
-  condition: postgresql.enabled
-  name: postgres
-  repository: oci://registry-1.docker.io/cloudpirates
-  version: 0.19.x
-- condition: redis.enabled
-  name: redis
-  repository: oci://registry-1.docker.io/cloudpirates
-  version: 0.30.x
 description: 'Buzz — a Nostr-based messaging platform for human–agent collaboration.  A
   single relay binary serving WebSocket + REST + web UI, backed by PostgreSQL and
   Redis. Configurable for single-node evaluation (subcharts on) and HA production
