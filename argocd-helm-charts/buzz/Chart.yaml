@@ -5,3 +5,6 @@ dependencies:
   - name: buzz
     version: 0.1.7
     repository: oci://ghcr.io/block/buzz/charts
+  - name: kubeaid-addons
+    version: 0.1.0
+    repository: file://../kubeaid-addons

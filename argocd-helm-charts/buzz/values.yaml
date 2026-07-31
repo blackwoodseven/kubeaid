@@ -1,0 +1,99 @@
+global:
+  postgresql:
+    enabled: true
+    instanceName: buzz
+    instances: 1
+    size: 5Gi
+    database: buzz
+    owner: buzz
+    # Pins the owner's password so the DATABASE_URL sealed into buzz-secrets
+    # keeps matching the database. See README.md.
+    existingSecret: buzz-pgsql-credentials
+    monitoring:
+      enablePodMonitor: true
+    resources:
+      limits:
+        memory: 800Mi
+      requests:
+        memory: 500Mi
+        cpu: 100m
+    backups:
+      enabled: false
+    logicalbackup:
+      enabled: false
+
+# Redis for buzz-pubsub, rendered by templates/redis-standalone.yaml through the
+# Redis operator. Reachable without auth as redis://buzz-redis:6379.
+externalRedis:
+  enabled: true
+  mode: standalone
+  replicas: 1
+  name: buzz-redis
+  storage: 2Gi
+  image: quay.io/opstree/redis:v7.2.6
+  imagePullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 101m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+buzz:
+  # Public wss:// URL clients dial. Also derives the ingress host and media URL.
+  relayUrl: wss://buzz.example.com
+
+  # Every relay env var is read from this one Secret, and DATABASE_URL is
+  # mandatory, so the chart-managed Secret path is unusable under ArgoCD.
+  # README.md lists the keys.
+  secrets:
+    existingSecret: buzz-secrets
+
+  replicaCount: 1
+
+  relay:
+    # Open relay: no ownerPubkey needed. Set this true and supply the operator's
+    # 64-char hex ownerPubkey to gate on relay membership.
+    requireRelayMembership: false
+
+  # Backing services come from the CNPG and Redis operators above, and from
+  # external object storage, so the chart's bundled ones stay off.
+  postgresql:
+    enabled: false
+  redis:
+    enabled: false
+  minio:
+    enabled: false
+
+  # External S3-compatible object storage. Credentials are supplied out of band
+  # as BUZZ_S3_ACCESS_KEY / BUZZ_S3_SECRET_KEY in buzz-secrets. Chart 0.1.7
+  # addresses the bucket as <endpoint>/<bucket>/<key> and exposes no region or
+  # addressing-style knob, so the endpoint must serve path-style requests.
+  s3:
+    endpoint: https://buckets.example.com
+    bucket: buzz-media
+
+  # Git repo state is object-store-backed, so ReadWriteOnce is enough at any
+  # replica count.
+  persistence:
+    git:
+      enabled: true
+      accessMode: ReadWriteOnce
+      size: 10Gi
+      # storageClass: ""
+
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      # Relay connections are long-lived WebSockets; the 60s default cuts them.
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    tls:
+      - hosts:
+          - buzz.example.com
+        secretName: buzz-tls
+
+  serviceMonitor:
+    enabled: true
