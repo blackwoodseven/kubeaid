@@ -2,6 +2,43 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 31.5.0
+
+### New Charts Added
+
+- a39dbb925 chore(new): Added new helm chart buzz 0.1.7
+
+### Features
+
+- c7dce6947 feat(buzz): wire the chart to cloudnative-pg, redis operator and external S3
+- 518baa862 feat(kubeaid-addons): allow pinning the postgres owner credentials
+- 2637d2ce2 feat(backup-exporter): allow reading deployments for sealed-secrets scope
+- 39ce3a9a5 feat(backup-exporter): add sealed-secrets key backup monitoring
+- c4fec5c6e feat(backup-exporter): add MongoDB dump monitoring
+
+### Bug Fixes
+
+- 7855c8b61 fix(buzz): pin an image tag that exists
+- 7a881c394 fix(buzz): pin the relay image instead of following appVersion
+- ed0806951 fix(buzz): default git storage to emptyDir so rollouts converge
+- 9ead8eb1e fix(buzz): stop shipping ingress defaults that cannot be removed
+
+### Configuration Changes
+
+- b4d2d0d03 chore(vuls-dictionary): bump vuls-exporter image to 1.3.3
+- 5023adb45 chore(buzz): drop the bundled postgres and redis subcharts
+- b8c608e04 chore(vuls-dictionary): remove default CPU limits in vuls-dictionary helm chart
+- 88e101545 chore(backup-exporter): track v1.2.0
+- ad43245ff chore(ntfy): lock topics down with deny-all and a user database
+
+### Other Changes
+
+- db84f112c bump-vuls-exporter-v1.3.1
+- 61a63bc82 docs(buzz): correct the relay private key guidance
+- 2b6667306 split keycloak documentation
+- df807a208 docs(keycloakx): add keycloak-to-keycloak identity brokering guide
+- fada0da6c Guide for enabling yubikey on keycloak
+
 ## KubeAid Release Version 31.4.0
 
 ### Minor Version Upgrades
