@@ -66,8 +66,8 @@ Guides for ongoing cluster management:
 
 | Guide | Description |
 | ------- | ------------- |
-| [CI/CD Setup](./development/ci-cd-setup.md) | Pipeline configuration |
-| [Helm Charts](./development/helm_charts.md) | Chart development |
+| [CI/CD Setup](./guides/ci-cd-setup.md) | Pipeline configuration |
+| [Helm Charts](./guides/helm_charts.md) | Chart development |
 | [Release Procedure](./guides/release.md) | Release workflow |
 | [Update ArgoCD Apps](./update_kubeaid_argocd_apps.md) | Updating deployed apps |
 
