@@ -1,6 +1,6 @@
 dependencies:
 - name: yetibot
   repository: https://yetibot.com/yetibot-helm/
-  version: 1.0.202
-digest: sha256:83621f770163ec0e01047329247a86412772803f8f67dc16bf31acb38eb471a5
-generated: "2026-07-27T20:10:27.124694771+05:30"
+  version: 1.0.213
+digest: sha256:ebff0a86ff6cd7e0984498e4b46fb6a29debf6cf5ead7ac7d74cf5ab1e57ba6b
+generated: "2026-08-03T15:13:52.253241637+05:30"
