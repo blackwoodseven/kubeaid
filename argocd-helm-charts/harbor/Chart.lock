@@ -1,9 +1,9 @@
 dependencies:
 - name: harbor
   repository: https://helm.goharbor.io
-  version: 1.19.1
+  version: 1.19.2
 - name: kubeaid-addons
   repository: file://../kubeaid-addons
   version: 0.1.0
-digest: sha256:7e439dcd7720133fd9149cc5897580b003a349432771df1a473c4a3a09be40ac
-generated: "2026-06-07T20:13:46.673126372+05:30"
+digest: sha256:ecd19f5ee796b85c91e35c858156a7d1a60033196cd8f800c5faf833f697f9d0
+generated: "2026-08-03T14:51:59.995619422+05:30"
