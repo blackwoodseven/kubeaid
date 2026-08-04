@@ -28,6 +28,7 @@ appConfig:
       - ipaddress
       - hostname
       - domain
+      - virtual
       - obmondo_customer
       - obmondo_system
       - snapshot
