@@ -152,7 +152,7 @@ All modes include:
 
 - [Cilium](https://cilium.io) CNI in [kube-proxyless mode](https://cilium.io/use-cases/kube-proxy/) with **VXLAN tunnel
   routing** (pod traffic is encapsulated over the node network - no routes programmed in HCloud)
-- [CAPH](https://github.com/syself/cluster-api-provider-hetzner) **v1.1.7** with default OS image **Ubuntu 26.04**
+- [CAPH](https://github.com/syself/cluster-api-provider-hetzner) **v1.1.8** with default OS image **Ubuntu 26.04**
 - GitOps with [ArgoCD](https://argoproj.github.io/cd/), [Sealed
   Secrets](https://github.com/bitnami-labs/sealed-secrets), [ClusterAPI](https://cluster-api.sigs.k8s.io)
 - Monitoring with [KubePrometheus](https://prometheus-operator.dev)
