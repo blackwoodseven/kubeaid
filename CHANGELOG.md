@@ -29,6 +29,54 @@ All releases and the changes included in them (pulled from git commits added sin
 - bf96a7ceb Updated teleport-kube-agent from version 18.10.1 to 18.10.3
 - bf96a7ceb Updated yetibot from version 1.0.202 to 1.0.213
 
+### Features
+
+- 8a098aa46 feat(kubeaid-agent): report the puppet  fact
+
+### Bug Fixes
+
+- d216e73b7 fix: eos/eol alerts text
+- 8bff53181 fix(buzz): wait for postgres and repair pre-0.2.0 schema on startup
+
+### Configuration Changes
+
+- edf903c3a chore(kubeaid-addons/postgresql): remove logical backup CRONJob, since we rely on Barman cloud plugin
+- 820bc13a7 chore(keycloakx): improve default values
+- d9b37d639 chore(capi): bump CAPH to v1.1.8
+- 83977fb63 chore(release): update CHANGELOG and Release Notes for Kubeaid 32.0.0
+- 08119550d chore(vuls-dictionary): bump vuls-exporter image to 1.3.3
+
+### Other Changes
+
+- 712f04505 docs: move ci-cd-setup and helm_charts into guides so the Development sidebar category goes away from docs
+
+## KubeAid Release Version 32.0.0
+
+### Major Version Upgrades
+
+- bf96a7ceb Updated postgres-operator from version 1.15.1 to 2.0.1
+
+### Minor Version Upgrades
+
+- bf96a7ceb Updated cilium from version 1.19.6 to 1.20.0
+- bf96a7ceb Updated rustfs from version 0.11.0 to 0.12.0
+- bf96a7ceb Updated traefik from version 41.0.2 to 41.1.1
+
+### Patch Version Upgrades
+
+- bf96a7ceb Updated aws-ebs-csi-driver from version 2.63.0 to 2.63.1
+- bf96a7ceb Updated cert-manager from version v1.21.0 to v1.21.1
+- bf96a7ceb Updated erpnext from version 8.0.68 to 8.0.69
+- bf96a7ceb Updated graylog from version 3.0.25 to 3.0.26
+- bf96a7ceb Updated harbor from version 1.19.1 to 1.19.2
+- bf96a7ceb Updated hcloud-csi from version 2.22.0 to 2.22.1
+- bf96a7ceb Updated keda from version 2.20.1 to 2.20.2
+- bf96a7ceb Updated rook-ceph from version v1.20.2 to v1.20.3
+- bf96a7ceb Updated rook-ceph-cluster from version v1.20.2 to v1.20.3
+- bf96a7ceb Updated teleport-cluster from version 18.10.1 to 18.10.3
+- bf96a7ceb Updated teleport-kube-agent from version 18.10.1 to 18.10.3
+- bf96a7ceb Updated yetibot from version 1.0.202 to 1.0.213
+
 ### Bug Fixes
 
 - 8bff53181 fix(buzz): wait for postgres and repair pre-0.2.0 schema on startup
