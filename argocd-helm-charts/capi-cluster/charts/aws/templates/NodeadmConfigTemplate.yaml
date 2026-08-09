@@ -1,0 +1,24 @@
+{{- if and .Values.eks (.Values.global).enableClusterAutoscaler }}
+{{/* EKS worker bootstrap : nodeadm on AL2023 (the EKSConfig / bootstrap.sh
+     flow only supports AL2, which is EOL). One template per node-group,
+     referenced by the MachineDeployments' bootstrap.configRef. Node taints
+     come from the EKS side of the join; labels propagate via the
+     MachineDeployment template metadata like on kubeadm clusters. */}}
+{{- range $index, $nodeGroup := $.Values.nodeGroups }}
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+kind: NodeadmConfigTemplate
+metadata:
+  name: {{ printf "%s-%s" $.Values.global.clusterName $nodeGroup.name }}
+spec:
+  template:
+    {{- if $nodeGroup.taints }}
+    spec:
+      kubelet:
+        flags:
+          - "--register-with-taints={{- $taints := list }}{{- range $taint := $nodeGroup.taints }}{{- $taints = append $taints (printf "%s=%s:%s" $taint.key $taint.value $taint.effect) }}{{- end }}{{- join "," $taints }}"
+    {{- else }}
+    spec: {}
+    {{- end }}
+{{- end }}
+{{- end }}

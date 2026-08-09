@@ -1,0 +1,101 @@
+suite: aws eks (managed control plane)
+templates:
+  - "*.yaml"
+release:
+  name: demo
+chart:
+  version: 1.0.0
+  appVersion: 1.0.0
+values:
+  - ../values.example.eks.yaml
+set:
+  global.clusterName: demo
+  global.kubernetes.version: v1.34.0
+  global.enableClusterAutoscaler: true
+  global.capa.enableMachinePools: false
+  global.additionalUsers: []
+  global.kubeaid.repo: https://github.com/Obmondo/KubeAid
+  global.kubeaid.version: ""
+tests:
+  - it: points the Cluster at the managed control plane
+    template: Cluster.yaml
+    asserts:
+      - equal:
+          path: spec.controlPlaneRef.kind
+          value: AWSManagedControlPlane
+      - equal:
+          path: spec.infrastructureRef.kind
+          value: AWSManagedCluster
+
+  - it: renders the AWSManagedControlPlane with VPC CNI and kube-proxy disabled
+    template: AWSManagedControlPlane.yaml
+    asserts:
+      - equal:
+          path: spec.eksClusterName
+          value: demo
+      - equal:
+          path: spec.version
+          value: v1.34.0
+      - equal:
+          path: spec.vpcCni.disable
+          value: true
+      - equal:
+          path: spec.kubeProxy.disable
+          value: true
+
+  - it: renders the AWSManagedCluster stand-in
+    template: AWSManagedCluster.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: bootstraps workers via NodeadmConfigTemplate
+    template: MachineDeployment.yaml
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.template.spec.bootstrap.configRef.kind
+          value: NodeadmConfigTemplate
+
+  - it: renders one NodeadmConfigTemplate per node-group
+    template: NodeadmConfigTemplate.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: worker machine templates use the EKS AMI lookup, keyless
+    template: AWSMachineTemplate.yaml
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.template.spec.ami.eksLookupType
+          value: AmazonLinux2023
+      - equal:
+          path: spec.template.spec.cloudInit.insecureSkipSecretsManager
+          value: true
+      - notExists:
+          path: spec.template.spec.sshKeyName
+
+  - it: renders no kubeadm control-plane resources
+    template: KubeadmControlPlane.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders no AWSCluster
+    template: AWSCluster.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders no KubeadmConfigTemplate
+    template: KubeadmConfigTemplate.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders no control-plane MachineHealthCheck
+    template: MachineHealthCheck.yaml
+    asserts:
+      - hasDocuments:
+          count: 0

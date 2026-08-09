@@ -1,0 +1,22 @@
+# Example values for an EKS (AWS managed control plane) cluster.
+# Workers are self-managed MachineDeployments bootstrapped via
+# NodeadmConfigTemplate on EKS optimized AL2023 AMIs (K8s >= v1.33).
+eks: true
+secretName: cloud-credentials
+region: eu-west-1
+bastion:
+  enabled: true
+vpc:
+  cidrBlock: 10.14.0.0/22
+pods:
+  cidrBlock: 10.244.0.0/16
+nodeGroups:
+  - name: primary
+    minSize: 3
+    maxSize: 9
+    cpu: 2
+    memory: 8
+    instanceType: m5.large
+    rootVolumeSize: 50
+    labels: {}
+    taints: []

@@ -1,3 +1,6 @@
+{{- /* Watches control-plane Machines — EKS clusters have none (AWS owns the
+     control plane), so this renders only for the kubeadm variant. */}}
+{{- if not .Values.eks }}
 apiVersion: cluster.x-k8s.io/v1beta2
 kind: MachineHealthCheck
 metadata:
@@ -16,3 +19,4 @@ spec:
     - type: Ready
       status: "False"
       timeout: 5m0s
+{{- end }}

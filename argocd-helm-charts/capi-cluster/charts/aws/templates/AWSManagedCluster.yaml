@@ -1,0 +1,11 @@
+{{- if .Values.eks }}
+{{/* The Cluster infrastructureRef stand-in for EKS : all the actual
+     infrastructure config lives on AWSManagedControlPlane. */}}
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: AWSManagedCluster
+metadata:
+  name: {{ .Values.global.clusterName }}
+  labels:
+    cluster.x-k8s.io/name: {{ .Values.global.clusterName }}
+spec: {}
+{{- end }}
