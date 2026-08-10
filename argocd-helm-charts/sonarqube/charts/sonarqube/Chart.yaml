@@ -1,9 +1,9 @@
 annotations:
   artifacthub.io/changes: |
     - kind: changed
-      description: "Upgrade Chart's version to 2026.4.0"
+      description: "Upgrade Chart's version to 2026.4.1"
     - kind: changed
-      description: "Upgrade SonarQube Server to 2026.4.0"
+      description: "Upgrade SonarQube Server to 2026.4.1"
     - kind: changed
       description: "Upgrade SonarQube Community build to 26.7.0.124771"
     - kind: added
@@ -17,9 +17,9 @@ annotations:
     - name: sonarqube-community
       image: sonarqube:26.7.0.124771-community
     - name: sonarqube-developer
-      image: sonarqube:2026.4.0-developer
+      image: sonarqube:2026.4.1-developer
     - name: sonarqube-enterprise
-      image: sonarqube:2026.4.0-enterprise
+      image: sonarqube:2026.4.1-enterprise
     - name: sonarqube-mcp
       image: sonarsource/sonarqube-mcp:1.22.0.3040
   artifacthub.io/links: |
@@ -29,7 +29,7 @@ annotations:
       url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
   charts.openshift.io/name: sonarqube
 apiVersion: v2
-appVersion: 2026.4.0
+appVersion: 2026.4.1
 dependencies:
 - condition: nginx.enabled,ingress-nginx.enabled
   name: ingress-nginx
@@ -72,4 +72,4 @@ sources:
 - https://github.com/SonarSource/docker-sonarqube
 - https://github.com/SonarSource/sonarqube
 type: application
-version: 2026.4.0
+version: 2026.4.1

@@ -1,9 +1,9 @@
 dependencies:
 - name: peertube
   repository: https://ananace.gitlab.io/charts
-  version: 1.8.0
+  version: 1.8.1
 - name: kubeaid-addons
   repository: file://../kubeaid-addons
   version: 0.1.0
-digest: sha256:034d50bc5139d28688e0dd466435fd1c03bce659949fca9060cf021442de8ae9
-generated: "2026-07-27T19:59:30.328743343+05:30"
+digest: sha256:d67a0edc0372ac63d133a806a661b6d683e158013d89f0ce921917b7eb135c48
+generated: "2026-08-10T14:58:41.351056872+05:30"
