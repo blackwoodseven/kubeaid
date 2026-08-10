@@ -107,7 +107,7 @@ vulsServer:
     accessMode: ReadWriteOnce
   resultRetention:
     enabled: true
-    maxAgeDays: 15
+    maxAgeDays: 7
     # How often the vuls-exporter sidecar re-runs the prune. The init container
     # only cleans at pod start; the sidecar enforces this policy periodically so
     # results do not accumulate between restarts.
