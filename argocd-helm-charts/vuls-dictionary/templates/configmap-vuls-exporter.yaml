@@ -9,6 +9,12 @@ data:
   config.yaml: |
     results_dir: "/vuls/results"
     interval: {{ .Values.vulsExporter.interval | quote }}
+    {{- if .Values.vulsServer.resultRetention.enabled }}
+    cleanup:
+      enabled: true
+      max_age_days: {{ .Values.vulsServer.resultRetention.maxAgeDays }}
+      interval: {{ .Values.vulsServer.resultRetention.exporterInterval | quote }}
+    {{- end }}
     obmondo:
       url: {{ .Values.vulsExporter.obmondo.url | quote }}
       {{- if .Values.vulsExporter.tls.secretName }}
