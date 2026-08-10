@@ -191,7 +191,9 @@ spec:
           volumeMounts:
             - name: results
               mountPath: /vuls
-              readOnly: true
+              # Read-write only when the exporter is responsible for pruning old
+              # results; otherwise it just reads them.
+              readOnly: {{ not .Values.vulsServer.resultRetention.enabled }}
             {{- if .Values.vuls2.enabled }}
             - name: vuls-db
               mountPath: /vuls-db
