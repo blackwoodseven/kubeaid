@@ -2,6 +2,46 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 32.1.0
+
+### Major Version Upgrades
+
+- 96ac2bd37 Updated postgres-operator from version 1.15.1 to 2.0.1
+
+### Minor Version Upgrades
+
+- 96ac2bd37 Updated argo-cd from version 10.2.1 to 10.3.2
+- 96ac2bd37 Updated cilium from version 1.19.6 to 1.20.0
+- 96ac2bd37 Updated openobserve from version 0.91.2 to 0.92.0
+- 96ac2bd37 Updated opensearch from version 3.7.0 to 3.8.0
+- 96ac2bd37 Updated opensearch-dashboards from version 3.7.0 to 3.8.0
+- 96ac2bd37 Updated opentelemetry-collector from version 0.165.0 to 0.169.0
+- 96ac2bd37 Updated rustfs from version 0.11.0 to 0.12.0
+- 96ac2bd37 Updated seaweedfs from version 4.40.0 to 4.41.0
+- 96ac2bd37 Updated traefik from version 41.0.2 to 41.2.0
+- 96ac2bd37 Updated trivy-operator from version 0.34.0 to 0.35.0
+
+### Patch Version Upgrades
+
+- 96ac2bd37 Updated aws-ebs-csi-driver from version 2.63.0 to 2.63.1
+- 96ac2bd37 Updated cert-manager from version v1.21.0 to v1.21.1
+- 96ac2bd37 Updated erpnext from version 8.0.68 to 8.0.71
+- 96ac2bd37 Updated graylog from version 3.0.25 to 3.0.27
+- 96ac2bd37 Updated harbor from version 1.19.1 to 1.19.2
+- 96ac2bd37 Updated hcloud-csi from version 2.22.0 to 2.22.1
+- 96ac2bd37 Updated keda from version 2.20.1 to 2.20.2
+- 96ac2bd37 Updated opencost from version 2.5.28 to 2.5.29
+- 96ac2bd37 Updated opentelemetry-operator from version 0.120.0 to 0.120.2
+- 96ac2bd37 Updated peertube from version 1.8.0 to 1.8.1
+- 96ac2bd37 Updated reloader from version 2.2.14 to 2.2.16
+- 96ac2bd37 Updated rook-ceph from version v1.20.2 to v1.20.3
+- 96ac2bd37 Updated rook-ceph-cluster from version v1.20.2 to v1.20.3
+- 96ac2bd37 Updated sonarqube from version 2026.4.0 to 2026.4.1
+- 96ac2bd37 Updated teleport-cluster from version 18.10.1 to 18.10.3
+- 96ac2bd37 Updated teleport-kube-agent from version 18.10.1 to 18.10.3
+- 96ac2bd37 Updated yetibot from version 1.0.202 to 1.0.216
+
+No changes in this release.
 ## KubeAid Release Version 32.0.0
 
 ### Major Version Upgrades
