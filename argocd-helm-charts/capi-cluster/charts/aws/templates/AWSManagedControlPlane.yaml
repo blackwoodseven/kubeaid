@@ -1,24 +1,25 @@
-{{- if not .Values.eks }}
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
-kind: AWSCluster
+{{- if .Values.eks }}
+apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+kind: AWSManagedControlPlane
 metadata:
-  name: {{ .Values.global.clusterName }}
+  name: {{ .Values.global.clusterName }}-control-plane
   labels:
     cluster.x-k8s.io/name: {{ .Values.global.clusterName }}
 spec:
+  eksClusterName: {{ .Values.global.clusterName }}
   region: {{ .Values.region }}
-  sshKeyName: {{ .Values.sshKeyName }}
+  version: {{ .Values.global.kubernetes.version }}
   bastion: {{ toYaml .Values.bastion | nindent 4 }}
   network:
     vpc:
-      {{- if .Values.vpc.id }}
+      {{- if (.Values.vpc).id }}
       id: {{ .Values.vpc.id }}
       {{- else }}
-      cidrBlock: {{ .Values.vpc.cidrBlock | default "10.14.0.0/22" }}
+      cidrBlock: {{ (.Values.vpc).cidrBlock | default "10.14.0.0/22" }}
       availabilityZoneSelection: Ordered
       availabilityZoneUsageLimit: 3
       {{- end }}
-    {{- if .Values.vpc.id }}
+    {{- if (.Values.vpc).id }}
     {{/* The user must specify 3 subnets- each in a different Availability Zone (AZ). This
          validation is done by KubeAid Bootstrap Script. */}}
     subnets:
@@ -40,7 +41,12 @@ spec:
           protocol: "icmp"
           fromPort: 8
           toPort: 8
-  controlPlaneLoadBalancer:
-    loadBalancerType: {{ .Values.controlPlane.loadBalancer.type }}
-    scheme: {{ .Values.controlPlane.loadBalancer.scheme | default "internet-facing" }}
+  {{/* Cilium is the CNI (installed by kubeaid-cli, then owned by the cilium
+       ArgoCD App) and runs with kube-proxy replacement — so the EKS default
+       VPC CNI (the aws-node DaemonSet) and kube-proxy addons are disabled
+       declaratively here. */}}
+  vpcCni:
+    disable: true
+  kubeProxy:
+    disable: true
 {{- end }}

@@ -1,4 +1,6 @@
-{{- if (.Values.global.capa).enableMachinePools }}
+{{/* Machine pools aren't supported with the EKS variant yet — workers there
+     are MachineDeployments (CAPA's stable EKS worker path). */}}
+{{- if and (not .Values.eks) (.Values.global.capa).enableMachinePools }}
 {{- range $index, $nodeGroup := $.Values.nodeGroups }}
 ---
 apiVersion: cluster.x-k8s.io/v1beta2

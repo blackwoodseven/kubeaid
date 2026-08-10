@@ -18,6 +18,9 @@ spec:
   version: {{ .Values.global.capa.version }}
   fetchConfig:
     url: https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/{{ .Values.global.capa.version }}/infrastructure-components.yaml
+  {{- /* EKS clusters have no control-plane nodes — pinning CAPA to them
+       would leave the controller unschedulable after the pivot. */}}
+  {{- if not (.Values.aws).eks }}
   deployment:
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
@@ -25,6 +28,7 @@ spec:
       - key: "node-role.kubernetes.io/control-plane"
         operator: "Exists"
         effect: "NoSchedule"
+  {{- end }}
   manager:
     cacheNamespace: {{ $namespace }}
     metrics:
@@ -32,4 +36,9 @@ spec:
     syncPeriod: 10m0s
     featureGates:
       MachinePool: {{ .Values.global.capa.enableMachinePools }}
+      {{- /* EKS support is enabled by default in CAPA v2 (the EKS bootstrap /
+           control-plane providers are merged into the main provider); stated
+           explicitly so the managed-control-plane path never silently breaks
+           if a future CAPA release flips the default. */}}
+      EKS: true
 {{- end }}

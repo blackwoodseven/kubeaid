@@ -1,3 +1,4 @@
+{{- if not .Values.eks }}
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: AWSMachineTemplate
 metadata:
@@ -21,6 +22,7 @@ spec:
       ami: {{ toYaml .Values.controlPlane.ami | nindent 8 }}
       rootVolume:
         size: {{ .Values.controlPlane.rootVolumeSize | default 35 }}
+{{- end }}
 
 {{- if (.Values.global).enableClusterAutoscaler }}
 {{- range $index, $nodeGroup := $.Values.nodeGroups }}
@@ -32,7 +34,18 @@ metadata:
 spec:
   template:
     spec:
+      {{- if $.Values.eks }}
+      {{- /* CAPA resolves the EKS optimized AL2023 AMI for the requested K8s
+           version itself. AL2023 lacks the CAPA custom cloud-init datasource,
+           so the secrets-manager bootstrap flow must be skipped (upstream
+           requirement). EKS workers stay keyless — use SSM Session Manager. */}}
+      ami:
+        eksLookupType: AmazonLinux2023
+      cloudInit:
+        insecureSkipSecretsManager: true
+      {{- else }}
       ami: {{ toYaml $nodeGroup.ami | nindent 8 }}
+      {{- end }}
       iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
       instanceMetadataOptions:
         httpEndpoint: enabled
@@ -40,8 +53,10 @@ spec:
         httpTokens: optional
         instanceMetadataTags: disabled
       instanceType: {{ $nodeGroup.instanceType }}
+      {{- if not $.Values.eks }}
       sshKeyName: {{ $nodeGroup.sshKeyName }}
       imageLookupBaseOS: ubuntu-20.04
+      {{- end }}
       rootVolume:
         size: {{ $nodeGroup.rootVolumeSize | default 35 }}
 {{- end }}

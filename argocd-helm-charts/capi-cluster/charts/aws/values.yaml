@@ -1,5 +1,15 @@
 secretName: cloud-credentials
 
+# eks: true provisions an AWS managed (EKS) control plane instead of the
+# self-managed kubeadm one : AWSManagedControlPlane + AWSManagedCluster replace
+# AWSCluster + KubeadmControlPlane, and the (still self-managed)
+# MachineDeployment workers bootstrap via NodeadmConfigTemplate on EKS
+# optimized AL2023 AMIs that CAPA looks up itself. Requires Kubernetes >=
+# v1.33, and a CAPA release that ships NodeadmConfig (global.capa.version >=
+# v2.11). The AWS default VPC CNI and kube-proxy are disabled — Cilium (with
+# kube-proxy replacement) is the CNI, installed by kubeaid-cli.
+eks: false
+
 bastion:
   enabled: True
 pods:
