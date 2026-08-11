@@ -2,6 +2,34 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 32.2.0
+
+### Features
+
+- b870d0d06 feat(capi-cluster): bump CAPZ to v1.26.0
+- be5962c84 feat(capi-cluster): add AKS (managed control plane) support to the azure chart
+- 2ac01a58d feat(rustfs): add optional backup-cleanup CronJob
+- 33330bcc3 feat(open-xchange): mail filter properties, Keycloak sync, and cleanup
+- c6ec90bd8 feat(capi-cluster): bump CAPA to v2.11.1
+- 61b158655 feat(vuls-dictionary): periodic result cleanup via exporter sidecar
+- 83f1c1ae4 feat(capi-cluster): add EKS (managed control plane) support to the aws chart
+
+### Bug Fixes
+
+- f2e15b2af fix(prometheus-linuxaid): corrected bugs in btrfs rules alert expression to make it actually alert disk issues
+
+### Configuration Changes
+
+- 55732eaa9 chore(vuls-dictionary): reduce result retention to 7 days
+- 3d765a8a4 chore(vuls-dictionary): bump vuls-exporter to 1.4.1
+- 62cfe7cfa chore: update netbird signal, relay, managament to 0.76.1 and dashboard to v2.90.9
+
+### Other Changes
+
+- 02048404e ci: run the helm-unittest container as the runner user
+- b78f146b2 ci: run the capi-cluster helm-unittest suites on PRs, repair the hetzner suite
+- dc3209fd9 docs: document the EKS / AKS managed control planes, fix the Azure key guidance
+
 ## KubeAid Release Version 32.1.0
 
 ### Major Version Upgrades
