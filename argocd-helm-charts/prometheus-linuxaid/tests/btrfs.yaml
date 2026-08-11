@@ -8,20 +8,31 @@ tests:
   # btrfs use check
   - interval: 1m
     input_series:
-      - series: obmondo_monitoring{certname="cert1.abc", block_group_type="/data", uuid="4321", alert_id="monitor::system::disk::btrfs"}
+      # Enablement follows the disk::usage toggle (btrfs has no toggle of its own).
+      - series: obmondo_monitoring{certname="cert1.abc", alert_id="monitor::system::disk::usage"}
         values: 1x1000
-      - series: obmondo_monitoring{certname="remdev.abc", block_group_type="/metadata", uuid="5321", alert_id="monitor::system::disk::btrfs"}
+      - series: obmondo_monitoring{certname="remdev.abc", alert_id="monitor::system::disk::usage"}
         values: 1x1000
+      # Host with a full btrfs block group but disk monitoring disabled -> must NOT alert.
+      - series: obmondo_monitoring{certname="nomon.abc", alert_id="monitor::system::disk::usage"}
+        values: 0x1000
       - series: threshold::monitor::system::disk::btrfs{certname="cert1.abc", block_group_type="/data", uuid="4321"}
         values: 90+0x30
+      # cert1 /data: 9013 / 10000 = 90.13% used, custom threshold 90 -> fires.
       - series: node_btrfs_size_bytes{certname="cert1.abc", block_group_type="/data", uuid="4321"}
-        values: 8198x30
+        values: 10000x30
       - series: node_btrfs_used_bytes{certname="cert1.abc", block_group_type="/data", uuid="4321"}
-        values: 9096x30
+        values: 9013x30
+      # remdev /metadata: 8821 / 10000 = 88.21% used, default threshold 80 -> fires.
       - series: node_btrfs_size_bytes{certname="remdev.abc", block_group_type="/metadata", uuid="5321"}
-        values: 8024x30
+        values: 10000x30
       - series: node_btrfs_used_bytes{certname="remdev.abc", block_group_type="/metadata", uuid="5321"}
-        values: 9096x30
+        values: 8821x30
+      # nomon /data: 9500 / 10000 = 95% used, but disk::usage disabled -> no alert.
+      - series: node_btrfs_size_bytes{certname="nomon.abc", block_group_type="/data", uuid="6321"}
+        values: 10000x30
+      - series: node_btrfs_used_bytes{certname="nomon.abc", block_group_type="/data", uuid="6321"}
+        values: 9500x30
 
     alert_rule_test:
       - alertname: monitor::system::disk::btrfs

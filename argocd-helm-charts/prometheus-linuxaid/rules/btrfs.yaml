@@ -4,11 +4,15 @@ groups:
 
     - alert: monitor::system::disk::btrfs
       expr: |
-        (node_btrfs_size_bytes / node_btrfs_used_bytes) * 100  >= on(certname, block_group_type, uuid) threshold::monitor::system::disk::btrfs
+        (
+          (node_btrfs_used_bytes / node_btrfs_size_bytes) * 100
+            >= on(certname, block_group_type, uuid) threshold::monitor::system::disk::btrfs
+        )
         or
-        (node_btrfs_size_bytes / node_btrfs_used_bytes) * 100 >= 80
-        and
-        on(certname, block_group_type, uuid) obmondo_monitoring{alert_id="monitor::system::disk::btrfs"} > 0
+        (
+          (node_btrfs_used_bytes / node_btrfs_size_bytes) * 100 >= 80
+            and on(certname) obmondo_monitoring{alert_id="monitor::system::disk::usage"} > 0
+        )
       for: 10m
       labels:
         severity: warning
