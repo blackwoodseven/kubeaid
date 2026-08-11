@@ -27,8 +27,13 @@ jobs:
         uses: actions/checkout@v7.0.1
 
       - name: Run helm-unittest on the capi-cluster subcharts
+        # --user + HOME : the image's default (non-root) user can't create
+        # the tests/__snapshot__ dirs inside the runner-owned checkout, and
+        # helm itself needs a writable HOME for its cache.
         run: |
           docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -e HOME=/tmp \
             -v "$PWD/argocd-helm-charts/capi-cluster:/apps" \
             helmunittest/helm-unittest:latest \
             charts/aws charts/azure charts/hetzner
