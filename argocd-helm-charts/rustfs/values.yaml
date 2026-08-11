@@ -16,3 +16,18 @@ rustfs:
   ingress:
     enabled: true
     className: nginx
+
+backupCleanup:
+  enabled: false
+  schedule: "0 3 * * *"
+  retentionDays: 7
+  buckets: []
+  excludePrefixes: []
+  region: us-east-1
+  # endpoint: S3-compatible endpoint. Defaults to http://<release-name>-svc.<namespace>.svc.cluster.local:9000
+  # secretName: secret providing the credentials. Defaults to rustfs.secret.existingSecret.
+  secretAccessKeyIdKey: RUSTFS_ACCESS_KEY
+  secretSecretAccessKeyKey: RUSTFS_SECRET_KEY
+  image:
+    repository: ghcr.io/obmondo/s3-backup-cleanup
+    tag: v1.0.0
