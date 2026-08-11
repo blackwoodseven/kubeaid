@@ -48,10 +48,13 @@ tests:
       - hasDocuments:
           count: 6
 
-  - it: writes and invokes the NAT gateway bootstrap on the control plane
+  - it: does not invoke the NAT gateway hop on bare-metal control planes
+    # Pure bare-metal nodes have their own public connectivity and no
+    # 10.0.0.1 gateway — the hop is HCloud-private / hybrid only (see the
+    # mode guard in KubeadmControlPlane.yaml).
     template: KubeadmControlPlane.yaml
     asserts:
-      - contains:
+      - notContains:
           path: spec.kubeadmConfigSpec.preKubeadmCommands
           content: chmod +x /connect-nat-gateway.sh && /connect-nat-gateway.sh
 
