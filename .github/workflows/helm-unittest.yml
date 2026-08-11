@@ -1,0 +1,39 @@
+name: Helm Unittest
+
+"on":
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths:
+      - 'argocd-helm-charts/capi-cluster/**'
+      - '.github/workflows/helm-unittest.yml'
+
+permissions:
+  contents: read
+
+# This will only allow a single helm-unittest action to run per PR.
+# Any github action running on the older commits will be aborted.
+concurrency:
+  group: helm-unittest-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  helm-unittest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Run helm-unittest on the capi-cluster subcharts
+        # --user + HOME : the image's default (non-root) user can't create
+        # the tests/__snapshot__ dirs inside the runner-owned checkout, and
+        # helm itself needs a writable HOME for its cache.
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -e HOME=/tmp \
+            -v "$PWD/argocd-helm-charts/capi-cluster:/apps" \
+            helmunittest/helm-unittest:latest \
+            charts/aws charts/azure charts/hetzner
