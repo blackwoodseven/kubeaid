@@ -1,3 +1,6 @@
+{{/* AKS workers are AzureManagedMachinePools (see MachinePool.yaml) — the
+     MachineDeployment path is kubeadm-only. */}}
+{{- if not $.Values.aks }}
 {{- range $nodeGroupIndex, $nodeGroup := $.Values.nodeGroups }}
 {{/* Since subnets in Azure are region wide, we don't need to worry about failure domains. */}}
 ---
@@ -42,4 +45,5 @@ spec:
         kind: AzureMachineTemplate
         name: {{ printf "%s-%s" $.Values.global.clusterName $nodeGroup.name }}
       version: {{ $.Values.global.kubernetes.version }}
+{{- end }}
 {{- end }}

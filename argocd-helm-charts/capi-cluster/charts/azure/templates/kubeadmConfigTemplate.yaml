@@ -1,4 +1,4 @@
-{{- if (.Values.global).enableClusterAutoscaler }}
+{{- if and (not .Values.aks) (.Values.global).enableClusterAutoscaler }}
 {{- range $index, $nodeGroup := $.Values.nodeGroups }}
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta2

@@ -1,3 +1,14 @@
+# -- Azure managed (AKS) control plane. When true, the chart renders
+# AzureManagedControlPlane + AzureManagedCluster + one AzureManagedMachinePool
+# per node-group instead of AzureCluster + KubeadmControlPlane +
+# MachineDeployments, and the AzureClusterIdentity switches to a
+# ServicePrincipal reading its client secret from `secretName`.
+aks: false
+
+# -- Secret (in the release namespace) holding the AAD service principal's
+# clientSecret key. Sealed by kubeaid-cli. AKS only.
+secretName: cloud-credentials
+
 location: northcentralus
 
 virtualNetwork:

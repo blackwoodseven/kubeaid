@@ -1,0 +1,34 @@
+{{- if .Values.aks }}
+{{- range $index, $nodeGroup := $.Values.nodeGroups }}
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: AzureManagedMachinePool
+metadata:
+  name: {{ printf "%s-%s" $.Values.global.clusterName $nodeGroup.name }}
+spec:
+  {{/* Every AKS cluster needs at least one System mode pool (it hosts the
+       critical kube-system workloads) — the first node-group takes that
+       role; the rest are User pools. kubeaid-cli validation guarantees at
+       least one node-group exists. */}}
+  mode: {{ eq $index 0 | ternary "System" "User" }}
+  name: {{ $nodeGroup.name }}
+  sku: {{ $nodeGroup.vmSize }}
+  osDiskSizeGB: {{ $nodeGroup.diskSizeGB }}
+  {{/* AKS's built-in cluster autoscaler scales the pool within these
+       bounds — no in-cluster cluster-autoscaler deployment involved. */}}
+  scaling:
+    minSize: {{ $nodeGroup.minSize }}
+    maxSize: {{ $nodeGroup.maxSize }}
+  {{- if $nodeGroup.labels }}
+  nodeLabels: {{- toYaml $nodeGroup.labels | nindent 4 }}
+  {{- end }}
+  {{- if $nodeGroup.taints }}
+  taints:
+    {{- range $taint := $nodeGroup.taints }}
+    - key: {{ $taint.key }}
+      value: {{ $taint.value }}
+      effect: {{ $taint.effect }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

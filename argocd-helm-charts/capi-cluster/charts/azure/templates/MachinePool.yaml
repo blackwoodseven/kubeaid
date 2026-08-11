@@ -1,0 +1,33 @@
+{{/* AKS workers are agent pools : one CAPI MachinePool per node-group, backed
+     by an AzureManagedMachinePool. CAPZ managed clusters support no other
+     worker shape (MachineDeployments cannot attach to an AKS control
+     plane). */}}
+{{- if .Values.aks }}
+{{- range $index, $nodeGroup := $.Values.nodeGroups }}
+---
+apiVersion: cluster.x-k8s.io/v1beta2
+kind: MachinePool
+metadata:
+  name: {{ printf "%s-%s" $.Values.global.clusterName $nodeGroup.name }}
+  annotations:
+    {{/* Scaling is owned by AKS's built-in cluster autoscaler (the scaling
+         block on AzureManagedMachinePool) — CAPZ requires this annotation so
+         CAPI leaves spec.replicas alone. */}}
+    cluster.x-k8s.io/replicas-managed-by: external-autoscaler
+spec:
+  clusterName: {{ $.Values.global.clusterName }}
+  replicas: {{ $nodeGroup.minSize }}
+  template:
+    spec:
+      clusterName: {{ $.Values.global.clusterName }}
+      {{/* AKS bootstraps its own nodes — an empty dataSecretName tells CAPI
+           no bootstrap provider is involved. */}}
+      bootstrap:
+        dataSecretName: ""
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: AzureManagedMachinePool
+        name: {{ printf "%s-%s" $.Values.global.clusterName $nodeGroup.name }}
+      version: {{ $.Values.global.kubernetes.version }}
+{{- end }}
+{{- end }}

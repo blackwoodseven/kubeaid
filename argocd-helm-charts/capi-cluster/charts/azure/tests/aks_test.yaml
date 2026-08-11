@@ -1,0 +1,145 @@
+suite: azure aks (managed control plane)
+templates:
+  - "*.yaml"
+release:
+  name: demo
+  namespace: capi-cluster
+chart:
+  version: 1.0.0
+  appVersion: 1.0.0
+values:
+  - ../values.example.aks.yaml
+set:
+  global.clusterName: demo
+  global.kubernetes.version: v1.34.0
+  global.enableClusterAutoscaler: true
+  global.additionalUsers: []
+  global.kubeaid.repo: https://github.com/Obmondo/KubeAid
+  global.kubeaid.version: ""
+tests:
+  - it: points the Cluster at the managed control plane
+    template: cluster.yaml
+    asserts:
+      - equal:
+          path: spec.controlPlaneRef.kind
+          value: AzureManagedControlPlane
+      - equal:
+          path: spec.infrastructureRef.kind
+          value: AzureManagedCluster
+
+  - it: renders the AzureManagedControlPlane keyless, BYO CNI, kube-proxy disabled
+    template: AzureManagedControlPlane.yaml
+    asserts:
+      - equal:
+          path: spec.version
+          value: v1.34.0
+      - equal:
+          path: spec.resourceGroupName
+          value: demo
+      - equal:
+          path: spec.networkPlugin
+          value: none
+      - equal:
+          path: spec.sshPublicKey
+          value: ""
+      - equal:
+          path: spec.oidcIssuerProfile.enabled
+          value: true
+      - equal:
+          path: spec.enablePreviewFeatures
+          value: true
+      - matchRegex:
+          path: spec.asoManagedClusterPatches[0]
+          pattern: kubeProxyConfig.*false
+
+  - it: renders the AzureManagedCluster stand-in
+    template: AzureManagedCluster.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: authenticates CAPZ with the service principal
+    template: AzureClusterIdentity.yaml
+    asserts:
+      - equal:
+          path: spec.type
+          value: ServicePrincipal
+      - equal:
+          path: spec.clientID
+          value: 33333333-3333-3333-3333-333333333333
+      - equal:
+          path: spec.clientSecret.name
+          value: cloud-credentials
+      - equal:
+          path: spec.clientSecret.namespace
+          value: capi-cluster
+
+  - it: renders one MachinePool per node-group, externally autoscaled, no bootstrap provider
+    template: MachinePool.yaml
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: spec.template.spec.bootstrap.dataSecretName
+          value: ""
+        documentIndex: 0
+      - equal:
+          path: spec.template.spec.infrastructureRef.kind
+          value: AzureManagedMachinePool
+        documentIndex: 0
+      - equal:
+          path: metadata.annotations["cluster.x-k8s.io/replicas-managed-by"]
+          value: external-autoscaler
+        documentIndex: 0
+
+  - it: first agent pool is System mode, the rest User
+    template: AzureManagedMachinePool.yaml
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: spec.mode
+          value: System
+        documentIndex: 0
+      - equal:
+          path: spec.mode
+          value: User
+        documentIndex: 1
+      - equal:
+          path: spec.sku
+          value: Standard_D2s_v3
+        documentIndex: 0
+      - equal:
+          path: spec.scaling.minSize
+          value: 3
+        documentIndex: 0
+      - equal:
+          path: spec.scaling.maxSize
+          value: 9
+        documentIndex: 0
+
+  - it: renders no kubeadm control-plane resources
+    template: kubeadmControlPlane.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders no AzureCluster
+    template: AzureCluster.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders no KubeadmConfigTemplate
+    template: kubeadmConfigTemplate.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders no MachineDeployments or AzureMachineTemplates
+    templates:
+      - MachineDeployment.yaml
+      - AzureMachineTemplate.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
