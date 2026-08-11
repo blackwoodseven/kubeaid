@@ -15,6 +15,9 @@ spec:
   version: {{ .Values.global.capz.version }}
   fetchConfig:
     url: https://github.com/kubernetes-sigs/cluster-api-provider-azure/releases/download/{{ .Values.global.capz.version }}/infrastructure-components.yaml
+  {{- /* AKS clusters have no control-plane nodes — pinning CAPZ to them
+       would leave the controller unschedulable after the pivot. */}}
+  {{- if not (.Values.azure).aks }}
   deployment:
     nodeSelector:
       node-role.kubernetes.io/control-plane: ""
@@ -22,6 +25,7 @@ spec:
       - key: "node-role.kubernetes.io/control-plane"
         operator: "Exists"
         effect: "NoSchedule"
+  {{- end }}
   manager:
     cacheNamespace: {{ $namespace }}
     # BUG : CAPZ infrastructure provider errors out, complaining :
@@ -29,4 +33,10 @@ spec:
     # metrics:
     #   bindAddress: ":8443"
     syncPeriod: 10m0s
+    featureGates:
+      {{- /* AKS agent pools are AzureManagedMachinePools, which build on the
+           CAPI MachinePool experiment. Enabled by default in CAPZ; stated
+           explicitly so the managed-control-plane path never silently breaks
+           if a future release flips the default. */}}
+      MachinePool: true
 {{- end }}
