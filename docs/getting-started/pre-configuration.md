@@ -105,6 +105,35 @@ cloud:
         maxSize: 10
 ```
 
+#### AWS EKS (managed control plane)
+
+Set `eks: true` to get an AWS managed (EKS) control plane instead of the
+self-managed EC2 one. AWS runs the control plane multi-AZ, CAPA resolves the
+EKS optimized AL2023 worker AMIs itself, and workers stay keyless — so
+`controlPlane`, `sshKeyName` and per-node-group AMIs must be left unset.
+Requires Kubernetes >= v1.33.
+
+```yaml
+cloud:
+  aws:
+    region: eu-central-1
+    eks: true
+    bastionEnabled: true
+    nodeGroups:
+      - name: default
+        minSize: 3
+        maxSize: 6
+        cpu: 4
+        memory: 8
+        instanceType: c6i.xlarge
+        rootVolumeSize: 35
+```
+
+> **Note:** `cluster upgrade` doesn't apply to EKS clusters — bump
+> `global.kubernetes.version` in `argocd-apps/values-capi-cluster.yaml` in your
+> kubeaid-config repo and let ArgoCD sync; CAPA then upgrades the control plane
+> and rolls the node-groups.
+
 #### Azure
 
 ```yaml
@@ -122,6 +151,41 @@ cloud:
         minSize: 1
         maxSize: 10
 ```
+
+#### Azure AKS (managed control plane)
+
+Set `aks: true` to get an Azure managed (AKS) control plane instead of the
+self-managed VM one. Azure owns the control plane, the node images and the
+agent-pool autoscaling, and CAPZ authenticates with your AAD service principal
+directly — so `controlPlane`, `sshPublicKey`, `canonicalUbuntuImage`,
+`storageAccount`, `workloadIdentity` and `aadApplication` must all be left
+unset. Node-groups become AKS agent pools: the first one is the required
+`System` pool, and names must be 1-12 lowercase alphanumeric characters
+starting with a letter.
+
+```yaml
+cloud:
+  azure:
+    tenantID: <tenant-id>
+    subscriptionID: <subscription-id>
+    location: westeurope
+    aks: true
+    nodeGroups:
+      - name: default
+        minSize: 3
+        maxSize: 6
+        cpu: 4
+        memory: 8
+        vmSize: Standard_F4s_v2
+        diskSizeGB: 128
+```
+
+> **Note:** Register the `KubeProxyConfigurationPreview` feature on your
+> subscription before bootstrapping (see [Prerequisites](./prerequisites.md)) —
+> KubeAid disables AKS's kube-proxy and runs Cilium with kube-proxy
+> replacement. Like EKS, `cluster upgrade` doesn't apply: bump
+> `global.kubernetes.version` in `argocd-apps/values-capi-cluster.yaml` and let
+> ArgoCD sync.
 
 #### Hetzner HCloud
 

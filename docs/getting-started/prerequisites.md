@@ -160,24 +160,36 @@ or create a separate user called `obmondo-<service>-user` and provide its Person
   
 - **Service Principal**: [Register an application (Service Principal) in Microsoft Entra ID](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app).
   
-- **SSH Keypairs**:
-  - An OpenSSH type SSH keypair (private key for SSH access to VMs). You can generate this using:
+- **SSH Keypairs** (self-managed clusters only — AKS clusters need neither):
+  - An **RSA** SSH keypair (public key provisioned onto the VMs for SSH
+    access). Azure's ARM API rejects non-RSA keys at VM creation, so ed25519
+    keys cannot be used here. Generate with:
 
     ```bash
-    ssh-keygen -t ed25519 -f azure-ssh-key -C "azure-cluster-key"
+    ssh-keygen -t rsa -b 4096 -f azure-ssh-key -C "azure-cluster-key"
     ```
 
-  - A key pair in PEM format (required for [Azure Workload Identity setup](https://learn.microsoft.com/en-us/azure/aks/workload-identity-deploy-cluster)).
-    You can generate this using:
+  - An **RSA** keypair for the workload-identity OIDC provider (it signs the
+    cluster's ServiceAccount tokens; Microsoft Entra ID verifies them with
+    RS256, so ed25519 cannot be used here either). Generate with:
 
     ```bash
-    openssl genpkey -algorithm ed25519 -out jwt-signing-key.pem
-    openssl pkey -in jwt-signing-key.pem -pubout -out jwt-signing-pub.pem
+    ssh-keygen -t rsa -b 4096 -f ~/.ssh/azure-oidc-issuer -N ""
     ```
 
-  > **Note:** ed25519 keys are shorter and more secure than RSA keys, though not quantum-safe.
-  > If RSA is preferred by you or your organization, use `ssh-keygen -t rsa -b 4096`
-  > and `openssl genrsa -out jwt-signing-key.pem 4096` instead.
+  > **Tip:** if your kubeaid-config deploy key happens to be RSA, kubeaid-cli
+  > reuses its public half as the VM SSH key automatically and skips the
+  > question.
+
+- **AKS clusters** (`cloud.azure.aks: true`): register the kube-proxy
+  configuration preview feature on the subscription before bootstrapping —
+  KubeAid disables AKS's kube-proxy and runs Cilium with kube-proxy
+  replacement:
+
+  ```bash
+  az feature register --namespace Microsoft.ContainerService --name KubeProxyConfigurationPreview
+  az provider register --namespace Microsoft.ContainerService
+  ```
   
 ### Bare Metal  
   
