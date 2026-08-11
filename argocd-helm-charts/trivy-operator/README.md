@@ -55,14 +55,40 @@ Forwarded to the [aquasecurity/trivy-operator](https://artifacthub.io/packages/h
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `kubeaid.prometheusRule.enabled` | Generate PrometheusRule (recording rule + `ImageOutdatedAndVulnerable` + `TrivyOperatorScannerStuck`) | `true` |
+| `kubeaid.prometheusRule.enabled` | Generate PrometheusRule (2 recording rules + `ImageOutdatedAndVulnerable` + 3 health alerts) | `true` |
 | `kubeaid.prometheusRule.additionalLabels` | Extra labels added to the PrometheusRule object (for Prometheus selector matching) | `{}` |
 | `kubeaid.prometheusRule.additionalAnnotations` | Extra annotations added to the PrometheusRule object | `{}` |
 
 ## Alerts shipped
 
-- `ImageOutdatedAndVulnerable` — fires when a running image has `Critical`/`High` CVEs **and** a newer tag is available in the source registry. Built by joining the `record::trivy::vulnerability_count::by_image` recording rule (reshaped from `trivy_vulnerability_id`) with `version_checker_is_latest_version == 0` on `(image, current_version)`. **Requires the [`version-checker`](../version-checker) chart deployed in the cluster** — without it the join produces no series and the alert never fires. Persists for 6h before firing to absorb registry/scanner flaps.
-- `TrivyOperatorScannerStuck` — last successful scan older than 24h (operator or trivy-server unhealthy).
+- `ImageOutdatedAndVulnerable` — fires when a running image has `Critical`/`High` CVEs **and** a newer tag is available in the source registry. Joins the two recording rules on `(image, current_version)`. **Requires the [`version-checker`](../version-checker) chart deployed in the cluster.** Persists for 6h before firing to absorb registry/scanner flaps.
+
+### Why two recording rules
+
+Trivy describes an image as three labels (`image_registry`, `image_repository`, `image_tag`); version-checker
+emits a single `image` label copied straight from the pod spec, with **no registry normalisation** — its
+`urlTagSHAFromImage` only splits off the tag and digest. So `nginx:1.25` is `nginx` to version-checker and
+`index.docker.io/library/nginx` to Trivy, and a naive join on `image` silently matches nothing for every
+short-form Docker Hub reference while still working for fully-qualified ones.
+
+`record::version_checker::outdated` applies Docker's reference expansion rules so both sides speak the same
+canonical `registry/repository` form before the join.
+
+### Health alerts
+
+These exist because the dangerous failure is not a noisy alert, it is a silent one. Each watches a way
+`ImageOutdatedAndVulnerable` can stop firing while everything still looks fine:
+
+- `TrivyVersionCheckerJoinEmpty` — both inputs have series but the join yields nothing, meaning the
+  normalisation no longer matches how images are referenced in this cluster.
+- `VersionCheckerMetricsMissing` — version-checker stopped reporting. It is load-bearing for the CVE alert and
+  ships no alerts of its own, so without this it can fail open unnoticed.
+- `TrivyOperatorMetricsMissing` — no vulnerability metrics at all: operator down, ServiceMonitor not scraped, or
+  every report expired past `scannerReportTTL` without refresh.
+
+> Note: a previous `TrivyOperatorScannerStuck` alert queried `trivy_resource_last_scan_timestamp_seconds`. That
+> metric does not exist — trivy-operator exposes no last-scan timestamp of any kind — so the alert could never
+> fire. Scanner liveness is now inferred from whether reports exist at all.
 
 ## Useful commands
 
