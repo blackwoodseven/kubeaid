@@ -45,6 +45,28 @@ appConfig:
     # enough not to thrash the API when no window is open.
     checkInterval: 15m
 
+  # Security posture: vulnerabilities with full CVE detail, least-privilege
+  # findings, per-app network enforcement and runtime detection posture,
+  # submitted to the Obmondo API for display in the UI.
+  securityPosture:
+    # -- When false, neither CRON job is scheduled, no snapshot is sent to
+    # Obmondo API, and the corresponding RBAC rules are not created. This is
+    # the switch for clusters that must not ship vulnerability detail off-site.
+    #
+    # Safe to leave on where no scanner is installed: the collector detects
+    # that through API discovery and does nothing, rather than erroring.
+    enabled: true
+
+    # -- Cadence of the full posture collection. Trivy refreshes its reports on
+    # a 24h scannerReportTTL, so polling faster re-reads identical data.
+    interval: 12h
+
+    # -- Cadence at which the agent checks for a service-window edge, to capture
+    # a before/after pair around maintenance. This bounds how precisely an edge
+    # is timed; a window opening and closing entirely between two checks is
+    # missed. Each check is one Obmondo API call, not a cluster scan.
+    windowCheckInterval: 15m
+
 # -- Kubernetes Secret name containing the TLS certificate key-pair, used to communicate with
 # Obmondo API.
 obmondoAPITLSSecretName: obmondo-clientcert
@@ -139,3 +161,4 @@ serviceMonitor:
 
   interval: 30s
   scrapeTimeout: 10s
+
