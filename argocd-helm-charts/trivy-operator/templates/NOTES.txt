@@ -8,14 +8,18 @@ Inspect findings:
 
 Prometheus metrics (assuming ServiceMonitor is picked up):
   trivy_image_vulnerabilities{severity="Critical"}
-  trivy_image_vulnerabilities_id{cve_id="CVE-..."}
+  trivy_vulnerability_id{vuln_id="CVE-..."}   # needs metricsVulnIdEnabled
 
 Default alert rules shipped with this chart:
-  - ImageOutdatedAndVulnerable — fires when a running image has
-    Critical/High CVEs AND a newer tag is available in the source registry
-    (joins trivy_vulnerability_id with version_checker_is_latest_version).
-    Requires the `version-checker` chart to also be deployed.
-  - TrivyOperatorScannerStuck — last successful scan older than 24h.
+  - TrivyOperatorMetricsMissing — no vulnerability metrics at all, so the
+    cluster is UNSCANNED rather than clean. Pages.
+  - ClusterVulnerabilityBacklog — fixable Critical/High findings above
+    kubeaid.prometheusRule.backlogThreshold. Ticket, never a page.
+
+Per-CVE detail (CVSS, installed/fixed version, links) is collected from the
+VulnerabilityReport CRs by kubeaid-agent and shown in the Obmondo UI. The
+metrics above are for alerting only — they do not carry that detail.
 
 Disable alert rules: set kubeaid.prometheusRule.enabled=false
-Tune scope:           set trivy-operator.excludeNamespaces / targetNamespaces
+Tune the backlog:    set kubeaid.prometheusRule.backlogThreshold
+Tune scope:          set trivy-operator.excludeNamespaces / targetNamespaces

@@ -14,49 +14,38 @@ metadata:
   {{- end }}
 spec:
   groups:
-    - name: trivy-operator.recording
+    # Two questions only: is the scanner working, is the backlog growing.
+    # Correlating CVEs against newer tags is deliberately NOT done here —
+    # rebuilding image references with label_replace failed silently twice.
+    - name: trivy-operator.health
       rules:
-        # Reshape trivy_vulnerability_id labels to match version-checker's
-        # naming (`image`, `current_version`) so the two metrics can be
-        # joined in alert expressions without inline label_join/label_replace
-        # gymnastics.
-        - record: record::trivy::vulnerability_count::by_image
+        # A scanner producing nothing looks exactly like a clean cluster.
+        - alert: TrivyOperatorMetricsMissing
           expr: |
-            label_replace(
-              label_join(
-                count by (image_registry, image_repository, image_tag, severity, namespace) (
-                  trivy_vulnerability_id{severity=~"Critical|High", fixed_version!=""}
-                ),
-                "image", "/", "image_registry", "image_repository"
-              ),
-              "current_version", "$1", "image_tag", "(.+)"
-            )
-
-    - name: trivy-operator.cve
-      rules:
-        - alert: ImageOutdatedAndVulnerable
-          expr: |
-            (
-              record::trivy::vulnerability_count::by_image
-              + on (image, current_version) group_left(latest_version)
-                sum by (image, current_version, latest_version) (
-                  version_checker_is_latest_version == 0
-                )
-            ) > 0
-          for: 6h
+            absent(trivy_image_vulnerabilities)
+          for: {{ .Values.kubeaid.prometheusRule.blindFor }}
           labels:
             severity: critical
           annotations:
-            summary: "{{ "{{ $labels.image }}:{{ $labels.current_version }}" }} has CVEs AND newer tag {{ "{{ $labels.latest_version }}" }} available"
-            description: "Image {{ "{{ $labels.image }}:{{ $labels.current_version }}" }} (ns {{ "{{ $labels.namespace }}" }}) has {{ "{{ $value }}" }} {{ "{{ $labels.severity }}" }} CVE(s) reported. Newer tag {{ "{{ $labels.latest_version }}" }} exists in registry. Please update the image"
+            summary: "Trivy Operator is reporting no vulnerability metrics"
+            description: "trivy_image_vulnerabilities is absent. Either the operator is down, its ServiceMonitor is not being scraped, or every VulnerabilityReport expired past scannerReportTTL without being refreshed. While this is true the cluster is UNSCANNED, not clean."
 
-        - alert: TrivyOperatorScannerStuck
+    - name: trivy-operator.backlog
+      rules:
+        # warning, not critical: this count is never zero on a real cluster,
+        # and a muted receiver would take the alert above down with it.
+        #
+        # "fixable" comes from trivy.ignoreUnfixed, not from this expression —
+        # the metric has no fixed_version label. Wording follows the value.
+        {{- $fixableOnly := index .Values "trivy-operator" "trivy" "ignoreUnfixed" }}
+        - alert: ClusterVulnerabilityBacklog
           expr: |
-            (time() - trivy_resource_last_scan_timestamp_seconds) > 86400
-          for: 1h
+            sum(trivy_image_vulnerabilities{severity=~"Critical|High"})
+              > {{ .Values.kubeaid.prometheusRule.backlogThreshold }}
+          for: {{ .Values.kubeaid.prometheusRule.backlogFor }}
           labels:
             severity: warning
           annotations:
-            summary: "Trivy Operator has not scanned {{ "{{ $labels.namespace }}/{{ $labels.name }}" }} in over a day"
-            description: "Last successful scan timestamp is older than 24h. Operator or trivy-server may be unhealthy."
+            summary: "Cluster has {{ "{{ $value }}" }} {{ if $fixableOnly }}fixable {{ end }}Critical/High CVEs"
+            description: "Critical/High findings exceed the threshold of {{ .Values.kubeaid.prometheusRule.backlogThreshold }}. {{ if $fixableOnly }}Every finding counted has a published fix, so the backlog is actionable.{{ else }}This count includes CVEs with no published fix, because trivy.ignoreUnfixed is false — some of it may not be actionable.{{ end }} Per-image detail: kubectl get vulnerabilityreports -A."
 {{- end }}

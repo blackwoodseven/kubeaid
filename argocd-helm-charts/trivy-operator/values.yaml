@@ -39,10 +39,16 @@ trivy-operator:
 kubeaid:
   prometheusRule:
     enabled: true
-    # Namespaces considered production for the critical-CVE alert.
-    productionNamespaceRegex: "^(production|prod|prd)$"
-    # How long a critical CVE must persist before the alert fires.
-    for: "30m"
-    severity: critical
+
+    # -- How long the scanner must report nothing before TrivyOperatorMetricsMissing
+    # fires. Rides out a restart or a missed scrape.
+    blindFor: "1h"
+
+    # -- Critical/High count above which ClusterVulnerabilityBacklog fires.
+    # Deliberately high — an alert that fires on day one everywhere gets ignored.
+    # Whether these are all fixable follows trivy.ignoreUnfixed above.
+    backlogThreshold: 100
+    backlogFor: "24h"
+
     additionalLabels: {}
     additionalAnnotations: {}
