@@ -76,7 +76,7 @@ spec:
       clusterName: {{ $.Values.global.clusterName }}
       bootstrap:
         configRef:
-          apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+          apiGroup: bootstrap.cluster.x-k8s.io
           {{- if $.Values.eks }}
           kind: NodeadmConfigTemplate
           {{- else }}
@@ -84,7 +84,7 @@ spec:
           {{- end }}
           name: {{ printf "%s-%s" $.Values.global.clusterName $nodeGroup.name }}
       infrastructureRef:
-        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+        apiGroup: infrastructure.cluster.x-k8s.io
         kind: AWSMachineTemplate
         name: {{ printf "%s-%s" $.Values.global.clusterName $nodeGroup.name }}
       failureDomain: {{ printf "%s%s" $.Values.region $failureDomain | quote }}

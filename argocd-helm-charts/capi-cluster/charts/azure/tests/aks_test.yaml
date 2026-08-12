@@ -39,9 +39,11 @@ tests:
       - equal:
           path: spec.networkPlugin
           value: none
-      - equal:
+      # sshPublicKey is deliberately omitted from the rendered manifest
+      # (not even set to "") so CAPZ's webhook-generated key isn't fought
+      # over by ArgoCD's three-way merge — see AzureManagedControlPlane.yaml.
+      - notExists:
           path: spec.sshPublicKey
-          value: ""
       - equal:
           path: spec.oidcIssuerProfile.enabled
           value: true
