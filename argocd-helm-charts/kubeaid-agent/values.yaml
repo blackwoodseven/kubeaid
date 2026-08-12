@@ -182,7 +182,3 @@ prometheusRule:
   # is a backlog to work through, not an incident.
   upgradableFor: 24h
 
-  # -- How long a component must report collection failure before alerting.
-  # Absorbs a transient API error without hiding a persistent one.
-  collectionFailingFor: 6h
-

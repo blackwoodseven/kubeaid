@@ -32,16 +32,7 @@ spec:
             summary: "{{ "{{ $value }}" }} images have fixable Critical/High CVEs with an upgrade available"
             description: "These images can be moved to a newer tag today, and doing so clears a known fixable exposure. List them with: kubectl get vulnerabilityreports -A"
 
-        # Gauge is 1 ok, 0 failed, -1 not installed. == 0 is load-bearing:
-        # anything looser also fires on clusters that simply do not run a
-        # scanner or Tetragon, and the alert gets silenced.
-        - alert: SecurityPostureCollectionFailing
-          expr: |
-            kubeaid_agent_security_posture_collection == 0
-          for: {{ .Values.prometheusRule.collectionFailingFor }}
-          labels:
-            severity: warning
-          annotations:
-            summary: "kubeaid-agent cannot collect {{ "{{ $labels.component }}" }} security posture"
-            description: "The component is installed but unreadable, so its posture is unknown rather than clean. Check the agent's RBAC and the component's availability."
+        # Collection status is exported as kubeaid_agent_security_posture_collection
+        # (1 ok, 0 failed, -1 not installed) but deliberately not alerted on —
+        # it is a debugging signal, not something worth waking anyone for.
 {{- end }}

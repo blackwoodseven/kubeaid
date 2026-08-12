@@ -334,10 +334,6 @@
         "upgradableFor": {
           "description": "How long the count must stay above the threshold before alerting.",
           "type": "string"
-        },
-        "collectionFailingFor": {
-          "description": "How long a component must report collection failure before alerting.",
-          "type": "string"
         }
       }
     }
