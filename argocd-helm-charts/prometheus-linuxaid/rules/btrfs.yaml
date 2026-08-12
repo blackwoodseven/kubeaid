@@ -2,21 +2,61 @@ groups:
   - name: monitor::system::disk::btrfs
     rules:
 
+    # btrfs carves unallocated device space into data/metadata chunks on demand,
+    # so per-block-group usage can look high while raw space remains. Fire only on
+    # real pressure: total used (all devices) >= 90% AND < 5% device unallocated (can't carve more chunks).
     - alert: monitor::system::disk::btrfs
       expr: |
         (
-          (node_btrfs_used_bytes / node_btrfs_size_bytes) * 100
-            >= on(certname, block_group_type, uuid) threshold::monitor::system::disk::btrfs
+          sum by (certname, uuid) (node_btrfs_used_bytes)
+            / on(certname, uuid)
+              sum by (certname, uuid) (node_btrfs_device_size_bytes)
+          * 100 >= 90
         )
-        or
+        and on(certname, uuid)
         (
-          (node_btrfs_used_bytes / node_btrfs_size_bytes) * 100 >= 80
-            and on(certname) obmondo_monitoring{alert_id="monitor::system::disk::usage"} > 0
+          sum by (certname, uuid) (node_btrfs_device_unused_bytes)
+            / on(certname, uuid)
+              sum by (certname, uuid) (node_btrfs_device_size_bytes)
+          * 100 < 5
         )
       for: 10m
       labels:
         severity: warning
         alert_id: monitor::system::disk::btrfs
       annotations:
-        summary: 'Available Block space on **{{ $labels.block_group_type }}** for **{{ $labels.certname }}** is low'
-        description: Available space is very low on btrfs filesystem for Block {{ $labels.block_group_type }} and current usage is around {{ humanize $value }}% which is above the threshold of {{ with printf "threshold::monitor::system::disk::btrfs{certname='%s'}" .Labels.certname | query }}{{ . | first | value }}{{ else }}{{ "80" }}{{ end }}%.
+        summary: btrfs filesystem is nearly full
+        description: |
+          btrfs filesystem '{{ .Labels.uuid }}' on {{ .Labels.certname }} is {{ humanize .Value }}%
+          used and has less than 5% of device space left to allocate more, so btrfs can no longer
+          carve new chunks. Free space or add/grow a device.
+
+    # If metadata fills with no unallocated space left to grow it, btrfs can't
+    # allocate a new metadata chunk and the filesystem flips read-only. Critical:
+    # fire on metadata >= 85% AND < 5% device unallocated (can hard-fail the fs).
+    - alert: monitor::system::disk::btrfs::metadata_exhaustion
+      expr: |
+        (
+          (
+            node_btrfs_used_bytes{block_group_type="metadata"}
+              / node_btrfs_size_bytes{block_group_type="metadata"}
+          ) * 100 >= 90
+        )
+        and on(certname, uuid)
+        (
+          sum by (certname, uuid) (node_btrfs_device_unused_bytes)
+            / on(certname, uuid)
+              sum by (certname, uuid) (node_btrfs_device_size_bytes)
+          * 100 < 5
+        )
+      for: 15m
+      labels:
+        severity: critical
+        alert_id: monitor::system::disk::btrfs::metadata_exhaustion
+      annotations:
+        summary: btrfs metadata is nearly exhausted
+        description: |
+          btrfs metadata on {{ .Labels.certname }} (filesystem '{{ .Labels.uuid }}') is
+          {{ humanize .Value }}% full and less than 5% of device space is left to allocate more, so btrfs
+          cannot allocate a new metadata chunk and the filesystem risks going read-only. Run
+          'btrfs balance start -musage=NN /' or add/grow a device.
