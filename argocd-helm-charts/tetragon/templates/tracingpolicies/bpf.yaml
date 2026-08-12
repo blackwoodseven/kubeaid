@@ -1,0 +1,119 @@
+{{- if and .Values.kubeaid.tracingPolicies.enabled .Values.kubeaid.tracingPolicies.policies.bpf }}
+# Vendored verbatim from Tetragon's curated policy library:
+# https://github.com/cilium/tetragon/blob/main/examples/policylibrary/bpf.yaml
+#
+# OFF BY DEFAULT on KubeAid clusters. Two reasons, both specific to this stack:
+#
+#   1. Cilium loads and reloads eBPF programs continuously during endpoint
+#      regeneration, and Tetragon loads its own. On a Cilium cluster this
+#      policy therefore reports mostly its own platform's activity.
+#
+#   2. It hooks security_file_permission and security_mmap_file, two of the
+#      hottest paths in the kernel. Selectors filter in-kernel so the events do
+#      not reach userspace, but the kprobe still fires on every call.
+#
+# Enable it on clusters where an unexpected eBPF load is a meaningful signal,
+# after confirming the volume on one cluster first.
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: "bpf-library-policy"
+  labels:
+    {{- include "tetragon-wrapper.labels" . | nindent 4 }}
+spec:
+  kprobes:
+  - call: "bpf_check"
+    syscall: false
+    args:
+    - index: 1
+      type: "bpf_attr"
+  - call: "security_perf_event_alloc"
+    syscall: false
+    args:
+    - index: 0
+      type: "perf_event"
+  - call: "security_bpf_map_alloc" # bpf map create, < Linux 6.9
+    syscall: false
+    args:
+    - index: 0
+      type: "bpf_map"
+    ignore:
+      callNotFound: true
+  - call: "security_bpf_map_create" # bpf map create, Linux 6.9+
+    syscall: false
+    args:
+    - index: 0
+      type: "bpf_map"
+    ignore:
+      callNotFound: true
+  - call: "security_file_permission"
+    syscall: false
+    return: true
+    args:
+    - index: 0
+      type: "file"
+    - index: 1
+      type: "int" # 0x04 MAY_READ, 0x02 MAY_WRITE
+    returnArg:
+      index: 0
+      type: "int"
+    selectors:
+    - matchArgs:
+      - index: 0
+        operator: "Prefix"
+        values:
+        - "/sys/fs/bpf"
+      - index: 1
+        operator: "Equal"
+        values:
+        - "4" # MAY_READ
+    - matchArgs:
+      - index: 0
+        operator: "Prefix"
+        values:
+        - "/sys/fs/bpf"
+      - index: 1
+        operator: "Equal"
+        values:
+        - "2" # MAY_WRITE
+  - call: "security_mmap_file"
+    syscall: false
+    return: true
+    args:
+    - index: 0
+      type: "file"
+    - index: 1
+      type: "uint32" # prot flags
+    - index: 2
+      type: "uint32" # mmap flags
+    returnArg:
+      index: 0
+      type: "int"
+    selectors:
+    - matchArgs:
+      - index: 0
+        operator: "Prefix"
+        values:
+        - "/sys/fs/bpf"
+      - index: 1
+        operator: "Equal"
+        values:
+        - "1" # MAY_READ
+      - index: 2
+        operator: "Mask"
+        values:
+        - "1" # MAP_SHARED
+    - matchArgs:
+      - index: 0
+        operator: "Prefix"
+        values:
+        - "/sys/fs/bpf"
+      - index: 1
+        operator: "Mask"
+        values:
+        - "2" # PROT_WRITE
+      - index: 2
+        operator: "Mask"
+        values:
+        - "1" # MAP_SHARED
+{{- end }}
