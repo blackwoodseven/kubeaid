@@ -174,9 +174,12 @@ prometheusRule:
   additionalAnnotations: {}
 
   # -- Alert when more than this many images have BOTH a fixable Critical/High
-  # finding and a newer tag available upstream. Zero means alert on any such
-  # image. One alert per cluster, not one per image.
-  upgradableThreshold: 0
+  # finding and a newer tag upstream. One alert per cluster, not one per image.
+  #
+  # Deliberately high. Every real cluster carries a few of these at any moment,
+  # so a low threshold fires everywhere on day one and gets ignored. The signal
+  # worth acting on is a pile of easy upgrades, not the existence of one.
+  upgradableThreshold: 20
 
   # -- How long the count must stay above the threshold. Long by design: this
   # is a backlog to work through, not an incident.
