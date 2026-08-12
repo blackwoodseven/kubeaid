@@ -11,20 +11,20 @@ spec:
       - {{ .Values.pods.cidrBlock | default "10.244.0.0/16" }}
   {{- if .Values.eks }}
   controlPlaneRef:
-    apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+    apiGroup: controlplane.cluster.x-k8s.io
     kind: AWSManagedControlPlane
     name: {{ .Values.global.clusterName }}-control-plane
   infrastructureRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    apiGroup: infrastructure.cluster.x-k8s.io
     kind: AWSManagedCluster
     name: {{ .Values.global.clusterName }}
   {{- else }}
   controlPlaneRef:
-    apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+    apiGroup: controlplane.cluster.x-k8s.io
     kind: KubeadmControlPlane
     name: {{ .Values.global.clusterName }}-control-plane
   infrastructureRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    apiGroup: infrastructure.cluster.x-k8s.io
     kind: AWSCluster
     name: {{ .Values.global.clusterName }}
   {{- end }}

@@ -12,20 +12,20 @@ spec:
        unlike CAPA v2 (whose AWSManagedControlPlane lives under
        controlplane.cluster.x-k8s.io). */}}
   controlPlaneRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    apiGroup: infrastructure.cluster.x-k8s.io
     kind: AzureManagedControlPlane
     name: {{ .Values.global.clusterName }}-control-plane
   infrastructureRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    apiGroup: infrastructure.cluster.x-k8s.io
     kind: AzureManagedCluster
     name: {{ .Values.global.clusterName }}
   {{- else }}
   controlPlaneRef:
-    apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+    apiGroup: controlplane.cluster.x-k8s.io
     kind: KubeadmControlPlane
     name: {{ .Values.global.clusterName }}-control-plane
   infrastructureRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    apiGroup: infrastructure.cluster.x-k8s.io
     kind: AzureCluster
     name: {{ .Values.global.clusterName }}
   {{- end }}

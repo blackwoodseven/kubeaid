@@ -30,12 +30,12 @@ spec:
     spec:
       bootstrap:
         configRef:
-          apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+          apiGroup: bootstrap.cluster.x-k8s.io
           kind: KubeadmConfig
           name: {{ printf "%s-%s" $.Values.global.clusterName $nodeGroup.name }}
       clusterName: {{ $.Values.global.clusterName }}
       infrastructureRef:
-        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+        apiGroup: infrastructure.cluster.x-k8s.io
         kind: AWSMachinePool
         name: {{ printf "%s-%s" $.Values.global.clusterName $nodeGroup.name }}
       version: {{ $.Values.global.kubernetes.version }}

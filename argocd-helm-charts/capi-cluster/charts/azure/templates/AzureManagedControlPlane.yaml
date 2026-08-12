@@ -13,9 +13,14 @@ spec:
     kind: AzureClusterIdentity
     name: {{ .Values.global.clusterName }}-cluster-identity
   {{/* AKS nodes stay keyless — use `az aks command invoke` for node access.
-       An empty string disables SSH key provisioning; leaving the field unset
-       would make CAPZ auto-generate a key instead. */}}
-  sshPublicKey: ""
+       We deliberately do NOT set sshPublicKey here (not even to ""): CAPZ's
+       admission webhook auto-generates a key on creation regardless of
+       whether the field is sent as "" or omitted, then rejects every later
+       patch as "field is immutable" because our desired manifest keeps
+       re-declaring a different value ("" vs the generated key). Omitting
+       the field entirely means our Helm-rendered manifest never claims
+       ownership of it, so ArgoCD's three-way merge leaves the
+       webhook-generated value alone instead of fighting it forever. */}}
   {{/* Cilium is the CNI (installed by kubeaid-cli, then owned by the cilium
        ArgoCD App) and runs with kube-proxy replacement — so AKS's own CNI is
        disabled via BYO CNI ("none"), and kube-proxy via the ASO patch below.
