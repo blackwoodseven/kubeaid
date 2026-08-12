@@ -162,3 +162,26 @@ serviceMonitor:
   interval: 30s
   scrapeTimeout: 10s
 
+# Alerts on the agent's own security-posture metrics. Only rendered when
+# appConfig.securityPosture.enabled is true, since without collection the
+# metrics never appear and every rule would evaluate against nothing.
+prometheusRule:
+  enabled: true
+
+  # -- Extra labels on the PrometheusRule object, for Prometheus selector
+  # matching.
+  additionalLabels: {}
+  additionalAnnotations: {}
+
+  # -- Alert when more than this many images have BOTH a fixable Critical/High
+  # finding and a newer tag upstream. One alert per cluster, not one per image.
+  #
+  # Deliberately high. Every real cluster carries a few of these at any moment,
+  # so a low threshold fires everywhere on day one and gets ignored. The signal
+  # worth acting on is a pile of easy upgrades, not the existence of one.
+  upgradableThreshold: 20
+
+  # -- How long the count must stay above the threshold. Long by design: this
+  # is a backlog to work through, not an incident.
+  upgradableFor: 24h
+
