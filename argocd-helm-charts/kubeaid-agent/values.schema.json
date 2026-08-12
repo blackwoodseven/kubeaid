@@ -42,6 +42,23 @@
               "type": "string"
             }
           }
+        },
+        "securityPosture": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "When true, the agent collects vulnerability and posture snapshots and submits them to Obmondo API. Also gates the corresponding RBAC rules. Set false on clusters that must not ship vulnerability detail off-site.",
+              "type": "boolean"
+            },
+            "interval": {
+              "description": "Cadence of the full posture collection. Trivy refreshes its reports on a 24h TTL, so polling faster re-reads identical data.",
+              "type": "string"
+            },
+            "windowCheckInterval": {
+              "description": "How often the agent looks for a service-window edge, to capture a before/after pair around maintenance.",
+              "type": "string"
+            }
+          }
         }
       }
     },
