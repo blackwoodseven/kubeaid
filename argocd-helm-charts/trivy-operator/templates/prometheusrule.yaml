@@ -49,6 +49,18 @@ spec:
         # filter this count is never zero on a real cluster, so marking it
         # critical would get it muted within a week — and a muted receiver
         # takes the health alert above down with it.
+        #
+        # Fixability is NOT in this expression. trivy_image_vulnerabilities
+        # counts by severity and carries no fixed_version label, so nothing
+        # here can filter on whether a fix exists. Every counted finding is
+        # fixable only because trivy.ignoreUnfixed makes Trivy drop unfixed
+        # CVEs at scan time, so they never reach a report to be counted.
+        #
+        # The wording below is derived from that value rather than asserting
+        # it. Setting ignoreUnfixed to false would otherwise leave this alert
+        # working but quietly claiming something untrue — counting CVEs nobody
+        # can act on while still calling them actionable.
+        {{- $fixableOnly := index .Values "trivy-operator" "trivy" "ignoreUnfixed" }}
         - alert: ClusterVulnerabilityBacklog
           expr: |
             sum(trivy_image_vulnerabilities{severity=~"Critical|High"})
@@ -57,6 +69,6 @@ spec:
           labels:
             severity: warning
           annotations:
-            summary: "Cluster has {{ "{{ $value }}" }} fixable Critical/High CVEs"
-            description: "Fixable Critical/High findings exceed the threshold of {{ .Values.kubeaid.prometheusRule.backlogThreshold }}. Every finding counted here has a published fix, so the backlog is actionable. Per-image detail: kubectl get vulnerabilityreports -A."
+            summary: "Cluster has {{ "{{ $value }}" }} {{ if $fixableOnly }}fixable {{ end }}Critical/High CVEs"
+            description: "Critical/High findings exceed the threshold of {{ .Values.kubeaid.prometheusRule.backlogThreshold }}. {{ if $fixableOnly }}Every finding counted has a published fix, so the backlog is actionable.{{ else }}This count includes CVEs with no published fix, because trivy.ignoreUnfixed is false — some of it may not be actionable.{{ end }} Per-image detail: kubectl get vulnerabilityreports -A."
 {{- end }}

@@ -41,14 +41,17 @@ kubeaid:
     enabled: true
 
     # TrivyOperatorMetricsMissing — the scanner is producing nothing, so the
-    # cluster is unscanned rather than clean. Pages. Long enough to ride out an
-    # operator restart or a missed scrape, short enough that a genuinely dead
-    # scanner does not go unnoticed for a working day.
+    # cluster is unscanned rather than clean. Severity critical. Long enough to
+    # ride out an operator restart or a missed scrape, short enough that a
+    # genuinely dead scanner does not go unnoticed for a working day.
     blindFor: "1h"
 
-    # ClusterVulnerabilityBacklog — fixable Critical/High findings above this
-    # count. Ticket, never a page: with ignoreUnfixed the count is still never
-    # zero on a real cluster, so paging would be muted within a week.
+    # ClusterVulnerabilityBacklog — Critical/High findings above this count.
+    # Severity warning: with ignoreUnfixed the count is still never zero on a
+    # real cluster, so marking it critical would get the receiver muted.
+    #
+    # Whether these are all fixable depends on trivy.ignoreUnfixed above, not
+    # on the alert — the metric it counts carries no fixed_version label.
     #
     # Tune per cluster. The default is deliberately high: an alert that fires
     # on day one everywhere teaches operators to ignore it.
