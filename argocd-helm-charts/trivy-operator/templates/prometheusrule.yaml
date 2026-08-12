@@ -14,25 +14,12 @@ metadata:
   {{- end }}
 spec:
   groups:
-    # Prometheus answers two questions here and no more: is the scanner
-    # working, and is the backlog growing. Per-CVE detail stays in the
-    # VulnerabilityReport CRs, which carry CVSS scores, installed and fixed
-    # versions and reference links that these metrics do not expose.
-    #
-    # An earlier revision correlated CVEs with version-checker inside a
-    # recording rule, joining on an image reference rebuilt from Trivy's
-    # registry/repository labels. That meant re-implementing Docker's
-    # reference grammar in chained label_replace calls, and it failed
-    # silently twice: short-form Docker Hub references never matched, and the
-    # fix for that wrongly rewrote localhost/… references. The correlation now
-    # happens in kubeaid-agent, where go-containerregistry already implements
-    # the grammar correctly.
+    # Two questions only: is the scanner working, is the backlog growing.
+    # Correlating CVEs against newer tags is deliberately NOT done here —
+    # rebuilding image references with label_replace failed silently twice.
     - name: trivy-operator.health
       rules:
-        # The dangerous failure is not a noisy alert, it is a silent one: a
-        # scanner producing nothing looks exactly like a clean cluster. Across
-        # a large fleet nobody notices by eye, which is why this is the one
-        # vulnerability alert that justifies paging.
+        # A scanner producing nothing looks exactly like a clean cluster.
         - alert: TrivyOperatorMetricsMissing
           expr: |
             absent(trivy_image_vulnerabilities)
@@ -45,21 +32,11 @@ spec:
 
     - name: trivy-operator.backlog
       rules:
-        # warning, not critical. With ignoreUnfixed and a CRITICAL,HIGH
-        # filter this count is never zero on a real cluster, so marking it
-        # critical would get it muted within a week — and a muted receiver
-        # takes the health alert above down with it.
+        # warning, not critical: this count is never zero on a real cluster,
+        # and a muted receiver would take the alert above down with it.
         #
-        # Fixability is NOT in this expression. trivy_image_vulnerabilities
-        # counts by severity and carries no fixed_version label, so nothing
-        # here can filter on whether a fix exists. Every counted finding is
-        # fixable only because trivy.ignoreUnfixed makes Trivy drop unfixed
-        # CVEs at scan time, so they never reach a report to be counted.
-        #
-        # The wording below is derived from that value rather than asserting
-        # it. Setting ignoreUnfixed to false would otherwise leave this alert
-        # working but quietly claiming something untrue — counting CVEs nobody
-        # can act on while still calling them actionable.
+        # "fixable" comes from trivy.ignoreUnfixed, not from this expression —
+        # the metric has no fixed_version label. Wording follows the value.
         {{- $fixableOnly := index .Values "trivy-operator" "trivy" "ignoreUnfixed" }}
         - alert: ClusterVulnerabilityBacklog
           expr: |

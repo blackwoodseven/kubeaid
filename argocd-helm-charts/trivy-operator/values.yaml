@@ -40,21 +40,13 @@ kubeaid:
   prometheusRule:
     enabled: true
 
-    # TrivyOperatorMetricsMissing — the scanner is producing nothing, so the
-    # cluster is unscanned rather than clean. Severity critical. Long enough to
-    # ride out an operator restart or a missed scrape, short enough that a
-    # genuinely dead scanner does not go unnoticed for a working day.
+    # -- How long the scanner must report nothing before TrivyOperatorMetricsMissing
+    # fires. Rides out a restart or a missed scrape.
     blindFor: "1h"
 
-    # ClusterVulnerabilityBacklog — Critical/High findings above this count.
-    # Severity warning: with ignoreUnfixed the count is still never zero on a
-    # real cluster, so marking it critical would get the receiver muted.
-    #
-    # Whether these are all fixable depends on trivy.ignoreUnfixed above, not
-    # on the alert — the metric it counts carries no fixed_version label.
-    #
-    # Tune per cluster. The default is deliberately high: an alert that fires
-    # on day one everywhere teaches operators to ignore it.
+    # -- Critical/High count above which ClusterVulnerabilityBacklog fires.
+    # Deliberately high — an alert that fires on day one everywhere gets ignored.
+    # Whether these are all fixable follows trivy.ignoreUnfixed above.
     backlogThreshold: 100
     backlogFor: "24h"
 
