@@ -45,10 +45,10 @@ spec:
 
     - name: trivy-operator.backlog
       rules:
-        # Deliberately a ticket, never a page. With ignoreUnfixed and a
-        # CRITICAL,HIGH filter this count is still never zero on a real
-        # cluster, so paging on it would be muted within a week — taking the
-        # health alert above down with it.
+        # warning, not critical. With ignoreUnfixed and a CRITICAL,HIGH
+        # filter this count is never zero on a real cluster, so marking it
+        # critical would get it muted within a week — and a muted receiver
+        # takes the health alert above down with it.
         - alert: ClusterVulnerabilityBacklog
           expr: |
             sum(trivy_image_vulnerabilities{severity=~"Critical|High"})
