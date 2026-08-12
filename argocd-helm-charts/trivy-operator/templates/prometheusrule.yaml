@@ -15,10 +15,9 @@ metadata:
 spec:
   groups:
     # Prometheus answers two questions here and no more: is the scanner
-    # working, and is the backlog growing. Per-CVE detail is collected by
-    # kubeaid-agent from the VulnerabilityReport CRs and sent to the Obmondo
-    # API — the CRs carry CVSS, installed/fixed versions and links that these
-    # metrics do not expose.
+    # working, and is the backlog growing. Per-CVE detail stays in the
+    # VulnerabilityReport CRs, which carry CVSS scores, installed and fixed
+    # versions and reference links that these metrics do not expose.
     #
     # An earlier revision correlated CVEs with version-checker inside a
     # recording rule, joining on an image reference rebuilt from Trivy's
@@ -59,5 +58,5 @@ spec:
             severity: warning
           annotations:
             summary: "Cluster has {{ "{{ $value }}" }} fixable Critical/High CVEs"
-            description: "Fixable Critical/High findings exceed the threshold of {{ .Values.kubeaid.prometheusRule.backlogThreshold }}. Every finding counted here has a published fix, so the backlog is actionable. Per-image detail is in the Obmondo UI."
+            description: "Fixable Critical/High findings exceed the threshold of {{ .Values.kubeaid.prometheusRule.backlogThreshold }}. Every finding counted here has a published fix, so the backlog is actionable. Per-image detail: kubectl get vulnerabilityreports -A."
 {{- end }}
