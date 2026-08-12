@@ -16,22 +16,11 @@ spec:
   groups:
     - name: kubeaid-agent.security-posture
       rules:
-        # The actionable set: an image carrying a fixable Critical/High finding
-        # that ALSO has a newer tag upstream. A CVE with no newer image is a
-        # wait, and a newer image with no CVE is routine maintenance. Only the
-        # overlap is work that can be done today and removes a known exposure.
+        # Images with a fixable Critical/High finding AND a newer tag upstream
+        # — the set worth acting on. The agent computes the join, because
+        # rebuilding image references in PromQL fails silently.
         #
-        # One alert per cluster, not one per image. The count is what decides
-        # whether anyone acts, and a per-image alert on a fleet produces a list
-        # nobody reads. The images themselves are in the VulnerabilityReport
-        # CRs.
-        #
-        # The correlation is computed by the agent, not by a PromQL join.
-        # Trivy splits and normalises registry and repository while
-        # version-checker copies the pod spec verbatim, so joining them in
-        # PromQL means reimplementing Docker reference grammar in
-        # label_replace, which fails silently on short-form and registry-local
-        # references.
+        # A count, so one alert per cluster rather than one per image.
         - alert: ImageOutdatedAndVulnerable
           expr: |
             kubeaid_agent_security_posture_upgradable_vulnerable_images
@@ -43,15 +32,9 @@ spec:
             summary: "{{ "{{ $value }}" }} images have fixable Critical/High CVEs with an upgrade available"
             description: "These images can be moved to a newer tag today, and doing so clears a known fixable exposure. List them with: kubectl get vulnerabilityreports -A"
 
-        # Collection status, reported per component as 1 ok, 0 failed and -1
-        # not installed.
-        #
-        # The comparison is == 0 and must stay that way. Not-installed is -1
-        # precisely so this alert stays quiet on a cluster that never ran
-        # Tetragon or a scanner, while still firing when something that IS
-        # installed cannot be read -- a missing RBAC rule, an unreachable
-        # scanner. Collapsing the two states would make this fire everywhere
-        # and it would be silenced, taking the real signal with it.
+        # Gauge is 1 ok, 0 failed, -1 not installed. == 0 is load-bearing:
+        # anything looser also fires on clusters that simply do not run a
+        # scanner or Tetragon, and the alert gets silenced.
         - alert: SecurityPostureCollectionFailing
           expr: |
             kubeaid_agent_security_posture_collection == 0
