@@ -18,8 +18,10 @@ Upstream chart: [https://helm.cilium.io/](https://github.com/cilium/tetragon) (s
 
 ## Usage
 
-- Installed as-is, Tetragon is **observability-only**: it emits process,
-  network and file events (JSON export + gRPC). Nothing is blocked.
+- Tetragon here is **observability-only**: it emits process, network and file
+  events (JSON export + gRPC), plus the curated detections from the
+  [TracingPolicies KubeAid ships](#tracingpolicies-shipped-by-kubeaid).
+  Nothing is blocked.
 - Inspect events from a node with the `tetra` CLI:
 
   ```sh
@@ -37,6 +39,62 @@ Upstream chart: [https://helm.cilium.io/](https://github.com/cilium/tetragon) (s
 
   Tetragon integrates naturally with Cilium (same vendor), which KubeAid
   already uses as the CNI.
+
+## TracingPolicies shipped by KubeAid
+
+Tetragon ships **no** TracingPolicy of its own. Without one it is a firehose of
+raw events with no curated detections, so KubeAid ships a small set under
+`kubeaid.tracingPolicies`.
+
+Every policy is vendored verbatim from Tetragon's **curated** policy library
+([`examples/policylibrary`](https://github.com/cilium/tetragon/tree/main/examples/policylibrary)),
+not the community examples in `examples/tracingpolicy` — upstream states those
+are "not curated in terms of suitability for specific use cases or best
+practices".
+
+All are **observability-only**. None carries a `Sigkill` or `Override` action,
+so nothing is ever blocked. Enforcement stays a separate, deliberate decision.
+
+| Value | Policy | Default | Detects |
+| ----- | ------ | ------- | ------- |
+| `policies.kernelModules` | `monitor-kernel-modules` | **on** | Kernel module loads (`security_kernel_module_request`, `security_kernel_read_file`) |
+| `policies.privilegesRaise` | `privileges-raise` | **on** | `capset`, unprivileged user-namespace creation, uid/gid changes to root |
+| `policies.bpf` | `bpf-library-policy` | off | eBPF program and map loads, BPFFS access |
+
+Disable the whole set with `kubeaid.tracingPolicies.enabled: false`.
+
+### Why these defaults
+
+**`kernelModules`** — module loads are near-zero in normal cluster operation
+and are a common rootkit step, giving the best signal-to-noise of anything in
+the library.
+
+**`privilegesRaise`** — upstream rate-limits every selector to one message per
+minute, which is what makes it safe to run fleet-wide. It deliberately
+supersedes the library's `privileges-setuid-root` policy, which is a strict
+subset: both watch uid/gid changes to root, but `privileges-raise` also covers
+`capset` and user-namespace creation. Shipping both would double-report every
+setuid event.
+
+**`bpf` is off** for two reasons specific to this stack:
+
+1. Cilium reloads eBPF programs continuously during endpoint regeneration, and
+   Tetragon loads its own. On a Cilium cluster the policy therefore reports
+   mostly the platform's own activity.
+2. It hooks `security_file_permission` and `security_mmap_file`, two of the
+   hottest paths in the kernel. Selectors filter in-kernel so filtered events
+   never reach userspace, but the kprobe still fires on every call.
+
+Enable it where an unexpected eBPF load is a meaningful signal, after
+confirming the event volume on a single cluster.
+
+### Adding more
+
+The library also contains `egress`, `library` (shared-object loads) and `sshd`
+policies. They are not vendored here. `library` in particular sets
+`loader: true` and fires on every shared-library load, which would flood the
+event pipeline across a large fleet — read and volume-test any of them on one
+cluster before adding.
 
 ## Configuration
 

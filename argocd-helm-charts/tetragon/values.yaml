@@ -21,3 +21,36 @@ tetragon:
   #   exporter + pipeline in the openobserve-collector values (filter on the Tetragon
   #   namespace) — Tetragon itself is unchanged.
   {}
+
+# KubeAid-owned TracingPolicy set.
+#
+# Tetragon ships no TracingPolicy of its own, so without these it is a firehose
+# of process/network/file events with no curated detections. Every policy here
+# is vendored verbatim from Tetragon's CURATED policy library
+# (examples/policylibrary), not the uncurated community examples
+# (examples/tracingpolicy).
+#
+# All are observability-only: none carry a Sigkill or Override action, so
+# nothing is ever blocked. Enforcement stays a deliberate, separate decision.
+kubeaid:
+  tracingPolicies:
+    enabled: true
+
+    policies:
+      # Kernel module loads. Near-zero in normal operation and a common rootkit
+      # step, so the highest signal-to-noise detection available.
+      kernelModules: true
+
+      # capset, unprivileged user-namespace creation, and uid/gid changes to
+      # root. Upstream rate-limits every selector to one message per minute.
+      #
+      # Deliberately supersedes the library's privileges-setuid-root policy,
+      # which is a strict subset — shipping both would double-report every
+      # setuid event.
+      privilegesRaise: true
+
+      # eBPF program and map loads. OFF by default on KubeAid clusters: Cilium
+      # and Tetragon both load eBPF continuously, so this mostly reports the
+      # platform's own activity, and it hooks two very hot kernel paths.
+      # Confirm volume on one cluster before enabling fleet-wide.
+      bpf: false
