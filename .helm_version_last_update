@@ -66,7 +66,6 @@
 2026-08-10 5.4.0 minio
 2026-08-10 1.10.0 mongodb-kubernetes
 2026-08-10 1.9.0 netbird
-2026-08-10 0.7.0 netbird-operator
 2026-08-10 0.5.19 ntfy
 2026-08-10 1.16.5 oncall
 2026-08-10 2.5.29 opencost
@@ -111,3 +110,4 @@
 2026-08-10 6.0.0 whoami
 2026-08-10 1.0.216 yetibot
 2026-08-10 2.10.1 zfs-localpv
+2026-08-12 0.8.0 netbird-operator
