@@ -155,6 +155,7 @@ exporter:
     s3:
       # S3 endpoint URL (eg. https://s3.example.com).
       url: ""
+      prefix: ""
       # Name of the Kubernetes Secret containing S3 credentials.
       # Expected secret keys:
       #   access-key-id, secret-access-key, region, bucket
