@@ -5,34 +5,49 @@ rule_files:
   - ../rules/btrfs.yaml
 
 tests:
-  # btrfs use check
+  # btrfs use + metadata exhaustion checks
   - interval: 1m
     input_series:
-      # Enablement follows the disk::usage toggle (btrfs has no toggle of its own).
-      - series: obmondo_monitoring{certname="cert1.abc", alert_id="monitor::system::disk::usage"}
-        values: 1x1000
-      - series: obmondo_monitoring{certname="remdev.abc", alert_id="monitor::system::disk::usage"}
-        values: 1x1000
-      # Host with a full btrfs block group but disk monitoring disabled -> must NOT alert.
-      - series: obmondo_monitoring{certname="nomon.abc", alert_id="monitor::system::disk::usage"}
-        values: 0x1000
-      - series: threshold::monitor::system::disk::btrfs{certname="cert1.abc", block_group_type="/data", uuid="4321"}
-        values: 90+0x30
-      # cert1 /data: 9013 / 10000 = 90.13% used, custom threshold 90 -> fires.
-      - series: node_btrfs_size_bytes{certname="cert1.abc", block_group_type="/data", uuid="4321"}
+      # Host A (cert1.abc): overall usage 94% and only 3% device space unallocated
+      # -> monitor::system::disk::btrfs fires. Metadata block is 75% -> no metadata alert.
+      - series: node_btrfs_used_bytes{certname="cert1.abc", block_group_type="data", uuid="4321"}
+        values: 8500x30
+      - series: node_btrfs_size_bytes{certname="cert1.abc", block_group_type="data", uuid="4321"}
+        values: 8800x30
+      - series: node_btrfs_used_bytes{certname="cert1.abc", block_group_type="metadata", uuid="4321"}
+        values: 900x30
+      - series: node_btrfs_size_bytes{certname="cert1.abc", block_group_type="metadata", uuid="4321"}
+        values: 1200x30
+      - series: node_btrfs_device_size_bytes{certname="cert1.abc", uuid="4321"}
         values: 10000x30
-      - series: node_btrfs_used_bytes{certname="cert1.abc", block_group_type="/data", uuid="4321"}
-        values: 9013x30
-      # remdev /metadata: 8821 / 10000 = 88.21% used, default threshold 80 -> fires.
-      - series: node_btrfs_size_bytes{certname="remdev.abc", block_group_type="/metadata", uuid="5321"}
+      - series: node_btrfs_device_unused_bytes{certname="cert1.abc", uuid="4321"}
+        values: 300x30
+
+      # Host B (meta.abc): overall usage only 40.8% (no usage alert), but metadata block
+      # is 90% full and device space unallocated is 2% -> metadata_exhaustion fires.
+      - series: node_btrfs_used_bytes{certname="meta.abc", block_group_type="data", uuid="5321"}
+        values: 3000x30
+      - series: node_btrfs_size_bytes{certname="meta.abc", block_group_type="data", uuid="5321"}
+        values: 3500x30
+      - series: node_btrfs_used_bytes{certname="meta.abc", block_group_type="metadata", uuid="5321"}
+        values: 1080x30
+      - series: node_btrfs_size_bytes{certname="meta.abc", block_group_type="metadata", uuid="5321"}
+        values: 1200x30
+      - series: node_btrfs_device_size_bytes{certname="meta.abc", uuid="5321"}
         values: 10000x30
-      - series: node_btrfs_used_bytes{certname="remdev.abc", block_group_type="/metadata", uuid="5321"}
-        values: 8821x30
-      # nomon /data: 9500 / 10000 = 95% used, but disk::usage disabled -> no alert.
-      - series: node_btrfs_size_bytes{certname="nomon.abc", block_group_type="/data", uuid="6321"}
-        values: 10000x30
-      - series: node_btrfs_used_bytes{certname="nomon.abc", block_group_type="/data", uuid="6321"}
+      - series: node_btrfs_device_unused_bytes{certname="meta.abc", uuid="5321"}
+        values: 200x30
+
+      # Host C (healthy.abc): 95% used but 30% device space still unallocated, so btrfs can
+      # still allocate chunks -> the "unused < 5%" guard blocks both alerts. Negative case.
+      - series: node_btrfs_used_bytes{certname="healthy.abc", block_group_type="data", uuid="6321"}
         values: 9500x30
+      - series: node_btrfs_size_bytes{certname="healthy.abc", block_group_type="data", uuid="6321"}
+        values: 9800x30
+      - series: node_btrfs_device_size_bytes{certname="healthy.abc", uuid="6321"}
+        values: 10000x30
+      - series: node_btrfs_device_unused_bytes{certname="healthy.abc", uuid="6321"}
+        values: 3000x30
 
     alert_rule_test:
       - alertname: monitor::system::disk::btrfs
@@ -41,18 +56,21 @@ tests:
           - exp_labels:
               severity: warning
               certname: cert1.abc
-              block_group_type: /data
               uuid: 4321
               alert_id: monitor::system::disk::btrfs
             exp_annotations:
-              summary: "Available Block space on **/data** for **cert1.abc** is low"
-              description: Available space is very low on btrfs filesystem for Block /data and current usage is around 90.13% which is above the threshold of 90%.
+              summary: "btrfs filesystem is nearly full"
+              description: "btrfs filesystem '4321' on cert1.abc is 94%\nused and has less than 5% of device space left unallocated, so btrfs can no longer\ncarve new chunks. Free space or add/grow a device.\n"
+
+      - alertname: monitor::system::disk::btrfs::metadata_exhaustion
+        eval_time: 30m
+        exp_alerts:
           - exp_labels:
-              severity: warning
-              certname: remdev.abc
-              block_group_type: /metadata
+              severity: critical
+              certname: meta.abc
+              block_group_type: metadata
               uuid: 5321
-              alert_id: monitor::system::disk::btrfs
+              alert_id: monitor::system::disk::btrfs::metadata_exhaustion
             exp_annotations:
-              summary: "Available Block space on **/metadata** for **remdev.abc** is low"
-              description: Available space is very low on btrfs filesystem for Block /metadata and current usage is around 88.21% which is above the threshold of 80%.
+              summary: "btrfs metadata is nearly exhausted"
+              description: "btrfs metadata on meta.abc (filesystem '5321') is\n90% full and less than 5% of device space is unallocated, so btrfs\ncannot allocate a new metadata chunk and the filesystem risks going read-only. Run\n'btrfs balance start -musage=NN /' or add/grow a device.\n"
