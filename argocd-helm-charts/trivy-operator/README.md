@@ -34,7 +34,9 @@ kubeaid:
     enabled: true
 ```
 
-> **Note:** `ImageOutdatedAndVulnerable` requires `version_checker_is_latest_version` metric. Deploy the [`version-checker`](../version-checker) chart alongside this one.
+> **Note:** deploy the [`version-checker`](../version-checker) chart alongside this one. Neither alert
+> here depends on it, but `kubeaid-agent` uses its metrics to tell you whether a newer image tag
+> actually exists — which is what turns a CVE finding into an upgrade you can apply.
 
 ## Configuration
 
@@ -55,40 +57,46 @@ Forwarded to the [aquasecurity/trivy-operator](https://artifacthub.io/packages/h
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `kubeaid.prometheusRule.enabled` | Generate PrometheusRule (2 recording rules + `ImageOutdatedAndVulnerable` + 3 health alerts) | `true` |
+| `kubeaid.prometheusRule.enabled` | Generate PrometheusRule (2 alerts, no recording rules) | `true` |
+| `kubeaid.prometheusRule.blindFor` | How long the scanner must report nothing before paging | `1h` |
+| `kubeaid.prometheusRule.backlogThreshold` | Fixable Critical/High count above which the backlog alert fires | `100` |
+| `kubeaid.prometheusRule.backlogFor` | How long the backlog must exceed the threshold | `24h` |
 | `kubeaid.prometheusRule.additionalLabels` | Extra labels added to the PrometheusRule object (for Prometheus selector matching) | `{}` |
 | `kubeaid.prometheusRule.additionalAnnotations` | Extra annotations added to the PrometheusRule object | `{}` |
 
 ## Alerts shipped
 
-- `ImageOutdatedAndVulnerable` — fires when a running image has `Critical`/`High` CVEs **and** a newer tag is available in the source registry. Joins the two recording rules on `(image, current_version)`. **Requires the [`version-checker`](../version-checker) chart deployed in the cluster.** Persists for 6h before firing to absorb registry/scanner flaps.
+Prometheus answers two questions here and no more — **is the scanner working**, and **is the backlog
+growing**. Per-CVE detail is not alerting data.
 
-### Why two recording rules
+- `TrivyOperatorMetricsMissing` — `absent(trivy_image_vulnerabilities)`. The scanner is producing
+  nothing, so the cluster is **unscanned, not clean**. This is the one vulnerability alert that
+  justifies paging: a silent scanner looks exactly like a healthy one, and across a fleet nobody
+  notices by eye.
+- `ClusterVulnerabilityBacklog` — fixable Critical/High findings above `backlogThreshold`.
+  Deliberately a **ticket, never a page**. With `ignoreUnfixed` the count is still never zero on a
+  real cluster, so paging on it would be muted within a week — taking the health alert down with it.
 
-Trivy describes an image as three labels (`image_registry`, `image_repository`, `image_tag`); version-checker
-emits a single `image` label copied straight from the pod spec, with **no registry normalisation** — its
-`urlTagSHAFromImage` only splits off the tag and digest. So `nginx:1.25` is `nginx` to version-checker and
-`index.docker.io/library/nginx` to Trivy, and a naive join on `image` silently matches nothing for every
-short-form Docker Hub reference while still working for fully-qualified ones.
+### Where the per-CVE detail went
 
-`record::version_checker::outdated` applies Docker's reference expansion rules so both sides speak the same
-canonical `registry/repository` form before the join.
+CVSS scores, installed and fixed versions, descriptions and links are **not** in these metrics.
+`kubeaid-agent` reads them from the `VulnerabilityReport` CRs — which carry the full record — and
+submits them to the Obmondo API for display in the UI, alongside the existing server-page CVE view.
 
-### Health alerts
+An earlier revision of this chart correlated CVEs against `version-checker` inside a recording rule,
+to alert only when a fix was actually available. It joined on an image reference rebuilt from Trivy's
+`image_registry` + `image_repository` labels, which meant re-implementing Docker's reference grammar
+in chained `label_replace` calls. It failed silently twice: short-form Docker Hub references
+(`nginx:1.25`) never matched, and the fix for that wrongly rewrote `localhost/…` references.
 
-These exist because the dangerous failure is not a noisy alert, it is a silent one. Each watches a way
-`ImageOutdatedAndVulnerable` can stop firing while everything still looks fine:
+That correlation now happens in `kubeaid-agent`, where
+[`go-containerregistry`](https://github.com/google/go-containerregistry) already implements the
+grammar correctly — the same library Trivy itself uses. A PromQL join can only ever *suppress*
+alerts, never add them, which is the wrong failure direction for security data.
 
-- `TrivyVersionCheckerJoinEmpty` — both inputs have series but the join yields nothing, meaning the
-  normalisation no longer matches how images are referenced in this cluster.
-- `VersionCheckerMetricsMissing` — version-checker stopped reporting. It is load-bearing for the CVE alert and
-  ships no alerts of its own, so without this it can fail open unnoticed.
-- `TrivyOperatorMetricsMissing` — no vulnerability metrics at all: operator down, ServiceMonitor not scraped, or
-  every report expired past `scannerReportTTL` without refresh.
-
-> Note: a previous `TrivyOperatorScannerStuck` alert queried `trivy_resource_last_scan_timestamp_seconds`. That
-> metric does not exist — trivy-operator exposes no last-scan timestamp of any kind — so the alert could never
-> fire. Scanner liveness is now inferred from whether reports exist at all.
+> A previous `TrivyOperatorScannerStuck` alert queried `trivy_resource_last_scan_timestamp_seconds`.
+> That metric does not exist — trivy-operator exposes no last-scan timestamp of any kind — so it
+> could never fire. Scanner liveness is now inferred from whether reports exist at all.
 
 ## Useful commands
 

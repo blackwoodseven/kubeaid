@@ -14,119 +14,50 @@ metadata:
   {{- end }}
 spec:
   groups:
-    - name: trivy-operator.recording
-      rules:
-        # Trivy reports an image as three labels (image_registry, image_repository,
-        # image_tag); version-checker reports one `image` label taken straight from
-        # the pod spec with no registry normalisation. Both sides are normalised to
-        # Docker's canonical reference form here so they can be joined.
-        #
-        # Canonical form is always registry/repository, e.g. index.docker.io/library/nginx.
-        - record: record::trivy::vulnerability_count::by_image
-          expr: |
-            label_replace(
-              label_join(
-                count by (image_registry, image_repository, image_tag, severity, namespace) (
-                  trivy_vulnerability_id{severity=~"Critical|High", fixed_version!=""}
-                ),
-                "image", "/", "image_registry", "image_repository"
-              ),
-              "current_version", "$1", "image_tag", "(.+)"
-            )
-
-        # version-checker's `image` label is whatever the pod spec said. Docker's
-        # reference rules make the expansion deterministic:
-        #
-        #   nginx              -> index.docker.io/library/nginx
-        #   bitnami/redis      -> index.docker.io/bitnami/redis
-        #   docker.io/...      -> index.docker.io/...
-        #   quay.io/foo/bar    -> unchanged (already canonical)
-        #
-        # The four regexes are mutually exclusive, so chaining them applies at most
-        # one transformation per series. Value is forced to 1 by count() so the join
-        # below can multiply without changing the CVE count.
-        - record: record::version_checker::outdated
-          expr: |
-            label_replace(
-              label_replace(
-                label_replace(
-                  label_replace(
-                    count by (image, current_version, latest_version) (
-                      version_checker_is_latest_version == 0
-                    ),
-                    "image", "index.docker.io/library/$1", "image", "^([^/.:]+)$"
-                  ),
-                  "image", "index.docker.io/$1/$2", "image", "^([^/.:]+)/([^/]+)$"
-                ),
-                "image", "index.docker.io/library/$1", "image", "^docker\\.io/library/(.+)$"
-              ),
-              "image", "index.docker.io/$1/$2", "image", "^docker\\.io/([^/]+)/(.+)$"
-            )
-
-    - name: trivy-operator.cve
-      rules:
-        - alert: ImageOutdatedAndVulnerable
-          # Multiplying by the right-hand series (value 1) preserves the CVE count
-          # while acting as an inner join, and lets group_left carry latest_version
-          # into the annotation.
-          expr: |
-            record::trivy::vulnerability_count::by_image
-            * on (image, current_version) group_left (latest_version)
-              record::version_checker::outdated
-          for: 6h
-          labels:
-            severity: critical
-          annotations:
-            summary: "{{ "{{ $labels.image }}:{{ $labels.current_version }}" }} has CVEs AND newer tag {{ "{{ $labels.latest_version }}" }} available"
-            description: "Image {{ "{{ $labels.image }}:{{ $labels.current_version }}" }} (ns {{ "{{ $labels.namespace }}" }}) has {{ "{{ $value }}" }} {{ "{{ $labels.severity }}" }} CVE(s) reported. Newer tag {{ "{{ $labels.latest_version }}" }} exists in registry. Please update the image"
-
+    # Prometheus answers two questions here and no more: is the scanner
+    # working, and is the backlog growing. Per-CVE detail is collected by
+    # kubeaid-agent from the VulnerabilityReport CRs and sent to the Obmondo
+    # API — the CRs carry CVSS, installed/fixed versions and links that these
+    # metrics do not expose.
+    #
+    # An earlier revision correlated CVEs with version-checker inside a
+    # recording rule, joining on an image reference rebuilt from Trivy's
+    # registry/repository labels. That meant re-implementing Docker's
+    # reference grammar in chained label_replace calls, and it failed
+    # silently twice: short-form Docker Hub references never matched, and the
+    # fix for that wrongly rewrote localhost/… references. The correlation now
+    # happens in kubeaid-agent, where go-containerregistry already implements
+    # the grammar correctly.
     - name: trivy-operator.health
       rules:
-        # The failure mode that matters most is not a noisy alert, it is a silent
-        # one. Each rule below watches a way ImageOutdatedAndVulnerable can stop
-        # firing without anything looking wrong.
-
-        # Both inputs have data but the join yields nothing: the normalisation above
-        # no longer matches how images are referenced in this cluster.
-        - alert: TrivyVersionCheckerJoinEmpty
-          expr: |
-            (count(record::trivy::vulnerability_count::by_image) > 0)
-            and (count(record::version_checker::outdated) > 0)
-            and absent(
-              record::trivy::vulnerability_count::by_image
-              * on (image, current_version) group_left (latest_version)
-                record::version_checker::outdated
-            )
-          for: 6h
-          labels:
-            severity: warning
-          annotations:
-            summary: "Trivy and version-checker both report data but their join is empty"
-            description: "ImageOutdatedAndVulnerable cannot fire. Both inputs have series, so the `image` label normalisation in record::version_checker::outdated no longer matches Trivy's canonical form. Compare: count by (image) (record::trivy::vulnerability_count::by_image) against count by (image) (record::version_checker::outdated)."
-
-        # version-checker is load-bearing for the CVE alert but ships no alerts of
-        # its own. Without this, losing it takes CVE alerting down silently.
-        - alert: VersionCheckerMetricsMissing
-          expr: |
-            absent(version_checker_is_latest_version)
-          for: 1h
-          labels:
-            severity: warning
-          annotations:
-            summary: "version-checker is reporting no metrics"
-            description: "version_checker_is_latest_version is absent. ImageOutdatedAndVulnerable depends on it and will not fire while this is true. Check the version-checker deployment and its ServiceMonitor."
-
-        # Replaces the previous TrivyOperatorScannerStuck, which queried
-        # trivy_resource_last_scan_timestamp_seconds — a metric trivy-operator does
-        # not expose. It exposes no last-scan timestamp at all, so scanner liveness
-        # is inferred from whether reports exist.
+        # The dangerous failure is not a noisy alert, it is a silent one: a
+        # scanner producing nothing looks exactly like a clean cluster. Across
+        # a large fleet nobody notices by eye, which is why this is the one
+        # vulnerability alert that justifies paging.
         - alert: TrivyOperatorMetricsMissing
           expr: |
             absent(trivy_image_vulnerabilities)
-          for: 1h
+          for: {{ .Values.kubeaid.prometheusRule.blindFor }}
+          labels:
+            severity: critical
+          annotations:
+            summary: "Trivy Operator is reporting no vulnerability metrics"
+            description: "trivy_image_vulnerabilities is absent. Either the operator is down, its ServiceMonitor is not being scraped, or every VulnerabilityReport expired past scannerReportTTL without being refreshed. While this is true the cluster is UNSCANNED, not clean."
+
+    - name: trivy-operator.backlog
+      rules:
+        # Deliberately a ticket, never a page. With ignoreUnfixed and a
+        # CRITICAL,HIGH filter this count is still never zero on a real
+        # cluster, so paging on it would be muted within a week — taking the
+        # health alert above down with it.
+        - alert: ClusterVulnerabilityBacklog
+          expr: |
+            sum(trivy_image_vulnerabilities{severity=~"Critical|High"})
+              > {{ .Values.kubeaid.prometheusRule.backlogThreshold }}
+          for: {{ .Values.kubeaid.prometheusRule.backlogFor }}
           labels:
             severity: warning
           annotations:
-            summary: "Trivy Operator is reporting no vulnerability metrics"
-            description: "trivy_image_vulnerabilities is absent. Either the operator is down, its ServiceMonitor is not being scraped, or every VulnerabilityReport has expired past scannerReportTTL without being refreshed."
+            summary: "Cluster has {{ "{{ $value }}" }} fixable Critical/High CVEs"
+            description: "Fixable Critical/High findings exceed the threshold of {{ .Values.kubeaid.prometheusRule.backlogThreshold }}. Every finding counted here has a published fix, so the backlog is actionable. Per-image detail is in the Obmondo UI."
 {{- end }}
