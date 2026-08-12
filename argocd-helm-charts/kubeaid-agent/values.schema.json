@@ -313,6 +313,33 @@
           "type": "string"
         }
       }
+    },
+    "prometheusRule": {
+      "description": "Alerts on the agent's security-posture metrics. Only rendered when appConfig.securityPosture.enabled is true.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "additionalLabels": {
+          "type": "object"
+        },
+        "additionalAnnotations": {
+          "type": "object"
+        },
+        "upgradableThreshold": {
+          "description": "Alert when more than this many images have both a fixable Critical/High finding and a newer tag upstream. One alert per cluster.",
+          "type": "integer"
+        },
+        "upgradableFor": {
+          "description": "How long the count must stay above the threshold before alerting.",
+          "type": "string"
+        },
+        "collectionFailingFor": {
+          "description": "How long a component must report collection failure before alerting.",
+          "type": "string"
+        }
+      }
     }
   }
 }
