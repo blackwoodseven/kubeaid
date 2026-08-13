@@ -47,6 +47,16 @@ rules:
     resources: ["deployments"]
     verbs: ["get", "list"]
 
+  # Velero volume policies. A Schedule can name a ConfigMap that tells Velero to
+  # skip a volume outright -- the velero chart renders exactly that from
+  # skipVolumePolicies, for databases backed up logically instead. The exporter
+  # reads it so those volumes are not reported as missing backups. Removing this
+  # rule fails safe but silently: the policy cannot be read, so every skipped
+  # volume alerts as unbacked, once per volume, forever.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get"]
+
   # Namespaces for cross-namespace discovery
   - apiGroups: [""]
     resources: ["namespaces"]
