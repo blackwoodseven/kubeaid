@@ -36,6 +36,40 @@ CronJob (`ghcr.io/obmondo/mariadb-logical-backup`).
 
 Matomo has no built-in OIDC; the [LoginOIDC plugin](https://plugins.matomo.org/LoginOIDC) provides it.
 
+The chart can install and configure the plugin itself. Create the Keycloak client as in step 1 below, put
+its secret in a Secret under key `MATOMO_OIDC_CLIENT_SECRET`, then set in your cluster values:
+
+```yaml
+matomo:
+  extraEnvVarsSecret: matomo-oidc
+  oidc:
+    enabled: true
+    keycloakUrl: https://your-keycloak.com/auth   # include the context path if any
+    realm: your-realm
+    allowedSignupDomains: example.com             # empty allows all domains
+    # optional: clientId (matomo), buttonName (Login with Keycloak),
+    # userinfoId (email), scope (openid email), allowSignup (true)
+  extraVolumes:
+    - name: oidc-setup
+      configMap:
+        name: matomo-oidc-setup
+        defaultMode: 0755
+  extraVolumeMounts:
+    - name: oidc-setup
+      mountPath: /oidc-setup
+      readOnly: true
+  lifecycleHooks:
+    postStart:
+      exec:
+        command: ["/bin/bash", "/oidc-setup/setup.sh"]
+```
+
+The postStart hook downloads the plugin into the persisted webroot once and writes the settings to
+`config.ini.php`, where they override the DB and turn read-only in the UI. Changing `matomo.oidc` values
+only updates the ConfigMap, so restart the deployment to re-apply them.
+
+The manual UI flow achieves the same result without chart support:
+
 1. In Keycloak, create a client in your realm: Client ID `matomo`, access type *confidential*, standard flow
    enabled, valid redirect URIs `https://<matomo>/index.php?module=LoginOIDC&action=callback&provider=oidc` and
    `https://<matomo>`, web origins `+`. Note the client secret from the Credentials tab.
