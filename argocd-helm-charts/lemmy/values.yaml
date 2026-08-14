@@ -37,7 +37,23 @@ lemmy:
     auth:
       username: lemmy
       database: lemmy
-      # password: set in production values
+      # password comes from the CNPG app secret
+      existingSecret: lemmy-pgsql-app
+      secretKeys:
+        userPasswordKey: password
+
+  backend:
+    env:
+      # $(PGPASSWORD) is expanded by kubernetes, overrides config.hjson
+      LEMMY_DATABASE_URL: "postgresql://lemmy:$(PGPASSWORD)@lemmy-pgsql-rw:5432/lemmy?sslmode=prefer"
+
+  federationsender:
+    env:
+      LEMMY_DATABASE_URL: "postgresql://lemmy:$(PGPASSWORD)@lemmy-pgsql-rw:5432/lemmy?sslmode=prefer"
+
+  taskrunner:
+    env:
+      LEMMY_DATABASE_URL: "postgresql://lemmy:$(PGPASSWORD)@lemmy-pgsql-rw:5432/lemmy?sslmode=prefer"
 
   pictrs:
     persistence:

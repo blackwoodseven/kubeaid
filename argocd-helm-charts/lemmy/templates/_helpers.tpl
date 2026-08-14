@@ -1,6 +1,7 @@
 {{/*
-Override the upstream lemmy.postgresql.password helper to avoid Helm lookup() issues with ArgoCD.
-When existingSecret is set, we return a placeholder that will be replaced by the init container.
+Override the upstream lemmy.postgresql.password helper - upstream uses lookup()
+which doesn't work under ArgoCD. The placeholder is inert, LEMMY_DATABASE_URL
+env provides the real connection string.
 */}}
 {{- define "lemmy.postgresql.password" -}}
 {{- if and (not .Values.postgresql.enabled) .Values.postgresql.auth.existingSecret -}}
