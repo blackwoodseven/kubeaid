@@ -2,6 +2,43 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 32.3.0
+
+### Minor Version Upgrades
+
+- f6be3647a chore(minor update): Updated netbird-operator from version 0.7.0 to 0.8.0
+
+### Features
+
+- 1313b0179 feat(backup-exporter): allow reading velero volume policies
+- 44dece32a feat(backup-exporter): scope Velero/Postgres alerts to enabled backups, support VELERO_S3_PREFIX
+- 72161d383 feat(kubeaid-agent): alert on vulnerable images that have an upgrade available
+- bfa2007e0 feat(kubeaid-agent): least-privilege RBAC and a security-posture switch
+- a5e365b67 feat(tetragon): ship a curated TracingPolicy set
+
+### Bug Fixes
+
+- 7a9450f3b fix(kubeaid-agent): raise the upgradable threshold off zero
+- ec003252e fix(kubeaid-agent): do not alert on collection failure
+- 1494a15d2 fix(trivy-operator): stop asserting fixability the alert cannot verify
+- 2a19a8b26 fix(prometheus-linuxaid): corrected logics in btrfs alert rules to handle edge cases and fix false positives
+- 8d8f00bf4 fix(capi-cluster): add apiGroup to v1beta2 refs; stop declaring AzureManagedControlPlane.sshPublicKey
+- bbb91f791 fix(trivy-operator): repair CVE alerts that could never fire
+
+### Configuration Changes
+
+- 8810ea71a chore: update container image kubeaid-agent to v0.7.0
+
+### Other Changes
+
+- 035094dc4 docs(backup-exporter): add chart README, bump appVersion to v1.2.1
+- 5c4d8509f style(kubeaid-agent): cut the alert comments back
+- 90493f5cc style(trivy-operator): cut the comments back
+- 6c0d08cc5 docs(trivy-operator): correct and restructure the README
+- 9ddfa556d docs(trivy-operator): correct what the backlog alert actually decides
+- 2979ae366 docs(trivy-operator): drop vendor references from the alert comments
+- 24273e8fb refactor(trivy-operator): move image correlation out of PromQL
+
 ## KubeAid Release Version 32.2.0
 
 ### Features
