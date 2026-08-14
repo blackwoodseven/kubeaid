@@ -35,9 +35,8 @@ metadata:
   name: {{ .Release.Name }}-keycloak-sync-script
   namespace: {{ .Release.Namespace }}
 data:
-  # This runs as a plain /bin/sh script inside a stock bitnami/kubectl image —
-  # no custom container image, just curl + kubectl + text parsing (grep/cut/sed
-  # instead of jq, since the kubectl image doesn't ship it).
+  # This runs as a plain /bin/sh script inside a stock alpine/k8s image —
+  # no custom container image, just curl + kubectl + text parsing (grep/cut/sed).
   sync.sh: |
     #!/bin/sh
     set -e
@@ -248,7 +247,8 @@ spec:
               # Stock kubectl image — no custom build. All the logic is the
               # mounted sync.sh script below, run with curl + kubectl exec
               # (kubectl only needed now for the mail-provisioning side).
-              image: bitnami/kubectl:latest
+              # Pinned by digest so the image can't change without a commit here.
+              image: alpine/k8s:1.33.4@sha256:b0523f0a244ddc4c8e055aa335c040d3d78b3ead5528f4544395f7f9f69c7b68
               command: ["/bin/sh", "/scripts/sync.sh"]
               env:
                 - name: OX_ADMIN_PASSWORD
