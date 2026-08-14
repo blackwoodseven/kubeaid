@@ -1,207 +1,165 @@
-# Welcome to **KubeAid**: Kubernetes, the Same Way, Everywhere
+# KubeAid: Kubernetes, the Same Way, Everywhere
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Obmondo/KubeAid)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 
-Everyone thinks installing Kubernetes on any cloud is easy. It's not.
-AWS has IAM. Azure has Workload Identity. Hetzner has its own model.
-Best practices differ *dramatically*, and that's just installation.
+**KubeAid is an open-source Kubernetes platform: one tested, maintained way to install and operate Kubernetes
+clusters on every platform** — AWS (self-managed or EKS), Azure (self-managed or AKS), Hetzner (HCloud and Bare
+Metal), on-premise bare metal, or locally on K3D.
 
-**KubeAid gives you one way to install and operate Kubernetes on any cloud (or your own servers)**, with GitOps,
-security, monitoring, and compliance built in from day one.
+Running Kubernetes means constantly tracking a moving ecosystem: which chart just got deprecated, which API version is
+about to break, which default is a security risk, what current best practice looks like. **KubeAid's job is to carry
+that mental overhead for you.** We curate the stack, test the defaults, track deprecations and breaking changes, and
+ship the result as regular updates — you review and pull them when it suits you. It also gives you a trustworthy
+source of Helm charts: every chart is vendored into this repository and updated through periodic, reviewed releases —
+not pulled live from upstream registries at deploy time — which protects you against supply-chain attacks.
+
+This repository holds the platform itself — curated Helm charts, monitoring, and secure defaults. It is consumed by
+the **[KubeAid CLI](https://github.com/Obmondo/kubeaid-cli)**, which is the tool you actually run to create and manage
+clusters.
 
 → [**Why KubeAid?**](./docs/kubeaid/why-kubeaid.md)
 · [**Getting Started**](./docs/getting-started/README.md)
 · [**Full Documentation**](./docs/README.md)
 
------------------
+## Table of Contents
 
-## What KubeAid Does
+- [What Exactly Is KubeAid?](#what-exactly-is-kubeaid)
+- [How It Works](#how-it-works)
+- [Quick Start](#quick-start)
+- [Features](#features)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Community and Governance](#community-and-governance)
+- [Roadmap](ROADMAP.md)
+- [Support](#support)
+- [License](#license)
 
-KubeAid is a comprehensive Kubernetes platform management system that provides production-ready cluster deployment and
-operations using GitOps principles. It delivers a complete stack (infrastructure provisioning, monitoring, security,
-networking, and data persistence), with everything managed as code through ArgoCD.
+## What Exactly Is KubeAid?
 
-* **Multi-cloud installation**: Deploy on AWS, Azure, Hetzner (HCloud and Bare Metal), and on-premise bare metal using
-  [Cluster API](https://cluster-api.sigs.k8s.io/). One install method, any target.
-* **100+ pre-configured Helm charts** in [`argocd-helm-charts`](./argocd-helm-charts/) with automated weekly updates.
-  We test and provide default values following best practices, handling the configuration complexity so you can focus on
-  your business logic.
-* **Comprehensive monitoring** using [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus) with
-  [Jsonnet](https://jsonnet.org/)-based generation.
-* **Unified access management** through Teleport for Kubernetes, applications, and databases.
-* **Compliance by default**: Security and operational defaults mapped to ISO 27001:2022, covering GDPR and NIS2 goals.
-  [Learn more](https://obmondo.com/en/compliance).
+Installing Kubernetes looks easy until you do it on a second platform. AWS wants IAM roles, Azure wants Workload
+Identity, Hetzner and bare metal have their own models — and that's before monitoring, ingress, storage, and upgrades.
+KubeAid removes the per-platform relearning: one workflow, one repository layout, one set of defaults, everywhere.
 
-The entire platform is managed through a single Git repository where configuration changes can trigger deployments via
-ArgoCD. By default, auto-sync is not enabled, giving you full control over when changes are applied. You can enable
-auto-sync for your application workloads if you prefer automated deployments.
+It is three pieces that work together:
 
-## KubeAid Architecture Overview
+1. **This repository (KubeAid)** — the platform definition: 100+ maintained Helm chart wrappers in
+   [`argocd-helm-charts/`](./argocd-helm-charts/), with tested default values and automated weekly updates, plus
+   [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus) monitoring generated with
+   [Jsonnet](https://jsonnet.org/). You don't run anything from here directly — it is consumed by the KubeAid CLI, and
+   later by ArgoCD from your own mirror of it. Mirroring it into your own Git platform means you keep full control
+   even if access to the upstream repository is ever lost.
+2. **[KubeAid CLI](https://github.com/Obmondo/kubeaid-cli)** — the entry point. A command-line tool you run once per
+   cluster: it consumes this repository, generates your configuration, and bootstraps the cluster using
+   [Cluster API](https://cluster-api.sigs.k8s.io/) (or [KubeOne](https://github.com/kubermatic/kubeone) for SSH-only
+   bare metal).
+3. **Your `kubeaid-config` repository** — generated for you during bootstrap; holds all your cluster-specific
+   settings, layered on top of your KubeAid mirror. ArgoCD inside the cluster watches it and applies changes, so Git
+   is the single source of truth for everything running in the cluster.
 
-KubeAid follows a GitOps-driven, automated approach to provision and manage production-ready Kubernetes clusters. The
-diagram below explains the high-level flow:
+Every KubeAid cluster ships with [Cilium](https://cilium.io/) (kube-proxyless),
+[ArgoCD](https://argo-cd.readthedocs.io/), [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets/), and
+kube-prometheus. By default, auto-sync is not enabled, so you decide when changes are applied; you can turn it on per
+application if you prefer automated deployments.
 
-```mermaid
----
-title: KubeAid Architecture
----
-flowchart TB
-    subgraph GitRepo["Git Repository"]
-        direction TB
-        modules["KubeAid Modules"]
-        yaml["YAML Configs"]
-        helm["Helm Charts"]
-    end
+## How It Works
 
-    subgraph ArgoCD["ArgoCD"]
-        direction TB
-        watch["Watches Git for changes"]
-        apply["Applies configs to cluster"]
-    end
-
-    subgraph Automation["KubeAid Automation Layer"]
-        direction TB
-        bootstrap["Cluster bootstrap & lifecycle management"]
-        addons["Add-ons installation<br/>(Ingress, Certs, Monitoring, etc.)"]
-        defaults["Secure defaults & best practices"]
-        upgrades["Automated upgrades and recovery"]
-    end
-
-    subgraph K8sCluster["KubeAid Kubernetes Cluster"]
-        direction TB
-        networking["Networking (CNI, Ingress)"]
-        storage["Storage (CSI, PVCs)"]
-        certs["Certificates (StepCA/Cert-Manager)"]
-        monitoring["Monitoring (Prometheus, Grafana)"]
-        logging["Logging & Alerting"]
-        workloads["Application Workloads"]
-    end
-
-    GitRepo -->|"GitOps Sync"| ArgoCD
-    ArgoCD -->|"Deploys / Updates"| Automation
-    Automation -->|"Provisions / Manages"| K8sCluster
-
-    style GitRepo fill:#4a90a4,stroke:#2d5a6b,color:#fff
-    style ArgoCD fill:#e8833a,stroke:#b35c1e,color:#fff
-    style Automation fill:#6b8e23,stroke:#4a6319,color:#fff
-    style K8sCluster fill:#7b68ee,stroke:#5a4bb8,color:#fff
-```
-
-## Setup of Kubernetes Clusters
-
-We use **KubeAid CLI** to set up and manage Kubernetes clusters. The CLI handles all the complexity of cluster
-provisioning, configuration, and lifecycle management.
-
-We recommend mirroring the KubeAid repository into your own Git platform. This ensures you own the product you are
-using. If access to the upstream KubeAid repository is ever lost, you still have full control over your infrastructure.
-
-You must NEVER make any changes on the master/main branch of your mirror of the KubeAid repository, as we use this to
-deliver updates to you. This means that your cluster can be updated simply by running `git pull` on your copy of this
-repository.
-
-After installation, you will work with a `kubeaid-config` repository that contains all your cluster-specific
-customisations. The [Getting Started Guide](./docs/getting-started/README.md) explains this workflow in detail.
-
-## Installation
-
-> 🎬 **[Watch the Installation Video](https://drive.google.com/file/d/1d9EdghntjDoJRkCHj-DeRiEMfQ4xjBbw/view?usp=sharing)**-
-a step-by-step walkthrough of setting up KubeAid via KubeAid-cli.
-
-For complete installation instructions, see the **[Getting Started Guide](./docs/getting-started/README.md)** which
-includes:
-
-* Prerequisites and pre-configuration
-* Installation (supports AWS, Azure, Hetzner HCloud, Hetzner Bare Metal, and Local K3D)
-* Post-configuration and basic operations
-
-For hosting-specific reference and operations guides, see the [documentation](./docs/README.md).
-
-## Support
-
-Besides community support, [Obmondo](https://obmondo.com) (the primary developers of this project) offers professional
-support services. We can observe your clusters, react to your alerts, and help you develop new features or other tasks
-on clusters set up using this project.
-
-There is ZERO vendor lock-in. Any subscription you sign can be cancelled at any time. You only pay for one month at a
-time.
-
-With a subscription, we will ensure smooth operations for you. We will speed up your development efforts on KubeAid if
-needed.
-
-## Secrets
-
-We use [sealed-secrets](https://github.com/bitnami-labs/sealed-secrets/) which means secrets are encrypted locally (by
-the developer who knows them) and committed to your KubeAid config repository.
-
-You can read the sealed-secrets details in the [sealed-secrets README](./argocd-helm-charts/sealed-secrets/README.md).
-
-## License
-
-**KubeAid** is licensed under the Affero GPLv3 license, as we believe this is the best way to protect against the patent
-attacks we see hurting the industry; where companies submit code that uses technology they have patented, and then turn
-and litigate companies that use the software.
-
-The Affero GNU Public License has always been focused on ensuring everyone gets the same privileges, protecting against
-methods
-like [TiVoization](https://en.wikipedia.org/wiki/Tivoization), which means it's very much aligned with the goals of this
-project, namely to allow everyone to work on a level playing ground.
-
-## Feature Goals
+The KubeAid CLI runs once to bootstrap: it generates your `kubeaid-config` repository and provisions the cluster. From
+then on, ArgoCD inside the cluster continuously syncs from `kubeaid-config`, reconciling both the platform stack and
+your applications:
 
 <!-- markdownlint-disable MD033 -->
-<details>
-<summary>Click to expand the full feature list</summary>
-
-* Set up Kubernetes clusters on:
-  * **Physical servers**: On-premise and [Hetzner](https://www.hetzner.com/) Bare Metal
-  * **Cloud VMs**: [Hetzner HCloud](https://www.hetzner.com/cloud), [AWS](https://aws.amazon.com/), and
-    [Azure](https://azure.microsoft.com/)
-  * **Hybrid clusters**: Combining Hetzner Bare Metal with HCloud VMs
-* Auto-scaling for all cloud Kubernetes clusters and easy scaling for physical servers
-* Manage an ever-growing list of Open Source Kubernetes applications (see [`argocd-helm-charts`](./argocd-helm-charts/)
-  folder for a list)
-* Build advanced, customised Prometheus monitoring using just a per-cluster config file, with automated handling of
-  trivial alerts, like disk filling.
-* GitOps setup - ALL changes in a cluster are done via Git AND we detect if anyone adds anything in cluster or modifies
-  existing resources without doing it through Git.
-* Frequent updates for KubeAid-managed applications with security and bug fixes, ready to be issued to your cluster(s)
-  at will - so you can focus on your business applications.
-* [Air-gapped operation](https://kubernetes.io/blog/2023/10/12/bootstrap-an-air-gapped-cluster-with-kubeadm/) of your
-  clusters, to ensure operational stability
-* Cluster security - we provide proper NetworkPolicies to secure intra-cluster and ingress traffic, ensuring least
-  privilege between applications
-* Backup, recovery and live migration of applications or entire clusters
-* Major cluster upgrades via a shadow Kubernetes setup (a parallel failover cluster that allows you to test upgrades and
-  seamlessly switch over), utilising the recovery and live migration features
-* Supply chain attack protection and discovery, with frequent security scans of all software used in the clusters (as
-  new vulnerabilities are constantly being discovered)
-
-</details>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/images/kubeaid-architecture-dark.svg">
+  <img alt="KubeAid architecture diagram: the KubeAid CLI bootstraps once, then ArgoCD continuously syncs the cluster
+    from your kubeaid-config repository, which is layered on your KubeAid mirror"
+    src="./docs/images/kubeaid-architecture.svg">
+</picture>
 <!-- markdownlint-enable MD033 -->
 
-## Technical Details on the Features
+One rule to know up front: never commit directly to the master/main branch of your KubeAid mirror — that branch is how
+updates are delivered to you, so keeping it clean means updating your cluster is as simple as a `git pull`.
 
-Read about the current status of all features of KubeAid from these links:
+## Quick Start
 
-* [GitOps setup and change detection](./docs/kubeaid/features-technical-details.md#gitops-setup-and-change-detection)
-* [Auto-scaling for all cloud Kubernetes clusters and easy scaling for physical
-  servers](./docs/kubeaid/features-technical-details.md#auto-scaling-for-all-cloud-kubernetes-clusters-and-easy-scaling-for-physical-servers)
-* [Manage an ever-growing list of Open Source Kubernetes
-  applications](./docs/kubeaid/features-technical-details.md#manage-an-ever-growing-list-of-open-source-kubernetes-applications-see-argocd-helm-charts-folder-for-a-list)
-* [Build advanced, customised Prometheus monitoring using just a per-cluster config
-  file](./docs/kubeaid/features-technical-details.md#build-advanced-customised-prometheus-monitoring-using-just-a-per-cluster-config-file)
-* [Regular application updates with security and bug fixes, ready to be issued to your cluster(s) at
-  will](./docs/kubeaid/features-technical-details.md#regular-application-updates-with-security-and-bug-fixes-ready-to-be-issued-to-your-clusters-at-will)
-* [Air-gapped operation of your clusters, to ensure operational
-  stability](./docs/kubeaid/features-technical-details.md#air-gapped-operation-of-your-clusters-to-ensure-operational-stability)
-* [Cluster security](./docs/kubeaid/features-technical-details.md#cluster-security)
-* [Backup, recovery and live-migration of applications or entire
-  clusters](./docs/kubeaid/features-technical-details.md#backup-recovery-and-live-migration-of-applications-or-entire-clusters)
-* [Major cluster upgrades, via a shadow Kubernetes setup utilising the recovery and live-migration
-  features](./docs/kubeaid/features-technical-details.md#major-cluster-upgrades-via-a-shadow-kubernetes-setup-utilising-the-recovery-and-live-migration-features)
-* [Supply chain attack protection and discovery - and security scans of all software used in
-  cluster](./docs/kubeaid/features-technical-details.md#supply-chain-attack-protection-and-discovery---and-security-scans-of-all-software-used-in-cluster)
+Install the [KubeAid CLI](https://github.com/Obmondo/kubeaid-cli/releases), then:
+
+```sh
+# Generate configuration for your platform:
+#   local | aws | azure | hetzner hcloud | hetzner bare-metal | hetzner hybrid | bare-metal
+kubeaid-cli config generate local
+
+# Review and edit the generated config, then bring the cluster up
+kubeaid-cli cluster bootstrap
+```
+
+`local` gives you a K3D playground on your own machine — the workflow is identical to a production cloud cluster. The
+**[Getting Started Guide](./docs/getting-started/README.md)** walks through prerequisites, configuration, installation,
+and day-2 operations for every supported platform.
+
+## Features
+
+* **No-mental-overhead updates**: we track what's broken, deprecated, or superseded across the whole stack, and ship
+  tested chart and security updates weekly — ready to be applied to your clusters at will, so you can focus on your
+  own applications.
+* **Multi-cloud installation**: self-managed clusters on AWS, Azure, Hetzner, and bare metal; managed control planes
+  on [EKS](https://aws.amazon.com/eks/) and
+  [AKS](https://azure.microsoft.com/en-us/products/kubernetes-service); hybrid Hetzner Bare Metal + HCloud clusters.
+  One install method, any target.
+* **GitOps everything**: all cluster changes go through Git, and drift is detected if anyone changes resources
+  directly in the cluster.
+* **Curated application catalogue**: an ever-growing list of open-source Kubernetes applications in
+  [`argocd-helm-charts/`](./argocd-helm-charts/), each wrapped with default values that follow current best practices.
+  Upstream charts are vendored into this repository, so what you deploy is exactly what was reviewed — a defence
+  against supply-chain attacks, backed by frequent security scans of all software used in the clusters.
+* **Monitoring built in**: advanced, customised Prometheus monitoring from a per-cluster config file, with automated
+  handling of trivial alerts like disks filling up.
+* **Secrets in Git, safely**: [sealed-secrets](./argocd-helm-charts/sealed-secrets/README.md) encrypts secrets locally
+  before they are committed to your config repository.
+* **Unified access management** through Teleport for Kubernetes, applications, and databases.
+* **Cluster security**: NetworkPolicies enforce least privilege between applications and secure intra-cluster and
+  ingress traffic.
+* **Lifecycle operations**: auto-scaling, backup and recovery, live migration of applications or whole clusters, major
+  upgrades via a parallel shadow cluster, and [air-gapped
+  operation](https://kubernetes.io/blog/2023/10/12/bootstrap-an-air-gapped-cluster-with-kubeadm/).
+* **Compliance by default**: security and operational defaults mapped to ISO 27001:2022, covering GDPR and NIS2 goals.
+
+The implementation status of each feature is documented in
+[Technical Details on the Features](./docs/kubeaid/features-technical-details.md); planned work lives in the
+[Roadmap](ROADMAP.md).
 
 ## Documentation
 
 You can find the documentation, guides and tutorials in the [`/docs`](./docs/) directory.
+
+## Contributing
+
+Contributions are welcome — bug reports, chart updates, new providers, and documentation alike. See
+[CONTRIBUTING.md](./CONTRIBUTING.md) for the workflow; note that commits need a DCO sign-off (`git commit -s`).
+
+## Community and Governance
+
+- [Code of Conduct](CODE_OF_CONDUCT.md) — we follow the CNCF Community Code of Conduct.
+- [Governance](GOVERNANCE.md) — how decisions are made and how maintainers are added.
+- [Maintainers](MAINTAINERS.md) — current maintainers of the project.
+- [Adopters](ADOPTERS.md) — organizations running KubeAid; add yours with a PR.
+- [Security policy](SECURITY.md) — how to report vulnerabilities privately.
+
+## Support
+
+Community support happens through the issue tracker. Besides that, [Obmondo](https://obmondo.com) (the primary
+developers of this project) offers professional support: we can observe your clusters, react to your alerts, and help
+you develop new features on clusters set up using this project.
+
+There is zero vendor lock-in — KubeAid works the same with or without a support agreement, and any agreement can be
+cancelled at any time.
+
+## License
+
+**KubeAid** is licensed under the [Affero GPLv3 license](LICENSE), as we believe this is the best way to protect
+against the patent attacks we see hurting the industry; where companies submit code that uses technology they have
+patented, and then turn and litigate companies that use the software.
+
+The Affero GNU Public License has always been focused on ensuring everyone gets the same privileges, protecting against
+methods like [TiVoization](https://en.wikipedia.org/wiki/Tivoization), which means it's very much aligned with the goals
+of this project, namely to allow everyone to work on a level playing ground.

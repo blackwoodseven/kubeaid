@@ -27,7 +27,7 @@ on as an open-source patch.
 3. **Create a branch** locally with a succinct name (e.g., `feat/add-azure-support`).
 4. **Commit changes** to your own branch.
 5. **Push** your work back up to your fork.
-6. Submit a **Pull Request** to the `main` branch.
+6. Submit a **Pull Request** to the `master` branch.
 
 ### 3. Style Guide & Standards
 
