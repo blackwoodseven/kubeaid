@@ -1,0 +1,28 @@
+name: jsonnetlint
+
+"on":
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - 'build/kube-prometheus/**/*.jsonnet'
+      - 'build/kube-prometheus/**/*.libsonnet'
+      - 'bin/lint-jsonnetfmt.sh'
+      - '.gitea/workflows/jsonnetlint.yaml'
+
+jobs:
+  jsonnetlint:
+    name: jsonnetlint
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ secrets.HARBOR_REGISTRY }}/${{ vars.KUBEAID_CI_IMAGE }}:${{ vars.KUBEAID_CI_TAG }}
+      credentials:
+        username: ${{ secrets.HARBOR_USERNAME }}
+        password: ${{ secrets.HARBOR_PASSWORD }}
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2
+
+    - name: jsonnetlint
+      run: ./bin/lint-jsonnetfmt.sh

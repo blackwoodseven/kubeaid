@@ -68,7 +68,7 @@ jobs:
       - name: Verify helm charts template cleanly
         if: steps.update.outputs.changed == 'true'
         run: |
-          ./scripts/verify-helm-charts.sh
+          ./bin/verify-helm-chart.sh
 
       - name: Push update branch
         if: steps.update.outputs.changed == 'true'

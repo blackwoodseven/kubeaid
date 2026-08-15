@@ -572,7 +572,9 @@ function main (){
     echo "Current KubeAid version: $CURRENT_VERSION"
 
     echo "Removing all the existing helm repo"
-    helm repo list | awk 'NR>1 {print $1}' | xargs -I {} helm repo remove {}
+    # `helm repo list` exits non-zero when no repositories are configured
+    # (always the case on a fresh CI runner), which would abort under set -e.
+    helm repo list 2>/dev/null | awk 'NR>1 {print $1}' | xargs -I {} helm repo remove {} || true
 
     while read -r HELM_CHART_NAME; do
       for SKIP_HELM_CHART in "${SKIP_HELM_CHARTS[@]}"; do
