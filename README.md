@@ -122,7 +122,9 @@ and day-2 operations for every supported platform.
   handling of trivial alerts like disks filling up.
 - **Secrets in Git, safely**: [sealed-secrets](./argocd-helm-charts/sealed-secrets/README.md) encrypts secrets locally
   before they are committed to your config repository.
-- **Unified access management** through Teleport for Kubernetes, applications, and databases.
+- **Unified access management**: cluster access runs over the [NetBird](https://netbird.io/) mesh with
+  [Keycloak](https://www.keycloak.org/) as the SSO identity provider by default. Teleport remains available as an
+  optional, deprecated alternative.
 - **Cluster security**: NetworkPolicies enforce least privilege between applications and secure intra-cluster and
   ingress traffic.
 - **Lifecycle operations**: auto-scaling, backup and recovery, live migration of applications or whole clusters, major

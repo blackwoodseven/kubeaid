@@ -50,10 +50,6 @@ See our **[Prometheus Configuration Guide](./prometheus-configuration.md)** for 
 
 We currently have CI support for GitLab and GitHub Actions.
 
-**TODO:** Implement Robusta to automate handling of trivial tasks, like increasing size of a PVC (and running disk
-cleanup
-scripts first to try and avoid it), or scaling up instead.
-
 ### Regular application updates with security and bug fixes, ready to be issued to your cluster(s) at will
 
 We update this repository with updated versions of the applications, and improvements - which you will get automatically
@@ -95,15 +91,19 @@ On AWS we have snapshot scripts to do regular and quick PVC backups.
 
 ### Supply chain attack protection and discovery - and security scans of all software used in the clusters
 
-We currently store all Helm charts from upstream in the [KubeAid repository](https://github.com/Obmondo/KubeAid). Upon
-updates to newer versions, we generate a `git diff`, which we review for any unexpected changes. This means that we
-would ONLY be vulnerable to supply chain attacks when downloading charts, but we have CI comparing OUR copy of the
-charts in the version we run to the upstream chart repo version (which we download and diff regularly) - that way we
-will detect if anyone has changed the upstream chart code compared to the version we run - which could indicate a supply
-chain attack on the chart repo.
+We store all upstream Helm charts vendored in the [KubeAid repository](https://github.com/Obmondo/KubeAid). Chart
+updates arrive as a pull request whose `git diff` is reviewed for unexpected changes before merging, and clusters
+deploy from your own mirror — so what runs is exactly the code that was reviewed, never something fetched live from
+an upstream registry at deploy time. The window for a supply-chain attack is limited to the moment a chart update is
+downloaded, and the update diff review is the checkpoint that catches it.
 
-**TODO:** Add something like Threadmapper - to scan clusters for security issues
+Complementing this, in-cluster scanning ships as charts:
 
-**TODO:** Add detection of in-use Docker images in cluster and cache all in local registry
-
-**TODO:** Add vulnerability scanning of Docker images used
+- [trivy-operator](../../argocd-helm-charts/trivy-operator/README.md) with
+  [version-checker](../../argocd-helm-charts/version-checker/README.md) scans running images for vulnerabilities and
+  alerts when a fixable CVE has an upgrade available (`cluster.security.vulnerabilityScanning`).
+- [kubescape-operator](../../argocd-helm-charts/kubescape-operator/README.md) scans cluster configuration and
+  workloads for security issues.
+- [Harbor](../../argocd-helm-charts/harbor/README.md) with the
+  [kyverno](../../argocd-helm-charts/kyverno/README.md) proxy-cache policy caches in-use images in your own
+  registry, on clusters that deploy Harbor.
