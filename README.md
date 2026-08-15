@@ -1,30 +1,45 @@
-# KubeAid
+<!-- markdownlint-disable-file MD041 -->
+<!-- markdownlint-disable MD033 -->
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/images/kubeaid-logo-dark.svg">
+  <img alt="KubeAid" src="./docs/images/kubeaid-logo.svg" width="380">
+</picture>
+
+*Open-source Kubernetes platform: install and operate clusters the same way everywhere —*
+*with the ecosystem's churn handled for you.*
+
+[![Latest Release](https://img.shields.io/github/v/release/Obmondo/KubeAid?sort=semver&label=release)](https://github.com/Obmondo/KubeAid/releases)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-orange)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/Obmondo/KubeAid?label=stars)](https://github.com/Obmondo/KubeAid/stargazers)
+[![Contributors](https://img.shields.io/github/contributors/Obmondo/KubeAid)](https://github.com/Obmondo/KubeAid/graphs/contributors)
+[![Issues](https://img.shields.io/github/issues/Obmondo/KubeAid)](https://github.com/Obmondo/KubeAid/issues)
+[![Last Commit](https://img.shields.io/github/last-commit/Obmondo/KubeAid)](https://github.com/Obmondo/KubeAid/commits/master)
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Obmondo/KubeAid)
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
-[![Latest Release](https://img.shields.io/github/v/release/Obmondo/KubeAid?sort=semver)](https://github.com/Obmondo/KubeAid/releases)
-[![Release](https://github.com/Obmondo/KubeAid/actions/workflows/release.yaml/badge.svg)](https://github.com/Obmondo/KubeAid/actions/workflows/release.yaml)
-[![Helm Charts Update](https://github.com/Obmondo/KubeAid/actions/workflows/update-helm-chart.yml/badge.svg)](https://github.com/Obmondo/KubeAid/actions/workflows/update-helm-chart.yml)
-[![Docs](https://img.shields.io/badge/docs-kubeaid.io-blue)](https://kubeaid.io/docs/)
+[![Release Build](https://github.com/Obmondo/KubeAid/actions/workflows/release.yaml/badge.svg)](https://github.com/Obmondo/KubeAid/actions/workflows/release.yaml)
+[![Chart Updates](https://github.com/Obmondo/KubeAid/actions/workflows/update-helm-chart.yml/badge.svg)](https://github.com/Obmondo/KubeAid/actions/workflows/update-helm-chart.yml)
 
-**KubeAid is an open-source Kubernetes platform: one tested, maintained way to install and operate Kubernetes
-clusters on every platform** — AWS (self-managed or EKS), Azure (self-managed or AKS), Hetzner (HCloud and Bare
-Metal), on-premise bare metal, or locally on K3D.
+[**Documentation**](https://kubeaid.io/docs/)
+· [**Getting Started**](https://kubeaid.io/docs/getting-started/)
+· [**Why KubeAid?**](https://kubeaid.io/docs/kubeaid/why-kubeaid)
+· [**Roadmap**](./ROADMAP.md)
 
-Running Kubernetes means constantly tracking a moving ecosystem: which chart just got deprecated, which API version is
-about to break, which default is a security risk, what current best practice looks like. **KubeAid's job is to carry
-that mental overhead for you.** We curate the stack, test the defaults, track deprecations and breaking changes, and
-ship the result as regular updates — you review and pull them when it suits you. It also gives you a trustworthy
-source of Helm charts: every chart is vendored into this repository and updated through periodic, reviewed releases —
-not pulled live from upstream registries at deploy time — which protects you against supply-chain attacks.
+</div>
+<!-- markdownlint-enable MD033 -->
+
+---
+
+Running Kubernetes means tracking a moving ecosystem: charts get deprecated, APIs break, defaults turn out to be
+security risks. **KubeAid carries that overhead for you** — a curated stack of 100+ vendored Helm charts with tested
+defaults, shipped as reviewed updates you pull when it suits you. Nothing is fetched live from upstream at deploy
+time: what you deploy is exactly what was reviewed. Runs everywhere: AWS and Azure (self-managed, or managed
+EKS/AKS), Hetzner, bare metal, or locally on K3D.
 
 This repository holds the platform itself — curated Helm charts, monitoring, and secure defaults. It is consumed by
 the **[KubeAid CLI](https://github.com/Obmondo/kubeaid-cli)**, which is the tool you actually run to create and manage
 clusters.
-
-→ [**Why KubeAid?**](https://kubeaid.io/docs/kubeaid/why-kubeaid)
-· [**Getting Started**](https://kubeaid.io/docs/getting-started/)
-· [**Full Documentation**](https://kubeaid.io/docs/)
 
 ## Table of Contents
 
@@ -69,15 +84,16 @@ application if you prefer automated deployments.
 
 ## How It Works
 
-The KubeAid CLI runs once to bootstrap: it generates your `kubeaid-config` repository and provisions the cluster. From
-then on, ArgoCD inside the cluster continuously syncs from `kubeaid-config`, reconciling both the platform stack and
-your applications:
+You commit to your `kubeaid-config` repository, and ArgoCD inside the cluster continuously pulls charts from KubeAid
+and your values from `kubeaid-config`, reconciling the platform stack and your applications. The KubeAid CLI runs
+once to bootstrap: it writes your initial config, provisions the cluster, and pivots Cluster API into it:
 
 <!-- markdownlint-disable MD033 -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/images/kubeaid-architecture-dark.svg">
-  <img alt="KubeAid architecture diagram: the KubeAid CLI bootstraps once, then ArgoCD continuously syncs the cluster
-    from your kubeaid-config repository, which is layered on your KubeAid mirror"
+  <img alt="KubeAid architecture diagram: the operator pushes to kubeaid-config; Argo CD in the cluster pulls charts
+    from the KubeAid repo and values from kubeaid-config, applying the platform stack and your applications; the
+    KubeAid CLI runs once to bootstrap and pivot Cluster API into the cluster"
     src="./docs/images/kubeaid-architecture.svg">
 </picture>
 <!-- markdownlint-enable MD033 -->
