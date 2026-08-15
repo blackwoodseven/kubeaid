@@ -255,7 +255,7 @@ azure:
   clientSecret: <service-principal-secret>
 ```
 
-#### Hetzner
+#### Hetzner credentials
 
 ```yaml
 hetzner:
