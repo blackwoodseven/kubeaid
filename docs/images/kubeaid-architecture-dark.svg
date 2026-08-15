@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 505" font-family="-apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" role="img" aria-label="KubeAid architecture: KubeAid CLI bootstraps once - writing your initial kubeaid-config and provisioning the cluster. From then on ArgoCD inside the cluster continuously syncs from kubeaid-config, which is layered on your KubeAid mirror, reconciling the platform stack and your applications. Cluster API is pivoted into the cluster so it manages its own nodes.">
+  <!--
+    KubeAid architecture diagram (dark theme).
+    The dark variant (kubeaid-architecture-dark.svg) is generated from kubeaid-architecture.svg
+    by palette swap - edit the light file first, then mirror the change here.
+  -->
+  <style>
+    .card    { fill: #15222F; stroke: #2C3E50; stroke-width: 1; }
+    .panel   { fill: #111C28; }
+    .chip    { fill: #223447; }
+    .chiptx  { font-size: 12px; font-weight: 500; fill: #AFC6DA; }
+    .title   { font-size: 16px; font-weight: 700; fill: #E5ECF2; }
+    .ctitle  { font-size: 15px; font-weight: 600; fill: #E5ECF2; }
+    .stitle  { font-size: 13px; font-weight: 600; fill: #E5ECF2; }
+    .sub     { font-size: 12px; fill: #9FB2C2; }
+    .glabel  { font-size: 11px; font-weight: 600; letter-spacing: 1.4px; fill: #7E93A8; }
+    .edge    { fill: none; stroke: #7E9CB8; stroke-width: 1.6; stroke-dasharray: 5 5; }
+    .edgeac  { fill: none; stroke: #F0435E; stroke-width: 2.2; }
+    .badge   { fill: #15222F; stroke: #7E9CB8; stroke-width: 1.4; }
+    .badgeac { fill: #15222F; stroke: #F0435E; stroke-width: 1.4; }
+    .badgetx { font-size: 11px; font-weight: 600; fill: #7E9CB8; }
+    .badgeactx { font-size: 11px; font-weight: 600; fill: #F0435E; }
+    .legend  { font-size: 12px; fill: #9FB2C2; }
+    .pill    { fill: #3A2028; }
+    .pilltx  { font-size: 11px; font-weight: 600; fill: #F0435E; }
+    .glyph   { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; font-weight: 700; fill: #F0435E; }
+  </style>
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7E9CB8"/>
+    </marker>
+    <marker id="arwA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#F0435E"/>
+    </marker>
+  </defs>
+
+  <!-- KubeAid CLI -->
+  <rect class="card" x="40" y="150" width="240" height="130" rx="14"/>
+  <rect class="pill" x="64" y="172" width="28" height="28" rx="8"/>
+  <text class="glyph" x="78" y="191" text-anchor="middle">&gt;_</text>
+  <rect class="pill" x="176" y="175" width="80" height="22" rx="11"/>
+  <text class="pilltx" x="216" y="190" text-anchor="middle">runs once</text>
+  <text class="title" x="64" y="230">KubeAid CLI</text>
+  <text class="sub" x="64" y="252">provisions clusters · generates config</text>
+
+  <!-- Your Git platform -->
+  <rect class="panel" x="340" y="80" width="290" height="320" rx="16"/>
+  <text class="glabel" x="364" y="112">YOUR GIT PLATFORM</text>
+
+  <!-- mirror card sits behind config card: config is layered on the mirror -->
+  <rect class="card" x="376" y="232" width="218" height="96" rx="12"/>
+  <text class="ctitle" x="485" y="276" text-anchor="middle">KubeAid mirror</text>
+  <text class="sub" x="485" y="298" text-anchor="middle">platform defaults · 100+ charts</text>
+
+  <rect class="card" x="364" y="138" width="242" height="110" rx="12"/>
+  <text class="ctitle" x="485" y="182" text-anchor="middle">kubeaid-config</text>
+  <text class="sub" x="485" y="204" text-anchor="middle">your cluster-specific overrides</text>
+
+  <text class="sub" x="485" y="376" text-anchor="middle" font-size="11">config is layered on the mirror — you own both repos</text>
+
+  <!-- Your cluster -->
+  <rect class="panel" x="690" y="40" width="430" height="400" rx="16"/>
+  <text class="glabel" x="714" y="72">YOUR CLUSTER — ANY CLOUD OR BARE METAL</text>
+
+  <rect class="card" x="795" y="92" width="190" height="68" rx="12"/>
+  <text class="ctitle" x="890" y="122" text-anchor="middle">ArgoCD</text>
+  <text class="sub" x="890" y="142" text-anchor="middle">GitOps controller</text>
+
+  <path d="M 882,172 l 8,8 l 8,-8" fill="none" stroke="#7E93A8" stroke-width="2"/>
+
+  <text class="stitle" x="714" y="212">Platform stack</text>
+  <rect class="chip" x="714" y="224" width="68" height="28" rx="14"/>
+  <text class="chiptx" x="748" y="242" text-anchor="middle">Cilium</text>
+  <rect class="chip" x="792" y="224" width="106" height="28" rx="14"/>
+  <text class="chiptx" x="845" y="242" text-anchor="middle">cert-manager</text>
+  <rect class="chip" x="908" y="224" width="126" height="28" rx="14"/>
+  <text class="chiptx" x="971" y="242" text-anchor="middle">kube-prometheus</text>
+  <rect class="chip" x="714" y="260" width="110" height="28" rx="14"/>
+  <text class="chiptx" x="769" y="278" text-anchor="middle">Sealed Secrets</text>
+  <rect class="chip" x="834" y="260" width="66" height="28" rx="14"/>
+  <text class="chiptx" x="867" y="278" text-anchor="middle">Velero</text>
+  <rect class="chip" x="910" y="260" width="92" height="28" rx="14"/>
+  <text class="chiptx" x="956" y="278" text-anchor="middle">Rook-Ceph</text>
+
+  <rect class="card" x="714" y="330" width="186" height="60" rx="12"/>
+  <text class="stitle" x="807" y="365" text-anchor="middle">Your applications</text>
+
+  <rect class="card" x="920" y="330" width="176" height="60" rx="12"/>
+  <text class="stitle" x="1008" y="354" text-anchor="middle">Cluster API</text>
+  <text class="sub" x="1008" y="372" text-anchor="middle" font-size="11">self-managed node lifecycle</text>
+
+  <!-- 1: bootstrap writes the initial config -->
+  <path class="edge" d="M 280,200 H 336" marker-end="url(#arw)"/>
+  <circle class="badge" cx="308" cy="200" r="10"/>
+  <text class="badgetx" x="308" y="204" text-anchor="middle">1</text>
+
+  <!-- 2: bootstrap provisions the cluster -->
+  <path class="edge" d="M 160,280 V 420 H 686" marker-end="url(#arw)"/>
+  <circle class="badge" cx="420" cy="420" r="10"/>
+  <text class="badgetx" x="420" y="424" text-anchor="middle">2</text>
+
+  <!-- 3: continuous GitOps sync (accent) -->
+  <path class="edgeac" d="M 606,193 H 660 V 126 H 791" marker-end="url(#arwA)"/>
+  <circle class="badgeac" cx="660" cy="160" r="10"/>
+  <text class="badgeactx" x="660" y="164" text-anchor="middle">3</text>
+
+  <!-- legend -->
+  <circle class="badge" cx="54" cy="478" r="10"/>
+  <text class="badgetx" x="54" y="482" text-anchor="middle">1</text>
+  <text class="legend" x="72" y="482">bootstrap — writes your initial config (runs once)</text>
+  <circle class="badge" cx="470" cy="478" r="10"/>
+  <text class="badgetx" x="470" y="482" text-anchor="middle">2</text>
+  <text class="legend" x="488" y="482">bootstrap — provisions the cluster, pivots Cluster API into it</text>
+  <circle class="badgeac" cx="880" cy="478" r="10"/>
+  <text class="badgeactx" x="880" y="482" text-anchor="middle">3</text>
+  <text class="legend" x="898" y="482">operations — continuous GitOps sync</text>
+</svg>
