@@ -36,15 +36,15 @@ kube-prometheus. Modify it according to your requirements.
    - Save the `kubeaid-config/k8s/<clustername>/<clustername>-vars.jsonnet` file after making the necessary modifications.
 
 4. Regenerate kube-prometheus YAML:
-   - Run the script to regenerate the kube-prometheus YAML files using the
-   `kubeaid-config/k8s/<clustername>/<clustername-vars>.jsonnet` file.
+   - Run the script to regenerate the kube-prometheus YAML files, passing it the cluster directory (the one
+   containing `<clustername>-vars.jsonnet`), not the jsonnet file itself.
    - Use the following command:
 
      ```bash
-     kubeaid/build/kube-prometheus/build.sh /path/to/kubernetes-config-company/k8s/production.company.io/production.company.io-vars.jsonnet
+     kubeaid/build/kube-prometheus/build.sh /path/to/kubernetes-config-company/k8s/production.company.io
      ```
 
-   - Replace the paths with the appropriate locations for your setup.
+   - Replace the path with the appropriate location for your setup.
 
 5. Commit and Sync:
    - Commit the changes made to the `kubeaid-config/k8s/<clustername>/<clustername>-vars.jsonnet` file to your cluster

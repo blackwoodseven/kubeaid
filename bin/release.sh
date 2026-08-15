@@ -205,14 +205,14 @@ fi
 
 git tag -a "$NEW_TAG" -m "Kubeaid Release $NEW_TAG"
 
-echo "Pushing changelog changes to Gitea"
+echo "Pushing changelog changes to GitHub (origin)"
 git push origin master
 
-echo "Pushing tag to Gitea"
+echo "Pushing tag to GitHub (origin)"
 git push origin "$NEW_TAG"
 
-echo "Pushing changelog changes to Internal Gitea"
+echo "Pushing changelog changes to internal Gitea"
 git push gitea master
 
-echo "Pushing tag to Internal Gitea"
+echo "Pushing tag to internal Gitea"
 git push gitea "$NEW_TAG"

@@ -20,10 +20,13 @@ _This needs to be done only once._
 
 - Set `enable_custom_metrics_apiservice: true` in your kubeaid managed cluster's prometheus build jsonnet vars file
   `(kubeaid-config/k8s/<clustername>/<clustername>-vars.jsonnet)`.
-- Ensure `kube_prometheus_version` is newer than `v0.12.0`.
+- Ensure `kube_prometheus_version` is at least `v0.13.0` (the oldest supported release; current examples use
+  `v0.18.0` - run `build.sh --versions` for the full Kubernetes compatibility table).
 
 Regenerate kube prometheus YAML with
-`kubeaid/build/kube-prometheus/build.sh /path/to/kubernetes-config-company/k8s/production.company.io/production.company.io-vars.jsonnet`
+`kubeaid/build/kube-prometheus/build.sh /path/to/kubernetes-config-company/k8s/production.company.io`
+
+(the argument is the cluster directory containing `production.company.io-vars.jsonnet`, not the jsonnet file itself)
 
 This will generate a few YAML files which define (setup or re-configure) prometheus, grafana, alertmanager,
 prometheus-adapter, and other resources and configs needed by them.

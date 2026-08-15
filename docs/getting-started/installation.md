@@ -14,32 +14,26 @@ Ensure you have completed:
 Make sure :
 
 - Docker is running locally
-- Your configuration files are in `outputs/configs/`
+- Your configuration files are in `outputs/configs/<cluster>/` (or `~/.config/kubeaid-cli/<cluster>/configs/`)
 - Your `secrets.yaml` is backed up in your password store
 
 ## Installing KubeAid CLI
 
-If you haven't already installed the KubeAid CLI, run:
+If you haven't already installed the KubeAid CLI, run the official install script:
 
 ```bash
-KUBEAID_CLI_VERSION=$(curl -s "https://api.github.com/repos/Obmondo/kubeaid-cli/releases/latest" | jq -r .tag_name)
-OS=$([ "$(uname -s)" = "Linux" ] && echo "Linux" || echo "Darwin")
-CPU_ARCHITECTURE=$([ "$(uname -m)" = "x86_64" ] && echo "amd64" || echo "arm64")
-
-wget "https://github.com/Obmondo/kubeaid-cli/releases/download/${KUBEAID_CLI_VERSION}/kubeaid-cli_${OS}_${CPU_ARCHITECTURE}.tar.gz"
-tar -xzf kubeaid-cli_${OS}_${CPU_ARCHITECTURE}.tar.gz
-sudo mv kubeaid-cli /usr/local/bin/kubeaid-cli
-sudo chmod +x /usr/local/bin/kubeaid-cli
-rm kubeaid-cli_${OS}_${CPU_ARCHITECTURE}.tar.gz
+curl -fsSL https://raw.githubusercontent.com/Obmondo/kubeaid-cli/main/scripts/install.sh | sh
 ```
 
-> **Note:** This script works on both Linux and macOS. For Linux users who prefer native package managers,
-> see the [Native Package Installation](#native-package-installation) section below.
+It supports `x86_64` and `arm64` on Linux and macOS, and installs to `/usr/local/bin` (may prompt for `sudo`).
+Alternatively, download the right package manually from the
+[releases page](https://github.com/Obmondo/kubeaid-cli/releases) - see the sections below. For Linux users who
+prefer native package managers, see the [Native Package Installation](#native-package-installation) section.
 
 Verify the installation:
 
 ```bash
-kubeaid-cli --version
+kubeaid-cli version
 ```
 
 ### Manual Installation (tar.gz Packages)
@@ -80,7 +74,7 @@ You can also manually download the appropriate tar.gz package for your platform 
 4. **Verify the installation**:
 
    ```bash
-   kubeaid-cli --version
+   kubeaid-cli version
    ```
 
 ### Native Package Installation
@@ -132,10 +126,11 @@ sha256sum -c kubeaid-cli_${KUBEAID_CLI_VERSION#v}_checksums.txt --ignore-missing
 
 ## Bootstrap the Cluster
 
-Run the bootstrap command:
+Run the bootstrap command, pointing it at the configs you generated during
+[pre-configuration](./pre-configuration.md):
 
 ```bash
-kubeaid-cli cluster bootstrap
+kubeaid-cli cluster bootstrap --configs-directory ./outputs/configs/<cluster>/
 ```
 
 ### What Happens During Bootstrap
@@ -178,7 +173,7 @@ flowchart TB
 ### Monitoring Progress
 
 - Logs are streamed to your terminal in real-time
-- All logs are saved to `outputs/.log` for later review
+- All logs are saved to `outputs/logs/` (one timestamped file per run) for later review
 - The process typically takes 10-30 minutes (depending on provider and cluster size)
 
 ### Bootstrap Output
@@ -195,9 +190,14 @@ Upon successful completion, you'll see:
 Set your kubeconfig and verify access:
 
 ```bash
-export KUBECONFIG=./outputs/kubeconfigs/main.yaml
+export KUBECONFIG=./outputs/kubeconfigs/clusters/main.yaml
 kubectl cluster-info
 ```
+
+> **VPN-type clusters** (`cluster.type: vpn`, with NetBird/Keycloak): after bootstrap the public kube-apiserver
+> load balancer is **disabled** and API access moves to the NetBird mesh - the generic kubeconfig flow above
+> doesn't apply. Follow the
+> [post-bootstrap operator guide](https://github.com/Obmondo/kubeaid-cli/blob/main/docs/post-bootstrap.md) instead.
 
 Expected output:
 
@@ -230,7 +230,7 @@ kubectl get applications -n argocd
 
 | Issue | Cause | Solution |
 | ------- | ------- | ---------- |
-| Bootstrap hangs | Network issues or resource constraints | Check logs in `outputs/.log` |
+| Bootstrap hangs | Network issues or resource constraints | Check logs in `outputs/logs/` |
 | Management cluster fails to create | Docker not running | Start Docker and retry |
 | Cloud resources fail to provision | Invalid credentials | Verify `secrets.yaml` credentials |
 | SSH connection fails (bare metal) | SSH key issues | Verify SSH key permissions and host connectivity |
@@ -239,11 +239,11 @@ kubectl get applications -n argocd
 ### Viewing Logs
 
 ```bash
-# View bootstrap logs
-cat outputs/.log
+# List bootstrap logs (one timestamped file per run)
+ls outputs/logs/
 
-# Follow logs in real-time (if bootstrap is running)
-tail -f outputs/.log
+# Follow the latest log in real-time (if bootstrap is running)
+tail -f "outputs/logs/$(ls -t outputs/logs | head -1)"
 ```
 
 ### Retry Bootstrap

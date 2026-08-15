@@ -11,7 +11,8 @@ The following tools are required locally:
 - `helm` (>= 3.8.0)
 - `yq` (Go version)
 
-The repository must have the `github` remote configured for pushing to GitHub.
+The repository must have the `origin` remote configured for pushing to GitHub, and a `gitea`
+remote configured for pushing to the internal Gitea mirror.
 
 ## 1. Update Managed Helm Charts
 
@@ -48,7 +49,7 @@ The script requires Linux (GNU sed). For macOS users, use the provided Docker wo
    ```bash
    apt-get update && apt-get install -y git curl
    curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/bin/yq && chmod +x /usr/bin/yq
-   curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+   curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
    chmod 700 get_helm.sh && ./get_helm.sh
    ./bin/manage-helm-chart.sh --update-all
    ```
@@ -126,7 +127,7 @@ The script will:
 4. Generate `CHANGELOG.md` and `.release-notes.md`
 5. Commit the changelog and release notes
 6. Create an annotated git tag from the `VERSION` file
-7. Push the commit and tag to both **Gitea** (`origin`) and **GitHub** (`github`)
+7. Push the commit and tag to both **GitHub** (`origin`) and the internal **Gitea** mirror (`gitea`)
 
 After the tag is pushed, GoReleaser CI workflows run automatically on both Gitea and GitHub to
 publish the release using the generated `.release-notes.md`.

@@ -40,6 +40,8 @@ Hosting-specific details and considerations:
 | [Bare Metal](./hosting/bare-metal.md) | On-premise dedicated servers |
 | [Single Host K8s](./hosting/single-host-k8s.md) | Single-node deployments |
 | [Hybrid Setup](./hosting/hybrid-setup.md) | Mixed cloud and bare metal |
+| [Hetzner Server Buying Guide](./guides/hetzner-server-buy-guides.md) | Bare metal and HCloud server purchasing recommendations |
+| [Harbor Registry](./guides/harbor-registry.md) | Host your own central container registry |
 
 ### Operations
 
@@ -52,6 +54,7 @@ Guides for ongoing cluster management:
 | [Node Reboot](./operations/node-reboot.md) | Safe node maintenance |
 | [Node Disk Repair](./operations/fixing-a-k8s-node-disk.md) | Procedure to replace and fix corrupted node disks |
 | [AWS Private Link Setup](./operations/aws-private-link-setup.md) | Cross-account connectivity |
+| [Updating Your Kubernetes Cluster](./updating-your-kubernetes-cluster.md) | Service windows and stakeholder communication for upgrades |
 | [Operations Tips](./operations/operations-tips.md) | Legacy operational procedures and debugging |
 
 #### Monitoring
@@ -87,13 +90,13 @@ Guides for ongoing cluster management:
 | [Features Technical Details](./kubeaid/features-technical-details.md) | In-depth feature documentation |
 | [Helm Umbrella Pattern](./kubeaid/helm-umbrella-pattern.md) | How KubeAid manages applications |
 | [Prometheus Configuration](./kubeaid/prometheus-configuration.md) | Configuring monitoring with kube-prometheus |
-| [Monitoring](./monitoring.md) | Metrics and log monitoring overview |
 | [GitOps Drift Detection](./kubeaid/gitops-drift-detection.md) | ArgoCD sync status and alerting |
 
 ### Architecture & Decisions
 
 | Guide | Description |
 | ------- | ------------- |
+| [Cluster Design](./cluster-design.md) | Control plane, storage, and database HA design principles |
 | [Architecture Decisions](../decisions.md) | Technical choices and architectural evolution |
 | [GitOps Decision Record](../decisions/gitops.md) | Real-world GitOps patterns and incident lessons |
 

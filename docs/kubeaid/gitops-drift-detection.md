@@ -72,24 +72,23 @@ Resources that exist in the cluster but are not tracked by ArgoCD. These can be:
 
 ## Detecting Unmanaged Resources
 
-ArgoCD can track resources it doesn't manage (orphaned resources). This is configured per Application:
+ArgoCD can warn about resources that live in an Application's namespace but are not managed by any Application
+(orphaned resources). This is configured on the AppProject the Applications belong to:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: AppProject
 metadata:
-  name: my-app
+  name: my-project
+  namespace: argocd
 spec:
   # ... other config ...
-  syncPolicy:
-    syncOptions:
-      - CreateNamespace=true
-  # Enable resource tracking
-  source:
-    plugin:
-      env:
-        - name: ARGOCD_APP_SOURCE_REPO
-          value: "true"
+  orphanedResources:
+    warn: true  # Raise a warning condition on Applications with orphaned resources
+    ignore:
+      # Resources to exclude from orphaned-resource monitoring
+      - kind: ConfigMap
+        name: kube-root-ca.crt
 ```
 
 ### Viewing Unmanaged Resources

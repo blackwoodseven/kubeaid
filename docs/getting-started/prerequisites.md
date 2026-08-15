@@ -63,13 +63,14 @@ Before setting up any KubeAid cluster, ensure you have the following tools and r
   
 The following packages must be installed on your local machine:  
   
-- [`kubectl`](https://kubernetes.io/docs/tasks/tools/) - Kubernetes command-line tool  
+- [`kubectl`](https://kubernetes.io/docs/tasks/tools/) - Kubernetes command-line tool (for operating the cluster)  
 - [`jq`](https://jqlang.org/download/) - JSON processor  
-- [`terragrunt`](https://terragrunt.gruntwork.io/docs/getting-started/install/) - Terraform wrapper  
-- [`terraform`](https://developer.hashicorp.com/terraform/install) - Infrastructure as Code tool  
-- [`bcrypt`](https://www.npmjs.com/package/bcrypt) - Password hashing utility  
+- [`yq`](https://github.com/mikefarah/yq) - YAML processor  
+- [`cilium-cli`](https://github.com/cilium/cilium-cli) - only required for `kubeaid-cli cluster test`  
 - [`wireguard`](https://www.wireguard.com/install/) - VPN software (optional, for private cluster access)  
-- [`yq`](https://github.com/mikefarah/yq) - YAML processor
+
+> **Note:** `kubeaid-cli` bundles the rest of its tooling (K3D, Helm, clusterctl, KubeOne) as Go libraries -
+> you do **not** need to install Terraform, Terragrunt or similar infrastructure tools.
   
 ### Docker  
   
@@ -130,22 +131,18 @@ flowchart LR
 > **Key Concept:** The KubeAid repo contains Helm charts and templates.
 > Your KubeAid Config repo contains values files and ArgoCD Application manifests that reference those charts.
   
-### Git Provider Credentials  
+### Git Access (SSH-only)  
   
-Keep your Git provider credentials ready. These will be used by ArgoCD for GitOps operations.  
+`kubeaid-cli` and ArgoCD access your Git repositories over **SSH only** - Personal Access Tokens (PATs) are not
+used by `kubeaid-cli` itself. Keep ready:  
   
-#### GitHub  
+- an SSH keypair whose public key is registered with your Git provider (or added as a deploy key on your forks), or  
+- a running `ssh-agent` with that key loaded (use the agent for passphrase-protected or hardware-backed keys).  
   
-Create a [Personal Access Token (PAT)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token)
-with permission to write to your KubeAid Config fork. This PAT will be used as the password.
+In `general.yaml` you point `kubeaid-cli` at this key via `git.privateKeyFilePath` **or** `git.useSSHAgent`
+(exactly one of the two), and give ArgoCD its own deploy keys under `cluster.argoCD.deployKeys`.  
   
-**Best Practice**: Create a separate user called `obmondo-<service>-user`
-and use its Personal Access Token instead of your personal account token.
-  
-#### GitLab  
-  
-For GitLab, you can create a Project Access Token (available in self-hosted and enterprise GitLab)
-or create a separate user called `obmondo-<service>-user` and provide its Personal Access Token.
+**Best Practice**: Create dedicated deploy keys per repository instead of reusing your personal SSH key.
   
 ## Provider-Specific Prerequisites  
   

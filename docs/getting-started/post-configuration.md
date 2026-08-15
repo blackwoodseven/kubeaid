@@ -8,7 +8,7 @@ These steps are **the same for all providers**.
 ### Check Cluster Status
 
 ```bash
-export KUBECONFIG=./outputs/kubeconfigs/main.yaml
+export KUBECONFIG=./outputs/kubeconfigs/clusters/main.yaml
 
 # Verify cluster info
 kubectl cluster-info
@@ -28,6 +28,11 @@ All nodes should show `Ready` status and all pods should be `Running` or `Comple
 
 KubeAid deploys several web interfaces for managing and monitoring your cluster.
 
+> **VPN-type clusters** (`cluster.type: vpn`, with NetBird/Keycloak): the public kube-apiserver load balancer is
+> disabled after bootstrap and cluster access moves to the NetBird mesh. Follow the
+> [post-bootstrap operator guide](https://github.com/Obmondo/kubeaid-cli/blob/main/docs/post-bootstrap.md)
+> instead of the generic kubeconfig flow on this page.
+
 ### ArgoCD Dashboard
 
 ArgoCD provides GitOps-based application management.
@@ -36,14 +41,14 @@ ArgoCD provides GitOps-based application management.
 # Get ArgoCD URL
 kubectl get ingress -n argocd
 
-# Get admin password (if not set in secrets.yaml)
+# Get admin password
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
 **Default credentials:**
 
 - Username: `admin`
-- Password: Set in your `secrets.yaml` or retrieve from the secret above
+- Password: retrieved from the `argocd-initial-admin-secret` Kubernetes secret, as shown above
 
 ### Grafana Dashboard
 
@@ -88,13 +93,23 @@ kubectl -n kube-system exec -it ds/cilium -- cilium status
 kubectl get pods -n kube-system -l name=sealed-secrets-controller
 ```
 
+### Check Backup Health
+
+If disaster recovery is configured, verify backup health (CNPG and Velero) as reported by backup-exporter:
+
+```bash
+kubeaid-cli backup status
+```
+
+See the [backup status guide](https://github.com/Obmondo/kubeaid-cli/blob/main/docs/backup-status.md) for details.
+
 ## Step 4: Configure DNS (If Applicable)
 
 If you're using custom domains for your cluster services, configure DNS records to point to your ingress load balancer:
 
 ```bash
-# Get the external IP/hostname of your ingress
-kubectl get svc -n ingress-nginx
+# Get the external IP/hostname of your ingress (KubeAid deploys Traefik by default)
+kubectl get svc -n traefik
 ```
 
 Create DNS records (A or CNAME) for:
@@ -187,6 +202,6 @@ kubectl get pods -n kube-system -l app=kube2iam
 
 ### Log Locations
 
-- **Bootstrap logs:** `outputs/.log`
+- **Bootstrap logs:** `outputs/logs/` (one timestamped file per run)
 - **Kubeconfig:** `outputs/kubeconfigs/clusters/main.yaml`
-- **Configuration files:** `outputs/configs/`
+- **Configuration files:** `outputs/configs/<cluster>/` (or `~/.config/kubeaid-cli/<cluster>/configs/`)

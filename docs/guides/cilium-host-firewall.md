@@ -15,8 +15,9 @@ When enabled, the policy:
   never the open internet)
 - Allows HTTP (80) and HTTPS (443) plus ICMP from the world
 
-The policy is **disabled by default**. After bootstrapping, `kubeaid-cli cluster lockdown` flips it on
-during the pivot phase.
+The policy is **disabled by default**. There is no standalone `kubeaid-cli cluster lockdown`
+subcommand; you enable it by setting `hostNetworkPolicy.enabled: true` in your per-cluster Cilium
+values overlay (see Configuration below) and rolling it out via ArgoCD.
 
 ## Configuration
 
@@ -61,16 +62,13 @@ and creates a `CiliumClusterwideNetworkPolicy` targeting the host endpoint. Traf
 allow rule is **dropped** by default (Cilium's host-firewall operates in default-deny mode when a policy
 is attached to the host endpoint).
 
-## Integration with kubeaid-cli
+## Enabling After Pivot
 
 After the cluster is bootstrapped and the management cluster has pivoted to the workload cluster,
-run:
-
-```bash
-kubeaid-cli cluster lockdown
-```
-
-This enables the host-firewall policy along with other post-pivot hardening steps.
+apply the same `hostNetworkPolicy.enabled: true` values change and let ArgoCD sync it. Note that
+`kubeaid-cli`'s interactive config prompt separately exposes a `lockdown` field that gets rendered
+into the generated `cluster.lockdown` setting — that's unrelated config plumbing, not a trigger for
+this policy.
 
 ## See Also
 

@@ -53,8 +53,8 @@ aws ec2 create-key-pair \
 ### AWS Setup
 
 ```bash
-# Generate configuration
-kubeaid-cli config generate aws
+# Generate configuration (interactive prompt; select aws when asked for a provider)
+kubeaid-cli config generate
 
 # Edit outputs/configs/general.yaml and secrets.yaml
 
@@ -62,9 +62,18 @@ kubeaid-cli config generate aws
 kubeaid-cli cluster bootstrap
 
 # Access the cluster
-export KUBECONFIG=./outputs/kubeconfigs/main.yaml
+export KUBECONFIG=./outputs/kubeconfigs/clusters/main.yaml
 kubectl cluster-info
 ```
+
+### AWS EKS (managed control plane)
+
+Set `cloud.aws.eks: true` to get an AWS-managed (EKS) control plane instead of the self-managed
+CAPA one. `cluster bootstrap` and `cluster delete` work as above; `cluster upgrade` refuses on EKS
+clusters - bump `global.kubernetes.version` in the kubeaid-config repo's `values-capi-cluster.yaml`
+instead and let ArgoCD/CAPA roll the control plane and node-groups. `cluster recover` isn't
+supported yet for EKS. See [Pre-Configuration](../getting-started/pre-configuration.md#aws-eks-managed-control-plane)
+for the full field list.
 
 ### AWS Cleanup
 
@@ -109,8 +118,8 @@ Provisions a KubeAid-managed Kubernetes cluster in Azure with:
 ### Azure Setup
 
 ```bash
-# Generate configuration
-kubeaid-cli config generate azure
+# Generate configuration (interactive prompt; select azure when asked for a provider)
+kubeaid-cli config generate
 
 # Edit outputs/configs/general.yaml and secrets.yaml
 
@@ -118,15 +127,27 @@ kubeaid-cli config generate azure
 kubeaid-cli cluster bootstrap
 
 # Access the cluster
-export KUBECONFIG=./outputs/kubeconfigs/main.yaml
+export KUBECONFIG=./outputs/kubeconfigs/clusters/main.yaml
 kubectl cluster-info
 ```
 
+### Azure AKS (managed control plane)
+
+Set `cloud.azure.aks: true` to get an Azure-managed (AKS) control plane instead of the self-managed
+CAPZ one. `cluster bootstrap` and `cluster delete` work as above; `cluster upgrade` refuses on AKS
+clusters - bump `global.kubernetes.version` in the kubeaid-config repo's `values-capi-cluster.yaml`
+instead and let ArgoCD/CAPZ roll the control plane and agent pools. `cluster recover` isn't
+supported yet for AKS. See [Pre-Configuration](../getting-started/pre-configuration.md#azure-aks-managed-control-plane)
+for the full field list.
+
 ### Azure Upgrade
 
+There are no `--new-k8s-version` / `--new-image-offer` flags. Edit `cluster.k8sVersion` (and the
+machine image fields) in `general.yaml`, then run:
+
 ```bash
-kubeaid-cli cluster upgrade --new-k8s-version v1.32.0
-# Add --new-image-offer for OS upgrade
+kubeaid-cli cluster upgrade
+# --skip-pr-workflow pushes changes directly instead of opening a PR
 ```
 
 ### Azure Cleanup
@@ -167,7 +188,8 @@ All modes include:
 #### HCloud Setup
 
 ```bash
-kubeaid-cli config generate hetzner hcloud
+# Interactive prompt; select hetzner, then hcloud, when asked
+kubeaid-cli config generate
 # Edit outputs/configs/general.yaml and secrets.yaml
 kubeaid-cli cluster bootstrap
 ```
@@ -193,7 +215,7 @@ For each server:
 - **Level 1 SWRAID** across specified disk WWNs
 - **25G LVG** named `vg0` with 10G root volume
 
-Configure further via `diskLayoutSetupCommands`. Recommendations:
+Configure further via `installImage.vg0.{size,rootVolumeSize}` and `wipeDisks`. Recommendations:
 
 - Allocate HDDs/SSDs to **Ceph**
 - Allocate NVMes to a **ZPool** (mirror mode) for ContainerD, logs, and OpenEBS ZFS LocalPV
@@ -205,7 +227,8 @@ Configure further via `diskLayoutSetupCommands`. Recommendations:
 #### Bare Metal Setup
 
 ```bash
-kubeaid-cli config generate hetzner bare-metal
+# Interactive prompt; select hetzner, then bare-metal, when asked
+kubeaid-cli config generate
 # Edit outputs/configs/general.yaml and secrets.yaml
 kubeaid-cli cluster bootstrap
 ```
@@ -248,7 +271,8 @@ is the operator's responsibility.
 #### Hybrid Setup
 
 ```bash
-kubeaid-cli config generate hetzner hybrid
+# Interactive prompt; select hetzner, then hybrid, when asked
+kubeaid-cli config generate
 # Edit outputs/configs/general.yaml and secrets.yaml
 kubeaid-cli cluster bootstrap
 ```
@@ -271,11 +295,11 @@ kubeaid-cli cluster delete management
 ### Access Cluster
 
 ```bash
-export KUBECONFIG=./outputs/kubeconfigs/main.yaml
+export KUBECONFIG=./outputs/kubeconfigs/clusters/main.yaml
 kubectl cluster-info
 ```
 
-Logs are saved in `outputs/.log`. Access the ArgoCD and Grafana dashboards for monitoring.
+Logs are saved in `outputs/logs`. Access the ArgoCD and Grafana dashboards for monitoring.
 
 ## See Also
 

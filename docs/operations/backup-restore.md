@@ -32,7 +32,24 @@ We use logical dumps for databases such as PostgreSQL and MongoDB to ensure port
 
 ### MongoDB
 
-- [Backup and Restore documentation](../../argocd-helm-charts/mongodb-operator/Readme.md#backup-and-restore)
+- The chart was renamed from `mongodb-operator` to
+  [`mongodb-kubernetes`](../../argocd-helm-charts/mongodb-kubernetes/README.md); its README is now a migration guide
+  (MCO to MCK) and doesn't cover backup/restore yet. Documentation pending.
+
+---
+
+## 4. Checking Backup Health
+
+The [backup-exporter](../../argocd-helm-charts/backup-exporter/) chart reads object storage directly and reports
+whether PostgreSQL (CNPG logical and WAL), Velero, MongoDB, and Sealed Secrets backups actually landed. Check status
+with:
+
+```bash
+kubeaid-cli backup status
+```
+
+See the [backup status docs](https://github.com/Obmondo/kubeaid-cli/blob/main/docs/backup-status.md) for the
+metrics reference, JSON output (`-o json`), and alerting behavior.
 
 ## Summary
 

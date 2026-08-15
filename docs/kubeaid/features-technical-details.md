@@ -17,11 +17,14 @@ Read our detailed guide on **[GitOps Drift Detection and Alerting](./gitops-drif
 
 We currently have working autoscale for Amazon Web Services (AWS).
 
-**TODO:** Get autoscaling working for Azure Kubernetes Service (AKS) and Google Cloud Platform (GCP).
+KubeAid also supports the managed control planes on EKS and AKS: it can bootstrap and delete such clusters, and
+upgrades are done as a version bump in your GitOps repository.
 
-### Manage an ever-growing list of Open Source Kubernetes applications (see
+**TODO:** Get autoscaling working for Azure Kubernetes Service (AKS).
 
-[`argocd-helm-charts`](../../argocd-helm-charts/) folder for a list)
+### Manage an ever-growing list of Open Source Kubernetes applications
+
+See the [`argocd-helm-charts`](../../argocd-helm-charts/) folder for the full list of applications.
 
 We use upstream Helm charts preferably - and use the Helm Umbrella pattern in ArgoCD - so the 'root' application,
 manages the rest of the applications in a cluster.
@@ -71,7 +74,7 @@ backups of PVCs.
 Ensuring least privilege between applications in your clusters, via resource limits and per-namespace/per-pod
 firewalling.
 
-We use Calico and NetworkPolicy resources to firewall each pod, so they cannot access anything in the cluster that they
+We use Cilium and NetworkPolicy resources to firewall each pod, so they cannot access anything in the cluster that they
 do not need to.
 
 This protects against a pod compromise and WHEN we block traffic from a pod, it triggers an event in the namespace that
@@ -84,13 +87,11 @@ We use Velero to do regular backups of cluster and PVC data.
 
 On AWS we have snapshot scripts to do regular and quick PVC backups.
 
-**TODO:** Get live cluster migration working - hopefully Calico team will soon enable multi-cluster mesh - so we can get
-start writing it.
+**TODO:** Get live cluster migration working - for example built on Cilium's Cluster Mesh multi-cluster support.
 
 ### Major cluster upgrades, via a shadow Kubernetes setup utilising the recovery and live-migration features
 
-**TODO:** Get live cluster migration working - hopefully Calico team will soon enable multi-cluster mesh - so we can get
-start writing it.
+**TODO:** Get live cluster migration working - for example built on Cilium's Cluster Mesh multi-cluster support.
 
 ### Supply chain attack protection and discovery - and security scans of all software used in the clusters
 

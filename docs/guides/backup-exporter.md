@@ -1,18 +1,31 @@
 # Backup Exporter
 
-The `obmondo-backup-exporter` chart deploys a Prometheus exporter that monitors the health of your
-backup infrastructure. It exposes metrics and ships PrometheusRule alerts for both **Velero** and
-**PostgreSQL** backups.
+The `backup-exporter` chart deploys a Prometheus exporter that monitors the health of your backup
+infrastructure. It exposes metrics and ships PrometheusRule alerts for **PostgreSQL**, **Velero**,
+**MongoDB**, and **Sealed Secrets** backups.
 
 ## What It Monitors
 
 | Backup System | Alert | Fires When |
 | ------------- | ----- | ---------- |
-| PostgreSQL | `PostgresBackupExporterJobFailed` | A PostgreSQL backup job reports an error (`backup_exporter_postgres_error == 1`) |
-| Velero | `VeleroBackupExporterJobFailed` | A Velero backup job reports an error (`backup_exporter_velero_error == 1`) |
+| PostgreSQL | `PostgresBackupExporterJobFailed` | The exporter job itself reports an error (`backup_exporter_postgres_error == 1`) |
+| PostgreSQL | `PostgresLogicalBackupExceededRPO` | Latest logical backup age exceeds `max_rpo` |
+| PostgreSQL | `PostgresCNPGWALBackupExceededRPO` | Latest CNPG WAL backup age exceeds `max_rpo` |
+| PostgreSQL | `PostgresLogicalBackupMissing` | No logical backup has ever been recorded |
+| PostgreSQL | `PostgresWALBackupMissing` | No WAL backup has ever been recorded |
+| Velero | `VeleroBackupExporterJobFailed` | The exporter job itself reports an error (`backup_exporter_velero_error == 1`) |
+| Velero | `VeleroBackupExceededRPO` | Latest backup age exceeds `max_rpo` |
+| Velero | `VeleroBackupMissing` | No backup has ever been recorded |
+| MongoDB | `MongoDBBackupExporterJobFailed` | The exporter job itself reports an error (`backup_exporter_mongodb_error == 1`) |
+| MongoDB | `MongoDBDumpBackupExceededRPO` | Latest dump backup age exceeds `max_rpo` |
+| MongoDB | `MongoDBDumpBackupMissing` | No dump backup has ever been recorded |
+| Sealed Secrets | `SealedSecretsBackupExporterJobFailed` | The exporter job itself reports an error (`backup_exporter_sealedsecrets_error == 1`) |
+| Sealed Secrets | `SealedSecretsKeyBackupExceededRPO` | Latest key backup age exceeds `max_rpo` |
+| Sealed Secrets | `SealedSecretsKeyBackupMissing` | No key backup has ever been recorded |
 
-Both alerts default to `critical` severity and fire after 5 minutes. These are configurable via the
-values file.
+All alerts default to `critical` severity and fire after 5 minutes. These are configurable via the
+values file. MongoDB and Sealed Secrets monitoring are opt-in (`enabled: false` by default) since
+not every cluster runs those backups.
 
 ## Deployment
 
@@ -29,6 +42,16 @@ prometheusRule:
     alertForDuration: 5m
   velero:
     enabled: true
+    namespace: monitoring
+    severity: critical
+    alertForDuration: 5m
+  mongodb:
+    enabled: false               # Follows exporter.mongodb.enabled
+    namespace: monitoring
+    severity: critical
+    alertForDuration: 5m
+  sealedSecrets:
+    enabled: false               # Follows exporter.sealedSecrets.enabled
     namespace: monitoring
     severity: critical
     alertForDuration: 5m

@@ -24,10 +24,11 @@ Deployment Steps:
 2. Update the values file with your specific configurations.
 3. Push the changes to your kubeaid-config repository.
 4. Sync the changes in ArgoCD root application, you can choose to just sync your harbor application as well
-5. Now you will have harbor set up successfully. you can refer to our configuration guide for various actions
-   With these steps, Harbor will be up and running,
+5. Now you will have harbor set up successfully.
+   With these steps, Harbor will be up and running.
 
-You can set up Keycloak for authentication using our Keycloak guide.
+See Harbor's official docs for further configuration, including
+[OIDC/Keycloak authentication setup](https://goharbor.io/docs/edge/administration/configure-authentication/oidc-auth/).
 
 ## Using CLI Tools with Harbor
 
@@ -107,18 +108,25 @@ on:
     branches: [main]
 
 jobs:
-  build-pull-request:
-  runs-on: [server-name]
-  needs: [ci]
-  uses: []
-  with:
-    push: true
-    file: ./Dockerfile
-    tags: harbor.example.com/organization/project-name:${{ gitea.event.number }}
-  secrets:
-    username: ${{ secrets.HARBOR_USERNAME }}
-    password: ${{ secrets.HARBOR_PASSWORD }}
-    
+  build-and-push:
+    runs-on: [server-name]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Harbor
+        uses: docker/login-action@v3
+        with:
+          registry: harbor.example.com
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          file: ./Dockerfile
+          tags: harbor.example.com/organization/project-name:${{ gitea.event.number }}
+
   some-other-action:
     runs-on: [server-name]
     container:

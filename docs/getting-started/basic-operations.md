@@ -13,13 +13,21 @@ Here's a quick reference of the most common `kubeaid-cli` commands:
 
 | Command | Description |
 | --------- | ------------- |
-| `kubeaid-cli config generate <provider>` | Generate configuration templates |
+| `kubeaid-cli config generate` | Interactively generate `general.yaml` and `secrets.yaml` |
 | `kubeaid-cli cluster bootstrap` | Create and provision a new cluster |
+| `kubeaid-cli cluster upgrade` | Upgrade to the K8s version and machine images in `general.yaml` |
+| `kubeaid-cli cluster recover` | Recover a cluster from a disaster recovery backup |
+| `kubeaid-cli cluster sync` | Converge a bare-metal (KubeOne) cluster onto `general.yaml` |
+| `kubeaid-cli cluster test` | Verify a cluster was bootstrapped properly |
 | `kubeaid-cli cluster delete main` | Delete the main cluster |
 | `kubeaid-cli cluster delete management` | Delete the local management cluster |
-| `kubeaid-cli cluster upgrade --new-k8s-version <version>` | Upgrade Kubernetes version |
-| `kubeaid-cli --version` | Show CLI version |
+| `kubeaid-cli backup status` | Show backup health of the cluster (CNPG and Velero) |
+| `kubeaid-cli devenv create` | Create the local K3D management cluster on its own |
+| `kubeaid-cli version` | Show CLI version |
 | `kubeaid-cli --help` | Show help and available commands |
+
+> **Note:** `cluster sync` only applies to the bare metal (KubeOne) provider - on the other providers, merged
+> kubeaid-config changes get reconciled by ArgoCD.
 
 > **Note:** KubeAid CLI does not have start/stop/pause/enable/disable commands. Cluster lifecycle is managed
 > through `bootstrap`, `upgrade`, and `delete` operations. For workload management, use standard `kubectl` commands.
@@ -31,7 +39,7 @@ Here's a quick reference of the most common `kubeaid-cli` commands:
 ### Check Cluster Health
 
 ```bash
-export KUBECONFIG=./outputs/kubeconfigs/main.yaml
+export KUBECONFIG=./outputs/kubeconfigs/clusters/main.yaml
 
 # Verify cluster info
 kubectl cluster-info
@@ -63,14 +71,21 @@ All applications should show `Healthy` and `Synced` status.
 
 ### Upgrade Command
 
-To upgrade the Kubernetes version of your cluster:
+To upgrade the Kubernetes version of your cluster, edit `cluster.k8sVersion` in your `general.yaml`, then run:
 
 ```bash
-kubeaid-cli cluster upgrade --new-k8s-version v1.32.0
+kubeaid-cli cluster upgrade
 ```
 
-> **Note:** Replace `v1.32.0` with your target Kubernetes version. Always review the
-> [Kubernetes changelog](https://kubernetes.io/releases/) before upgrading.
+The command upgrades the cluster to the Kubernetes version (and machine images) declared in `general.yaml`. Its
+only flag is `--skip-pr-workflow`, which pushes the resulting kubeaid-config changes directly to the default
+branch instead of opening a PR.
+
+> **Note:** Always review the [Kubernetes changelog](https://kubernetes.io/releases/) before upgrading.
+
+> **EKS / AKS clusters:** `cluster upgrade` refuses to run - the managed control plane is upgraded the GitOps way.
+> Bump `global.kubernetes.version` in `argocd-apps/values-capi-cluster.yaml` in your kubeaid-config repo and let
+> ArgoCD sync; CAPA/CAPZ then upgrade the control plane and roll the node groups.
 
 ---
 
@@ -261,10 +276,10 @@ To create a new cluster with the same configuration:
 
 ```bash
 # Retrieve secrets from password store (example using pass)
-pass kubeaid/my-cluster/secrets.yaml > outputs/configs/secrets.yaml
+pass kubeaid/my-cluster/secrets.yaml > outputs/configs/<cluster>/secrets.yaml
 
 # Bootstrap the cluster
-kubeaid-cli cluster bootstrap
+kubeaid-cli cluster bootstrap --configs-directory ./outputs/configs/<cluster>/
 ```
 
 ---
@@ -278,16 +293,16 @@ kubeaid-cli cluster bootstrap
 | CLI command not found | CLI not installed or not in PATH | Re-run the [CLI installation](./installation.md#installing-kubeaid-cli) |
 | Delete hangs | Resources stuck or network issues | Check cloud provider console for stuck resources |
 | Management cluster already deleted | Running delete twice | This is safe to ignore |
-| Kubeconfig not found | Wrong path or cluster not created | Verify `outputs/kubeconfigs/main.yaml` exists |
+| Kubeconfig not found | Wrong path or cluster not created | Verify `outputs/kubeconfigs/clusters/main.yaml` exists |
 
 ### Viewing Logs
 
 ```bash
-# View operation logs
-cat outputs/.log
+# List operation logs (one timestamped file per run)
+ls outputs/logs/
 
-# Follow logs in real-time
-tail -f outputs/.log
+# Follow the latest log in real-time
+tail -f "outputs/logs/$(ls -t outputs/logs | head -1)"
 ```
 
 ### Getting Help

@@ -18,9 +18,9 @@ This repository holds the platform itself — curated Helm charts, monitoring, a
 the **[KubeAid CLI](https://github.com/Obmondo/kubeaid-cli)**, which is the tool you actually run to create and manage
 clusters.
 
-→ [**Why KubeAid?**](./docs/kubeaid/why-kubeaid.md)
-· [**Getting Started**](./docs/getting-started/README.md)
-· [**Full Documentation**](./docs/README.md)
+→ [**Why KubeAid?**](https://kubeaid.io/docs/kubeaid/why-kubeaid)
+· [**Getting Started**](https://kubeaid.io/docs/getting-started/)
+· [**Full Documentation**](https://kubeaid.io/docs/)
 
 ## Table of Contents
 

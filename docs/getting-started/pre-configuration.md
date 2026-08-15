@@ -18,75 +18,90 @@ KubeAid uses two configuration files:
 
 ## Step 1: Generate Configuration Files
 
-Run the config generate command with your provider type:
+Run the config generate command:
 
 ```bash
-kubeaid-cli config generate <provider>
+kubeaid-cli config generate --configs-directory ./outputs/configs/<cluster>/
 ```
 
-Replace `<provider>` with one of:
+There is no provider argument - the command walks you through an **interactive prompt** that asks which provider
+you're deploying to (AWS, Azure, Hetzner, bare metal or local) and then collects everything required for it:
+cluster basics, provider credentials, Git / KubeAid fork URLs, and so on. It writes the resulting `general.yaml`
+and `secrets.yaml` under the directory given via `--configs-directory`.
 
-| Provider | Command |
-| ---------- | ------- |
-| AWS | `kubeaid-cli config generate aws` |
-| Azure | `kubeaid-cli config generate azure` |
-| Hetzner HCloud | `kubeaid-cli config generate hetzner hcloud` |
-| Hetzner Bare Metal | `kubeaid-cli config generate hetzner bare-metal` |
-| Hetzner Hybrid | `kubeaid-cli config generate hetzner hybrid` |
-| Bare Metal (SSH-only) | `kubeaid-cli config generate bare-metal` |
-| Local K3D | `kubeaid-cli config generate local` |
-
-The generated templates are saved in `outputs/configs/`.
+> **Note:** Without `--configs-directory`, the prompt asks which cluster you're configuring and writes to
+> `~/.config/kubeaid-cli/<cluster>/configs/` (an existing config in `./outputs/configs/` is offered for reuse).
+> Follow-up commands can then locate that config with `--cluster-name <cluster>` instead of the full path.
 
 ### Generated Directory Structure
 
-After running the config generate command, your working directory will look like:
+After running the config generate command with `--configs-directory ./outputs/configs/<cluster>/`, your working
+directory will look like:
 
 ```bash
 your-working-directory/
 ├── outputs/
 │   ├── configs/
-│   │   ├── general.yaml      # Cluster configuration (edit this)
-│   │   └── secrets.yaml      # Credentials (edit this, store in password manager)
+│   │   └── <cluster>/
+│   │       ├── general.yaml  # Cluster configuration (review this)
+│   │       └── secrets.yaml  # Credentials (review this, store in password manager)
 │   ├── kubeconfigs/          # Generated after bootstrap
-│   │   └── main.yaml         # Kubeconfig for your cluster
-│   └── .log                  # Bootstrap logs
+│   │   └── clusters/
+│   │       └── main.yaml     # Kubeconfig for your cluster
+│   └── logs/                 # One timestamped log file per run
 └── ...
 ```
 
-## Step 2: Configure general.yaml
+## Step 2: Review general.yaml
 
-The `general.yaml` file defines your cluster's infrastructure. Most fields are **common across all providers**.
+The `general.yaml` file defines your cluster's infrastructure. The interactive prompt fills in everything required -
+hand-edit only when you want to override defaults. The authoritative field reference (all providers, all fields) is
+the generated [config reference](https://github.com/Obmondo/kubeaid-cli/blob/main/docs/config-reference.md).
 
 ### Common Configuration (All Providers)
 
 ```yaml
-# Repository URLs
+# Git server SSH access.
+# Exactly one of privateKeyFilePath / useSSHAgent must be set.
+git:
+  sshUsername: git
+  privateKeyFilePath: /home/you/.ssh/id_ed25519
+  # useSSHAgent: true
+
+# Repository fork URLs (SSH URLs; both must be hosted on the same Git server).
 forkURLs:
-  kubeaid: https://github.com/<your-org>/KubeAid
-  kubeaidConfig: https://github.com/<your-org>/kubeaid-config
+  kubeaid:
+    url: git@github.com:<your-org>/KubeAid
+    version: <tag / branch / commit>   # optional: pin the KubeAid version
+  kubeaidConfig:
+    url: git@github.com:<your-org>/kubeaid-config
 
 # Cluster specification
 cluster:
-  name: my-cluster              # Unique cluster name
-  k8sVersion: v1.31.0           # Kubernetes version
-  kubeaidVersion: 18.0.0        # KubeAid version
+  name: my-cluster              # Unique cluster name (no dots allowed)
+  k8sVersion: v1.34.0           # Kubernetes version
 
-# Git configuration
-git:
-  useSSHAgentAuth: false
-  useSSHPrivateKeyAuth: false
-
-# ArgoCD configuration
-argocd:
-  useSSHPrivateKeyAuth: false
-  kubeaidURL: https://github.com/<your-org>/KubeAid
-  kubeaidConfigURL: https://github.com/<your-org>/kubeaid-config
+  # ArgoCD deploy keys (SSH). Each takes privateKeyFilePath or useSSHAgent,
+  # exactly like the git section above.
+  argoCD:
+    deployKeys:
+      kubeaid:
+        useSSHAgent: true
+      kubeaidConfig:
+        useSSHAgent: true
 ```
+
+> **Note on Kubernetes versions:** supported ranges differ per provider. Cluster API clouds (AWS, Azure, Hetzner)
+> support v1.30 up to the latest released (non-EOL) version; bare metal (KubeOne) supports **v1.33 - v1.35** only;
+> EKS requires >= v1.33.
 
 ### Provider-Specific Configuration
 
-The `cloud` section differs by provider. Below are the key fields for each:
+The `cloud` section differs by provider - exactly one of `cloud.aws`, `cloud.azure`, `cloud.hetzner`,
+`cloud.bare-metal` (note the hyphen; Hetzner's *nested* bare-metal key is spelled `bareMetal`) or `cloud.local`
+is set. The interactive prompt generates the correct section for your provider; the samples below only highlight
+the key fields. For the full per-provider schema, see the
+[config reference](https://github.com/Obmondo/kubeaid-cli/blob/main/docs/config-reference.md).
 
 #### AWS
 
@@ -94,13 +109,18 @@ The `cloud` section differs by provider. Below are the key fields for each:
 cloud:
   aws:
     region: eu-central-1         # Frankfurt; change to your preferred region
-    sshKeyName: kubeaid-demo    # Name of your AWS SSH keypair
+    sshKeyName: kubeaid-demo     # Name of your AWS SSH keypair
     controlPlane:
       instanceType: t3.medium
       replicas: 3
-    nodePools:
+      ami:
+        id: <ami-id>
+    nodeGroups:
       - name: workers
         instanceType: t3.large
+        rootVolumeSize: 35
+        cpu: 2
+        memory: 8
         minSize: 1
         maxSize: 10
 ```
@@ -136,21 +156,11 @@ cloud:
 
 #### Azure
 
-```yaml
-cloud:
-  azure:
-    subscriptionId: <subscription-id>
-    resourceGroup: my-cluster-rg
-    location: westeurope          # Amsterdam; change to your preferred region
-    controlPlane:
-      vmSize: Standard_D2s_v3
-      replicas: 3
-    nodePools:
-      - name: workers
-        vmSize: Standard_D4s_v3
-        minSize: 1
-        maxSize: 10
-```
+The `cloud.azure` section takes `tenantID`, `subscriptionID` and `location`, plus a `controlPlane` and `nodeGroups`
+(each node group with `vmSize`, `diskSizeGB`, `cpu`, `memory`, `minSize`, `maxSize`). Self-managed clusters
+additionally need the SSH public key and workload-identity settings described in
+[Prerequisites](./prerequisites.md) - see the
+[config reference](https://github.com/Obmondo/kubeaid-cli/blob/main/docs/config-reference.md) for the full schema.
 
 #### Azure AKS (managed control plane)
 
@@ -187,99 +197,28 @@ cloud:
 > `global.kubernetes.version` in `argocd-apps/values-capi-cluster.yaml` and let
 > ArgoCD sync.
 
-#### Hetzner HCloud
+#### Hetzner
 
-```yaml
-cloud:
-  hetzner:
-    hcloud:
-      region: nbg1
-      sshKeyName: kubeaid-demo
-      controlPlane:
-        serverType: cpx31
-        replicas: 3
-      nodePools:
-        - name: workers
-          serverType: cpx41
-          minSize: 1
-          maxSize: 10
-```
+The `cloud.hetzner` section supports three modes via `mode: hcloud | bare-metal | hybrid`. All modes share a
+Hetzner `sshKeyPair`; HCloud clusters add `hcloud` (zone, image, control plane machine type, node groups), while
+Hetzner bare-metal clusters add the **nested** `bareMetal` key (camelCase - only the *top-level* SSH-only provider
+key `cloud.bare-metal` is hyphenated) with per-host settings such as `wipeDisks`. The interactive prompt
+collects all of this; see the
+[config reference](https://github.com/Obmondo/kubeaid-cli/blob/main/docs/config-reference.md) for the full schema.
 
 > **Note:** HCloud storage only allows a maximum of 16 buckets per physical node. Plan your PV usage accordingly
 > to avoid running out of PVs before node resources are exhausted.
 
-#### Hetzner Bare Metal
-
-```yaml
-cloud:
-  hetzner:
-    bareMetal:
-      wipeDisks: false          # Set true to wipe existing RAID
-      controlPlane:
-        serverIds: [123456, 123457, 123458]  # Must be unique within the cluster
-      nodePools:
-        - name: workers
-          serverIds: [234567, 234568]        # Must be unique within the cluster
-          labels:
-            node-type: worker
-          taints: []
-```
-
-> **Note:** Server IDs must be unique within a cluster. Each server can only belong to one node pool
-> (either control plane or a worker pool).
-
-#### Hetzner Hybrid
-
-```yaml
-cloud:
-  hetzner:
-    hcloud:
-      # Control plane in HCloud
-      controlPlane:
-        serverType: cpx31
-        replicas: 3
-    bareMetal:
-      # Workers in Bare Metal
-      nodePools:
-        - name: bare-metal-workers
-          serverIds: [234567, 234568]
-```
-
 #### Bare Metal (SSH-only)
 
-```yaml
-cloud:
-  bareMetal:
-    controlPlane:
-      hosts:
-        - address: 10.0.0.1
-          user: root
-        - address: 10.0.0.2
-          user: root
-        - address: 10.0.0.3
-          user: root
-    nodePools:
-      - name: workers
-        hosts:
-          - address: 10.0.0.10
-            user: root
-          - address: 10.0.0.11
-            user: root
-        labels:
-          node-type: worker
-        taints: []
-```
+SSH-only bare metal clusters (provisioned via KubeOne) live under the top-level `cloud.bare-metal` key (note the
+hyphen). The interactive prompt collects the control-plane and node-group host addresses and SSH settings; see
+the [config reference](https://github.com/Obmondo/kubeaid-cli/blob/main/docs/config-reference.md) for the full
+schema. KubeOne supports Kubernetes **v1.33 - v1.35** only.
 
-> **Note:** The IP addresses shown above (e.g., `10.0.0.1`) are examples. You can use any valid private IP range
-> (RFC 1918) such as:
->
-> - `10.0.0.0/8` (10.0.0.0 – 10.255.255.255)
-> - `172.16.0.0/12` (172.16.0.0 – 172.31.255.255)
-> - `192.168.0.0/16` (192.168.0.0 – 192.168.255.255)
->
-> These addresses are for **internal cluster communication** and should not be publicly routable.
-> The control plane addresses are used for the Kubernetes API server and etcd cluster,
-> while worker addresses are for node-to-node and pod networking.
+> **Note:** Host addresses should come from a valid private IP range (RFC 1918), e.g. `10.0.0.0/8`,
+> `172.16.0.0/12` or `192.168.0.0/16`. These addresses are for **internal cluster communication** and should not
+> be publicly routable.
 
 #### Local K3D
 
@@ -288,28 +227,14 @@ cloud:
   local: {}
 ```
 
-## Step 3: Configure secrets.yaml
+## Step 3: Review secrets.yaml
 
 The `secrets.yaml` file contains sensitive credentials. **Do not commit this file to Git.**
 
-### Common Secrets (All Providers)
-
-```yaml
-# Git credentials for ArgoCD
-git:
-  username: <git-username>
-  password: <personal-access-token>
-
-# Docker registry (optional)
-dockerRegistry:
-  username: ""
-  password: ""
-
-# ArgoCD admin password
-argocd:
-  admin:
-    password: <strong-password>
-```
+The interactive prompt fills this file in for you. Its only top-level keys are `aws`, `azure`, `hetzner`,
+`keycloak`, `netbird` and `acme`. There are **no Git credentials** here (Git access is SSH-only, configured in
+`general.yaml`) and **no ArgoCD admin password** (that is generated in-cluster - see
+[Post-Configuration](./post-configuration.md)).
 
 ### Provider-Specific Secrets
 
@@ -317,37 +242,37 @@ argocd:
 
 ```yaml
 aws:
-  accessKeyId: <aws-access-key>
+  accessKeyID: <aws-access-key>
   secretAccessKey: <aws-secret-key>
+  sessionToken: <session-token>         # Only when using temporary credentials
 ```
 
 #### Azure Secrets
 
 ```yaml
 azure:
-  clientId: <service-principal-client-id>
+  clientID: <service-principal-client-id>
   clientSecret: <service-principal-secret>
-  tenantId: <azure-tenant-id>
 ```
 
 #### Hetzner
 
 ```yaml
 hetzner:
-  hcloudToken: <hcloud-api-token>
-  robotUser: <robot-username>           # For bare metal only
-  robotPassword: <robot-password>       # For bare metal only
+  apiToken: <hcloud-api-token>
+  robot:                                # For bare metal only
+    user: <robot-username>
+    password: <robot-password>
 ```
 
-#### Bare Metal (SSH-only) Secrets
+#### Keycloak / NetBird / ACME (VPN-type clusters)
 
-```yaml
-ssh:
-  privateKey: |
-    -----BEGIN OPENSSH PRIVATE KEY-----
-    ...
-    -----END OPENSSH PRIVATE KEY-----
-```
+The `keycloak`, `netbird` and `acme` keys hold secrets for VPN-type clusters (`cluster.type: vpn`). Values left
+blank are auto-generated on first run where possible. See the
+[config reference](https://github.com/Obmondo/kubeaid-cli/blob/main/docs/config-reference.md) for details.
+
+> **Note:** Bare metal (SSH-only) clusters need no `secrets.yaml` entries - node access uses the SSH key or
+> SSH agent configured in `general.yaml`.
 
 ## Step 4: Validate Configuration
 
@@ -356,7 +281,7 @@ Before proceeding, verify your configuration:
 1. **Check file locations:**
 
    ```bash
-   ls -la outputs/configs/
+   ls -la outputs/configs/<cluster>/
    # Should show: general.yaml, secrets.yaml
    # Expected owner: your current user (or root if running as root)
    # Expected file mode: -rw------- (600) for secrets.yaml to protect credentials
@@ -366,13 +291,13 @@ Before proceeding, verify your configuration:
 2. **Validate YAML syntax:**
 
    ```bash
-   yq eval '.' outputs/configs/general.yaml > /dev/null && echo "general.yaml is valid"
-   yq eval '.' outputs/configs/secrets.yaml > /dev/null && echo "secrets.yaml is valid"
+   yq eval '.' outputs/configs/<cluster>/general.yaml > /dev/null && echo "general.yaml is valid"
+   yq eval '.' outputs/configs/<cluster>/secrets.yaml > /dev/null && echo "secrets.yaml is valid"
    ```
 
 3. **Store secrets securely:**
 
    ```bash
    # Example using pass
-   pass insert kubeaid/my-cluster/secrets.yaml < outputs/configs/secrets.yaml
+   pass insert kubeaid/my-cluster/secrets.yaml < outputs/configs/<cluster>/secrets.yaml
    ```
