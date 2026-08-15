@@ -50,10 +50,6 @@ See our **[Prometheus Configuration Guide](./prometheus-configuration.md)** for 
 
 We currently have CI support for GitLab and GitHub Actions.
 
-**TODO:** Implement Robusta to automate handling of trivial tasks, like increasing size of a PVC (and running disk
-cleanup
-scripts first to try and avoid it), or scaling up instead.
-
 ### Regular application updates with security and bug fixes, ready to be issued to your cluster(s) at will
 
 We update this repository with updated versions of the applications, and improvements - which you will get automatically
