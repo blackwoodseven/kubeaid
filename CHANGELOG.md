@@ -2,6 +2,59 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 32.4.0
+
+### Minor Version Upgrades
+
+- 4d4a62d37 Updated hcloud-cloud-controller-manager from version 1.34.0 to 1.35.0
+- 4d4a62d37 Updated cerebro from version 2.3.0 to 2.4.0
+- 4d4a62d37 Updated fluent-bit from version 0.57.9 to 0.58.0
+- 4d4a62d37 Updated mongodb-kubernetes from version 1.9.1 to 1.10.0
+- 4d4a62d37 Updated opentelemetry-operator from version 0.120.2 to 0.121.0
+- 4d4a62d37 Updated opentelemetry-collector from version 0.169.0 to 0.170.0
+
+### Patch Version Upgrades
+
+- 4d4a62d37 Updated argo-cd from version 10.3.2 to 10.3.3
+- 4d4a62d37 Updated azuredisk-csi-driver from version 1.34.4 to 1.34.5
+- 4d4a62d37 Updated plugin-barman-cloud from version 0.7.0 to 0.7.1
+- 4d4a62d37 Updated erpnext from version 8.0.71 to 8.0.73
+- 4d4a62d37 Updated gitlab-runner from version 0.91.0 to 0.91.2
+- 4d4a62d37 Updated rook-ceph from version v1.20.3 to v1.20.4
+- 4d4a62d37 Updated rook-ceph-cluster from version v1.20.3 to v1.20.4
+- 4d4a62d37 Updated teleport-cluster from version 18.10.3 to 18.10.4
+- 4d4a62d37 Updated teleport-kube-agent from version 18.10.3 to 18.10.4
+- 4d4a62d37 Updated yetibot from version 1.0.216 to 1.0.217
+
+### Configuration Changes
+
+- 0fced7dfb chore(backup-exporter): track v1.2.2
+
+### Other Changes
+
+- fa054325e docs: drop stale AKS autoscaling TODO — agent pools use AKS's built-in autoscaler
+- 3126ad002 docs(roadmap): the feature goals shipped — list only what is genuinely open
+- 8b81ac63b docs: centered README header, Prometheus-style architecture diagram, diagram style guide
+- 211d557d9 docs: supply-chain section claims only what exists
+- 100bcce42 docs: drop the Robusta TODO — trivial-alert automation will be built in-house
+- d8e9acd72 docs(umbrella-pattern): replace invented override examples with the real kubeaid-config layout
+- a6f1172b4 docs: access management default is NetBird + Keycloak; Teleport is deprecated
+- 45e5f5c15 docs: fix markdownlint violations left on master by the docs overhaul
+- 03b5ae50f docs(charts): give every tier-1–5 chart a README that says what it is and why
+- bc055b215 docs: the tutorial's destination is deploying your own apps; kubeaid-config template framing in README
+- 983f152cb docs: only kubeaid-config is required setup — the KubeAid mirror is optional
+- 342e86531 docs(getting-started): KubeOne is platform-specific, not part of every cluster
+- d91ca56b4 ci: add loud skip-list for charts that cannot template with default values
+- 42f3c01a3 docs(getting-started): retitle tutorial to the reader's goal
+- cb98984ba docs(readme): add release, chart-update status and docs badges
+- 15f0332b7 docs: restructure by reader intent — tutorial, how-to, reference, concepts
+- 672ac0166 ci: unbreak weekly helm update, add changed-chart checks, path-filter jsonnet lint
+- b8eccba6e docs: fix commands, paths and examples to match kubeaid-cli reality
+- eb29cf6a4 docs(readme): plain KubeAid heading, fix quick-start to the real interactive config generate
+- 3fbbb576a docs: rewrite README developer-first and adopt CNCF project standard
+- 538ebecd0 open-xchange: pin keycloak-sync image by digest, bitnami/kubectl:latest is mutable and frozen upstream
+- f2111cf2f funkwhale,lemmy: remove config-generator jobs, wire CNPG password via secretKeyRef
+
 ## KubeAid Release Version 32.3.0
 
 ### Minor Version Upgrades
