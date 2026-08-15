@@ -1,4 +1,4 @@
-# KubeAid: Kubernetes, the Same Way, Everywhere
+# KubeAid
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Obmondo/KubeAid)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
@@ -85,15 +85,15 @@ updates are delivered to you, so keeping it clean means updating your cluster is
 Install the [KubeAid CLI](https://github.com/Obmondo/kubeaid-cli/releases), then:
 
 ```sh
-# Generate configuration for your platform:
-#   local | aws | azure | hetzner hcloud | hetzner bare-metal | hetzner hybrid | bare-metal
-kubeaid-cli config generate local
+# Interactive prompt walks you through cluster name, platform
+# (local K3D, AWS, Azure, Hetzner, bare metal) and everything else
+kubeaid-cli config generate --configs-directory ./outputs/configs/<cluster>/
 
-# Review and edit the generated config, then bring the cluster up
-kubeaid-cli cluster bootstrap
+# Review the generated config, then bring the cluster up
+kubeaid-cli cluster bootstrap --configs-directory ./outputs/configs/<cluster>/
 ```
 
-`local` gives you a K3D playground on your own machine — the workflow is identical to a production cloud cluster. The
+Choosing local K3D gives you a playground on your own machine — the workflow is identical to a production cloud cluster. The
 **[Getting Started Guide](./docs/getting-started/README.md)** walks through prerequisites, configuration, installation,
 and day-2 operations for every supported platform.
 
