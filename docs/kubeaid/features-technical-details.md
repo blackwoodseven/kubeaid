@@ -15,12 +15,11 @@ Read our detailed guide on **[GitOps Drift Detection and Alerting](./gitops-drif
 
 ### Auto-scaling for all cloud Kubernetes clusters and easy scaling for physical servers
 
-We currently have working autoscale for Amazon Web Services (AWS).
+We currently have working autoscale for Amazon Web Services (AWS). On AKS, agent pools are scaled by AKS's
+built-in cluster autoscaler.
 
 KubeAid also supports the managed control planes on EKS and AKS: it can bootstrap and delete such clusters, and
 upgrades are done as a version bump in your GitOps repository.
-
-**TODO:** Get autoscaling working for Azure Kubernetes Service (AKS).
 
 ### Manage an ever-growing list of Open Source Kubernetes applications
 
