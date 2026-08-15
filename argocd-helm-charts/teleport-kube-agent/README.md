@@ -4,10 +4,14 @@ This chart deploys the [Teleport](https://goteleport.com) kube-agent — a light
 cluster's Kubernetes API to the central [`teleport-cluster`](../teleport-cluster/README.md) (see `proxyAddr` in
 values.yaml), so operators access it through Teleport instead of a distributed kubeconfig.
 
+> **Deprecated:** Teleport is no longer KubeAid's default access layer — new clusters use the NetBird mesh with
+> Keycloak SSO instead. This chart remains available for existing setups.
+
 ## Why it's in KubeAid
 
-This is the per-managed-cluster half of KubeAid's Teleport-based access model: `teleport-cluster` runs the central
-proxy/auth service, and every managed cluster runs this agent to expose its API through it.
+This is the per-managed-cluster half of KubeAid's previous Teleport-based access model: `teleport-cluster` runs the
+central proxy/auth service, and every managed cluster runs this agent to expose its API through it. On current
+clusters that role is filled by NetBird (mesh access) and Keycloak (SSO).
 
 **NOTE: if there is no join-token secret, the pod would fail to start.**
 

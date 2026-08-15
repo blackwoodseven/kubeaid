@@ -4,11 +4,15 @@
 apps). This chart deploys the central Teleport proxy/auth cluster (`clusterName` in values.yaml, e.g.
 `teleport.obmondo.com`) that managed clusters join through.
 
+> **Deprecated:** Teleport is no longer KubeAid's default access layer — new clusters use the NetBird mesh with
+> Keycloak SSO instead. This chart remains available for existing setups.
+
 ## Why it's in KubeAid
 
-KubeAid uses Teleport as the access layer for managed clusters: instead of distributing raw kubeconfigs, each
-managed cluster runs the [`teleport-kube-agent`](../teleport-kube-agent/README.md) chart and joins this central
-cluster, so cluster access can be issued/revoked/audited from one place.
+KubeAid previously used Teleport as the access layer for managed clusters: instead of distributing raw
+kubeconfigs, each managed cluster runs the [`teleport-kube-agent`](../teleport-kube-agent/README.md) chart and
+joins this central cluster, so cluster access can be issued/revoked/audited from one place. On current clusters
+that role is filled by NetBird (mesh access) and Keycloak (SSO).
 
 ## Upgrade
 
