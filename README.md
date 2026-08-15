@@ -2,6 +2,10 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Obmondo/KubeAid)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+[![Latest Release](https://img.shields.io/github/v/release/Obmondo/KubeAid?sort=semver)](https://github.com/Obmondo/KubeAid/releases)
+[![Release](https://github.com/Obmondo/KubeAid/actions/workflows/release.yaml/badge.svg)](https://github.com/Obmondo/KubeAid/actions/workflows/release.yaml)
+[![Helm Charts Update](https://github.com/Obmondo/KubeAid/actions/workflows/update-helm-chart.yml/badge.svg)](https://github.com/Obmondo/KubeAid/actions/workflows/update-helm-chart.yml)
+[![Docs](https://img.shields.io/badge/docs-kubeaid.io-blue)](https://kubeaid.io/docs/)
 
 **KubeAid is an open-source Kubernetes platform: one tested, maintained way to install and operate Kubernetes
 clusters on every platform** — AWS (self-managed or EKS), Azure (self-managed or AKS), Hetzner (HCloud and Bare
