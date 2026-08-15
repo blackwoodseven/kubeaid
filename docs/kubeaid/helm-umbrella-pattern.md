@@ -133,47 +133,59 @@ git pull upstream main
 
 ## Working with the Pattern
 
+Each cluster's applications live in your kubeaid-config repository under `k8s/<cluster>/argocd-apps/`: an
+`Application` manifest per app in `templates/`, and a `values-<app>.yaml` per app next to them.
+
 ### Adding a New Application
 
-1. Check if the chart exists in `argocd-helm-charts/`
-2. Enable it in your cluster's values:
+1. Check that the chart exists in `argocd-helm-charts/`.
+2. Add an `Application` manifest at `k8s/<cluster>/argocd-apps/templates/<app>.yaml`, following the two-source
+   pattern — the chart comes from KubeAid, the values from your kubeaid-config repo:
 
 ```yaml
-# kubeaid-config/k8s/<cluster>/values.yaml
-applications:
-  velero:
-    enabled: true
-    values:
-      # Your custom values here
+# k8s/<cluster>/argocd-apps/templates/velero.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: velero
+  namespace: argocd
+spec:
+  destination:
+    namespace: velero
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+    - repoURL: https://github.com/Obmondo/kubeaid.git
+      path: argocd-helm-charts/velero
+      targetRevision: <kubeaid-release-tag>
+      helm:
+        valueFiles:
+          - $values/k8s/<cluster>/argocd-apps/values-velero.yaml
+    - repoURL: <your-kubeaid-config-repo-url>
+      targetRevision: HEAD
+      ref: values
 ```
 
-1. Commit and push - ArgoCD will deploy it
+1. Add `k8s/<cluster>/argocd-apps/values-velero.yaml` with your overrides, commit and push — ArgoCD deploys it.
 
 ### Customizing an Application
 
-Override values in your `kubeaid-config` repository:
+Edit the app's values file. Keys under the subchart's name override the vendored upstream chart; top-level keys
+configure the wrapper's own KubeAid additions:
 
 ```yaml
-# kubeaid-config/k8s/<cluster>/argocd/cert-manager.yaml
-spec:
-  source:
-    helm:
-      values: |
-        installCRDs: true
-        global:
-          leaderElection:
-            namespace: cert-manager
+# k8s/<cluster>/argocd-apps/values-cert-manager.yaml
+cert-manager:        # -> the vendored upstream chart
+  installCRDs: true
+issuer:              # -> the KubeAid wrapper's own template
+  name: letsencrypt
+  enabled: true
 ```
 
 ### Disabling an Application
 
-Remove or disable it in your configuration:
-
-```yaml
-applications:
-  some-app:
-    enabled: false
-```
+Delete the app's `Application` manifest from `k8s/<cluster>/argocd-apps/templates/` (and its values file), then
+sync the root app with prune — ArgoCD removes the application and its resources.
 
 ## Relationship with ArgoCD
 
