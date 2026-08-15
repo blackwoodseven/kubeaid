@@ -1,4 +1,4 @@
-# Getting Started: Your First KubeAid Cluster
+# Your First Kubernetes Cluster with KubeAid
 
 This tutorial walks you through setting up your first KubeAid-managed Kubernetes cluster, from an empty machine to a
 running cluster you can operate through Git. The workflow is **provider-agnostic**: the steps are the same whether you
