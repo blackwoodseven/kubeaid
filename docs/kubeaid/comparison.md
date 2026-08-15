@@ -102,10 +102,26 @@ everything keeps running.
 
 ## Why Not Terraform?
 
-Terraform is everywhere - ~48k GitHub stars, ~76% market share in IaC.
-We use it ourselves in a limited way for cloud resource provisioning
-(VPCs, IAM roles, DNS zones). But we do not build our platform on top
-of it. Here is why.
+Terraform has been the default infrastructure-as-code tool for a
+decade. We use it ourselves in a limited way for cloud resource
+provisioning (VPCs, IAM roles, DNS zones). But we do not build our
+platform on top of it. Here is why.
+
+### The License Problem
+
+In August 2023, HashiCorp relicensed Terraform from the open-source
+MPL 2.0 to the Business Source License - source-available, but with
+field-of-use restrictions decided by the vendor (now IBM, after its
+HashiCorp acquisition). The community answered by forking Terraform
+into [OpenTofu](https://opentofu.org/) under the Linux Foundation,
+which remains MPL-licensed.
+
+Whichever side of that fork you build on, the episode makes the deeper
+point: when your platform's foundation is controlled by a single
+vendor, one license change can strand you. KubeAid is AGPLv3, builds
+on CNCF projects (Cluster API, ArgoCD, Cilium, Prometheus), and the
+mirror-your-own-repo model means nobody can relicense your platform
+out from under you.
 
 ### The Statefile Problem
 
@@ -234,9 +250,15 @@ Puppet was revolutionary in its time. We came from the Puppet world
 with [LinuxAid](https://github.com/Obmondo/LinuxAid) - we know it
 well, we have written thousands of manifests.
 
-But Puppet is in decline (~7.9k GitHub stars, ~600 contributors,
-shrinking). The community is moving elsewhere, and with it goes the
-ecosystem.
+But the Puppet ecosystem has changed hands and closed down. Perforce
+acquired Puppet in 2022, and in late 2024 moved ongoing development
+into a private repository - public releases stopped, and access to
+hardened builds now sits behind a Perforce EULA. The community
+responded with the [OpenVox](https://github.com/OpenVoxProject) fork to
+keep an open Puppet alive (KubeAid ships an
+[openvox chart](../../argocd-helm-charts/openvox/) for exactly that
+reason). We still maintain LinuxAid for the fleets that run on it -
+but we would not start a new platform on that foundation.
 
 More importantly, Puppet's model is built around **managing individual
 servers** - packages, files, services on a host. Kubernetes is a

@@ -3,7 +3,7 @@
 * This Script changes all application tags - to the target KubeAid release(tag)
 * You can get the release tags from here https://github.com/Obmondo/KubeAid/releases
 * This scripts need to be run manually during the service or a day before and raise the PR and get it to merged.
-![alt text](<image (2).png>)
+![alt text](../images/argocd-app-update.png)
 * Make sure the same tag is used for the entire service window cycle **DO NOT: use latest/recent tag in the middle of
   service window cycle**
 
@@ -21,6 +21,9 @@ For example, in Obmondo, *traefik* is deployed as **external**, **private**, etc
 ## Update the tags for a cluster
 
 * should be run at this folder level `/kubeaid-config-enableit/k8s/`
+
+The Docker image below (`harbor.obmondo.com/...`) is Obmondo-internal tooling, hosted on Obmondo's private registry;
+if you're not an Obmondo operator, run `bin/update-kubeaid-argocd-app.sh` directly instead.
 
 ```sh
 docker run -it  -v $(pwd):/workspace -v ../../KubeAid:/KubeAid harbor.obmondo.com/obmondo/kubeaid-update-apps:1.0.0 /KubeAid/bin/update-kubeaid-argocd-app.sh -c <cluster-name> -r <tag-for-the-current-window-cycle>

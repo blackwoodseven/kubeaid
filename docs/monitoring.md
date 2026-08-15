@@ -150,7 +150,6 @@ to reduce noise from transient scan failures. Adjust in your values if you need 
 
 ## Further reading
 
-- [Prometheus Configuration](./kubeaid/prometheus-configuration.md) - kube-prometheus setup and Jsonnet build
-- [Prometheus Namespaces](./operations/monitoring/prometheus-namespaces.md) - namespace scrape scope
-- [Pod Autoscaling](./operations/monitoring/pod-autoscaling.md) - HPA with custom metrics from Prometheus
+- [Prometheus Configuration](./kubeaid/prometheus-configuration.md) - kube-prometheus setup and Jsonnet build,
+  including namespace scrape scope and pod autoscaling with custom metrics
 - [Backup Exporter](./guides/backup-exporter.md) - Velero and PostgreSQL backup monitoring

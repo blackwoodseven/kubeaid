@@ -38,6 +38,11 @@ on as an open-source patch.
   - `docs:` for documentation changes
   - `chore:` for maintenance (dependencies, etc.)
 
+## Maintainer Documentation
+
+Maintainers managing Helm chart updates and cutting releases should see the guides in
+[`docs/maintainers/`](./docs/maintainers/).
+
 ## Development Setup
 
 ### Prerequisites
