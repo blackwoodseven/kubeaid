@@ -50,8 +50,10 @@ two YAML files (`general.yaml` for what you want, `secrets.yaml` for
 credentials), and you get a production-ready cluster with GitOps,
 monitoring, networking, and security configured out of the box.
 
-The same workflow works on AWS, Azure, Hetzner, and bare metal.
-Learn it once, use it everywhere.
+The same workflow works on AWS, Azure, Hetzner, and bare metal -
+self-managed clusters and the managed control planes (EKS and AKS)
+alike, which KubeAid can bootstrap and delete, with upgrades done as
+a GitOps version bump. Learn it once, use it everywhere.
 
 ### 100+ Helm Charts, Curated and Tested
 
@@ -302,7 +304,7 @@ seamlessly - so you do not spend months integrating them yourself.
 | Drift detection | Only on next plan/apply | Only on refresh | None (run-and-done) | Agent checks ~30 min | **Continuous** |
 | Manual changes | Silent disaster | Same as Terraform | Does not track | May revert on next run | **Detected immediately** |
 | Kubernetes-native | No | Partial | No | No | **Yes** |
-| Multi-cloud | Per-provider modules | Per-provider code | Per-host playbooks | Per-host manifests | **One workflow, any cloud** |
+| Multi-cloud | Per-provider modules | Per-provider code | Per-host playbooks | Per-host manifests | **One workflow, any cloud (incl. EKS/AKS)** |
 | Compliance | DIY | DIY | DIY | DIY | **ISO 27001:2022 built in** |
 | Where we use it | Limited (VPCs, IAM) | We do not | LinuxAid | LinuxAid (legacy) | **End-to-end** |
 <!-- markdownlint-enable MD013 -->

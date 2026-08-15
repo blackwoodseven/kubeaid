@@ -52,23 +52,28 @@ Example configuration:
 
 ```jsonnet
 {
-  // Cluster identification
-  cluster_name: 'production',
-  cluster_domain: 'example.com',
+  // Which platform Kubernetes runs on, e.g. 'kubeadm', 'kops' or 'aks'
+  platform: 'kubeadm',
+
+  // Connect to Obmondo monitoring; certname format is '<cluster>.<customerid>'
+  connect_obmondo: true,
+  certname: 'production.customer1',
   
   // kube-prometheus version to use
   kube_prometheus_version: 'v0.18.0',
   
   // Prometheus configuration
-  prometheus_replicas: 2,
-  prometheus_retention: '30d',
-  prometheus_storage_size: '100Gi',
-  
-  // Alertmanager configuration
-  alertmanager_replicas: 3,
+  prometheus+: {
+    retention: '30d',
+    storage: {
+      size: '100Gi',
+      classname: 'rook-ceph-block',
+    },
+  },
   
   // Grafana configuration
-  grafana_domain: 'grafana.example.com',
+  grafana_root_url: 'https://grafana.example.com',
+  grafana_ingress_host: 'grafana.example.com',
   
   // Namespaces to scrape metrics from
   prometheus_scrape_namespaces: [
@@ -83,7 +88,7 @@ Example configuration:
   enable_custom_metrics_apiservice: true,
   
   // Enable mixins
-  addMixins: {
+  addMixins+: {
     ceph: true,
     sealedsecrets: true,
     etcd: true,
@@ -126,11 +131,8 @@ kubeaid-config/k8s/<cluster-name>/kube-prometheus/
 
 ### Applying to Cluster
 
-Commit the generated manifests and sync via ArgoCD, or apply manually:
-
-```bash
-kubectl apply -f ../kubeaid-config/k8s/<cluster-name>/kube-prometheus/
-```
+Commit the generated manifests to your `kubeaid-config` repository and let ArgoCD sync them - every change goes
+through Git.
 
 ## Common Configuration Options
 
@@ -179,8 +181,8 @@ grafana_dashboards: {
 },
 ```
 
-See the [build/kube-prometheus
-README](../../build/kube-prometheus/README.md#adding-support-for-custom-dashboards-in-grafana) for detailed
+See the [build/kube-prometheus Grafana
+docs](../../build/kube-prometheus/docs/grafana.md#adding-custom-dashboards-via-gitops) for detailed
 instructions.
 
 ### Alertmanager Configuration

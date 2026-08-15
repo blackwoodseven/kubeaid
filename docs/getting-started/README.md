@@ -65,7 +65,9 @@ KubeAid supports the following hosting environments:
 | Provider | Type | Autoscaling | Notes |
 | ---------- | ------ | ------------- | ------- |
 | **AWS** | Cloud (API-managed) | ✅ Scale to/from 0 | Uses ClusterAPI |
+| **AWS EKS** | Cloud (managed control plane) | ✅ Scale to/from 0 | CAPA; upgrade via GitOps bump, recover not yet |
 | **Azure** | Cloud (API-managed) | ✅ Scale to/from 0 | Uses ClusterAPI |
+| **Azure AKS** | Cloud (managed control plane) | ✅ AKS agent pools | CAPZ; upgrade via GitOps bump, recover not yet |
 | **Hetzner HCloud** | Cloud (API-managed) | ✅ Scale to/from 0 | Uses ClusterAPI |
 | **Hetzner Bare Metal** | Dedicated servers | ❌ Manual | Uses ClusterAPI |
 | **Hetzner Hybrid** | Cloud + Bare Metal | ✅ HCloud only | Uses ClusterAPI |
@@ -77,29 +79,21 @@ KubeAid supports the following hosting environments:
 
 ## Quick Start
 
-For experienced users, here's the minimal workflow:
+For experienced users, here's the minimal workflow. The
+[KubeAid CLI quick start](https://github.com/Obmondo/kubeaid-cli#quick-start) is the authoritative, always-current
+version of this sequence.
 
 ```bash
 # 1. Install the CLI
-KUBEAID_CLI_VERSION=$(curl -s "https://api.github.com/repos/Obmondo/kubeaid-cli/releases/latest" | jq -r .tag_name)
-OS=$([ "$(uname -s)" = "Linux" ] && echo "Linux" || echo "Darwin")
-CPU_ARCHITECTURE=$([ "$(uname -m)" = "x86_64" ] && echo "amd64" || echo "arm64")
-wget "https://github.com/Obmondo/kubeaid-cli/releases/download/${KUBEAID_CLI_VERSION}/kubeaid-cli_${OS}_${CPU_ARCHITECTURE}.tar.gz"
-tar -xzf kubeaid-cli_${OS}_${CPU_ARCHITECTURE}.tar.gz
-sudo mv kubeaid-cli /usr/local/bin/kubeaid-cli
-sudo chmod +x /usr/local/bin/kubeaid-cli
-rm kubeaid-cli_${OS}_${CPU_ARCHITECTURE}.tar.gz
+curl -fsSL https://raw.githubusercontent.com/Obmondo/kubeaid-cli/main/scripts/install.sh | sh
 
-# 2. Generate config (replace <provider> with: aws, azure, hetzner hcloud, hetzner bare-metal, hetzner hybrid, bare-metal, local)
-kubeaid-cli config generate <provider>
+# 2. Generate general.yaml and secrets.yaml via the interactive prompt
+kubeaid-cli config generate --configs-directory ./outputs/configs/<cluster>/
 
-# 3. Edit configuration files
-# Edit outputs/configs/general.yaml and outputs/configs/secrets.yaml
+# 3. Review the generated files, then bootstrap
+kubeaid-cli cluster bootstrap --configs-directory ./outputs/configs/<cluster>/
 
-# 4. Bootstrap
-kubeaid-cli cluster bootstrap
-
-# 5. Access cluster
-export KUBECONFIG=./outputs/kubeconfigs/main.yaml
+# 4. Access cluster
+export KUBECONFIG=./outputs/kubeconfigs/clusters/main.yaml
 kubectl cluster-info
 ```

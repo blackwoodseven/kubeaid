@@ -3,6 +3,11 @@
 
 ## Note
 
+GitHub offers two kinds of Personal Access Tokens: **fine-grained tokens** (recommended, scoped to
+specific repositories and permissions) and **classic tokens** (scoped to broad, repo-wide
+permissions). The scope-based walkthrough below describes the classic token path; for new tokens,
+prefer fine-grained tokens where your workflow supports them.
+
 It is not a good practice to provide Personal Access Token for any public/general usage.
 
 So it is advised to create separate user called `obmondo-<service>-user` and

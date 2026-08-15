@@ -6,6 +6,9 @@ access**. There is no cloud API host management-you manage the server lifecycle 
 > Uses [Kubermatic KubeOne](https://github.com/kubermatic/kubeone) under the hood for SSH-only access platforms without
   API host management support.
 
+This page covers generic SSH-only bare metal. Hetzner Bare Metal is provisioned differently, via
+[ClusterAPI/CAPH](./cloud-providers.md#bare-metal-mode) instead of KubeOne - see [Cloud Providers](./cloud-providers.md).
+
 ## Features
 
 - [Cilium](https://cilium.io) CNI in [kube-proxyless mode](https://cilium.io/use-cases/kube-proxy/)
@@ -53,8 +56,8 @@ sudo chmod +x /usr/local/bin/kubeaid-cli
 ## Setup
 
 ```bash
-# Generate configuration
-kubeaid-cli config generate bare-metal
+# Generate configuration (interactive prompt; select bare-metal when asked for a provider)
+kubeaid-cli config generate
 
 # Edit outputs/configs/general.yaml and secrets.yaml
 
@@ -62,11 +65,11 @@ kubeaid-cli config generate bare-metal
 kubeaid-cli cluster bootstrap
 
 # Access the cluster
-export KUBECONFIG=./outputs/kubeconfigs/main.yaml
+export KUBECONFIG=./outputs/kubeconfigs/clusters/main.yaml
 kubectl cluster-info
 ```
 
-Logs are saved in `outputs/.log`. Access the ArgoCD and Grafana dashboards.
+Logs are saved in `outputs/logs`. Access the ArgoCD and Grafana dashboards.
 
 ## Cleanup
 

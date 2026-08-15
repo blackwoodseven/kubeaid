@@ -33,8 +33,8 @@ sudo chmod +x /usr/local/bin/kubeaid-cli
 ## Setup
 
 ```bash
-# Generate configuration
-kubeaid-cli config generate local
+# Generate configuration (interactive prompt; select local when asked for a provider)
+kubeaid-cli config generate
 
 # Edit outputs/configs/general.yaml and secrets.yaml
 
@@ -42,11 +42,11 @@ kubeaid-cli config generate local
 kubeaid-cli cluster bootstrap
 
 # Access the cluster
-export KUBECONFIG=./outputs/kubeconfigs/main.yaml
+export KUBECONFIG=./outputs/kubeconfigs/clusters/main.yaml
 kubectl cluster-info
 ```
 
-Logs are saved in `outputs/.log`. Access the ArgoCD and Grafana dashboards.
+Logs are saved in `outputs/logs`. Access the ArgoCD and Grafana dashboards.
 
 ## Cleanup
 

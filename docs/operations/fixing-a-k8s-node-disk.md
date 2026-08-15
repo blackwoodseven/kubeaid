@@ -155,26 +155,26 @@ zpool replace <pool> \
 zpool status -v <pool>    # use this command to keep monitoring the progress
 ```
 
-### 2. Verify etcd is back to 3/3
+### 4. Verify etcd is back to 3/3
 
 ```sh
 # same endpoint health --cluster command as Phase 1 step 1
 ```
 
-### 3. Uncordon the node
+### 5. Uncordon the node
 
 ```sh
 kubectl uncordon $NODE
 ```
 
-### 4. Watch Ceph recover (if ceph installed on the node)
+### 6. Watch Ceph recover (if ceph installed on the node)
 
 ```sh
 kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph status
 # wait for: 8/8 osds up, all PGs active+clean, 0% degraded
 ```
 
-### 5. Unset noout, only after all PGs are active+clean (if ceph installed on the node)
+### 7. Unset noout, only after all PGs are active+clean (if ceph installed on the node)
 
 Please make sure ```ceph status``` goes back to 0% degradation. it may take 3 to 4 hours sometimes so you need to wait
 
@@ -182,7 +182,7 @@ Please make sure ```ceph status``` goes back to 0% degradation. it may take 3 to
 kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd unset noout
 ```
 
-### 6. Final verification
+### 8. Final verification
 
 Confirm every layer. nodes, Ceph, ZFS, workloads is fully back before you close the ticket.
 

@@ -669,8 +669,6 @@ kubectl taint nodes <cp-node> node-role.kubernetes.io/control-plane:NoSchedule
 2. Add more worker nodes
 3. Migrate to Ceph storage
 
-See: [Hetzner CSI Volume Limit Debugging](../guides/storage/hetzner/hetzner-csi-volume-limit-debugging.md)
-
 ### "Database not recovering after node failure"
 
 **Cause:** Using local PV with single replica
@@ -681,29 +679,6 @@ See: [Hetzner CSI Volume Limit Debugging](../guides/storage/hetzner/hetzner-csi-
 postgres:
   instance: 2
 ```
-
----
-
-## Related Documentation
-
-**Hetzner Storage Guides:**
-
-- [Hetzner CSI Volume Limit Debugging](https://gitea.obmondo.com/EnableIT/wiki/src/branch/master/guides/storage/hetzner/hetzner-csi-volume-limit-debugging.md)
-  16 volumes/node limit
-- [Hetzner Block Storage Debugging](https://gitea.obmondo.com/EnableIT/wiki/src/branch/master/guides/storage/hetzner/hetzner-block-storage-debugging.md)
-  Volume mount issues
-
-**Alert Handling:**
-
-- [KubeContainerWaiting](https://gitea.obmondo.com/EnableIT/wiki/src/branch/master/procedures/alerts/KubeContainerWaiting.md)
-  Pods stuck in ContainerCreating
-- [KubePodNotReady](https://gitea.obmondo.com/EnableIT/wiki/src/branch/master/procedures/alerts/KubePodNotReady.md)
-  Pod scheduling issues
-
-**Application Guides:**
-
-- [CSS/JS Asset Loading Failures](https://gitea.obmondo.com/EnableIT/wiki/src/branch/master/guides/debugging/css-js-asset-loading-failures.md)
-  Volume path mismatches
 
 ---
 

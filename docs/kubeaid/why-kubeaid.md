@@ -71,13 +71,16 @@ is the *exact same* as what every other team needs.
 ## One Way to Install, On Any Cloud (Even Your Own)
 
 KubeAid was designed to solve this by giving you **one unified way to install Kubernetes**, regardless of where you
-choose to run it: AWS, Azure, Hetzner, bare metal, or your own data centre.
+choose to run it: AWS, Azure, Hetzner, bare metal, or your own data centre. This includes the clouds' managed control
+planes: KubeAid can bootstrap and delete EKS and AKS clusters, with upgrades done as a GitOps version bump.
 
 We tried hard not to reinvent the wheel. For unifying installation automation across every possible target, there is
 only one solution: **[Cluster API](https://cluster-api.sigs.k8s.io/)**.
 
 Cluster API is complex by design. It hides each cloud provider's complexity behind drivers, which are often maintained
-by the cloud vendors themselves. But it removes the vendor lock-in those vendors have worked so hard to build.
+by the cloud vendors themselves. But it removes the vendor lock-in those vendors have worked so hard to build. And it
+unifies the managed paths too: an EKS or AKS cluster is driven through the same Cluster API workflow as a self-managed
+one.
 
 On top of Cluster API, there is a *lot* to set up correctly: GitOps management, identity implementation (which differs
 by provider), networking, monitoring, and more. This is what **KubeAid CLI** handles for you.

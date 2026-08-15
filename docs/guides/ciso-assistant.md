@@ -38,7 +38,7 @@ After the chart is deployed and synced via ArgoCD:
 3. **Configure email** (optional but recommended for invitations):
 
    ```yaml
-   ciso-assistant:
+   ciso-assistant-next:
      backend:
        config:
          smtp:

@@ -138,7 +138,7 @@ Both alerts fire at `critical` severity after 30 minutes.
 ### Backup exporter
 
 <!-- markdownlint-disable MD013 -->
-The [obmondo-backup-exporter](../argocd-helm-charts/obmondo-backup-exporter/) chart monitors Velero
+The [backup-exporter](../argocd-helm-charts/backup-exporter/) chart monitors Velero
 and PostgreSQL backup health via dedicated Prometheus metrics and alerts. See the
 [Backup Exporter guide](./guides/backup-exporter.md) for details.
 <!-- markdownlint-enable MD013 -->
