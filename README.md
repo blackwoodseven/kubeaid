@@ -50,16 +50,17 @@ It is three pieces that work together:
 1. **This repository (KubeAid)** — the platform definition: 100+ maintained Helm chart wrappers in
    [`argocd-helm-charts/`](./argocd-helm-charts/), with tested default values and automated weekly updates, plus
    [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus) monitoring generated with
-   [Jsonnet](https://jsonnet.org/). You don't run anything from here directly — it is consumed by the KubeAid CLI, and
-   later by ArgoCD from your own mirror of it. Mirroring it into your own Git platform means you keep full control
-   even if access to the upstream repository is ever lost.
+   [Jsonnet](https://jsonnet.org/). You don't run anything from here directly — it is consumed by the KubeAid CLI,
+   and later by ArgoCD, straight from upstream by default. For production we recommend mirroring it into your own
+   Git platform, so you keep full control even if access to the upstream repository is ever lost.
 2. **[KubeAid CLI](https://github.com/Obmondo/kubeaid-cli)** — the entry point. A command-line tool you run once per
    cluster: it consumes this repository, generates your configuration, and bootstraps the cluster using
    [Cluster API](https://cluster-api.sigs.k8s.io/) (or [KubeOne](https://github.com/kubermatic/kubeone) for SSH-only
    bare metal).
-3. **Your `kubeaid-config` repository** — generated for you during bootstrap; holds all your cluster-specific
-   settings, layered on top of your KubeAid mirror. ArgoCD inside the cluster watches it and applies changes, so Git
-   is the single source of truth for everything running in the cluster.
+3. **Your `kubeaid-config` repository** — created from the
+   [sample template](https://github.com/Obmondo/kubeaid-config) and filled in during bootstrap; holds all your
+   cluster-specific settings, layered on top of the KubeAid platform defaults. ArgoCD inside the cluster watches it
+   and applies changes, so Git is the single source of truth for everything running in the cluster.
 
 Every KubeAid cluster ships with [Cilium](https://cilium.io/) (kube-proxyless),
 [ArgoCD](https://argo-cd.readthedocs.io/), [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets/), and
@@ -81,7 +82,7 @@ your applications:
 </picture>
 <!-- markdownlint-enable MD033 -->
 
-One rule to know up front: never commit directly to the master/main branch of your KubeAid mirror — that branch is how
+One rule to know up front: if you run a KubeAid mirror, never commit directly to its master/main branch — that branch is how
 updates are delivered to you, so keeping it clean means updating your cluster is as simple as a `git pull`.
 
 ## Quick Start

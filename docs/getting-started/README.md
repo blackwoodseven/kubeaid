@@ -68,7 +68,10 @@ kubeaid-config repository. When it finishes, you have a kubeconfig and a running
 ### 4. [Post-Configuration](./post-configuration.md)
 
 Verify the cluster is healthy, log in to the ArgoCD and Grafana dashboards, create your first sealed secret, and
-decide how you want to receive KubeAid updates going forward.
+decide how you want to receive KubeAid updates going forward. Then do what you built the cluster for: deploy your
+own applications — enable a chart from the catalogue or add your own through your kubeaid-config repository, and
+ArgoCD rolls it out (see [Adding a New
+Application](../kubeaid/helm-umbrella-pattern.md#adding-a-new-application)).
 
 ## Choosing Your Platform
 
