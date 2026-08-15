@@ -1,5 +1,14 @@
 # Strimzi kafka operator
 
+Wraps the [Strimzi](https://strimzi.io/) operator chart, which runs and manages Apache Kafka (brokers,
+ZooKeeper, topics, users, TLS) on Kubernetes via CRDs (`Kafka`, `KafkaTopic`, `KafkaUser`).
+
+## Why it's in KubeAid
+
+Gives clusters a self-hosted Kafka option, provisioned and rotated declaratively (CRDs + sealed secrets)
+instead of depending on a managed Kafka service. The chart also carries KubeAid-specific templates
+(see `templates/`) for `KafkaTopic`/`KafkaUser`/ingress objects, driven from `values.yaml`.
+
 ## Setting up the strimzi kafka operator
 
 ### Configuration

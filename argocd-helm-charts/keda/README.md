@@ -1,14 +1,20 @@
-# Pod Autoscaling with KEDA Project
+# Pod Autoscaling with KEDA
 
-**NOTE: Do not combine KEDA Project's autoscaling (described in this guide) with Kubernetes HPA + Prom Adapter
-for the same pod deployment. They will compete with each other and break things.**
+[KEDA](https://keda.sh) is a Kubernetes event-driven autoscaler. It provides the `external.metrics.k8s.io` API and
+drives `ScaledObject`/HPA autoscaling from Prometheus queries, CPU/memory, queues, and other event sources.
 
-**NOTE2: This assumes your cluster is setup with KubeAid because it provides sane defaults, although its possible to setup
-this on non KubeAid clusters too.**
+## Why it's in KubeAid
 
-For new setups, we recommend using KEDA Project for Pod Autoscaling instead of Prometheus Adapter because
-it is much easier to wrap your head around it compared to Prometheus Adapter where you have to define
-rules, metric to resource association, etc.
+KubeAid also supports autoscaling via `kube-prometheus`'s Prometheus Adapter (`custom.metrics.k8s.io`) — see
+[Pod Autoscaling Guide](../../docs/operations/monitoring/pod-autoscaling.md). KEDA is the recommended path for new
+setups: rules live in a `ScaledObject` instead of jsonnet Prometheus Adapter rules, which is much easier to reason
+about.
+
+**NOTE: Do not combine KEDA's autoscaling (described in this guide) with Kubernetes HPA + Prometheus Adapter for the
+same pod deployment. They will compete with each other and break things.**
+
+**NOTE2: This assumes your cluster is setup with KubeAid because it provides sane defaults, although it's possible
+to set this up on non-KubeAid clusters too.**
 
 ## Introduction & Situation
 
@@ -23,12 +29,16 @@ Set `connect_keda: true` in your kubeaid managed cluster's prometheus build json
 `(kubeaid-config/k8s/<clustername>/<clustername>-vars.jsonnet)`.
 
 Regenerate kube prometheus YAML with
-`kubeaid/build/kube-prometheus/build.sh /path/to/kubeaid-config/k8s/<clustername>/<clustername>-vars.jsonnet`
 
-This will generate a few YAML files which define the network policy which allows Keda to connect to prometheus.
+```sh
+kubeaid/build/kube-prometheus/build.sh /path/to/kubeaid-config/k8s/<clustername>
+```
 
-Create `kubeaid-config/k8s/<clustername>/argocd-apps/templates/keda.yaml`.
-Replace the repo URLs with your own.
+(the argument is the cluster directory containing `<clustername>-vars.jsonnet`, not the jsonnet file itself). This
+generates YAML that includes the network policy allowing KEDA to connect to Prometheus.
+
+Enable the chart via your `kubeaid-config` repo's override pattern (an ArgoCD Application in
+`argocd-apps/templates/`, with cluster-specific values sourced from `argocd-apps/values-keda.yaml`):
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -40,30 +50,29 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
-  project: default
+  project: kubeaid
   sources:
-    - repoURL: https://gitlab.enableit.dk/kubernetes/kubeaid.git
+    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
       path: argocd-helm-charts/keda
       targetRevision: HEAD
       helm:
         valueFiles:
-          - $values/k8s/kbm.obmondo.com/argocd-apps/values-keda.yaml
-    - repoURL: https://gitea.obmondo.com/EnableIT/kubernetes-config-enableit.git
+          - $values/k8s/<cluster>/argocd-apps/values-keda.yaml
+    - repoURL: <your-config-repo>
       targetRevision: HEAD
       ref: values
   syncPolicy:
-    automated: null
     syncOptions:
       - CreateNamespace=true
       - ApplyOutOfSyncOnly=true
 ```
 
-Create a values file `kubeaid-config/k8s/<clustername>/argocd-apps/values-keda.yaml`. Leave it empty for now.
+Create `values-keda.yaml` in your cluster config repo (can be empty to start with default chart values).
 
 Commit the changes to your cluster config repo and sync.
 
-KEDA project provides the `external.metrics.k8s.io` API which is different from `custom.metrics.k8s.io` provided by
-Prometheus Adapter. Both APIs have the same desired usecase but work in a different way.
+KEDA provides the `external.metrics.k8s.io` API, which is different from `custom.metrics.k8s.io` provided by
+Prometheus Adapter. Both APIs serve the same use case but work differently.
 
 You should now see `external.metrics.k8s.io` as _running_ in the output of `kubectl api-versions`.
 
@@ -118,8 +127,9 @@ The result of your query is compared against the threshold. **It should return a
 - You can configure Stabilization window and Scaling policies to change how much time to wait before scaling and
   how fast should it scale.
 
-## Reference Links
+## Docs
 
+- [Pod Autoscaling Guide](../../docs/operations/monitoring/pod-autoscaling.md) — the Prometheus Adapter alternative.
 - https://keda.sh/docs/2.10/concepts/scaling-deployments/
 - https://keda.sh/docs/2.10/scalers/prometheus/
 - https://keda.sh/docs/2.10/scalers/cpu/

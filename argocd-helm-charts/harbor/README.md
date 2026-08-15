@@ -1,7 +1,19 @@
 # Harbor
 
-Harbor needs to have a storage-class defined in its values - that gives it a PV with ReadWriteMany support.
-This ensures High Availability, scaling, failover and drainage of k8s nodes (for regular maintenance) works.
+[Harbor](https://goharbor.io) is an open-source OCI container registry: image storage, vulnerability scanning
+(Trivy), RBAC per project, and OIDC login.
+
+## Why it's in KubeAid
+
+Obmondo runs Harbor as its own central registry for build artifacts and CI/CD, instead of depending on a paid
+third-party registry (see [Host your own central registry with KubeAid](../../docs/guides/harbor-registry.md)).
+The chart wraps upstream Harbor plus `kubeaid-addons` (see `Chart.yaml` dependencies).
+
+## Key values
+
+Harbor needs a storage-class defined in its values that gives it a PV with `ReadWriteMany` support (see
+`accessMode: ReadWriteMany` in values.yaml). This ensures High Availability, scaling, failover and drainage of k8s
+nodes (for regular maintenance) works.
 
 ## Accessing Harbor via CLI
 
@@ -363,8 +375,6 @@ spec:
       namespace: harbor
       jsonPointers:
         - /data
-See [example ArgoCD Application with ignoreDifferences](examples/argocd-application-ignore-drift.yaml).
-
   sources:
     - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
       path: argocd-helm-charts/harbor
@@ -376,3 +386,10 @@ See [example ArgoCD Application with ignoreDifferences](examples/argocd-applicat
       targetRevision: HEAD
       ref: values
 ```
+
+See [example ArgoCD Application with ignoreDifferences](examples/argocd-application-ignore-drift.yaml).
+
+## Docs
+
+- [Host your own central registry with KubeAid](../../docs/guides/harbor-registry.md) — deploying Harbor with KubeAid.
+- [Harbor upstream docs](https://goharbor.io/docs/2.0.0/administration/garbage-collection/)

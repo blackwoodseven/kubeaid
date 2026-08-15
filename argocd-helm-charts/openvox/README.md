@@ -1,5 +1,25 @@
 # Puppet Server with Linuxaid
 
+## What this is
+
+OpenVox is the community-driven Puppet fork ([OpenVoxProject](https://github.com/OpenVoxProject), chart repo
+`https://openvoxproject.github.io/openvox-helm-chart`) — puppetserver, puppetdb, puppetboard and their
+PostgreSQL backend, pulled in as the `puppetserver` subchart (see `charts/puppetserver`, `Chart.lock`; the
+dependency is currently commented out in `Chart.yaml` because this chart carries local patches and the
+upstream PRs to support them are still open — see the linked issues/PRs at the top of `Chart.yaml`). On top
+of that, KubeAid adds:
+
+- `puppetAgentExporter` — exposes Prometheus metrics scraped from agent-reported Puppet run data.
+- `gfetch` — a git-polling daemon (`ghcr.io/obmondo/gfetch`) that syncs the puppet code/hiera environments
+  from git into the puppetserver's `code` volume (r10k/g10k-style), instead of running r10k as a sidecar.
+
+## Why it's in KubeAid
+
+This is the server side of **LinuxAid**, Obmondo's Puppet-based config management for self-hosted Linux
+servers (bare metal/VMs outside the k8s cluster). Obmondo runs this chart to serve LinuxAid manifests
+(`puppeturl: https://github.com/Obmondo/LinuxAid.git`) and hieradata to those servers, with puppetdb and
+puppetboard for reporting, and an optional connection back to Obmondo's own PuppetCA.
+
 ## Secret setup to access puppet and hieradata git repo
 
 * Create hiera and puppet git repo secret

@@ -1,9 +1,18 @@
 # Postgres-operator
 
-## Summary
+[Zalando's postgres-operator](https://github.com/zalando/postgres-operator) manages Postgres instances, including
+high-availability setups with master and multiple replicas, automatic failover, and backups of data to offsite
+storage.
 
-Postgres-operator is used to manage Postgres instances, including high-availability setups with master and
-multiple slaves, and automatic failover and backups of data to offsite location.
+## Why it's in KubeAid, and the relationship with cloudnative-pg
+
+KubeAid also ships a [`cloudnative-pg`](../cloudnative-pg/readme.md) chart (CNPG). New clusters provisioned by
+`kubeaid-cli` deploy `cloudnative-pg`, not `postgres-operator` — there is no `kubeaid-cli` template for
+`postgres-operator`. This chart exists for clusters and application charts (e.g. keycloakx) that were provisioned
+before that switch, or that haven't migrated yet. See
+[Migrating Zalando PGSQL to CNPG Postgres](../keycloakx/doc/operations-maintenance.md#migrating-keycloak-from-zalando-to-cnpg)
+for a worked migration example, and [CNPG backup and restore](../cloudnative-pg/readme.md#backup-and-recovery) for
+the CNPG-side equivalent of the backup/restore procedures below.
 
 Example [postgres-cluster](./examples/postgres-cluster.yaml)
 
@@ -39,7 +48,7 @@ Example [postgres-cluster](./examples/postgres-cluster.yaml)
   export AWS_PROFILE=obmondo
   ```
 
-  * Create the bucket manually
+  * Create the bucket manually (`kbm-postgres-buckets` below is an example name — pick your own per cluster)
 
   ```sh
   # aws s3api create-bucket --bucket kbm-postgres-buckets --region eu-west-1 --endpoint-url=https://s3.obmondo.com
@@ -80,17 +89,17 @@ Example [postgres-cluster](./examples/postgres-cluster.yaml)
 
 ## Notes
 
-* Depending on the chart please check what database env variables are getting used. And provide those values through
-[values.yaml](../keycloak/values.yaml).
+* Depending on the chart, check what database env variables are getting used, and provide those values through the
+consuming chart's `values.yaml` (e.g. `../keycloakx/values.yaml`).
 
-* Create the `postgresql.yaml` file in `templates` directory of umbrella chart.
-So that postgres-operator will use that to manage the instance
+* Create the `postgresql.yaml` file in `templates` directory of the umbrella chart, so postgres-operator will use
+that to manage the instance.
 
-* Also check this [example](../keycloak/templates/postgresql.yaml) for postgresql.yaml file
-
-* Also check example of mattermost setup for [postgresql](../mattermost-team-edition/templates/postgresql.yaml) and the corresponding
-
-* [values.yaml](../mattermost-team-edition/values.yaml) file
+> The `keycloak`/`mattermost-team-edition` chart directories and `templates/postgresql.yaml` examples this section
+> used to link to no longer exist in this repo (charts were renamed/restructured — see `keycloakx` and
+> `mattermost-operator`, neither of which currently ships a `postgresql.yaml` template). Check `keycloakx`'s or
+> `mattermost-operator`'s current chart for whether it still manages its own Postgres instance this way, or has
+> moved to `cloudnative-pg`.
 
 ## Backup
 
@@ -188,7 +197,8 @@ CronJobs for postgresql logical backup cronjob template can be found [here](./ex
 ## Restore Postgres DB using WALG from s3
 
 1. Get clone time stamp run the command `cat postres.yaml.matter | kubectl apply -n mattermost -f -`
-  on the yaml file below
+  on the yaml file below (cluster name `keycloakx-pgsql` and bucket `kcm-postgres-backups` below are examples —
+  substitute your own)
 
   ```yaml
   # Here we are restoring the keycloakx-pgsql instance
@@ -301,3 +311,9 @@ spec:
       targetRevision: HEAD
       ref: values
 ```
+
+## Docs
+
+- [cloudnative-pg](../cloudnative-pg/readme.md) — the chart new clusters use instead.
+- [Backup & Restore overview](../../docs/operations/backup-restore.md)
+- [Zalando postgres-operator upstream docs](https://postgres-operator.readthedocs.io/)

@@ -1,5 +1,10 @@
 # CircleCI Runner
 
+Runs [CircleCI's self-hosted runner](https://circleci.com/docs/2.0/runner-overview/) as a pod on the cluster,
+so CircleCI jobs execute against a runner resource-class you control instead of CircleCI's own compute.
+It registers itself with CircleCI using a runner token tied to a resource class (see "CircleCI CLI Setup"
+below), and jobs deploy back into this same cluster via a scoped `circleci-runner` ServiceAccount/kubeconfig.
+
 NOTE: there is no helm package given by the upstream guys, so have build it by forking it under Obmondo org
 so you can download the chart under main branch and a PR is also raised https://github.com/CircleCI-Public/circleci-runner-k8s/pull/11/files
 this is just a workaround, if you need to change anything in the helm chart, just push it to the main branch of

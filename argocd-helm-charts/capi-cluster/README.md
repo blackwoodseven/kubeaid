@@ -1,10 +1,19 @@
 # CAPI (Core Cluster API)
 
-This chart will setup kubernetes cluster with cluster-api with request provider
+This is the chart that renders the actual [Cluster API](https://cluster-api.sigs.k8s.io/) manifests (`Cluster`,
+control-plane, and worker `MachineDeployment`/`MachinePool` resources) for a managed cluster — `kubeaid-cli` deploys
+it as the `capi-cluster` ArgoCD Application when provisioning or updating a cluster.
+
+## Why it's in KubeAid
+
+KubeAid provisions and manages Kubernetes clusters declaratively via Cluster API. This chart is the per-provider
+(Hetzner/AWS/Azure) manifest layer; the [`cluster-api-operator`](../cluster-api-operator/README.md) chart installs
+the CAPI core and the provider CRDs/controllers this chart's resources depend on.
 
 ## Setup
 
-Install the [cluster-api chart](../cluster-api/)
+Install the [cluster-api-operator chart](../cluster-api-operator/README.md) first — it installs the CAPI core and
+provider controllers this chart's resources (`Cluster`, `HetznerCluster`, `AWSManagedControlPlane`, etc.) depend on.
 
 [hetzner robot control plane](./examples/hetzner-robot-control-plane.yaml)
 
@@ -29,7 +38,3 @@ Both suites are covered by helm-unittest tests (`charts/aws/tests/`,
 ```bash
 docker run --rm -v $(pwd):/apps helmunittest/helm-unittest charts/aws charts/azure
 ```
-
-## TODO
-
-* Add support for private repo to get added in bootstrap setup

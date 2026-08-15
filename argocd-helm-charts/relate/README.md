@@ -1,4 +1,15 @@
-# Flow for giving user a course and exam
+# Relate
+
+[RELATE](https://relate.readthedocs.io/) is an open-source e-learning platform (courses, exams, flow-based
+content). This chart runs it with a `cloudnative-pg`-backed PostgreSQL instance (see `values.yaml`
+`global.postgresql`) and an nginx sidecar for static/media assets.
+
+## Why it's in KubeAid
+
+Self-hosted courses/exams (`relate.obmondo.com`) without depending on a SaaS LMS, with backups and network
+policy already wired through `kubeaid-addons` (the `global.postgresql.cnpg`/`netpol` blocks in `values.yaml`).
+
+## Flow for giving user a course and exam
 
 1. create user under admin->users - be sure to set user to "active" (under continue editing).
    The password you give the user is irrelevant as they will never know it.
