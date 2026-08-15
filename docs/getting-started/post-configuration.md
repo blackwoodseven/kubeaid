@@ -161,10 +161,14 @@ Pull updates manually from the upstream KubeAid repository:
 ```bash
 cd /path/to/your/kubeaid-fork
 git remote add upstream https://github.com/Obmondo/KubeAid.git
-git fetch upstream
-git merge upstream/main
-git push origin main
+git fetch upstream --tags
+git merge upstream/master
+git push origin master --tags
 ```
+
+Updating the mirror makes new release tags available but changes nothing on the cluster by itself - your ArgoCD
+Applications pin the KubeAid repository to a release tag. To roll an update out, bump that pinned tag; see
+[Update KubeAid ArgoCD Apps](../operations/update-kubeaid-argocd-apps.md).
 
 ## Provider-Specific Notes
 
