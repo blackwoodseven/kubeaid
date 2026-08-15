@@ -1,0 +1,23 @@
+# Charts that `helm template` cannot render with default values alone.
+# bin/verify-helm-chart.sh skips these LOUDLY — they are not verified by CI.
+# Every entry must carry a reason. Remove a chart from this list once its
+# default values render (that is the goal; this list should shrink).
+#
+# All entries below were found failing on master when the verify gate first
+# went live (workflow run 31887548046, 2026-08-15).
+open-xchange                     # requires user-supplied values to render
+lemmy                            # requires user-supplied values to render
+hcloud-fip-controller            # requires user-supplied values to render
+hetzner-robot                    # requires user-supplied values to render
+metallb                          # requires user-supplied values to render
+odoo                             # requires user-supplied values to render
+peertube                         # requires user-supplied values to render
+azure-workload-identity-webhook  # requires user-supplied values to render
+rustfs                           # requires user-supplied values to render
+buzz                             # requires user-supplied values to render
+pixelfed                         # requires user-supplied values to render
+mattermost-operator              # requires user-supplied values to render
+twenty                           # requires user-supplied values to render
+funkwhale                        # requires user-supplied values to render
+mastodon                         # requires user-supplied values to render
+redmine                          # templates/postgresql.yaml dereferences postgresql.logicalBackup with no default

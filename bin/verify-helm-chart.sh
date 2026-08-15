@@ -51,14 +51,43 @@ if [ "${#charts[@]}" -eq 0 ]; then
   exit 0
 fi
 
+# Charts listed in .helm-template-skip (one name per line, comments with #)
+# cannot render with default values alone and are skipped loudly. Every
+# entry must carry a reason in the file.
+SKIP_FILE=".helm-template-skip"
+skip_list=()
+if [ -f "$SKIP_FILE" ]; then
+  mapfile -t skip_list < <(sed 's/#.*//' "$SKIP_FILE" | awk 'NF {print $1}')
+fi
+
+is_skipped() {
+  local name="$1" s
+  for s in "${skip_list[@]}"; do
+    [ "$s" = "$name" ] && return 0
+  done
+  return 1
+}
+
 failed=()
+skipped=()
 
 for chart in "${charts[@]}"; do
+  chart_name="$(basename "$chart")"
+  if is_skipped "$chart_name"; then
+    skipped+=("$chart")
+    echo "==> SKIPPED ${chart} (listed in ${SKIP_FILE} — cannot template with default values)"
+    continue
+  fi
   echo "==> Templating ${chart}"
   if ! helm template "$chart" --api-versions="monitoring.coreos.com/v1" >/dev/null; then
     failed+=("$chart")
   fi
 done
+
+if [ "${#skipped[@]}" -gt 0 ]; then
+  echo
+  echo "NOTE: ${#skipped[@]} chart(s) were skipped via ${SKIP_FILE} and are NOT verified."
+fi
 
 echo
 if [ "${#failed[@]}" -eq 0 ]; then
