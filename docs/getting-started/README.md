@@ -1,13 +1,19 @@
-# Getting Started with KubeAid
+# Your First Kubernetes Cluster with KubeAid
 
-This guide walks you through the complete process of setting up and managing a KubeAid-managed Kubernetes cluster. The
-workflow is **provider-agnostic** and the steps are the same whether you're deploying on AWS, Azure, Hetzner, bare
-metal, or locally.
+This tutorial walks you through setting up your first KubeAid-managed Kubernetes cluster, from an empty machine to a
+running cluster you can operate through Git. The workflow is **provider-agnostic**: the steps are the same whether you
+deploy on AWS, Azure, Hetzner, bare metal, or locally.
 
-## Overview
+## What You'll Build
 
-KubeAid is a **Kubernetes management suite** that helps you set up and operate Kubernetes clusters following **GitOps
-principles**.
+By the end of this tutorial you will have a Kubernetes cluster that is set up and operated following **GitOps
+principles**, containing:
+
+- **Cilium CNI** - running in kube-proxyless mode
+- **ArgoCD** - for GitOps-based deployments
+- **Sealed Secrets** - for secure secret management
+- **KubePrometheus** - for monitoring and alerting
+- **ClusterAPI** - for cluster lifecycle management
 
 ```mermaid
 ---
@@ -24,43 +30,54 @@ flowchart LR
         AS["Scale to/from<br/>Zero"]
     end
     subgraph Mgmt["Cluster Management"]
-        CM["ClusterAPI +<br/>KubeOne"]
+        CM["ClusterAPI"]
     end
-    
+
     Obs ~~~ Git ~~~ Scale ~~~ Mgmt
 ```
 
-All KubeAid clusters include:
+**How long does it take?** Preparing tools, repositories, and configuration is mostly answering an interactive
+prompt; the cluster bootstrap itself typically runs unattended for 10-30 minutes, depending on provider and cluster
+size.
 
-- **Cilium CNI** - running in kube-proxyless mode  
-- **ArgoCD** - for GitOps-based deployments  
-- **Sealed Secrets** - for secure secret management  
-- **KubePrometheus** - for monitoring and alerting  
-- **ClusterAPI** - for cluster lifecycle management (providers with API access)  
-- **KubeOne** - for cluster initialization (SSH-only access platforms)
+## The Journey: Four Steps
 
-## Installation Steps
+Work through these four documents in order. Each one ends where the next begins.
 
-Follow these steps in order to set up your cluster:
+### 1. [Prerequisites](./prerequisites.md)
 
-| Step | Document | Description |
-| ------ | ---------- | ------------- |
-| 1 | [Prerequisites](./prerequisites.md) | Verify required tools, repositories, and provider credentials |
-| 2 | [Pre-Configuration](./pre-configuration.md) | Generate and configure `general.yaml` and `secrets.yaml` |
-| 3 | [Installation](./installation.md) | Bootstrap the cluster using `kubeaid-cli` |
-| 4 | [Post-Configuration](./post-configuration.md) | Access dashboards, verify setup, and configure services |
+Get your workstation and accounts ready. You install a handful of standard tools (`kubectl`, `jq`, `yq`, Docker),
+create your own kubeaid-config repository from the
+[sample template](https://github.com/Obmondo/kubeaid-config), and prepare SSH keys plus any provider-specific
+requirements (cloud credentials, SSH keypairs). If you deploy locally with K3D, only the common dependencies
+apply.
 
-## Cluster Operations
+### 2. [Pre-Configuration](./pre-configuration.md)
 
-After installation, use these guides for ongoing cluster management:
+Generate the two files that describe your cluster: `general.yaml` (cluster specs, node configs, networking - stored
+in your kubeaid-config repo) and `secrets.yaml` (credentials - stored in your password manager, never in Git). An
+interactive prompt asks which provider you're targeting and collects everything required, so you review rather than
+hand-write the configuration.
 
-| Operation | Document | Description |
-| ----------- | ---------- | ------------- |
-| Basic Operations | [Basic Operations](./basic-operations.md) | Basic operations including deletion and clean-up |
+### 3. [Installation](./installation.md)
 
-## Supported Providers
+Install `kubeaid-cli` and run a single bootstrap command. The CLI creates a temporary local management cluster,
+provisions infrastructure, initializes Kubernetes, installs the core components, and wires ArgoCD to your
+kubeaid-config repository. When it finishes, you have a kubeconfig and a running cluster.
 
-KubeAid supports the following hosting environments:
+### 4. [Post-Configuration](./post-configuration.md)
+
+Verify the cluster is healthy, log in to the ArgoCD and Grafana dashboards, create your first sealed secret, and
+decide how you want to receive KubeAid updates going forward. Then do what you built the cluster for: deploy your
+own applications — enable a chart from the catalogue or add your own through your kubeaid-config repository, and
+ArgoCD rolls it out (see [Adding a New
+Application](../kubeaid/helm-umbrella-pattern.md#adding-a-new-application)).
+
+## Choosing Your Platform
+
+**New to KubeAid?** Start with a **local K3D** deployment - it runs in Docker on your machine, costs nothing, and
+exercises the exact same four-step flow you would use for AWS/EKS, Azure/AKS, Hetzner, or bare metal. When you move
+to a real provider later, only the provider-specific values in your configuration change; the commands stay the same.
 
 | Provider | Type | Autoscaling | Notes |
 | ---------- | ------ | ------------- | ------- |
@@ -97,3 +114,15 @@ kubeaid-cli cluster bootstrap --configs-directory ./outputs/configs/<cluster>/
 export KUBECONFIG=./outputs/kubeconfigs/clusters/main.yaml
 kubectl cluster-info
 ```
+
+## Where to Go Next
+
+Once your cluster is running:
+
+| Next Step | Document |
+| ----------- | ---------- |
+| Day-to-day operations, upgrades, deletion and clean-up | [Basic Operations](./basic-operations.md) |
+| Hosting details for cloud providers | [Cloud Providers](../hosting/cloud-providers.md) |
+| Hosting details for on-premise servers | [Bare Metal](../hosting/bare-metal.md) |
+| Common questions about how KubeAid works | [FAQ](../faq.md) |
+| Something not behaving as expected | [Troubleshooting](../troubleshooting.md) |

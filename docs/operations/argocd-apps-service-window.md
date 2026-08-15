@@ -1,6 +1,9 @@
 
 # **How to work on a Service Window and inform Stakeholders - for Cluster's KubeAid Application Upgrades**
 
+> **Note:** This covers service windows for KubeAid application updates. For Kubernetes version upgrades, see
+> [basic operations](../getting-started/basic-operations.md) and the kubeaid-cli docs.
+
 ## **1. Service Window**
 
 Servicewindow: Updates should happen within service windows - that you have advertised to relevant system owners and
@@ -51,8 +54,7 @@ XYZ
 
 ### **4. Prepare PRs, Merge in Git, Push Upstream & Update KubeAid Apps**
 
-* Run the KubeAid update script:
-  [https://github.com/Obmondo/KubeAid/blob/master/docs/update_kubeaid_argocd_apps.md](https://github.com/Obmondo/KubeAid/blob/master/docs/update_kubeaid_argocd_apps.md)
+* Run the KubeAid update script, see [Update KubeAid ArgoCD Apps](./update-kubeaid-argocd-apps.md)
 
 > If a customer chooses to deploy the Helm chart using different application names—such as traefik-external or
   traefik-internal—we must manually add each of these names to:
