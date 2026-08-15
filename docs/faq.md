@@ -20,7 +20,7 @@ Not to get started - the only repository you must create is your own kubeaid-con
 [sample template](https://github.com/Obmondo/kubeaid-config)); the platform repository is consumed from upstream by
 default. Mirroring KubeAid is recommended for production: your cluster's ArgoCD Applications then point at *your*
 mirror, so nothing lands on your cluster that you didn't pull into your own Git first, and updates only arrive when
-you (or an update automation you granted access) update the mirror. Upstream charts are vendored into the
+you update the mirror. Upstream charts are vendored into the
 repository, so what you deploy is exactly what was reviewed - a defence against supply-chain attacks. See
 [Prerequisites](./getting-started/prerequisites.md#git-repositories).
 
@@ -35,13 +35,14 @@ chart values per cluster. See the warning in
 ## How do updates reach my cluster?
 
 Obmondo updates the upstream KubeAid repository with new application versions and improvements, published as
-[release tags](https://github.com/Obmondo/KubeAid/releases). You pull those into your mirror either automatically
-(grant write access to the GitHub user `obmondo-pushupdate-user`) or manually with
-`git fetch upstream --tags && git merge upstream/master`. Updating the mirror alone changes nothing on the cluster:
-every ArgoCD Application pins the KubeAid repository to a specific release tag (`targetRevision`). To roll an update
-out, bump that pinned tag across all apps with `bin/update-kubeaid-argocd-app.sh -c <cluster-name> -r <tag>` and push
-the resulting kubeaid-config change - only then does ArgoCD mark the affected applications `OutOfSync`, and you can
-inspect the exact diff before syncing during a service window. See
+[release tags](https://github.com/Obmondo/KubeAid/releases). Your ArgoCD Applications consume KubeAid either
+directly from the [Obmondo repository](https://github.com/Obmondo/KubeAid) or from your own fork, which you keep in
+sync with `git fetch upstream --tags && git merge upstream/master`. Either way, a new release changes nothing on
+the cluster by itself: every Application pins the KubeAid repository to a specific release tag (`targetRevision`).
+To roll an update out, bump that pinned tag across all apps with
+`bin/update-kubeaid-argocd-app.sh -c <cluster-name> -r <tag>` and push the resulting kubeaid-config change - only
+then does ArgoCD mark the affected applications `OutOfSync`, and you can inspect the exact diff before syncing
+during a service window. See
 [Post-Configuration, Step 6](./getting-started/post-configuration.md#step-6-configure-updates) and
 [Update KubeAid ArgoCD Apps](./operations/update-kubeaid-argocd-apps.md).
 
