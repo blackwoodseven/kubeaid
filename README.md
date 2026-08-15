@@ -82,8 +82,9 @@ your applications:
 </picture>
 <!-- markdownlint-enable MD033 -->
 
-One rule to know up front: if you run a KubeAid mirror, never commit directly to its master/main branch — that branch is how
-updates are delivered to you, so keeping it clean means updating your cluster is as simple as a `git pull`.
+One rule to know up front: if you run a KubeAid mirror, never commit directly to its master/main branch — that
+branch is how updates are delivered to you, so keeping it clean means updating your cluster is as simple as a
+`git pull`.
 
 ## Quick Start
 
@@ -98,36 +99,36 @@ kubeaid-cli config generate --configs-directory ./outputs/configs/<cluster>/
 kubeaid-cli cluster bootstrap --configs-directory ./outputs/configs/<cluster>/
 ```
 
-Choosing local K3D gives you a playground on your own machine — the workflow is identical to a production cloud cluster. The
-**[Getting Started Guide](./docs/getting-started/README.md)** walks through prerequisites, configuration, installation,
+Choosing local K3D gives you a playground on your own machine — the workflow is identical to a production cloud
+cluster. The **[Getting Started Guide](./docs/getting-started/README.md)** walks through prerequisites, configuration, installation,
 and day-2 operations for every supported platform.
 
 ## Features
 
-* **No-mental-overhead updates**: we track what's broken, deprecated, or superseded across the whole stack, and ship
+- **No-mental-overhead updates**: we track what's broken, deprecated, or superseded across the whole stack, and ship
   tested chart and security updates weekly — ready to be applied to your clusters at will, so you can focus on your
   own applications.
-* **Multi-cloud installation**: self-managed clusters on AWS, Azure, Hetzner, and bare metal; managed control planes
+- **Multi-cloud installation**: self-managed clusters on AWS, Azure, Hetzner, and bare metal; managed control planes
   on [EKS](https://aws.amazon.com/eks/) and
   [AKS](https://azure.microsoft.com/en-us/products/kubernetes-service); hybrid Hetzner Bare Metal + HCloud clusters.
   One install method, any target.
-* **GitOps everything**: all cluster changes go through Git, and drift is detected if anyone changes resources
+- **GitOps everything**: all cluster changes go through Git, and drift is detected if anyone changes resources
   directly in the cluster.
-* **Curated application catalogue**: an ever-growing list of open-source Kubernetes applications in
+- **Curated application catalogue**: an ever-growing list of open-source Kubernetes applications in
   [`argocd-helm-charts/`](./argocd-helm-charts/), each wrapped with default values that follow current best practices.
   Upstream charts are vendored into this repository, so what you deploy is exactly what was reviewed — a defence
   against supply-chain attacks, backed by frequent security scans of all software used in the clusters.
-* **Monitoring built in**: advanced, customised Prometheus monitoring from a per-cluster config file, with automated
+- **Monitoring built in**: advanced, customised Prometheus monitoring from a per-cluster config file, with automated
   handling of trivial alerts like disks filling up.
-* **Secrets in Git, safely**: [sealed-secrets](./argocd-helm-charts/sealed-secrets/README.md) encrypts secrets locally
+- **Secrets in Git, safely**: [sealed-secrets](./argocd-helm-charts/sealed-secrets/README.md) encrypts secrets locally
   before they are committed to your config repository.
-* **Unified access management** through Teleport for Kubernetes, applications, and databases.
-* **Cluster security**: NetworkPolicies enforce least privilege between applications and secure intra-cluster and
+- **Unified access management** through Teleport for Kubernetes, applications, and databases.
+- **Cluster security**: NetworkPolicies enforce least privilege between applications and secure intra-cluster and
   ingress traffic.
-* **Lifecycle operations**: auto-scaling, backup and recovery, live migration of applications or whole clusters, major
+- **Lifecycle operations**: auto-scaling, backup and recovery, live migration of applications or whole clusters, major
   upgrades via a parallel shadow cluster, and [air-gapped
   operation](https://kubernetes.io/blog/2023/10/12/bootstrap-an-air-gapped-cluster-with-kubeadm/).
-* **Compliance by default**: security and operational defaults mapped to ISO 27001:2022, covering GDPR and NIS2 goals.
+- **Compliance by default**: security and operational defaults mapped to ISO 27001:2022, covering GDPR and NIS2 goals.
 
 The implementation status of each feature is documented in
 [Technical Details on the Features](./docs/kubeaid/features-technical-details.md); planned work lives in the

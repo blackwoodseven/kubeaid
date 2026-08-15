@@ -28,7 +28,7 @@ Here's a quick reference of the most common `kubeaid-cli` commands:
 
 > **Note:** `cluster sync` only applies to the bare metal (KubeOne) provider - on the other providers, merged
 > kubeaid-config changes get reconciled by ArgoCD.
-
+>
 > **Note:** KubeAid CLI does not have start/stop/pause/enable/disable commands. Cluster lifecycle is managed
 > through `bootstrap`, `upgrade`, and `delete` operations. For workload management, use standard `kubectl` commands.
 
@@ -82,7 +82,7 @@ only flag is `--skip-pr-workflow`, which pushes the resulting kubeaid-config cha
 branch instead of opening a PR.
 
 > **Note:** Always review the [Kubernetes changelog](https://kubernetes.io/releases/) before upgrading.
-
+>
 > **EKS / AKS clusters:** `cluster upgrade` refuses to run - the managed control plane is upgraded the GitOps way.
 > Bump `global.kubernetes.version` in `argocd-apps/values-capi-cluster.yaml` in your kubeaid-config repo and let
 > ArgoCD sync; CAPA/CAPZ then upgrade the control plane and roll the node groups.

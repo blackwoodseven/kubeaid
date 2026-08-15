@@ -10,7 +10,7 @@ in the KubeAid community. We appreciate all our users and their contributions to
 The list of organizations that have publicly shared their usage of KubeAid:
 
 | Organization | Success Story |
-|:---|:---|
+| :--- | :--- |
 | [Obmondo](https://obmondo.com) | Obmondo's own managed customer clusters, provisioned and operated with KubeAid. |
 | [Kilroy International](https://www.kilroy.net/) | Multi-cloud production clusters (Azure and Hetzner) across several environments, provisioned and managed with KubeAid. |
 | [BlackWoodSeven (BW7)](https://www.blackwoodseven.com/) | Multiple AWS production and staging environments, kept up to date and operated with KubeAid. |
