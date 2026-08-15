@@ -47,9 +47,10 @@ Work through these four documents in order. Each one ends where the next begins.
 ### 1. [Prerequisites](./prerequisites.md)
 
 Get your workstation and accounts ready. You install a handful of standard tools (`kubectl`, `jq`, `yq`, Docker),
-set up two Git repositories - a mirror of the KubeAid repository and a fork of the kubeaid-config repository - and
-prepare SSH keys plus any provider-specific requirements (cloud credentials, SSH keypairs). If you deploy locally
-with K3D, only the common dependencies apply.
+create your own kubeaid-config repository from the
+[sample template](https://github.com/Obmondo/kubeaid-config), and prepare SSH keys plus any provider-specific
+requirements (cloud credentials, SSH keypairs). If you deploy locally with K3D, only the common dependencies
+apply.
 
 ### 2. [Pre-Configuration](./pre-configuration.md)
 

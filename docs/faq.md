@@ -14,12 +14,14 @@ tool that generates configuration and bootstraps, upgrades, and deletes clusters
 [Prerequisites](./getting-started/prerequisites.md#git-repositories) for how the repositories relate and the
 [Helm Umbrella Pattern](./kubeaid/helm-umbrella-pattern.md) for how they combine at runtime.
 
-## Why must I mirror the KubeAid repository?
+## Do I need to mirror the KubeAid repository?
 
-Your cluster's ArgoCD Applications point at *your* mirror of KubeAid, not at Obmondo's upstream, so nothing lands on
-your cluster that you didn't pull into your own Git first. Upstream charts are vendored into the repository, so what
-you deploy is exactly what was reviewed - a defence against supply-chain attacks. Updates only reach your cluster
-when you (or an update automation you granted access) update your mirror. See
+Not to get started - the only repository you must create is your own kubeaid-config (from the
+[sample template](https://github.com/Obmondo/kubeaid-config)); the platform repository is consumed from upstream by
+default. Mirroring KubeAid is recommended for production: your cluster's ArgoCD Applications then point at *your*
+mirror, so nothing lands on your cluster that you didn't pull into your own Git first, and updates only arrive when
+you (or an update automation you granted access) update the mirror. Upstream charts are vendored into the
+repository, so what you deploy is exactly what was reviewed - a defence against supply-chain attacks. See
 [Prerequisites](./getting-started/prerequisites.md#git-repositories).
 
 ## Why can't I commit to my mirror's master branch?

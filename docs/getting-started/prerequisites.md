@@ -79,15 +79,17 @@ Docker Desktop is recommended for Linux, macOS, and Windows users for ease of us
   
 ### Git Repositories  
   
-You need to set up two Git repositories:  
+You need one Git repository of your own:  
   
-1. **KubeAid Repository**: Fork or mirror the [KubeAid repository](https://github.com/Obmondo/KubeAid) from Obmondo.
+**KubeAid Config Repository**: Create your own repository from the
+[kubeaid-config sample template](https://github.com/Obmondo/kubeaid-config). It will contain all your
+cluster-specific configuration — this is the repository ArgoCD syncs from, and the only one you edit.
 
-  **Important**: Never make changes on the master/main branch of your mirror of the KubeAid repository,
-  as this branch is used to deliver updates. All customizations should happen in your `kubeaid-config` repository.
-  
-1. **KubeAid Config Repository**: Fork the [KubeAid Config repository](https://github.com/Obmondo/kubeaid-config),
-   which will contain your cluster-specific configurations.
+The KubeAid platform repository itself is consumed directly from
+[upstream](https://github.com/Obmondo/KubeAid) by default. Mirroring it into your own Git platform is optional
+but recommended for production, so you keep full control even if access to upstream is ever lost. If you do
+mirror it, never commit to your mirror's master/main branch — that branch delivers updates, and all your
+customisations live in `kubeaid-config` anyway.
 
 #### Repository Structure Overview
 
