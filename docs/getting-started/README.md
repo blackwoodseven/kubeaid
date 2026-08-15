@@ -13,8 +13,7 @@ principles**, containing:
 - **ArgoCD** - for GitOps-based deployments
 - **Sealed Secrets** - for secure secret management
 - **KubePrometheus** - for monitoring and alerting
-- **ClusterAPI** - for cluster lifecycle management (providers with API access)
-- **KubeOne** - for cluster initialization (SSH-only access platforms)
+- **ClusterAPI** - for cluster lifecycle management
 
 ```mermaid
 ---
@@ -31,7 +30,7 @@ flowchart LR
         AS["Scale to/from<br/>Zero"]
     end
     subgraph Mgmt["Cluster Management"]
-        CM["ClusterAPI +<br/>KubeOne"]
+        CM["ClusterAPI"]
     end
 
     Obs ~~~ Git ~~~ Scale ~~~ Mgmt
