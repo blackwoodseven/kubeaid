@@ -1,6 +1,25 @@
 # Traefik Forward Auth
 
-https://github.com/mesosphere/traefik-forward-auth
+Wraps the [mesosphere/traefik-forward-auth](https://github.com/mesosphere/traefik-forward-auth) chart — an
+OIDC forward-auth service. Traefik forwards incoming requests to it via a middleware, it authenticates the
+user against an OIDC provider (Keycloak), and returns allow/deny (plus optional RBAC on top of the OIDC
+claims) before Traefik lets the request through.
+
+## Why it's in KubeAid
+
+Puts OIDC login + RBAC in front of internal ingress-exposed apps (dashboards, admin UIs) that don't have
+their own auth, without changing the app. It's deployed alongside the `traefik` chart, which is where the
+`traefik-traefik-forward-auth@kubernetescrd` middleware and the `traefikForwardAuth` client config it depends
+on live.
+
+## Key values
+
+`argocd-helm-charts/traefik-forward-auth/values.yaml`:
+
+- `traefikForwardAuth.enabled: true`, `clientId: traefik-forward-auth` — the OIDC client used against Keycloak.
+- `traefikForwardAuth.enableRBAC: false` — RBAC checks (see below) are off by default; flip to `true` per
+  the [example values](./examples/values.yaml) to enforce ClusterRole/ClusterRoleBinding-based authorization.
+- `middleware.enabled: true` — installs the Traefik middleware resource that ingress objects reference.
 
 ## RBAC Support
 

@@ -1,5 +1,16 @@
 # Keycloak Server Setup
 
+[Keycloak](https://www.keycloak.org) (via the [codecentric `keycloakx`](https://github.com/codecentric/helm-charts)
+chart) is an open-source identity and access management server: OIDC/SAML login, realms, users, and identity
+provider brokering.
+
+## Why it's in KubeAid
+
+KubeAid uses Keycloak as the OIDC provider for cluster access (`kubectl oidc-login`, group-based RBAC) and for
+other applications in the stack that need SSO (e.g. Harbor's OIDC login). It depends on a Postgres instance — see
+[Migrating Zalando PGSQL to CNPG Postgres](doc/operations-maintenance.md#migrating-keycloak-from-zalando-to-cnpg)
+for the current recommended backing database.
+
 Welcome to the Keycloak Helm Chart & Server Setup Documentation.
 
 ## Table of Contents (Index)

@@ -1,8 +1,15 @@
 # Velero
 
-## Setting up Velero
+[Velero](https://velero.io) backs up and restores Kubernetes cluster resources and Persistent Volumes (via CSI
+snapshots), and can migrate resources between clusters.
 
-### Configuration
+## Why it's in KubeAid
+
+Velero is KubeAid's disaster-recovery mechanism for cluster state and PVC data — separate from the logical DB dumps
+handled by postgres-operator/cloudnative-pg and the Sealed Secrets key backup. See
+[Backup & Restore overview](../../docs/operations/backup-restore.md) for how the pieces fit together.
+
+## Key values
 
 - **Plugin usage:**
   - Azure: `velero-plugin-for-microsoft-azure`
@@ -14,15 +21,13 @@
   - Azure: Azure Blob Storage
   - AWS: Amazon S3
 - **Backup naming convention:** `daily-backup-<namespace>-<timestamp>`
-
-### Scheduling
-
-- Daily full-volume backups via `velero schedule` CRDs
-- Retention policies configured using TTL settings in Velero schedules
+- **Scheduling:** Daily full-volume backups via `velero schedule` CRDs; retention via TTL settings on the schedule.
 
 Example value files can be found [here](./examples).
 
-## How to check the backup in Velero
+## Operational notes
+
+### How to check the backup in Velero
 
 - using `kubectl`
 
@@ -30,13 +35,13 @@ Example value files can be found [here](./examples).
 kubectl get backup -n velero
 ```
 
-- using `velero` 
+- using `velero`
 
 ```sh
 velero get backups
 ```
 
-## Check backup schedules
+### Check backup schedules
 
 - using `kubectl`
 
@@ -71,10 +76,6 @@ velero restore create --from-backup manual-backup
 velero get restores
 ```
 
-## Docs
-
-* https://github.com/vmware-tanzu/helm-charts/blob/main/charts/velero/README.md
-
 ## Upgrade
 
 Velero can be updated by updating the helm chart.
@@ -89,7 +90,7 @@ NOTE: Please look at the respective plugin you use in velero, before updating th
 | CSI | https://github.com/vmware-tanzu/velero-plugin-for-csi#compatibility |
 | Azure | https://github.com/vmware-tanzu/velero-plugin-for-microsoft-azure#compatibility |
 
-## Issues
+## Known issues
 
 Velero keeps a track of schedules even when they are deleted.
 https://github.com/vmware-tanzu/velero/issues/1333
@@ -141,6 +142,10 @@ AZURE_RESOURCE_GROUP=MC_k8s-prod-ddkkwji
 AZURE_CLOUD_NAME=AwsPublicCloud
 ```
 
+> NOTE: the `kubeseal --controller-namespace` above uses `system`, this chart's default controller namespace — see
+> the [sealed-secrets README](../sealed-secrets/README.md#a-note-on-the-controller-namespace) if your cluster
+> deploys the controller elsewhere.
+
 ## Create SealedSecret for Velero
 
 Depending on the cloud provider, run the script located inside `/bin/<cloud>` directory. (Currently only `Azure` is supported)
@@ -163,8 +168,9 @@ Generating a azure token with role as contributor, scope as a subscription id fo
 az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/<subscription-id>" --years 4000 --output json
 ```
 
-## References
+## Docs
 
+* [Velero upstream chart](https://github.com/vmware-tanzu/helm-charts/blob/main/charts/velero/README.md)
 * [How Velero Works](https://velero.io/docs/v1.9/how-velero-works/)
 * [Velero Troubleshooting Guide](https://velero.io/docs/v1.3.2/troubleshooting/)
-* [Azure Resource not found](https://velero.io/docs/v1.3.2/troubleshooting/)
+* [Backup & Restore overview](../../docs/operations/backup-restore.md)

@@ -121,7 +121,7 @@ Docker Hub references, and the fix for that wrongly rewrote `localhost/…` refe
 can only ever *suppress* alerts, never add them, which is the wrong failure direction for security
 data.
 
-See [`decisions/security-scanning.md`](../../decisions/security-scanning.md) for the full rationale.
+See [`decisions.md`](../../decisions.md) for the platform's decision records.
 
 ## Useful commands
 

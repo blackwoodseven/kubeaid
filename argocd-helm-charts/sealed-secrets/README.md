@@ -1,31 +1,36 @@
-# Why Sealed Secrets?
+# Sealed Secrets
 
-As we know Secrets are used to store sensitive data like password, keys, certificates and token
-In Secrets these values are encoded by base64.
-But the actual problem is these encoded values can be easily decoded,
-which means if hacker or normal guy get access to your Secrets then
-can easily get access to your sensitive data like passwords, token, etc.
-To know [more](https://docs.bitnami.com/tutorials/sealed-secrets)
+[Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets) lets you encrypt a Kubernetes `Secret` into a
+`SealedSecret` that is safe to commit to a public or shared git repository. The `SealedSecret` can only be decrypted
+by the controller running in the target cluster, using a private key that never leaves that cluster.
 
-## What is the Solution?
+Concept: encryption uses a `public/private` key pair. Anyone can encrypt data with the controller's public key, but
+only the controller (holding the private key) can decrypt it. So committing a `SealedSecret` to git is safe even
+though the repo (and its history) is world-readable.
 
-Concept of `private-public` keys. The Secret(or any data) will be encrypted
-using Public keys and those encrypted values can only be decrypted using
-private key only. So, neither hacker(or normal guy) is having those prvate keys.
-Therefore, it can't be decoded. So, it is safely secured.
+## Why it's in KubeAid
 
-## Sealed secrets
+KubeAid is GitOps-driven: ArgoCD applies everything from git, including secrets referenced by other charts (repo
+credentials, TLS certs, DB passwords). Sealed Secrets is what makes it safe to commit those secrets to the
+`kubeaid-config` repo instead of managing them out-of-band.
 
-Sealed Secrets is a solution to encrypt your Kubernetes Secret into a SealedSecret,
-which is safe to store – even to a public repository.
-The SealedSecret can be decrypted only by the controller running in
-the target cluster and nobody else.
-Sealed secrets are build on the top of kubernetes secrets where the
-data is encrypted using the cluster controllers `public key`, so it can
-only be read by the controller. Because the target cluster controller
-keeps the `private key` with itself. So no one else other than target
-cluster controller could have access to Secrets sesitive data.
-To know more, [refer](https://blog.knoldus.com/how-to-encrypt-kubernetes-secrets-with-sealed-secrets/#:~:text=Sealed%20Secrets%20is%20a%20solution,target%20cluster%20and%20nobody%20else)
+## Key values
+
+- `sealed-secrets.namespace` (values.yaml default: `system`) — namespace the controller Deployment runs in.
+- `backup.enabled` / `backup.schedule` / `backup.provider` — the CronJob-based key backup described below.
+
+### A note on the controller namespace
+
+This chart's own `values.yaml` defaults `sealed-secrets.namespace` to `system`, which is what all the `kubeseal`
+and `kubectl` commands in this README use. Current `kubeaid-cli`-provisioned clusters override this and install the
+controller into a namespace literally named `sealed-secrets` (see `values-sealed-secrets.yaml.tmpl` in kubeaid-cli).
+Neither is `kube-system` — before running any command below, confirm the real namespace with:
+
+```sh
+kubectl get pods -A -l app.kubernetes.io/name=sealed-secrets
+```
+
+and substitute it for `system` in the commands below if your cluster uses the `sealed-secrets` namespace instead.
 
 ## How to add a sealed secret
 
@@ -87,7 +92,8 @@ must add an annotation to the existing secret:
 sealedsecrets.bitnami.com/managed: "true"
 ```
 
-and then restart sealed-secrets pod in kube-system to make it do its job (it has already given up at this point).
+and then restart the sealed-secrets controller pod (in its namespace — see above) to make it do its job (it has
+already given up at this point).
 
 ## Important Considerations
 
@@ -202,7 +208,8 @@ velero restore create <restore-name> --include-namespaces system --include-resou
 
 #### CronJob
 
-Backup sealed secrets via [cronjob](./templates/cronjob.yaml)
+Backup sealed secrets via [cronjob](./templates/cronjob.yaml). Controlled by `backup.enabled` / `backup.schedule` /
+`backup.provider` in values.yaml.
 
 ### Backup Setup on aws
 
@@ -211,3 +218,7 @@ Create the s3 bucket
 ```sh
 aws s3api create-bucket --bucket kbm-sealed-secrets-backups --region eu-west-1 --endpoint-url=https://s3.obmondo.com
 ```
+
+## Docs
+
+- [Backup & Restore overview](../../docs/operations/backup-restore.md) — how this fits into the broader DR strategy.

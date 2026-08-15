@@ -1,4 +1,4 @@
-# Graylog docs
+# Graylog
 
 ## Log monitoring in KubeAid
 
@@ -20,15 +20,23 @@ The sections below cover installation, configuration, and operations.
 
 ---
 
+## Initial admin secret setup
+
+Generate the `graylog` secret (holds the admin password and its sha256, referenced by the Helm chart):
 
 ```sh
-# pwgen 20 1 | tr -d '\n' > graylog-password
-# cat graylog-password | sha256sum | tr -d '\n' > graylog-sha2
-# kubectl create secret generic graylog -n graylog  --dry-run=client --from-file=graylog-password-secret=./graylog-password --from-file=graylog-password-sha2=./graylog-sha2 -o json >graylog.json
-# kubeseal --controller-name sealed-secrets --controller-namespace system < graylog.json > graylog-final.json
+pwgen 20 1 | tr -d '\n' > graylog-password
+cat graylog-password | sha256sum | tr -d '\n' > graylog-sha2
+kubectl create secret generic graylog -n graylog --dry-run=client --from-file=graylog-password-secret=./graylog-password --from-file=graylog-password-sha2=./graylog-sha2 -o json >graylog.json
+kubeseal --controller-name sealed-secrets --controller-namespace system < graylog.json > graylog-final.json
 ```
 
-**TODO:** Add infomation about creating the graylog-es-svc secret
+> NOTE: `--controller-namespace system` is this chart's default sealed-secrets controller namespace — see the
+> [sealed-secrets README](../sealed-secrets/README.md#a-note-on-the-controller-namespace) if your cluster deploys
+> the controller elsewhere.
+
+See [Opensearch](#opensearch-elasticsearch-fork-with-open-source-license) below for the separate `graylog-es-svc`
+secret.
 
 ## Port forwarding to access the Graylog
 
@@ -100,19 +108,24 @@ This username and password combination allows the Graylog client to authenticate
 
 **NOTE: Do not use `userAdminAnyDatabase` role of MongoDB as it does not have permissions to create index.**
 
-Create the mongodb graylog-user password
+Create the mongodb graylog-user password. `passwordSecretRef.name: graylog-user-password` in values.yaml expects
+this secret in the same namespace as the `MongoDBCommunity` object (`graylog`, not `default`):
 
 ```bash
-kubectl create secret generic graylog-user-password -n default --dry-run=client --from-literal=password=lolpassword -o yaml
+kubectl create secret generic graylog-user-password -n graylog --dry-run=client --from-literal=password=lolpassword -o yaml
 ```
 
-## 🔧 Critical Configuration: Prevent Deflector Race Conditions
+## Critical configuration: prevent deflector race conditions
 
-By default, OpenSearch allows the automatic creation of indices. If the cluster experiences temporary instability during a Graylog index rotation, incoming log traffic can cause OpenSearch to mistakenly auto-create a physical `graylog_deflector` index before Graylog has a chance to create the routing alias. This creates a roadblock that completely breaks the log ingestion pipeline.
+By default, OpenSearch allows the automatic creation of indices. If the cluster experiences temporary instability
+during a Graylog index rotation, incoming log traffic can cause OpenSearch to mistakenly auto-create a physical
+`graylog_deflector` index before Graylog has a chance to create the routing alias. This creates a roadblock that
+completely breaks the log ingestion pipeline.
 
-To prevent this race condition, you must explicitly forbid OpenSearch from auto-creating any index containing the word "deflector". 
+To prevent this race condition, you must explicitly forbid OpenSearch from auto-creating any index containing the
+word "deflector".
 
-**Apply the following persistent cluster setting:**
+Apply the following persistent cluster setting:
 
 ```bash
 curl -X PUT "http://localhost:9200/_cluster/settings" -H 'Content-Type: application/json' -d'
@@ -122,6 +135,7 @@ curl -X PUT "http://localhost:9200/_cluster/settings" -H 'Content-Type: applicat
   }
 }
 '
+```
 
 ## Opensearch (elasticsearch fork with open source license)
 
@@ -270,8 +284,9 @@ After restore, verify:
   * `inputs`
 * OpenSearch has no historical data (fresh/empty target as intended).
 
-General MongoDB operator backup/restore reference:
-[../mongodb-operator/Readme.md#backup-and-restore](../mongodb-operator/Readme.md#backup-and-restore)
+The `mongodb-operator` chart was renamed to [`mongodb-kubernetes`](../mongodb-kubernetes/README.md); as of this
+writing its README is an MCO-to-MCK migration guide and doesn't cover backup/restore yet — the manual `mongodump`/
+`mongorestore` procedure above is the current reference for Graylog's MongoDB data.
 
 ### Example migration outcome (source -> target)
 
@@ -299,3 +314,8 @@ Notes:
 
 * `index_failures` was excluded from backup due to OOM on full dump attempt; this is an expected limitation in constrained environments.
 * Password reset/login issue was resolved by using the dataset's expected legacy Graylog password storage format: `{bcrypt}...{salt}...`.
+
+## Docs
+
+- [Monitoring in KubeAid](../../docs/monitoring.md) — how Graylog compares to OpenObserve and OpenSearch + Kibana.
+- [mongodb-kubernetes](../mongodb-kubernetes/README.md) — the MongoDB operator backing Graylog's config store.

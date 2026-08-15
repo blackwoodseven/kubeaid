@@ -1,6 +1,50 @@
-# Backup and Recovery
+# CloudNativePG
 
-## Backup
+[CloudNativePG](https://cloudnative-pg.io) is a Kubernetes operator that manages the full lifecycle
+of PostgreSQL clusters — provisioning, failover, rolling upgrades, backup/WAL archiving, and
+point-in-time recovery — through a `Cluster` custom resource.
+
+This wrapper (chart version 1.0.0) pins two upstream charts from `https://cloudnative-pg.github.io/charts`:
+the `cloudnative-pg` operator itself (`0.29.0`) and the `plugin-barman-cloud` CNPG plugin (`0.7.0`),
+which handles WAL archiving and backups to S3/Azure Blob Storage via Barman Cloud.
+
+## Why it's in KubeAid
+
+Application charts across KubeAid (Grafana, OnCall, etc.) provision their own Postgres via a CNPG
+`Cluster` resource rather than depending on an external managed database. This chart installs the
+operator (controller, webhooks, RBAC, CRDs) and the Barman Cloud plugin those `Cluster`s need for
+backups; it does not provision any `Cluster` itself.
+
+## Key values / KubeAid-specific configuration
+
+- `cloudnative-pg.config.data.INHERITED_ANNOTATIONS`: `iam.amazonaws.com/role,velero.io/exclude-from-backup`
+  — annotations on this list get copied from the `Cluster` down to the Postgres Pods, so an IRSA role
+  annotation (for S3 backup access) and the Velero exclusion annotation both propagate correctly.
+- `cloudnative-pg.monitoring.podMonitorEnabled: true` — a `PodMonitor` is created for Prometheus to
+  scrape CNPG metrics.
+- `cloudnative-pg.monitoring.prometheusRule.enabled` (default `false`) — when `true`, renders
+  `templates/prometheusrule.yaml` with four backup-health alerts: `CNPGClusterNoRecentBackup`
+  (critical, no successful backup within `backupMaxAgeSeconds`, default 24h),
+  `CNPGClusterWALArchivingStale` (warning, default 5m), `CNPGClusterWALArchivingFailing` (warning),
+  and `CNPGClusterLowRecoverability` (warning, recovery window older than
+  `firstRecoverabilityPointMaxAgeSeconds`, default 30d). `prometheusRule.labels` and
+  `prometheusRule.alertLabels` add labels to the `PrometheusRule` object and to every alert,
+  respectively.
+- `plugin-barman-cloud.certificate.renewBefore: 720h` — overrides the plugin's cert-manager
+  certificate renewal window. The upstream default (360h) trips a cert-manager expiry alert against
+  Let's Encrypt certificates, which are only valid ~720h (30 days) to begin with.
+
+## Operational notes
+
+The sections below (backup/recovery configuration, the restore script, monitoring/alerting, and
+triggering ad hoc backups) are kept from this chart's original backup-and-recovery runbook.
+Additional references: [`FAQ.md`](./FAQ.md) (known issues, e.g. `pg_dump` "out of shared memory"
+during logical backups) and [`zalando-to-cnpg-migration.md`](./zalando-to-cnpg-migration.md) (migrating
+existing Zalando-operator Postgres clusters to CNPG).
+
+### Backup and Recovery
+
+#### Backup
 
 Taking a backup of your data is very important since this is what gonna help you recover the data if data is lost
 
@@ -10,7 +54,7 @@ The `spec.backup` section of the Cluster resource contains the parameters needed
 
 CronJobs for postgresql logical backup cronjob template can be found [here](./examples/backup-template/postgresql-logical-backup.yaml).
 
-### For S3
+##### For S3
 
 Here is a sample configuration for backing up data to S3-compatible storage:
 
@@ -48,7 +92,7 @@ backup:
       compression: gzip # WAL compression is enabled
 ```
 
-### For Azure blob storage
+##### For Azure blob storage
 
 ```yaml
 backup:
@@ -92,12 +136,12 @@ spec:
     name: grafana-pg # Cluster name
 ```
 
-## Recovery
+#### Recovery
 
 Incase unthinkable happens and data is lost.Then don't worry
 you can recover your data,there are two scenarios which you can look at
 
-### Recovery from cluster backup
+##### Recovery from cluster backup
 
 If your cluster still has the backup resource - then you can recover
 that easily by adding the below in your cloudnative cluster resource `spec` section
@@ -109,13 +153,13 @@ bootstrap:
         name: $backup-name # backup is the name which you stated in scheduled backup above
 ```
 
-### Recovery from S3 bucket or Azure blob storage
+##### Recovery from S3 bucket or Azure blob storage
 
-# Disaster Recovery: Restoring from S3 Object Store
+### Disaster Recovery: Restoring from S3 Object Store
 
 If your entire CloudNativePG cluster resource or namespace is deleted, you can recover your data from the external S3 bucket (or Azure Blob storage). 
 
-## ⚠️ Critical Pre-checks
+#### ⚠️ Critical Pre-checks
 
 * **Postgres Version:** The `imageName` in your recovery manifest **must** match the major version of the backup (e.g., if the backup is from PG 15, you cannot use a PG 16+ image).
 * **Initial Bootstrap Only:** Recovery configuration must be present in the **very first** `kubectl apply`. You cannot spin up a fresh DB and enable recovery later.
@@ -123,7 +167,7 @@ If your entire CloudNativePG cluster resource or namespace is deleted, you can r
 
 ---
 
-## Recovery Steps
+#### Recovery Steps
 
 1.  **Prepare the Manifest:** Do not sync from ArgoCD initially if it contains a "fresh" DB config. Prepare a manifest following the example below, ensuring the `database` and `owner` names match what was in the original DB.
 2.  **Manual Apply:** Apply the recovery manifest using `kubectl apply -f recovery-cluster.yaml`.
@@ -135,7 +179,7 @@ If your entire CloudNativePG cluster resource or namespace is deleted, you can r
 
 ---
 
-## Recovery Manifest Example (S3)
+#### Recovery Manifest Example (S3)
 
 ```yaml
 apiVersion: postgresql.cnpg.io/v1
@@ -185,7 +229,7 @@ spec:
           name: backup-creds
           key: ACCESS_SECRET_KEY
 ```
-# Recovery From azure blob storage
+### Recovery From azure blob storage
 
 ```yaml
 bootstrap:
@@ -213,7 +257,7 @@ bootstrap:
           maxParallel: 8
 ```
 
-#### Using Restore Script
+###### Using Restore Script
 
 The [restore script](./bin/restore.sh) can run in two modes:
 
@@ -222,7 +266,7 @@ The [restore script](./bin/restore.sh) can run in two modes:
 
 Set `RESTORE_MODE=non-interactive` to run in non-interactive mode.
 
-##### Example command for non-interactive mode:
+###### Example command for non-interactive mode:
 
 ```bash
 RESTORE_MODE=non-interactive \
@@ -242,7 +286,7 @@ DB_PORT=5432 \
 
 ---
 
-##### Required Environment Variables
+###### Required Environment Variables
 
 | Variable Name                  | Description                            | Required For           |
 |-------------------------------|------------------------------------|-----------------------|
@@ -269,11 +313,11 @@ DB_PORT=5432 \
 ---
 
 
-## Monitoring and Alerting
+#### Monitoring and Alerting
 
 CloudNativePG provides metrics that can be used to monitor backup health. This chart includes PrometheusRule resources for alerting on backup failures.
 
-### Enabling Backup Monitoring Alerts
+##### Enabling Backup Monitoring Alerts
 
 To enable backup monitoring alerts, set the following in your values:
 
@@ -296,7 +340,7 @@ cloudnative-pg:
       firstRecoverabilityPointMaxAgeSeconds: 2592000
 ```
 
-### Available Alerts
+##### Available Alerts
 
 | Alert Name | Severity | Description |
 |------------|----------|-------------|
@@ -305,7 +349,7 @@ cloudnative-pg:
 | `CNPGClusterWALArchivingFailing` | warning | WAL archiving is actively failing |
 | `CNPGClusterLowRecoverability` | warning | Point-in-time recovery window is too old (default: > 7 days) |
 
-### Metrics Used
+##### Metrics Used
 
 The alerts use the following CNPG metrics:
 
@@ -316,7 +360,7 @@ The alerts use the following CNPG metrics:
 
 **Note:** Some of these metrics may be deprecated in newer CNPG versions (>= 1.26). Check the CNPG documentation for the latest metrics available in your version.
 
-## Triggering Backups Immediately
+#### Triggering Backups Immediately
 
 Unlike traditional CronJobs, CNPG ScheduledBackups cannot be triggered on-demand directly. The workaround is:
 
@@ -347,7 +391,7 @@ spec:
     name: my-cluster
 ```
 
-## Docs and External References
+#### Docs and External References
 
 - https://www.enterprisedb.com/blog/current-state-major-postgresql-upgrades-cloudnativepg-kubernetes
 - https://cloudnative-pg.io/documentation/current/monitoring/

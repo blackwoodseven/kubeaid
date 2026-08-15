@@ -1,94 +1,66 @@
-# Matomo Deployment with Operator managed MariaDB
+# Matomo
 
-## Setting up keycloak with matomo
+[Matomo](https://matomo.org) is an open-source, self-hosted web analytics platform — a privacy-respecting
+alternative to Google Analytics where visitor data stays on your own infrastructure.
 
-### Creating the Keycloak client
+This is a KubeAid wrapper around the [Bitnami matomo chart](https://github.com/bitnami/charts/tree/main/bitnami/matomo)
+(version 11.0.0), with the bundled MariaDB replaced by a database managed through the
+[mariadb-operator](../mariadb-operator).
 
-Login into the Keycloak UI and select the desired Realm in the Dropdown menu in the top left corner. Then click the Clients menu entry and start the creation with the Create button in the top right corner.
+## Why it's in KubeAid
 
-Define the following attributes according to your setup:
+Self-hosted analytics with the database run the KubeAid way: instead of Bitnami's in-chart MariaDB
+(`matomo.mariadb.enabled: false`), this chart renders `k8s.mariadb.com/v1alpha1` custom resources — a `MariaDB`
+instance (`matomo-mariadb`), a `Database`, a `Grant` for the `matomo` user, and an optional logical-backup
+CronJob (`ghcr.io/obmondo/mariadb-logical-backup`).
 
-- Client ID: matomo
-- Access Type: confidential
-- Standard Flow Enabled: ON
-- Valid Redirect URIs: https://your-matomo.com/index.php?module=LoginOIDC&action=callback&provider=oidc and https://your-matomo.com
-- Web Origins: +
+## Prerequisites
 
-After hitting the save Button, make sure you take note of the Client Secret in the Credentials tab. You will need this later during the tutorial.
+- `mariadb-operator` installed on the cluster (reconciles the `MariaDB`/`Database`/`Grant` CRs).
+- Storage: `mariadb.storage.storageClassName` defaults to `zfs-localpv`. With rook-ceph the MariaDB liveness and
+  readiness probes were failing because the root password did not get set properly — hence the default.
 
-Installation of the OIDC Plugin
-Matomo is highly extensible through the usage of Plugins, which can be found in the Matomo Marketplace: https://plugins.matomo.org. There we also find the needed Plugin to enable OIDC in Matomo: https://plugins.matomo.org/LoginOIDC
+## Key values / KubeAid-specific configuration
 
-Login to Matomo UI and go to the settings menu. From there open the menu entry Marketplace under Platform. Simply search for OIDC to find the desired Plugin.
+| Value | Default | Meaning |
+|---|---|---|
+| `matomo.image.*` | `bitnamilegacy/matomo:5.1.1` | Pinned app image (Bitnami legacy registry). |
+| `matomo.externalDatabase.*` | host `matomo-mariadb` | Points Matomo at the operator-managed database. |
+| `matomo.externalDatabase.existingSecret` | `matomo-user` | Secret with the DB password under the `db-password` key. |
+| `mariadb.rootPasswordSecretKeyRef` | `matomo-secrets` / `MARIADB_ROOT_PASSWORD`, `generate: true` | Operator generates the root password. Cannot be removed with zfs-localpv (PVC stays Pending otherwise). |
+| `mariadb.passwordSecretKeyRef` | `matomo-user` / `db-password`, `generate: true` | Key name must stay `db-password` — it is what `externalDatabase.existingSecret` looks up. |
+| `mariadb.storage.size` | `1Gi` | In-use volume resize + wait are enabled. |
+| `mariadb.logicalbackup.enabled` | `true` | Daily dump CronJob (default schedule `30 00 * * *`). |
 
-![failed to load image](./images/image.png)
+## Single sign-on via Keycloak (OIDC)
 
-For security reasons Matomo will ask you for your password again.
+Matomo has no built-in OIDC; the [LoginOIDC plugin](https://plugins.matomo.org/LoginOIDC) provides it.
 
-![failed to load image](./images/image-1.png)
+1. In Keycloak, create a client in your realm: Client ID `matomo`, access type *confidential*, standard flow
+   enabled, valid redirect URIs `https://<matomo>/index.php?module=LoginOIDC&action=callback&provider=oidc` and
+   `https://<matomo>`, web origins `+`. Note the client secret from the Credentials tab.
+2. In Matomo (as superuser), install and activate **LoginOIDC** from *Settings → Platform → Marketplace*.
+3. Under *General Settings → LoginOIDC*, enable **Create new users when users try to log in with unknown OIDC
+   accounts**, then fill in the endpoints (from the realm's *OpenID Endpoint Configuration*):
+   - Authorize / Token / Userinfo URL: `https://<keycloak>/auth/realms/<realm>/protocol/openid-connect/{auth,token,userinfo}`
+   - Logout URL: `.../openid-connect/logout?redirect_uri=https://<matomo>`
+   - Userinfo ID: `preferred_username`; Client ID `matomo` + the client secret; OAuth scopes `openid email profile`.
+4. A "Keycloak" button appears on the login screen. First-time OIDC users have no site permissions — assign them
+   under *System → Users*.
 
-The Plugin will be downloaded as zip file and unzipped. If everything completes successful we can activate the Plugin.
+## Operational notes
 
-![failed to load image](./images/image-2.png)
+Matomo allows only [one superuser](https://matomo.org/faq/general/faq_69/) through the UI by default. To grant
+superuser to more users, set it directly in the database (exec into the MariaDB pod):
 
-You will be prompted with a green banner telling you everything worked as desired.
+```sql
+mariadb -u root -p$MARIADB_ROOT_PASSWORD    -- no space after -p
+use <db_name>;
+UPDATE `matomo_user` SET superuser_access = 1 WHERE `login` = 'username-here';
+```
 
-![failed to load image](./images/image-3.png)
+## Docs links
 
-From here we can go straight to the settings to connect the earlier created Keycloak client to this Matomo installation. You will be redirect the attributes of the Plugin, which can be found under **General Settings --> LoginOIDC.**
-
-### Configuring the OIDC Plugin
-
-We can leave the first settings as they are, with one exception. Make sure you activate the checkbox **Create new users when users try to log in with unknown OIDC accounts**.
-
-![failed to load image](./images/image-5.png)
-
-You'll need some URLs to specific endpoints of your Keycloak installation. You can find them in the Keycloak UI under **Realm Settings --> Endpoints --> OpenID Endpoint Configuration.**
-
-![failed to load image](./images/image-6.png)
-
-This will open up a new tab, which contains the required URLs like the authorization, token and userinfo endpoint.
-
-![failed to load image](./images/image-7.png)
-
-Enter the attributes similar to the following examples:
-
-- Name: Keycloak
-- Authorize URL: https://your-keycloak.com/auth/realms/your-realm/protocol/openid-connect/auth
-- Token URL: https://your-keycloak.com/auth/realms/your-realm/protocol/openid-connect/token
-- Userinfo URL: https://your-keycloak.com/auth/realms/your-realm/protocol/openid-connect/userinfo
-- Logout URL: https://your-keycloak.com/auth/realms/your-realm/protocol/openid-connect/logout?redirect_uri=https://your-matomo.com
-- Userinfo ID: preferred_username
-- Client ID: matomo
-- Client Secret: 4gqYXyeOX7lPlk4JTvDStwIipJ8T3mbU
-- OAuth Scopes: openid email profile
-
-After defining all the required attributes you will find a new button "Keycloak" on the login screen.
-
-![failed to load image](./images/image-8.png)
-
-When first loggin in you will probably see an error, stating that you don't have any permissions to access any of the websites inside the Matomo installation. Please ask your Matomo administrator to fix this problem by assigning you some permissions under **System --> Users** in the Matomo Settings.
-
-![failed to load image](./images/image-9.png)
-
-That's it! You have setup Single Sign-On for Matomo using Keycloak as OIDC Provider.
-
-- source - https://christianhuth.de/using-keycloak-as-oidc-provider/
-
-## Changing access to superuser for multiple users
-  
-- Matomo currently allows only [one superuser](https://matomo.org/faq/general/faq_69/#:~:text=Users%20with%20'admin'%20permission%20can,plugins%20or%20other%20global%20settings) by default.
-- To give superuser access to multiple users, we have to set `superuser_access` in `matomo_user` table in the db:
-  - Exec into the mariadb pod
-  - Run the following commands -
-
-  ```sql
-    mariadb -u root -p$MARIADB_ROOT_PASSWORD
-    use <db_name>;
-    UPDATE `matomo_user` SET superuser_access = 1 WHERE `login` = 'username-here';
-  ```
-
-  - Now the given user should have superuser access which you can verify through the dashboard.
-  - Same steps can be used to modify access for any user
-
-  **NOTE** - in the command `mariadb -u root -p$MARIADB_ROOT_PASSWORD`, ensure that there is no space after `-p` flag
+- Matomo: <https://matomo.org> — LoginOIDC plugin: <https://plugins.matomo.org/LoginOIDC>
+- Upstream chart: <https://github.com/bitnami/charts/tree/main/bitnami/matomo>
+- mariadb-operator: <https://github.com/mariadb-operator/mariadb-operator>
