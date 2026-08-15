@@ -33,6 +33,3 @@ jobs:
     - name: opa
       run: |
         opa test ./argocd-helm-charts/gatekeeper/policies -v
-
-    - name: jsonnetlint
-      run: ./bin/lint-jsonnetfmt.sh

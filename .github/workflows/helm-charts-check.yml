@@ -1,0 +1,88 @@
+name: Helm Charts Check
+
+"on":
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths:
+      - 'argocd-helm-charts/**'
+      - '.github/workflows/helm-charts-check.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helm-charts-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-template:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          # Full history so we can diff against the PR base to find the
+          # charts this PR actually touches.
+          fetch-depth: 0
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v5
+        with:
+          version: 'v3.21.3'
+
+      - name: Detect changed charts
+        id: charts
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          changed="$(git diff --name-only "origin/${BASE_REF}"...HEAD -- argocd-helm-charts/ \
+            | cut -d/ -f2 | sort -u \
+            | while read -r chart; do
+                [ -f "argocd-helm-charts/${chart}/Chart.yaml" ] && echo "$chart"
+              done)" || true
+
+          if [ -z "$changed" ]; then
+            echo "No charts changed."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Charts changed in this PR:"
+            echo "$changed"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "list<<CHARTS_EOF"
+              echo "$changed"
+              echo "CHARTS_EOF"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Helm lint changed charts
+        if: steps.charts.outputs.changed == 'true'
+        env:
+          CHARTS: ${{ steps.charts.outputs.list }}
+        run: |
+          failed=0
+          while read -r chart; do
+            [ -z "$chart" ] && continue
+            echo "::group::helm lint ${chart}"
+            if ! helm lint "argocd-helm-charts/${chart}"; then
+              failed=1
+            fi
+            echo "::endgroup::"
+          done <<< "$CHARTS"
+          exit "$failed"
+
+      - name: Helm template changed charts
+        if: steps.charts.outputs.changed == 'true'
+        env:
+          CHARTS: ${{ steps.charts.outputs.list }}
+        run: |
+          args=""
+          while read -r chart; do
+            [ -z "$chart" ] && continue
+            args="$args ./argocd-helm-charts/${chart}"
+          done <<< "$CHARTS"
+          # shellcheck disable=SC2086
+          ./bin/verify-helm-chart.sh $args
