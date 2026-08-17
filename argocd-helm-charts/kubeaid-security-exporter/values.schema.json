@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "nameOverride": {
+      "type": "string"
+    },
+    "fullnameOverride": {
+      "type": "string"
+    },
+    "exporter": {
+      "type": "object",
+      "properties": {
+        "port": {
+          "description": "Port the exporter listens on. Serves /healthz, /readyz, /metrics and /api/v1/security-posture.",
+          "type": "integer"
+        },
+        "interval": {
+          "description": "Cadence of the full posture collection, and the staleness bound on what kubeaid-agent forwards.",
+          "type": "string"
+        }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "replicas": {
+          "type": "integer"
+        },
+        "podLabels": {
+          "type": "object"
+        },
+        "podAnnotations": {
+          "type": "object"
+        },
+        "imagePullSecrets": {
+          "type": "array"
+        },
+        "podSecurityContext": {
+          "type": "object"
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "repository": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            },
+            "pullPolicy": {
+              "type": "string"
+            }
+          }
+        },
+        "env": {
+          "type": "array"
+        },
+        "securityContext": {
+          "type": "object"
+        },
+        "probes": {
+          "type": "object",
+          "properties": {
+            "readiness": {
+              "type": "object"
+            },
+            "liveness": {
+              "type": "object"
+            }
+          }
+        },
+        "resources": {
+          "type": "object"
+        },
+        "extraVolumes": {
+          "type": "array"
+        },
+        "extraVolumeMounts": {
+          "type": "array"
+        },
+        "terminationGracePeriodSeconds": {
+          "type": "integer"
+        },
+        "nodeSelector": {
+          "type": "object"
+        },
+        "affinity": {
+          "type": "object"
+        },
+        "tolerations": {
+          "type": "array"
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "object"
+        },
+        "annotations": {
+          "type": "object"
+        },
+        "port": {
+          "type": "integer"
+        }
+      }
+    },
+    "serviceMonitor": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "labels": {
+          "type": "object"
+        },
+        "annotations": {
+          "type": "object"
+        },
+        "interval": {
+          "type": "string"
+        },
+        "scrapeTimeout": {
+          "type": "string"
+        }
+      }
+    },
+    "prometheusRule": {
+      "description": "Alerts on the exporter's security-posture metrics.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "additionalLabels": {
+          "type": "object"
+        },
+        "additionalAnnotations": {
+          "type": "object"
+        },
+        "upgradableThreshold": {
+          "description": "Alert when more than this many images have both a fixable Critical/High finding and a newer tag upstream. One alert per cluster.",
+          "type": "integer"
+        },
+        "upgradableFor": {
+          "description": "How long the count must stay above the threshold before alerting.",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,23 +1,19 @@
 {{/*
      The agent's cluster-scoped read access — one ClusterRole, one binding.
 
-     Replaces the built-in `view` ClusterRole this chart used to bind. `view` was
-     simultaneously too wide and too narrow:
-
-       too wide   — read on nearly every namespaced resource in the cluster,
-                    plus `watch` on all of them. The agent needs neither.
-
-       too narrow — custom resources appear in `view` only when their vendor
-                    ships a ClusterRole labelled aggregate-to-view. Cilium 1.20
-                    and Tetragon ship none; trivy-operator aggregates only three
-                    of its report kinds, not the rbac/infra assessments. Relying
-                    on `view` half-worked, which is worse than failing outright.
+     Replaces the built-in `view` ClusterRole this chart used to bind: `view`
+     grants read on nearly every namespaced resource plus `watch` on all of them,
+     and the agent needs neither.
 
      Every rule names the call site that needs it. Verbs are exactly what the
      code calls — the agent builds no informers, so `watch` is granted nowhere.
 
      Secrets are deliberately absent: they stay on the namespaced Role in
      rbac-secret-reader.yaml, which is what keeps that access scoped.
+
+     Security-posture reads — Trivy, Cilium, Tetragon, KubeArmor — are NOT here.
+     They belong to kubeaid-security-exporter, which collects that data and
+     serves it to the agent over HTTP. The agent holds no CRD access at all.
 */}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -37,12 +33,10 @@ rules:
     resources: ["events"]
     verbs: ["list"]
 
-  # get  — probing for the sealed-secrets controller (sealedsecret/seal.go)
-  # list — locating version-checker's metrics endpoint by label
-  #        (securityposture/versionchecker.go)
+  # Probing for the sealed-secrets controller (sealedsecret/seal.go).
   - apiGroups: [""]
     resources: ["services"]
-    verbs: ["get", "list"]
+    verbs: ["get"]
 
   # Owner-ref walk targets and their container specs. ReplicaSet is read to
   # reach the Deployment above it; the rest for their pod templates.
@@ -60,72 +54,6 @@ rules:
       - jobs
       - cronjobs
     verbs: ["get"]
-{{- if .Values.appConfig.securityPosture.enabled }}
-
-  {{/*
-       Security posture. Gated by the SAME flag the agent reads, so the RBAC and
-       the CRON job can never disagree — granting these while the collector is
-       off is dead access, and running the collector without them fails on every
-       cycle.
-
-       IMPORTANT: every rule below is consumed through a DYNAMIC client. Nothing
-       in the agent's Go code references these resource names as imported types,
-       so a reader grepping for "vulnerabilityreports" finds only this file and
-       can reasonably conclude the rule is unused. Removing any of them does not
-       fail the build, does not fail startup, and does not log an obvious error
-       — the collector returns no data and the Obmondo UI renders the cluster as
-       clean. This is the same trap already hit in backup-exporter.
-  */}}
-
-  # Trivy Operator — vulnerabilities and least-privilege posture.
-  - apiGroups: ["aquasecurity.github.io"]
-    resources:
-      - vulnerabilityreports
-      - configauditreports
-      - rbacassessmentreports
-      - infraassessmentreports
-    verbs: ["get", "list"]
-
-  # Upstream NetworkPolicy, read alongside CiliumNetworkPolicy to decide whether
-  # an app ships a policy at all.
-  - apiGroups: ["networking.k8s.io"]
-    resources: ["networkpolicies"]
-    verbs: ["get", "list"]
-
-  # Cilium — CiliumEndpoint carries the realised per-direction enforcement
-  # state; CiliumNetworkPolicy is what an app ships; TracingPolicy is Tetragon's
-  # runtime detection posture. All under cilium.io.
-  #
-  # The collector swallows a list error on the policy kinds, so omitting either
-  # policy rule reports every app as shipping no network policy — no error, no
-  # log, no metric.
-  - apiGroups: ["cilium.io"]
-    resources:
-      - ciliumendpoints
-      - ciliumnetworkpolicies
-      - tracingpolicies
-      - tracingpoliciesnamespaced
-    verbs: ["get", "list"]
-
-  # KubeArmor — the second runtime engine, reported alongside Tetragon. All four
-  # policy kinds are read: host and cluster policies are cluster-scoped, the
-  # other two namespaced, and an operator can enforce through any of them.
-  - apiGroups: ["security.kubearmor.com"]
-    resources:
-      - kubearmorpolicies
-      - kubearmorclusterpolicies
-      - kubearmorhostpolicies
-      - kubearmornetworkpolicies
-    verbs: ["get", "list"]
-
-  # KubeArmorConfig carries the cluster-wide default postures (file, network,
-  # capabilities → audit or block). It lives under the OPERATOR's group, not the
-  # policy group, and without it a cluster whose policies all audit is
-  # indistinguishable from one whose defaults block.
-  - apiGroups: ["operator.kubearmor.com"]
-    resources: ["kubearmorconfigs"]
-    verbs: ["get", "list"]
-{{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

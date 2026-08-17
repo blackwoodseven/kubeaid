@@ -47,11 +47,15 @@
           "type": "object",
           "properties": {
             "enabled": {
-              "description": "When true, the agent collects vulnerability and posture snapshots and submits them to Obmondo API. Also gates the corresponding RBAC rules. Set false on clusters that must not ship vulnerability detail off-site.",
+              "description": "When true, the agent polls kubeaid-security-exporter and forwards its snapshots to Obmondo API. Set false on clusters that must not ship vulnerability detail off-site.",
               "type": "boolean"
             },
-            "interval": {
-              "description": "Cadence of the full posture collection. Trivy refreshes its reports on a 24h TTL, so polling faster re-reads identical data.",
+            "exporterURL": {
+              "description": "In-cluster URL of kubeaid-security-exporter. A bare Service name resolves within the agent's own namespace.",
+              "type": "string"
+            },
+            "pollInterval": {
+              "description": "How often the agent polls the exporter. The submit is skipped when collectedAt has not advanced.",
               "type": "string"
             },
             "windowCheckInterval": {
@@ -310,29 +314,6 @@
           "type": "object"
         },
         "scrapeTimeout": {
-          "type": "string"
-        }
-      }
-    },
-    "prometheusRule": {
-      "description": "Alerts on the agent's security-posture metrics. Only rendered when appConfig.securityPosture.enabled is true.",
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
-        "additionalLabels": {
-          "type": "object"
-        },
-        "additionalAnnotations": {
-          "type": "object"
-        },
-        "upgradableThreshold": {
-          "description": "Alert when more than this many images have both a fixable Critical/High finding and a newer tag upstream. One alert per cluster.",
-          "type": "integer"
-        },
-        "upgradableFor": {
-          "description": "How long the count must stay above the threshold before alerting.",
           "type": "string"
         }
       }

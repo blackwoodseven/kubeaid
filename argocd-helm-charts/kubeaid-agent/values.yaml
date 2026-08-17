@@ -45,21 +45,28 @@ appConfig:
     # enough not to thrash the API when no window is open.
     checkInterval: 15m
 
-  # Security posture: vulnerabilities with full CVE detail, least-privilege
-  # findings, per-app network enforcement and runtime detection posture,
-  # submitted to the Obmondo API for display in the UI.
+  # Security posture: vulnerabilities, least-privilege findings, network
+  # enforcement and runtime detection posture. The agent collects none of this
+  # itself — kubeaid-security-exporter does, and the agent forwards it.
   securityPosture:
-    # -- When false, neither CRON job is scheduled, no snapshot is sent to
-    # Obmondo API, and the corresponding RBAC rules are not created. This is
-    # the switch for clusters that must not ship vulnerability detail off-site.
+    # -- When false, the agent neither polls the exporter nor forwards anything
+    # to Obmondo API. This is the switch for clusters that must not ship
+    # vulnerability detail off-site.
     #
-    # Safe to leave on where no scanner is installed: the collector detects
-    # that through API discovery and does nothing, rather than erroring.
+    # Safe to leave on where the exporter is not installed: the poll fails, a
+    # metric records it, and nothing is submitted.
     enabled: true
 
-    # -- Cadence of the full posture collection. Trivy refreshes its reports on
-    # a 24h scannerReportTTL, so polling faster re-reads identical data.
-    interval: 12h
+    # -- In-cluster URL of kubeaid-security-exporter. A bare Service name
+    # resolves within the agent's own namespace; qualify it if the two charts
+    # deploy to different namespaces.
+    exporterURL: http://kubeaid-security-exporter
+
+    # -- How often the agent polls the exporter. Cheap, because the exporter
+    # serves a cached snapshot and the agent skips the submit when collectedAt
+    # has not advanced. End-to-end freshness is bounded by the EXPORTER's
+    # collection interval, not by this one.
+    pollInterval: 1h
 
     # -- Cadence at which the agent checks for a service-window edge, to capture
     # a before/after pair around maintenance. This bounds how precisely an edge
@@ -161,27 +168,4 @@ serviceMonitor:
 
   interval: 30s
   scrapeTimeout: 10s
-
-# Alerts on the agent's own security-posture metrics. Only rendered when
-# appConfig.securityPosture.enabled is true, since without collection the
-# metrics never appear and every rule would evaluate against nothing.
-prometheusRule:
-  enabled: true
-
-  # -- Extra labels on the PrometheusRule object, for Prometheus selector
-  # matching.
-  additionalLabels: {}
-  additionalAnnotations: {}
-
-  # -- Alert when more than this many images have BOTH a fixable Critical/High
-  # finding and a newer tag upstream. One alert per cluster, not one per image.
-  #
-  # Deliberately high. Every real cluster carries a few of these at any moment,
-  # so a low threshold fires everywhere on day one and gets ignored. The signal
-  # worth acting on is a pile of easy upgrades, not the existence of one.
-  upgradableThreshold: 20
-
-  # -- How long the count must stay above the threshold. Long by design: this
-  # is a backlog to work through, not an incident.
-  upgradableFor: 24h
 
