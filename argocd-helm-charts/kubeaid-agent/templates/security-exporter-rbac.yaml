@@ -1,3 +1,4 @@
+{{- if .Values.securityExporter.enabled }}
 {{/*
      Cluster-scoped read access. Every rule is consumed through a DYNAMIC client,
      so no Go code references these resource names as imported types — a reader
@@ -13,9 +14,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "kubeaid-security-exporter.fullname" . }}-read
+  name: {{ include "kubeaid-agent.securityExporter.fullname" . }}-read
   labels:
-    {{- include "kubeaid-security-exporter.labels" . | nindent 4 }}
+    {{- include "kubeaid-agent.securityExporter.labels" . | nindent 4 }}
 rules:
   # Locating version-checker's metrics endpoint by label, which is how image
   # tags get compared against upstream.
@@ -88,14 +89,15 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "kubeaid-security-exporter.fullname" . }}-read
+  name: {{ include "kubeaid-agent.securityExporter.fullname" . }}-read
   labels:
-    {{- include "kubeaid-security-exporter.labels" . | nindent 4 }}
+    {{- include "kubeaid-agent.securityExporter.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: {{ include "kubeaid-security-exporter.fullname" . }}
+    name: {{ include "kubeaid-agent.securityExporter.fullname" . }}
     namespace: {{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "kubeaid-security-exporter.fullname" . }}-read
+  name: {{ include "kubeaid-agent.securityExporter.fullname" . }}-read
+{{- end }}

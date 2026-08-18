@@ -1,11 +1,11 @@
 apiVersion: v2
 name: kubeaid-agent
-description: KubeAid Agent Helm chart
+description: KubeAid Agent and its security-posture exporter — one Argo CD application, two Deployments.
 icon: https://avatars.githubusercontent.com/u/13882947?s=250&v=4
 
 type: application
 
-version: 0.2.0
+version: 0.3.0
 appVersion: 0.0.3
 
 keywords:

@@ -1,14 +1,15 @@
-{{- if .Values.prometheusRule.enabled }}
+{{- if .Values.securityExporter.enabled }}
+{{- if .Values.securityExporter.prometheusRule.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ include "kubeaid-security-exporter.fullname" . }}
+  name: {{ include "kubeaid-agent.securityExporter.fullname" . }}
   labels:
-    {{- include "kubeaid-security-exporter.labels" . | nindent 4 }}
-    {{- with .Values.prometheusRule.additionalLabels }}
+    {{- include "kubeaid-agent.securityExporter.labels" . | nindent 4 }}
+    {{- with .Values.securityExporter.prometheusRule.additionalLabels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with .Values.prometheusRule.additionalAnnotations }}
+  {{- with .Values.securityExporter.prometheusRule.additionalAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -24,8 +25,8 @@ spec:
         - alert: ImageOutdatedAndVulnerable
           expr: |
             security_exporter_upgradable_vulnerable_images
-              > {{ .Values.prometheusRule.upgradableThreshold }}
-          for: {{ .Values.prometheusRule.upgradableFor }}
+              > {{ .Values.securityExporter.prometheusRule.upgradableThreshold }}
+          for: {{ .Values.securityExporter.prometheusRule.upgradableFor }}
           labels:
             severity: warning
           annotations:
@@ -35,4 +36,5 @@ spec:
         # Collection status is exported as security_exporter_collection
         # (1 ok, 0 failed, -1 not installed) but deliberately not alerted on —
         # it is a debugging signal, not something worth waking anyone for.
+{{- end }}
 {{- end }}

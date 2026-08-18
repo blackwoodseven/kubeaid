@@ -1,0 +1,92 @@
+{{- if .Values.securityExporter.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubeaid-agent.securityExporter.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kubeaid-agent.securityExporter.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.securityExporter.deployment.replicas }}
+  selector:
+    matchLabels:
+      {{- include "kubeaid-agent.securityExporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kubeaid-agent.securityExporter.selectorLabels" . | nindent 8 }}
+        {{- with .Values.securityExporter.deployment.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.securityExporter.deployment.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.securityExporter.deployment.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "kubeaid-agent.securityExporter.fullname" . }}
+      {{- with .Values.securityExporter.deployment.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "kubeaid-agent.securityExporter.name" . }}
+          image: "{{ .Values.securityExporter.deployment.image.repository }}:{{ .Values.securityExporter.deployment.image.tag }}"
+          imagePullPolicy: {{ .Values.securityExporter.deployment.image.pullPolicy }}
+          env:
+            - name: SECURITY_EXPORTER_PORT
+              value: {{ .Values.securityExporter.exporter.port | quote }}
+            - name: SECURITY_EXPORTER_INTERVAL
+              value: {{ .Values.securityExporter.exporter.interval | quote }}
+            {{- with .Values.securityExporter.deployment.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.securityExporter.exporter.port }}
+              protocol: TCP
+          {{- with .Values.securityExporter.deployment.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- with .Values.securityExporter.deployment.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.securityExporter.deployment.probes.readiness }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.securityExporter.deployment.probes.liveness }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.securityExporter.deployment.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- with .Values.securityExporter.deployment.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.securityExporter.deployment.terminationGracePeriodSeconds }}
+      {{- with .Values.securityExporter.deployment.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.securityExporter.deployment.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.securityExporter.deployment.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
