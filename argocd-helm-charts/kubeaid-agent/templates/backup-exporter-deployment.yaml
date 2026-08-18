@@ -1,67 +1,68 @@
+{{- if .Values.backupExporter.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "backup-exporter.fullname" . }}
+  name: {{ include "kubeaid-agent.backupExporter.fullname" . }}
   labels:
-    {{- include "backup-exporter.labels" . | nindent 4 }}
+    {{- include "kubeaid-agent.backupExporter.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
+  {{- if not .Values.backupExporter.autoscaling.enabled }}
+  replicas: {{ .Values.backupExporter.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "backup-exporter.selectorLabels" . | nindent 6 }}
+      {{- include "kubeaid-agent.backupExporter.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- with .Values.backupExporter.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "backup-exporter.labels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
+        {{- include "kubeaid-agent.backupExporter.labels" . | nindent 8 }}
+        {{- with .Values.backupExporter.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- with .Values.backupExporter.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "backup-exporter.serviceAccountName" . }}
-      {{- with .Values.podSecurityContext }}
+      serviceAccountName: {{ include "kubeaid-agent.backupExporter.serviceAccountName" . }}
+      {{- with .Values.backupExporter.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          {{- with .Values.securityContext }}
+          {{- with .Values.backupExporter.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.backupExporter.image.repository }}:{{ .Values.backupExporter.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.backupExporter.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: {{ .Values.backupExporter.service.port }}
               protocol: TCP
           env:
             - name: POSTGRES_EXPORTER_MAX_RPO
-              value: {{ .Values.exporter.postgres.max_rpo | default "26h" | quote }}
+              value: {{ .Values.backupExporter.exporter.postgres.max_rpo | default "26h" | quote }}
             - name: POSTGRES_EXPORTER_INTERVAL_RATE
-              value: {{ .Values.exporter.postgres.interval_rate | default "0.25" | quote }}
+              value: {{ .Values.backupExporter.exporter.postgres.interval_rate | default "0.25" | quote }}
             - name: VELERO_EXPORTER_MAX_RPO
-              value: {{ .Values.exporter.velero.max_rpo | default "26h" | quote }}
+              value: {{ .Values.backupExporter.exporter.velero.max_rpo | default "26h" | quote }}
             - name: VELERO_EXPORTER_INTERVAL_RATE
-              value: {{ .Values.exporter.velero.interval_rate | default "0.25" | quote }}
-            {{- with .Values.exporter.velero.s3.url }}
+              value: {{ .Values.backupExporter.exporter.velero.interval_rate | default "0.25" | quote }}
+            {{- with .Values.backupExporter.exporter.velero.s3.url }}
             - name: VELERO_S3_ENDPOINT
               value: {{ . | quote }}
             {{- end }}
-            {{- with .Values.exporter.velero.s3.prefix }}
+            {{- with .Values.backupExporter.exporter.velero.s3.prefix }}
             - name: VELERO_S3_PREFIX
               value: {{ . | quote }}
             {{- end }}
-            {{- with .Values.exporter.velero.s3.secretName }}
+            {{- with .Values.backupExporter.exporter.velero.s3.secretName }}
             - name: VELERO_S3_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -83,31 +84,31 @@ spec:
                   name: {{ . }}
                   key: bucket
             {{- else }}
-            {{- with .Values.exporter.velero.s3.accessKeyId }}
+            {{- with .Values.backupExporter.exporter.velero.s3.accessKeyId }}
             - name: VELERO_S3_ACCESS_KEY_ID
               value: {{ . | quote }}
             {{- end }}
-            {{- with .Values.exporter.velero.s3.secretAccessKey }}
+            {{- with .Values.backupExporter.exporter.velero.s3.secretAccessKey }}
             - name: VELERO_S3_SECRET_ACCESS_KEY
               value: {{ . | quote }}
             {{- end }}
-            {{- with .Values.exporter.velero.s3.region }}
+            {{- with .Values.backupExporter.exporter.velero.s3.region }}
             - name: VELERO_S3_REGION
               value: {{ . | quote }}
             {{- end }}
-            {{- with .Values.exporter.velero.s3.bucket }}
+            {{- with .Values.backupExporter.exporter.velero.s3.bucket }}
             - name: VELERO_S3_BUCKET
               value: {{ . | quote }}
             {{- end }}
             {{- end }}
-            {{- if (.Values.exporter.mongodb).enabled }}
+            {{- if (.Values.backupExporter.exporter.mongodb).enabled }}
             - name: MONGODB_BACKUP_ENABLED
               value: "true"
             - name: MONGODB_EXPORTER_MAX_RPO
-              value: {{ .Values.exporter.mongodb.max_rpo | default "26h" | quote }}
+              value: {{ .Values.backupExporter.exporter.mongodb.max_rpo | default "26h" | quote }}
             - name: MONGODB_EXPORTER_INTERVAL_RATE
-              value: {{ .Values.exporter.mongodb.interval_rate | default "0.25" | quote }}
-            {{- with .Values.exporter.mongodb.s3.secretName }}
+              value: {{ .Values.backupExporter.exporter.mongodb.interval_rate | default "0.25" | quote }}
+            {{- with .Values.backupExporter.exporter.mongodb.s3.secretName }}
             - name: MONGODB_S3_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -119,32 +120,32 @@ spec:
                   name: {{ . }}
                   key: secret-access-key
             {{- else }}
-            {{- with .Values.exporter.mongodb.s3.accessKeyId }}
+            {{- with .Values.backupExporter.exporter.mongodb.s3.accessKeyId }}
             - name: MONGODB_S3_ACCESS_KEY_ID
               value: {{ . | quote }}
             {{- end }}
-            {{- with .Values.exporter.mongodb.s3.secretAccessKey }}
+            {{- with .Values.backupExporter.exporter.mongodb.s3.secretAccessKey }}
             - name: MONGODB_S3_SECRET_ACCESS_KEY
               value: {{ . | quote }}
             {{- end }}
             {{- end }}
             {{- end }}
-            {{- if (.Values.exporter.sealedSecrets).enabled }}
+            {{- if (.Values.backupExporter.exporter.sealedSecrets).enabled }}
             - name: SEALED_SECRETS_BACKUP_ENABLED
               value: "true"
             - name: SEALED_SECRETS_EXPORTER_MAX_RPO
-              value: {{ .Values.exporter.sealedSecrets.max_rpo | default "26h" | quote }}
+              value: {{ .Values.backupExporter.exporter.sealedSecrets.max_rpo | default "26h" | quote }}
             - name: SEALED_SECRETS_EXPORTER_INTERVAL_RATE
-              value: {{ .Values.exporter.sealedSecrets.interval_rate | default "0.25" | quote }}
-            {{- with .Values.exporter.sealedSecrets.s3.bucket }}
+              value: {{ .Values.backupExporter.exporter.sealedSecrets.interval_rate | default "0.25" | quote }}
+            {{- with .Values.backupExporter.exporter.sealedSecrets.s3.bucket }}
             - name: SEALED_SECRETS_S3_BUCKET
               value: {{ . | quote }}
             {{- end }}
-            {{- with .Values.exporter.sealedSecrets.s3.endpoint }}
+            {{- with .Values.backupExporter.exporter.sealedSecrets.s3.endpoint }}
             - name: SEALED_SECRETS_S3_ENDPOINT
               value: {{ . | quote }}
             {{- end }}
-            {{- with .Values.exporter.sealedSecrets.s3.secretName }}
+            {{- with .Values.backupExporter.exporter.sealedSecrets.s3.secretName }}
             - name: SEALED_SECRETS_S3_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -156,17 +157,17 @@ spec:
                   name: {{ . }}
                   key: secret-access-key
             {{- else }}
-            {{- with .Values.exporter.sealedSecrets.s3.accessKeyId }}
+            {{- with .Values.backupExporter.exporter.sealedSecrets.s3.accessKeyId }}
             - name: SEALED_SECRETS_S3_ACCESS_KEY_ID
               value: {{ . | quote }}
             {{- end }}
-            {{- with .Values.exporter.sealedSecrets.s3.secretAccessKey }}
+            {{- with .Values.backupExporter.exporter.sealedSecrets.s3.secretAccessKey }}
             - name: SEALED_SECRETS_S3_SECRET_ACCESS_KEY
               value: {{ . | quote }}
             {{- end }}
             {{- end }}
             {{- end }}
-            {{- $s3 := .Values.exporter.postgres.s3 }}
+            {{- $s3 := .Values.backupExporter.exporter.postgres.s3 }}
             {{- with $s3.secretName }}
             - name: POSTGRES_S3_LOGICAL_ACCESS_KEY_ID
               valueFrom:
@@ -193,40 +194,41 @@ spec:
             - name: config
               mountPath: /utils/config
               readOnly: true
-            {{- with .Values.volumeMounts }}
+            {{- with .Values.backupExporter.volumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- with .Values.livenessProbe }}
+          {{- with .Values.backupExporter.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.readinessProbe }}
+          {{- with .Values.backupExporter.readinessProbe }}
           readinessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.resources }}
+          {{- with .Values.backupExporter.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
-        {{- with .Values.volumes }}
+        {{- with .Values.backupExporter.volumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
         - name: config
           configMap:
-            name: {{ include "backup-exporter.fullname" . }}-config
+            name: {{ include "kubeaid-agent.backupExporter.fullname" . }}-config
             items:
               - key: config.yaml
                 path: config.yaml
-      {{- with .Values.nodeSelector }}
+      {{- with .Values.backupExporter.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- with .Values.backupExporter.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.backupExporter.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}

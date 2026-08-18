@@ -1,0 +1,17 @@
+{{- if .Values.backupExporter.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kubeaid-agent.backupExporter.fullname" . }}
+  labels:
+    {{- include "kubeaid-agent.backupExporter.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.backupExporter.service.type }}
+  ports:
+    - port: {{ .Values.backupExporter.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "kubeaid-agent.backupExporter.selectorLabels" . | nindent 4 }}
+{{- end }}

@@ -6,20 +6,26 @@ Argo CD syncs during agreed service windows. This chart is authored in KubeAid (
 
 ## What this chart deploys
 
-Two Deployments from one Argo CD application:
+Three Deployments from one Argo CD application:
 
 | Workload | Purpose |
 |---|---|
 | `kubeaid-agent` | Talks to the Obmondo API over mTLS. Holds the credential; holds no CRD access. |
-| `kubeaid-security-exporter` | Collects the cluster's security posture and serves it at `/api/v1/security-posture`. Holds cluster-wide read; talks to nothing outside the cluster. |
+| `security-exporter` | Collects the cluster's security posture and serves it at `/api/v1/security-posture`. Holds cluster-wide read; talks to nothing outside the cluster. |
+| `backup-exporter` | Reports backup health for PostgreSQL, Velero, MongoDB and sealed-secrets, and ships their alerts. |
 
-They are **two Deployments with two ServiceAccounts, not one pod with a sidecar**. A pod carries a single
-ServiceAccount, so co-locating them would hand the workload holding the Obmondo credential the exporter's
-cluster-wide read across seven API groups — the coupling that separating them removed in the first place.
-Keeping them apart also bounds the blast radius: a collection pass holds every VulnerabilityReport in memory
-at once, and as a sidecar an OOM there would take down the agent, and with it the cluster-liveness ping.
+They are **three Deployments with three ServiceAccounts, not one pod with sidecars**. A pod carries a single
+ServiceAccount, so co-locating them would hand the workload holding the Obmondo credential the exporters'
+cluster-wide read — the coupling that separating them removed in the first place. Keeping them apart also
+bounds the blast radius: a security collection pass holds every VulnerabilityReport in memory at once, and as
+a sidecar an OOM there would take down the agent, and with it the cluster-liveness ping.
 
-Set `securityExporter.enabled: false` to run the agent alone.
+Each exporter is independently switchable: `securityExporter.enabled: false`, `backupExporter.enabled: false`.
+
+Both exporters are discovered by the agent at runtime rather than wired by config, so their object names are
+**pinned** rather than release-derived. The agent finds backup-exporter by the label
+`app.kubernetes.io/name=backup-exporter` and reaches security-exporter at the Service name in
+`appConfig.securityPosture.exporterURL`. Renaming either without the other end silently stops reporting.
 
 ## Why it's in KubeAid
 
@@ -61,7 +67,8 @@ Cilium, Tetragon and KubeArmor are read when present and skipped when not.
 | `appConfig.securityPosture.pollInterval` | `1h` | Poll cadence. The submit is skipped when `collectedAt` has not advanced, so end-to-end freshness is bounded by `securityExporter.exporter.interval`, not by this. |
 | `obmondoAPITLSSecretName` | `obmondo-clientcert` | Secret with the mTLS keypair. |
 | `extraSecretReaderNamespaces` | `[]` | Extra namespaces where a secrets-read Role/RoleBinding is created for the agent. |
-| `securityExporter.enabled` | `true` | Deploy the exporter alongside the agent. |
+| `securityExporter.enabled` | `true` | Deploy the security exporter alongside the agent. |
+| `backupExporter.enabled` | `true` | Deploy the backup exporter alongside the agent. See the [Backup Exporter guide](../../docs/guides/backup-exporter.md) for its own values. |
 | `securityExporter.exporter.interval` | `12h` | Collection cadence. Trivy refreshes its reports on a 24h TTL, so polling faster re-reads identical data. |
 | `securityExporter.prometheusRule.upgradableThreshold` | `20` | `ImageOutdatedAndVulnerable` fires above this many images having both a fixable Critical/High CVE and a newer tag available. |
 | `securityExporter.prometheusRule.upgradableFor` | `24h` | How long the count must hold before the alert fires. |
@@ -122,5 +129,6 @@ deliberately not alerted on: a collection failure is a debugging signal, not som
 ## Docs links
 
 - Chart source: `templates/` and [values.yaml](./values.yaml) in this directory (documented inline).
-- Exporter source: <https://gitea.obmondo.com/EnableIT/kubeaid-security-exporter>
+- Security exporter source: <https://gitea.obmondo.com/EnableIT/kubeaid-security-exporter>
+- Backup exporter: [guide](../../docs/guides/backup-exporter.md)
 - Obmondo: <https://obmondo.com>

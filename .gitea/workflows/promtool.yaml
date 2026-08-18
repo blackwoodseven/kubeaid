@@ -29,12 +29,12 @@ jobs:
       - name: backup-exporter alert rules check and test
         run: |
           set -e
-          helm template backup-exporter argocd-helm-charts/backup-exporter \
-            --show-only templates/postgres-prometheusrule.yaml \
-            --show-only templates/velero-prometheusrule.yaml \
+          helm template kubeaid-agent argocd-helm-charts/kubeaid-agent \
+            --show-only templates/backup-exporter-postgres-prometheusrule.yaml \
+            --show-only templates/backup-exporter-velero-prometheusrule.yaml \
             | yq ea '[.spec.groups[]] | {"groups": .}' > /tmp/prometheusRule.yaml
           promtool check rules /tmp/prometheusRule.yaml
-          promtool test rules argocd-helm-charts/backup-exporter/test/prometheusRuleTest.yaml
+          promtool test rules argocd-helm-charts/kubeaid-agent/test/prometheusRuleTest.yaml
 
       - name: prometheus mixins rules check and lint
         working-directory: build/kube-prometheus/mixins

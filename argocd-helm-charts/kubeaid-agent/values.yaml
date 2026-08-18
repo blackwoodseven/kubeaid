@@ -57,10 +57,10 @@ appConfig:
     # metric records it, and nothing is submitted.
     enabled: true
 
-    # -- In-cluster URL of kubeaid-security-exporter. A bare Service name
+    # -- In-cluster URL of the security exporter. A bare Service name
     # resolves within the agent's own namespace; qualify it if the two charts
     # deploy to different namespaces.
-    exporterURL: http://kubeaid-security-exporter
+    exporterURL: http://security-exporter
 
     # -- How often the agent polls the exporter. Cheap, because the exporter
     # serves a cached snapshot and the agent skips the submit when collectedAt
@@ -304,3 +304,274 @@ securityExporter:
     # -- How long the count must stay above the threshold. Long by design: this
     # is a backlog to work through, not an incident.
     upgradableFor: 24h
+
+# -- backup-exporter: reports backup health (Postgres, Velero, MongoDB,
+# sealed-secrets) and serves it for the agent to forward.
+#
+# It ships in THIS chart as its own Deployment with its own ServiceAccount and
+# ClusterRole, so a cluster gets the agent and both exporters from one Argo CD
+# application. Not a sidecar, for the same reason as the security exporter: a
+# pod carries one ServiceAccount.
+backupExporter:
+  # -- Set false to run without backup reporting. The agent tolerates its
+  # absence — discover() returns "not installed" and nothing is submitted.
+  enabled: true
+
+  # -- Overrides the exporter's Deployment/Service name. Leave empty. The agent
+  # finds this exporter by the label app.kubernetes.io/name=backup-exporter,
+  # which is pinned regardless, but the default name keeps objects readable.
+  fullnameOverride: ""
+
+
+  # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+  replicaCount: 1
+
+  # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+  image:
+    repository: ghcr.io/obmondo/backup-exporter
+    # This sets the pull policy for images.
+    pullPolicy: IfNotPresent
+    # Overrides the image tag. Left empty so it follows the chart appVersion, which
+    # keeps the deployed version in one place rather than two that can disagree.
+    tag: ""
+
+  # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  imagePullSecrets: []
+
+  # This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Automatically mount a ServiceAccount's API credentials?
+    automount: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  # This is for setting Kubernetes Annotations to a Pod.
+  # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  podAnnotations: {}
+  # This is for setting Kubernetes Labels to a Pod.
+  # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+  podLabels: {}
+
+  podSecurityContext: {}
+  # fsGroup: 2000
+
+  securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+  # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+  service:
+    # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+    type: ClusterIP
+    # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+    port: 8080
+
+  resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+  # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /readyz
+      port: http
+
+  # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  # Additional volumes on the output Deployment definition.
+  volumes: []
+  # - name: foo
+  #   secret:
+  #     secretName: mysecret
+  #     optional: false
+
+  # Additional volumeMounts on the output Deployment definition.
+  volumeMounts: []
+  # - name: foo
+  #   mountPath: "/etc/foo"
+  #   readOnly: true
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+  exporter:
+    debug: false
+    postgres:
+      # Maximum acceptable Recovery Point Objective (RPO) for PostgreSQL backups.
+      # Supported formats: "24h", "6h", "30m", "1d", "7d"
+      max_rpo: 26h
+
+      # Note: This value is also used in prometheusRule.alerts to check if latest
+      # backup age exceeds RPO.
+
+      # Rate at which the exporter checks backup health, expressed as a fraction
+      # of max_rpo. For example, 0.25 means the exporter runs every 25% of
+      # max_rpo (e.g. every 6h if max_rpo is 24h), giving multiple chances to
+      # detect a missed backup before the RPO window expires.
+      # Must be between 0 and 1. Defaults to 0.25 (every 25% of max_rpo) if
+      # not set
+      interval_rate: 0.25
+
+      # S3 configuration common for both logical and WAL backups (except region).
+      s3:
+        secretName: ""
+        accessKeyId: ""
+        secretAccessKey: ""
+      logical:
+      wal:
+        # Region for WAL backups (POSTGRES_S3_WAL_REGION).
+        # Logical backups get their region from the CronJob env map (LOGICAL_BACKUP_S3_REGION).
+        s3Region: ""
+    velero:
+      # Maximum acceptable Recovery Point Objective (RPO) for Velero backups.
+      # Supported formats: "24h", "6h", "30m", "1d", "7d"
+      max_rpo: 26h
+
+      # Rate at which the exporter checks backup health, expressed as a fraction
+      # of max_rpo. For example, 0.25 means the exporter runs every 25% of
+      # max_rpo (e.g. every 6h if max_rpo is 24h), giving multiple chances to
+      # detect a missed backup before the RPO window expires.
+      # Must be between 0 and 1. Defaults to 0.25 (every 25% of max_rpo) if
+      # not set
+      interval_rate: 0.25
+
+      # S3 configuration.
+      # Credentials can be provided either via a Kubernetes Secret (secretName)
+      # or directly as values (accessKeyId, secretAccessKey, region, bucket)
+      # for testing purposes. The S3 endpoint URL is always provided directly.
+      s3:
+        # S3 endpoint URL (eg. https://s3.example.com).
+        url: ""
+        prefix: ""
+        # Name of the Kubernetes Secret containing S3 credentials.
+        # Expected secret keys:
+        #   access-key-id, secret-access-key, region, bucket
+        secretName: ""
+        # Direct values for testing (used when secretName is empty).
+        accessKeyId: ""
+        secretAccessKey: ""
+        region: ""
+        bucket: ""
+    mongodb:
+      # The MongoDB dump exporter is opt-in: the MongoDB Community operator ships
+      # no backup CRD, so a cluster without the Obmondo mongodump CronJob has
+      # nothing to report and should not be scheduled at all.
+      enabled: false
+
+      # Maximum acceptable Recovery Point Objective (RPO) for MongoDB dumps.
+      # Supported formats: "24h", "6h", "30m", "1d", "7d"
+      max_rpo: 26h
+
+      # Rate at which the exporter checks backup health, expressed as a fraction
+      # of max_rpo. Must be between 0 and 1. Defaults to 0.25.
+      interval_rate: 0.25
+
+      # Credentials for listing the dump bucket. Required when enabled: the
+      # exporter uses its own read-only keys and never reads the backup CronJob's
+      # Secret, which would need "get" on secrets in every namespace. Everything
+      # else -- bucket, prefix, endpoint -- is read off the discovered CronJob.
+      s3:
+        # Name of the Kubernetes Secret containing S3 credentials.
+        # Expected secret keys: access-key-id, secret-access-key
+        secretName: ""
+        # Direct values for testing (used when secretName is empty).
+        accessKeyId: ""
+        secretAccessKey: ""
+    sealedSecrets:
+      # The sealed-secrets master key backup. Opt-in: a cluster whose
+      # sealed-secrets chart has backup.enabled=false has nothing to report.
+      #
+      # These keys decrypt every SealedSecret in git, and the backup CronJob is
+      # their only copy outside the cluster, so this is the backup with the least
+      # margin for error.
+      enabled: false
+
+      # Maximum acceptable Recovery Point Objective (RPO) for key backups.
+      # Supported formats: "24h", "6h", "30m", "1d", "7d"
+      max_rpo: 26h
+
+      # Rate at which the exporter checks backup health, expressed as a fraction
+      # of max_rpo. Must be between 0 and 1. Defaults to 0.25.
+      interval_rate: 0.25
+
+      s3:
+        # Bucket and endpoint the key archives are written to. Unlike the other
+        # exporters these cannot be discovered: the sealed-secrets chart templates
+        # them into the backup script, so the CronJob's env never carries them.
+        # They MUST match backup.s3Bucket and backup.s3Endpoint in that chart --
+        # a mismatch reports as a missing backup.
+        bucket: ""
+        endpoint: ""
+        # Read-only credentials for that bucket.
+        # Expected secret keys: access-key-id, secret-access-key
+        secretName: ""
+        # Direct values for testing (used when secretName is empty).
+        accessKeyId: ""
+        secretAccessKey: ""
+
+  # PrometheusRule for alerting
+  prometheusRule:
+    enabled: true
+    postgres:
+      enabled: true
+      labels: {}
+      severity: critical
+      alertForDuration: 5m
+      namespace: monitoring
+    velero:
+      enabled: true
+      labels: {}
+      severity: critical
+      alertForDuration: 5m
+      namespace: monitoring
+    mongodb:
+      # Follows exporter.mongodb.enabled -- rules for an exporter that is not
+      # running would alert on series that never appear.
+      enabled: false
+      labels: {}
+      severity: critical
+      alertForDuration: 5m
+      namespace: monitoring
+    sealedSecrets:
+      # Follows exporter.sealedSecrets.enabled.
+      enabled: false
+      labels: {}
+      severity: critical
+      alertForDuration: 5m
+      namespace: monitoring
+
+  # ServiceMonitor for Prometheus metrics scraping
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    labels: {}

@@ -1,0 +1,34 @@
+{{- if .Values.backupExporter.enabled }}
+{{- if .Values.backupExporter.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "kubeaid-agent.backupExporter.fullname" . }}
+  labels:
+    {{- include "kubeaid-agent.backupExporter.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "kubeaid-agent.backupExporter.fullname" . }}
+  minReplicas: {{ .Values.backupExporter.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.backupExporter.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.backupExporter.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.backupExporter.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.backupExporter.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.backupExporter.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}

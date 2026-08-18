@@ -1,8 +1,11 @@
 # Backup Exporter
 
-The `backup-exporter` chart deploys a Prometheus exporter that monitors the health of your backup
-infrastructure. It exposes metrics and ships PrometheusRule alerts for **PostgreSQL**, **Velero**,
-**MongoDB**, and **Sealed Secrets** backups.
+The backup exporter is a Prometheus exporter that monitors the health of your backup infrastructure.
+It exposes metrics and ships PrometheusRule alerts for **PostgreSQL**, **Velero**, **MongoDB**, and
+**Sealed Secrets** backups.
+
+It ships in the [`kubeaid-agent`](../../argocd-helm-charts/kubeaid-agent/) chart, as its own
+Deployment alongside the agent, so one Argo CD application covers both.
 
 ## What It Monitors
 
@@ -29,32 +32,36 @@ not every cluster runs those backups.
 
 ## Deployment
 
-The chart is deployed via ArgoCD like any other KubeAid application. Key values to configure:
+It is deployed with the `kubeaid-agent` Argo CD application. Set `backupExporter.enabled: false`
+to run the agent without it. Key values to configure, all under the `backupExporter` key:
 
 ```yaml
-# Enable Prometheus alerting rules
-prometheusRule:
+backupExporter:
   enabled: true
-  postgres:
+
+  # Enable Prometheus alerting rules
+  prometheusRule:
     enabled: true
-    namespace: monitoring        # Where the PrometheusRule is created
-    severity: critical
-    alertForDuration: 5m
-  velero:
-    enabled: true
-    namespace: monitoring
-    severity: critical
-    alertForDuration: 5m
-  mongodb:
-    enabled: false               # Follows exporter.mongodb.enabled
-    namespace: monitoring
-    severity: critical
-    alertForDuration: 5m
-  sealedSecrets:
-    enabled: false               # Follows exporter.sealedSecrets.enabled
-    namespace: monitoring
-    severity: critical
-    alertForDuration: 5m
+    postgres:
+      enabled: true
+      namespace: monitoring        # Where the PrometheusRule is created
+      severity: critical
+      alertForDuration: 5m
+    velero:
+      enabled: true
+      namespace: monitoring
+      severity: critical
+      alertForDuration: 5m
+    mongodb:
+      enabled: false               # Follows exporter.mongodb.enabled
+      namespace: monitoring
+      severity: critical
+      alertForDuration: 5m
+    sealedSecrets:
+      enabled: false               # Follows exporter.sealedSecrets.enabled
+      namespace: monitoring
+      severity: critical
+      alertForDuration: 5m
 ```
 
 The exporter also ships a **ServiceMonitor** for automatic Prometheus scraping and supports
