@@ -32,6 +32,20 @@ rules:
       - infraassessmentreports
     verbs: ["get", "list"]
 
+  # Kubescape — the alternative vulnerability scanner, read only where Trivy is
+  # absent. Served by an AGGREGATED APIService rather than by CRDs, which changes
+  # nothing for RBAC but does mean these resources vanish from discovery whenever
+  # the kubescape storage pod is down, rather than persisting as CRDs would.
+  #
+  # vulnerabilitymanifests carries per-CVE detail; the summaries kind holds only
+  # counters and is deliberately not read. workloadconfigurationscans is the
+  # control-scan equivalent of Trivy's three least-privilege report kinds.
+  - apiGroups: ["spdx.softwarecomposition.kubescape.io"]
+    resources:
+      - vulnerabilitymanifests
+      - workloadconfigurationscans
+    verbs: ["get", "list"]
+
   # Upstream NetworkPolicy, read alongside CiliumNetworkPolicy to decide whether
   # an app ships a policy at all.
   - apiGroups: ["networking.k8s.io"]

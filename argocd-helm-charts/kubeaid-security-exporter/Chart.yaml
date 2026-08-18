@@ -13,6 +13,7 @@ keywords:
   - kubeaid
   - security
   - trivy
+  - kubescape
 
 maintainers:
   - name: Sanskar Bhushan

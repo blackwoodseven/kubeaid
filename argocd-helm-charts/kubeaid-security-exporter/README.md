@@ -8,6 +8,8 @@ What it collects, where the relevant operator is installed:
 
 - **Vulnerabilities and least-privilege findings** from Trivy Operator's report CRs — full CVE detail
   (CVSS score, installed and fixed version, advisory link), rather than the lossy Prometheus projection.
+- **Or the same from Kubescape**, read through its aggregated APIService, with per-CVE relevancy —
+  whether the vulnerable code actually loaded. The two scanners are alternatives, never merged.
 - **Upgrade availability**, by joining those findings against version-checker on canonical image
   references resolved in Go. Rebuilding image references in PromQL fails silently.
 - **Network enforcement** from Cilium — whether policy is actually realised on an app's pods, which is a
@@ -28,13 +30,28 @@ Deploying this chart without the agent is fine — the metrics and the JSON API 
 
 ## Prerequisites
 
-- **trivy-operator**, for vulnerability and least-privilege data. Without it the exporter reports no
-  findings, and says so rather than reporting a clean cluster.
+- **A vulnerability scanner** — either **trivy-operator** or **kubescape-operator**. Without one the
+  exporter reports no findings, and says so rather than reporting a clean cluster.
 - **version-checker**, for upgrade availability. Without it findings still ship, with upgrade availability
   unknown rather than "up to date".
 - kube-prometheus, if `serviceMonitor` / `prometheusRule` stay enabled (both default to `true`).
 
 Cilium, Tetragon and KubeArmor are read when present and skipped when not.
+
+### Which scanner is used
+
+Exactly one, chosen by API discovery: **Trivy takes precedence, Kubescape is used where Trivy is
+absent.** Merging them would double-count the same CVE from two databases that disagree at the
+margins, and switching an existing cluster's scanner rewrites every finding's ID, score and link at
+once — which reads as mass CVE churn rather than as a configuration change. A cluster running both
+logs which one it picked; the snapshot names it in `scanner`.
+
+Two fields differ by scanner, and both are absent rather than false when unanswerable:
+
+| Field | Trivy | Kubescape |
+|---|---|---|
+| `relevant` (did the vulnerable code load) | never — Trivy cannot observe runtime | when the eBPF node-agent runs |
+| `os.eosl` (base image past end of life) | yes | never — Grype has no end-of-life data |
 
 ## Key values
 
