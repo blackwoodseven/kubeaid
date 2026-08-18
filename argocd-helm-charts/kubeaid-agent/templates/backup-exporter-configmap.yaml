@@ -1,0 +1,21 @@
+{{- if .Values.backupExporter.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kubeaid-agent.backupExporter.fullname" . }}-config
+  labels:
+    {{- include "kubeaid-agent.backupExporter.labels" . | nindent 4 }}
+data:
+  config.yaml: |-
+    exporter:
+      debug: {{ .Values.backupExporter.exporter.debug | default "false" | quote }}
+      postgres:
+        s3:
+          accessKeyId: {{ .Values.backupExporter.exporter.postgres.s3.accessKeyId | quote }}
+          secretAccessKey: {{ .Values.backupExporter.exporter.postgres.s3.secretAccessKey | quote }}
+        wal:
+          {{- with .Values.backupExporter.exporter.postgres.wal.s3Region }}
+          s3Region: {{ . | quote }}
+          {{- end }}
+      velero:
+{{- end }}

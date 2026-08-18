@@ -40,9 +40,9 @@ We use logical dumps for databases such as PostgreSQL and MongoDB to ensure port
 
 ## 4. Checking Backup Health
 
-The [backup-exporter](../../argocd-helm-charts/backup-exporter/) chart reads object storage directly and reports
-whether PostgreSQL (CNPG logical and WAL), Velero, MongoDB, and Sealed Secrets backups actually landed. Check status
-with:
+The backup exporter in the [`kubeaid-agent`](../../argocd-helm-charts/kubeaid-agent/) chart reads object
+storage directly and reports whether PostgreSQL (CNPG logical and WAL), Velero, MongoDB, and Sealed Secrets
+backups actually landed. Check status with:
 
 ```bash
 kubeaid-cli backup status

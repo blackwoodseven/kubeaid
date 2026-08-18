@@ -1,0 +1,42 @@
+{{- if .Values.backupExporter.enabled }}
+{{- if and .Values.backupExporter.prometheusRule.enabled (hasKey .Values.backupExporter.prometheusRule "velero") ( .Values.backupExporter.prometheusRule.velero.enabled ) }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "kubeaid-agent.backupExporter.fullname" . }}-velero
+  namespace: {{ .Values.backupExporter.prometheusRule.velero.namespace | default "monitoring" }}
+  labels:
+    {{- include "kubeaid-agent.backupExporter.labels" . | nindent 4 }}
+    {{- if .Values.backupExporter.prometheusRule.velero.labels }}
+    {{- toYaml .Values.backupExporter.prometheusRule.velero.labels | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: {{ include "kubeaid-agent.backupExporter.name" . }}-velero
+      rules:
+        - alert: VeleroBackupExporterJobFailed
+          expr: max by (type) (backup_exporter_velero_error == 1) > 0
+          for: {{ .Values.backupExporter.prometheusRule.velero.alertForDuration | default "5m" }}
+          labels:
+            severity: {{ .Values.backupExporter.prometheusRule.velero.severity | default "critical" }}
+          annotations:
+            summary: 'Velero backup exporter job failed'
+            description: 'Velero backup exporter error (type: {{ `{{ $labels.type }}` }})'
+        - alert: VeleroBackupExceededRPO
+          expr: backup_exporter_velero_latest_backup_age > {{ include "kubeaid-agent.backupExporter.durationToSeconds" .Values.backupExporter.exporter.velero.max_rpo }}
+          for: {{ .Values.backupExporter.prometheusRule.velero.alertForDuration | default "5m" }}
+          labels:
+            severity: {{ .Values.backupExporter.prometheusRule.velero.severity | default "critical" }}
+          annotations:
+            summary: 'Velero backup exceeded RPO'
+            description: 'Backup for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.resource_name }}` }} ({{ `{{ $labels.resource_type }}` }}, method: {{ `{{ $labels.backup }}` }}) exceeded RPO (age: {{ `{{ $value }}` }})'
+        - alert: VeleroBackupMissing
+          expr: backup_exporter_velero_latest_backup_age == 0 unless on (namespace, resource_name, resource_type) (backup_exporter_velero_error{type="backup_not_enabled"} == 1)
+          for: {{ .Values.backupExporter.prometheusRule.velero.alertForDuration | default "5m" }}
+          labels:
+            severity: {{ .Values.backupExporter.prometheusRule.velero.severity | default "critical" }}
+          annotations:
+            summary: 'Velero backup missing'
+            description: 'No backup found for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.resource_name }}` }} ({{ `{{ $labels.resource_type }}` }}, method: {{ `{{ $labels.backup }}` }})'
+{{- end }}
+{{- end }}

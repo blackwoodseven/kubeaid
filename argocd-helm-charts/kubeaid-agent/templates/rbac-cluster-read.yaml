@@ -12,7 +12,7 @@
      rbac-secret-reader.yaml, which is what keeps that access scoped.
 
      Security-posture reads — Trivy, Cilium, Tetragon, KubeArmor — are NOT here.
-     They belong to kubeaid-security-exporter, which collects that data and
+     They belong to the security exporter, which collects that data and
      serves it to the agent over HTTP. The agent holds no CRD access at all.
 */}}
 apiVersion: rbac.authorization.k8s.io/v1

@@ -47,11 +47,11 @@
           "type": "object",
           "properties": {
             "enabled": {
-              "description": "When true, the agent polls kubeaid-security-exporter and forwards its snapshots to Obmondo API. Set false on clusters that must not ship vulnerability detail off-site.",
+              "description": "When true, the agent polls the security exporter and forwards its snapshots to Obmondo API. Set false on clusters that must not ship vulnerability detail off-site.",
               "type": "boolean"
             },
             "exporterURL": {
-              "description": "In-cluster URL of kubeaid-security-exporter. A bare Service name resolves within the agent's own namespace.",
+              "description": "In-cluster URL of the security exporter. A bare Service name resolves within the agent's own namespace.",
               "type": "string"
             },
             "pollInterval": {
@@ -63,6 +63,44 @@
               "type": "string"
             }
           }
+        }
+      }
+    },
+    "backupExporter": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "fullnameOverride": {
+          "type": "string"
+        },
+        "replicaCount": {
+          "type": "integer"
+        },
+        "image": {
+          "type": "object"
+        },
+        "serviceAccount": {
+          "type": "object"
+        },
+        "service": {
+          "type": "object"
+        },
+        "serviceMonitor": {
+          "type": "object"
+        },
+        "exporter": {
+          "type": "object"
+        },
+        "prometheusRule": {
+          "type": "object"
+        },
+        "autoscaling": {
+          "type": "object"
+        },
+        "resources": {
+          "type": "object"
         }
       }
     },
@@ -267,6 +305,13 @@
         }
       }
     },
+    "extraSecretReaderNamespaces": {
+      "description": "Extra namespaces where the agent's ServiceAccount may read secrets. A Role + RoleBinding is created in each.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "fullnameOverride": {
       "type": "string"
     },
@@ -277,11 +322,83 @@
       "description": "Kubernetes Secret name containing the TLS certificate key-pair, used to communicate with Obmondo API.",
       "type": "string"
     },
-    "extraSecretReaderNamespaces": {
-      "description": "Extra namespaces where the agent's ServiceAccount may read secrets. A Role + RoleBinding is created in each.",
-      "type": "array",
-      "items": {
-        "type": "string"
+    "securityExporter": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "fullnameOverride": {
+          "type": "string"
+        },
+        "exporter": {
+          "type": "object",
+          "properties": {
+            "port": {
+              "type": "integer"
+            },
+            "interval": {
+              "type": "string"
+            }
+          }
+        },
+        "deployment": {
+          "type": "object"
+        },
+        "service": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "type": "object"
+            },
+            "labels": {
+              "type": "object"
+            },
+            "port": {
+              "type": "integer"
+            }
+          }
+        },
+        "serviceMonitor": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "type": "object"
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "interval": {
+              "type": "string"
+            },
+            "labels": {
+              "type": "object"
+            },
+            "scrapeTimeout": {
+              "type": "string"
+            }
+          }
+        },
+        "prometheusRule": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "additionalLabels": {
+              "type": "object"
+            },
+            "additionalAnnotations": {
+              "type": "object"
+            },
+            "upgradableThreshold": {
+              "type": "integer"
+            },
+            "upgradableFor": {
+              "type": "string"
+            }
+          }
+        }
       }
     },
     "service": {

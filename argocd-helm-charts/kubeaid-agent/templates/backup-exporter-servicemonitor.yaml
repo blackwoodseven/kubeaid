@@ -1,16 +1,17 @@
-{{- if .Values.serviceMonitor.enabled }}
+{{- if .Values.backupExporter.enabled }}
+{{- if .Values.backupExporter.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "backup-exporter.fullname" . }}
+  name: {{ include "kubeaid-agent.backupExporter.fullname" . }}
   labels:
-    {{- include "backup-exporter.labels" . | nindent 4 }}
-    {{- with .Values.serviceMonitor.labels }}
+    {{- include "kubeaid-agent.backupExporter.labels" . | nindent 4 }}
+    {{- with .Values.backupExporter.serviceMonitor.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
   endpoints:
-    - interval: {{ .Values.serviceMonitor.interval }}
+    - interval: {{ .Values.backupExporter.serviceMonitor.interval }}
       port: http
       path: /metrics
       # The exporter's own "namespace" label (the app/PVC being reported on)
@@ -21,8 +22,9 @@ spec:
       honorLabels: true
   selector:
     matchLabels:
-      {{- include "backup-exporter.selectorLabels" . | nindent 6 }}
+      {{- include "kubeaid-agent.backupExporter.selectorLabels" . | nindent 6 }}
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}
+{{- end }}
 {{- end }}

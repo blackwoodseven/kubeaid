@@ -1,9 +1,10 @@
+{{- if .Values.backupExporter.enabled }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "backup-exporter.fullname" . }}
+  name: {{ include "kubeaid-agent.backupExporter.fullname" . }}
   labels:
-    {{- include "backup-exporter.labels" . | nindent 4 }}
+    {{- include "kubeaid-agent.backupExporter.labels" . | nindent 4 }}
 # The exporter only reads. It never creates, mutates or deletes anything, in the
 # cluster or in object storage, so no rule below carries a write verb. It also
 # runs no informers -- it lists on a cron tick -- so none needs watch.
@@ -69,3 +70,4 @@ rules:
   - apiGroups: [""]
     resources: ["persistentvolumeclaims"]
     verbs: ["get", "list"]
+{{- end }}
