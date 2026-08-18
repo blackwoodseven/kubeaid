@@ -66,44 +66,6 @@
         }
       }
     },
-    "backupExporter": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
-        "fullnameOverride": {
-          "type": "string"
-        },
-        "replicaCount": {
-          "type": "integer"
-        },
-        "image": {
-          "type": "object"
-        },
-        "serviceAccount": {
-          "type": "object"
-        },
-        "service": {
-          "type": "object"
-        },
-        "serviceMonitor": {
-          "type": "object"
-        },
-        "exporter": {
-          "type": "object"
-        },
-        "prometheusRule": {
-          "type": "object"
-        },
-        "autoscaling": {
-          "type": "object"
-        },
-        "resources": {
-          "type": "object"
-        }
-      }
-    },
     "configMap": {
       "type": "object",
       "properties": {
@@ -321,85 +283,6 @@
     "obmondoAPITLSSecretName": {
       "description": "Kubernetes Secret name containing the TLS certificate key-pair, used to communicate with Obmondo API.",
       "type": "string"
-    },
-    "securityExporter": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
-        "fullnameOverride": {
-          "type": "string"
-        },
-        "exporter": {
-          "type": "object",
-          "properties": {
-            "port": {
-              "type": "integer"
-            },
-            "interval": {
-              "type": "string"
-            }
-          }
-        },
-        "deployment": {
-          "type": "object"
-        },
-        "service": {
-          "type": "object",
-          "properties": {
-            "annotations": {
-              "type": "object"
-            },
-            "labels": {
-              "type": "object"
-            },
-            "port": {
-              "type": "integer"
-            }
-          }
-        },
-        "serviceMonitor": {
-          "type": "object",
-          "properties": {
-            "annotations": {
-              "type": "object"
-            },
-            "enabled": {
-              "type": "boolean"
-            },
-            "interval": {
-              "type": "string"
-            },
-            "labels": {
-              "type": "object"
-            },
-            "scrapeTimeout": {
-              "type": "string"
-            }
-          }
-        },
-        "prometheusRule": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean"
-            },
-            "additionalLabels": {
-              "type": "object"
-            },
-            "additionalAnnotations": {
-              "type": "object"
-            },
-            "upgradableThreshold": {
-              "type": "integer"
-            },
-            "upgradableFor": {
-              "type": "string"
-            }
-          }
-        }
-      }
     },
     "service": {
       "type": "object",
