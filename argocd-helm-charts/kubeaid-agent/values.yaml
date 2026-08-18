@@ -313,9 +313,16 @@ securityExporter:
 # application. Not a sidecar, for the same reason as the security exporter: a
 # pod carries one ServiceAccount.
 backupExporter:
-  # -- Set false to run without backup reporting. The agent tolerates its
-  # absence — discover() returns "not installed" and nothing is submitted.
-  enabled: true
+  # -- OFF by default, unlike the security exporter, because this one cannot
+  # start without configuration: every backend it reports on needs S3
+  # credentials and a bucket (see exporter.* below), and there is no sane
+  # default for those. Enabled on a fresh cluster it would deploy a pod that
+  # cannot do its job, so the opt-in is deliberate.
+  #
+  # Turn it on together with the exporter.<backend>.s3 settings for whichever
+  # backups the cluster actually runs. The agent tolerates its absence —
+  # discover() returns "not installed" and nothing is submitted.
+  enabled: false
 
   # -- Overrides the exporter's Deployment/Service name. Leave empty. The agent
   # finds this exporter by the label app.kubernetes.io/name=backup-exporter,

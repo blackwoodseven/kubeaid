@@ -20,7 +20,9 @@ cluster-wide read — the coupling that separating them removed in the first pla
 bounds the blast radius: a security collection pass holds every VulnerabilityReport in memory at once, and as
 a sidecar an OOM there would take down the agent, and with it the cluster-liveness ping.
 
-Each exporter is independently switchable: `securityExporter.enabled: false`, `backupExporter.enabled: false`.
+Each exporter is independently switchable. `securityExporter.enabled` defaults to `true`;
+`backupExporter.enabled` defaults to **`false`**, because it cannot start without S3 credentials for
+the backends it reports on.
 
 Both exporters are discovered by the agent at runtime rather than wired by config, so their object names are
 **pinned** rather than release-derived. The agent finds backup-exporter by the label
@@ -68,7 +70,7 @@ Cilium, Tetragon and KubeArmor are read when present and skipped when not.
 | `obmondoAPITLSSecretName` | `obmondo-clientcert` | Secret with the mTLS keypair. |
 | `extraSecretReaderNamespaces` | `[]` | Extra namespaces where a secrets-read Role/RoleBinding is created for the agent. |
 | `securityExporter.enabled` | `true` | Deploy the security exporter alongside the agent. |
-| `backupExporter.enabled` | `true` | Deploy the backup exporter alongside the agent. See the [Backup Exporter guide](../../docs/guides/backup-exporter.md) for its own values. |
+| `backupExporter.enabled` | `false` | Deploy the backup exporter alongside the agent. Off by default: it needs S3 credentials per backend, so enabling it without those deploys a pod that cannot work. See the [Backup Exporter guide](../../docs/guides/backup-exporter.md). |
 | `securityExporter.exporter.interval` | `12h` | Collection cadence. Trivy refreshes its reports on a 24h TTL, so polling faster re-reads identical data. |
 | `securityExporter.prometheusRule.upgradableThreshold` | `20` | `ImageOutdatedAndVulnerable` fires above this many images having both a fixable Critical/High CVE and a newer tag available. |
 | `securityExporter.prometheusRule.upgradableFor` | `24h` | How long the count must hold before the alert fires. |

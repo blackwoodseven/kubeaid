@@ -32,8 +32,10 @@ not every cluster runs those backups.
 
 ## Deployment
 
-It is deployed with the `kubeaid-agent` Argo CD application. Set `backupExporter.enabled: false`
-to run the agent without it. Key values to configure, all under the `backupExporter` key:
+It is deployed with the `kubeaid-agent` Argo CD application, but is **off by default** — it needs S3
+credentials for each backend it reports on, and there is no sane default for those. Set
+`backupExporter.enabled: true` along with the credentials below. Key values, all under the
+`backupExporter` key:
 
 ```yaml
 backupExporter:
