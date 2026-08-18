@@ -6,6 +6,17 @@ Argo CD syncs during agreed service windows. This chart is authored in KubeAid (
 
 ## What this chart deploys
 
+Three Deployments from one Argo CD application. The two exporters are **local subcharts** under
+`charts/`, resolved from the working tree — no repository, no `Chart.lock`, no
+`helm dependency update`:
+
+```
+kubeaid-agent/
+  templates/                     the agent
+  charts/security-exporter/      Chart.yaml + values.yaml + templates/
+  charts/backup-exporter/        Chart.yaml + values.yaml + templates/
+```
+
 Three Deployments from one Argo CD application:
 
 | Workload | Purpose |
@@ -20,8 +31,8 @@ cluster-wide read — the coupling that separating them removed in the first pla
 bounds the blast radius: a security collection pass holds every VulnerabilityReport in memory at once, and as
 a sidecar an OOM there would take down the agent, and with it the cluster-liveness ping.
 
-Each exporter is independently switchable. `securityExporter.enabled` defaults to `true`;
-`backupExporter.enabled` defaults to **`false`**, because it cannot start without S3 credentials for
+Each exporter is independently switchable. `security-exporter.enabled` defaults to `true`;
+`backup-exporter.enabled` defaults to **`false`**, because it cannot start without S3 credentials for
 the backends it reports on.
 
 Both exporters are discovered by the agent at runtime rather than wired by config, so their object names are
@@ -43,7 +54,7 @@ on the `kubeaid` Argo CD project, stored in the `argocd-project-role-kubeaid-age
 - `argocd-project-role-kubeaid-agent` Secret in the `argocd` namespace, holding the Argo CD auth token under the
   `token` key (created automatically by `kubeaid-cli`). Name overridable via
   `appConfig.argocd.authTokenSecretName`.
-- kube-prometheus, if `serviceMonitor` / `securityExporter.prometheusRule` stay enabled (all default to `true`).
+- kube-prometheus, if `serviceMonitor` / `security-exporter.prometheusRule` stay enabled (all default to `true`).
 
 The exporter additionally wants, but does not require:
 
@@ -56,6 +67,9 @@ Cilium, Tetragon and KubeArmor are read when present and skipped when not.
 
 ## Key values / KubeAid-specific configuration
 
+Each subchart owns its own `values.yaml`; the table below lists what you are most likely to set, and
+the parent's values file carries only the agent's own settings.
+
 `appConfig` is rendered verbatim into the agent's config file (a ConfigMap mounted at
 `/etc/kubeaid-agent/config.yaml`); a config change triggers a rollout via a checksum annotation.
 
@@ -66,14 +80,14 @@ Cilium, Tetragon and KubeArmor are read when present and skipped when not.
 | `appConfig.kubeaidUpdate.checkInterval` | `15m` | Poll cadence for an active KubeAid update service window. |
 | `appConfig.securityPosture.enabled` | `true` | Poll the exporter and forward its snapshots to the Obmondo API. The agent collects nothing itself. |
 | `appConfig.securityPosture.exporterURL` | `http://security-exporter` | In-cluster URL of the exporter. Matches the Service this chart creates — change both or neither. |
-| `appConfig.securityPosture.pollInterval` | `1h` | Poll cadence. The submit is skipped when `collectedAt` has not advanced, so end-to-end freshness is bounded by `securityExporter.exporter.interval`, not by this. |
+| `appConfig.securityPosture.pollInterval` | `1h` | Poll cadence. The submit is skipped when `collectedAt` has not advanced, so end-to-end freshness is bounded by `security-exporter.exporter.interval`, not by this. |
 | `obmondoAPITLSSecretName` | `obmondo-clientcert` | Secret with the mTLS keypair. |
 | `extraSecretReaderNamespaces` | `[]` | Extra namespaces where a secrets-read Role/RoleBinding is created for the agent. |
-| `securityExporter.enabled` | `true` | Deploy the security exporter alongside the agent. |
-| `backupExporter.enabled` | `false` | Deploy the backup exporter alongside the agent. Off by default: it needs S3 credentials per backend, so enabling it without those deploys a pod that cannot work. See the [Backup Exporter guide](../../docs/guides/backup-exporter.md). |
-| `securityExporter.exporter.interval` | `12h` | Collection cadence. Trivy refreshes its reports on a 24h TTL, so polling faster re-reads identical data. |
-| `securityExporter.prometheusRule.upgradableThreshold` | `20` | `ImageOutdatedAndVulnerable` fires above this many images having both a fixable Critical/High CVE and a newer tag available. |
-| `securityExporter.prometheusRule.upgradableFor` | `24h` | How long the count must hold before the alert fires. |
+| `security-exporter.enabled` | `true` | Deploy the security exporter alongside the agent. |
+| `backup-exporter.enabled` | `false` | Deploy the backup exporter alongside the agent. Off by default: it needs S3 credentials per backend, so enabling it without those deploys a pod that cannot work. See the [Backup Exporter guide](../../docs/guides/backup-exporter.md). |
+| `security-exporter.exporter.interval` | `12h` | Collection cadence. Trivy refreshes its reports on a 24h TTL, so polling faster re-reads identical data. |
+| `security-exporter.prometheusRule.upgradableThreshold` | `20` | `ImageOutdatedAndVulnerable` fires above this many images having both a fixable Critical/High CVE and a newer tag available. |
+| `security-exporter.prometheusRule.upgradableFor` | `24h` | How long the count must hold before the alert fires. |
 
 ## What the exporter collects
 

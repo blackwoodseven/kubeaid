@@ -23,3 +23,15 @@ maintainers:
   - name: Basit Hasan
     email: basit@obmondo.com
     url: https://github.com/basit9958
+
+# Both live in charts/ and are therefore resolved locally: no repository, no
+# Chart.lock, no `helm dependency update`. The conditions let a cluster take the
+# agent alone, or the agent plus either exporter.
+dependencies:
+  - name: security-exporter
+    version: 0.1.0
+    condition: security-exporter.enabled
+
+  - name: backup-exporter
+    version: 0.3.5
+    condition: backup-exporter.enabled
