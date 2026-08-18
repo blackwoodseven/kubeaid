@@ -3,8 +3,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/images/kubeaid-logo-dark.svg">
-  <img alt="KubeAid" src="./docs/images/kubeaid-logo.svg" width="380">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Obmondo/KubeAid/master/docs/images/kubeaid-logo-dark.svg">
+  <img alt="KubeAid" src="https://raw.githubusercontent.com/Obmondo/KubeAid/master/docs/images/kubeaid-logo.svg" width="380">
 </picture>
 
 *Open-source Kubernetes platform: install and operate clusters the same way everywhere —*
@@ -90,11 +90,11 @@ once to bootstrap: it writes your initial config, provisions the cluster, and pi
 
 <!-- markdownlint-disable MD033 -->
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/images/kubeaid-architecture-dark.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Obmondo/KubeAid/master/docs/images/kubeaid-architecture-dark.svg">
   <img alt="KubeAid architecture diagram: the operator pushes to kubeaid-config; Argo CD in the cluster pulls charts
     from the KubeAid repo and values from kubeaid-config, applying the platform stack and your applications; the
     KubeAid CLI runs once to bootstrap and pivot Cluster API into the cluster"
-    src="./docs/images/kubeaid-architecture.svg">
+    src="https://raw.githubusercontent.com/Obmondo/KubeAid/master/docs/images/kubeaid-architecture.svg">
 </picture>
 <!-- markdownlint-enable MD033 -->
 
