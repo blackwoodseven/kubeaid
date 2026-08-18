@@ -47,7 +47,7 @@ appConfig:
 
   # Security posture: vulnerabilities, least-privilege findings, network
   # enforcement and runtime detection posture. The agent collects none of this
-  # itself — kubeaid-security-exporter does, and the agent forwards it.
+  # itself — the security exporter does, and the agent forwards it.
   securityPosture:
     # -- When false, the agent neither polls the exporter nor forwards anything
     # to Obmondo API. This is the switch for clusters that must not ship
@@ -170,7 +170,7 @@ serviceMonitor:
   scrapeTimeout: 10s
 
 
-# -- kubeaid-security-exporter: collects the cluster's security posture and
+# -- security-exporter: collects the cluster's security posture and
 # serves it at /api/v1/security-posture, which the agent above forwards.
 #
 # It ships in THIS chart, as its own Deployment with its own ServiceAccount and

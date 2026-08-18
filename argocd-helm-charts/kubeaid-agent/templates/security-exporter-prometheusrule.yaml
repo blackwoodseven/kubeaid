@@ -15,7 +15,7 @@ metadata:
   {{- end }}
 spec:
   groups:
-    - name: kubeaid-security-exporter
+    - name: security-exporter
       rules:
         # Images with a fixable Critical/High finding AND a newer tag upstream
         # — the set worth acting on. The exporter computes the join, because

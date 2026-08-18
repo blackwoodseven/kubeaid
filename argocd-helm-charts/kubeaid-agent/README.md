@@ -63,7 +63,7 @@ Cilium, Tetragon and KubeArmor are read when present and skipped when not.
 | `appConfig.kubeaidUpdate.enabled` | `false` | Opt-in: schedule the service-window Argo CD sync cron job. |
 | `appConfig.kubeaidUpdate.checkInterval` | `15m` | Poll cadence for an active KubeAid update service window. |
 | `appConfig.securityPosture.enabled` | `true` | Poll the exporter and forward its snapshots to the Obmondo API. The agent collects nothing itself. |
-| `appConfig.securityPosture.exporterURL` | `http://kubeaid-security-exporter` | In-cluster URL of the exporter. Matches the Service this chart creates — change both or neither. |
+| `appConfig.securityPosture.exporterURL` | `http://security-exporter` | In-cluster URL of the exporter. Matches the Service this chart creates — change both or neither. |
 | `appConfig.securityPosture.pollInterval` | `1h` | Poll cadence. The submit is skipped when `collectedAt` has not advanced, so end-to-end freshness is bounded by `securityExporter.exporter.interval`, not by this. |
 | `obmondoAPITLSSecretName` | `obmondo-clientcert` | Secret with the mTLS keypair. |
 | `extraSecretReaderNamespaces` | `[]` | Extra namespaces where a secrets-read Role/RoleBinding is created for the agent. |

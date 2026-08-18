@@ -47,11 +47,11 @@
           "type": "object",
           "properties": {
             "enabled": {
-              "description": "When true, the agent polls kubeaid-security-exporter and forwards its snapshots to Obmondo API. Set false on clusters that must not ship vulnerability detail off-site.",
+              "description": "When true, the agent polls the security exporter and forwards its snapshots to Obmondo API. Set false on clusters that must not ship vulnerability detail off-site.",
               "type": "boolean"
             },
             "exporterURL": {
-              "description": "In-cluster URL of kubeaid-security-exporter. A bare Service name resolves within the agent's own namespace.",
+              "description": "In-cluster URL of the security exporter. A bare Service name resolves within the agent's own namespace.",
               "type": "string"
             },
             "pollInterval": {
