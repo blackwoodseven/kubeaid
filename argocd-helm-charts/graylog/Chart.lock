@@ -1,6 +1,6 @@
 dependencies:
 - name: graylog
   repository: https://charts.kong-z.com
-  version: 3.0.27
-digest: sha256:bc673928b9f19d2fbb1c343c948c171a7820aa5e685c5a354209ab724c4aaef7
-generated: "2026-08-10T14:44:55.546462007+05:30"
+  version: 3.0.28
+digest: sha256:b696f71407bd60f59896ab6dbda37bf0cc9697d5767c19940c59df5da05bf37f
+generated: "2026-08-18T15:42:19.433601929Z"
