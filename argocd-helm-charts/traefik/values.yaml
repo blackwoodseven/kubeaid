@@ -25,6 +25,8 @@ traefik:
     revisionHistoryLimit: 0
   log:
     level: INFO
+  accessLog:
+    enabled: true
   ports:
     web:
       http:
