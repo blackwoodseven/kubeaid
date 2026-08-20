@@ -20,7 +20,10 @@ tetragon:
   # - To route events to a different or internet-facing OpenObserve, add a second
   #   exporter + pipeline in the openobserve-collector values (filter on the Tetragon
   #   namespace) — Tetragon itself is unchanged.
-  {}
+  # TracingPolicy CRs ship with this chart, so their CRDs must too — the upstream
+  # "operator" default creates them at runtime and ArgoCD applies the CRs first.
+  crds:
+    installMethod: helm
 
 # KubeAid-owned TracingPolicy set.
 #
