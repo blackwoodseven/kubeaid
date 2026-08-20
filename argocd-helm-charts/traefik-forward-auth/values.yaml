@@ -1,4 +1,11 @@
 traefik-forward-auth:
+  # Chart is pinned at appVersion 3.1.0 (image.tag 3.1.0 by default) and
+  # hasn't been bumped since 2023. App itself has moved on to v3.3.0 --
+  # all dependency/go-version bumps and a cache race-condition fix, no
+  # flag/env/config changes -- so it's safe to override here rather than
+  # wait on https://github.com/mesosphere/charts/pull/1666
+  image:
+    tag: v3.3.0
   traefikForwardAuth:
     enabled: true
     clientId: traefik-forward-auth
