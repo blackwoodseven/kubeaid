@@ -5,6 +5,9 @@ whoami:
   ingress:
     enabled: true
 
+  image:
+    tag: v1.12.0
+
 global:
   netpol:
     enabled: false
