@@ -84,6 +84,24 @@ rules:
   - apiGroups: ["operator.kubearmor.com"]
     resources: ["kubearmorconfigs"]
     verbs: ["get", "list"]
+
+  # Resolving a CiliumEndpoint to the workload that owns it, which is what
+  # apps[] is keyed by. The endpoint is named after its pod; the pod's
+  # controller reference names a ReplicaSet, and the ReplicaSet's names the
+  # Deployment -- the same resolution trivy-operator bakes into its report
+  # labels.
+  #
+  # These are NOT optional. The network collector treats a list failure as an
+  # error rather than as absence, because Cilium is mandatory on a KubeAid
+  # cluster, so removing either rule takes network posture from "collected" to
+  # "failed" for the whole cluster rather than degrading it quietly.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
