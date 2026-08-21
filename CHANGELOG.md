@@ -2,6 +2,57 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 32.5.0
+
+### Minor Version Upgrades
+
+- f170970b7 Updated argo-cd from version 10.3.3 to 10.4.0
+- f170970b7 Updated haproxy from version 1.29.0 to 1.30.1
+- f170970b7 Updated seaweedfs from version 4.41.0 to 4.42.0
+
+### Patch Version Upgrades
+
+- f170970b7 Updated cilium from version 1.20.0 to 1.20.1
+- f170970b7 Updated erpnext from version 8.0.73 to 8.0.75
+- f170970b7 Updated fluent-bit from version 0.58.0 to 0.58.1
+- f170970b7 Updated graylog from version 3.0.27 to 3.0.28
+- f170970b7 Updated keycloakx from version 7.2.2 to 7.2.3
+- f170970b7 Updated openobserve from version 0.92.0 to 0.92.2
+- f170970b7 Updated yetibot from version 1.0.217 to 1.0.220
+
+### Features
+
+- bebc7b254 feat(security-exporter): grant pods and replicasets for owner resolution
+- 7ccbe796e feat(kubeaid-security-exporter): grant read on kubescape's aggregated api
+- bd916ea02 feat(kubeaid-security-exporter): add chart, move posture collection off the agent
+
+### Bug Fixes
+
+- cd40c3738 fix(traefik-forward-auth): override image tag to v3.3.0
+- 6923f9a84 fix(tetragon): install CRDs via helm so the shipped TracingPolicies sync
+- 5c6ea52a8 fix(traefik): enable access logs
+- 9e4ca8f46 fix(kubeaid-agent): default backupExporter.enabled to false
+
+### Configuration Changes
+
+- e73b3e54d chore: update container image kubeaid-agent to v1.1.0
+- b0a81e9c2 chore: bump whoami image to v1.12.0
+- 53514af98 chore: update container image kubeaid-agent to v1.0.0
+
+### Other Changes
+
+- 83cb49d9d docs(security-exporter): warn that the image tag must stay quoted
+- 43dce53c1 docs: add netbird VPN debugging procedure
+- 85ce15920 refactor(kubeaid-agent): make the exporters local subcharts
+- 0a7dc4fc5 docs(kubeaid-agent): drop stale kubeaid-security-exporter references
+- 81215c226 docs: use absolute image URLs in README so they render on the kubeaid.io docs site
+- ad8164129 refactor(kubeaid-agent): fold backup-exporter in too, rename to security-exporter
+- 114a493b7 refactor(kubeaid-agent): fold the security exporter into this chart
+- c5c0a9c63 matomo: add declarative Keycloak/OIDC SSO support
+- ab93f02e1 docs(kubeaid-security-exporter): add chart README, refresh the agent one
+- cea91fde6 docs: applications use the Obmondo repo directly or a fork - drop pushupdate user
+- 7db3ef4cd docs: correct update-rollout and air-gap answers
+
 ## KubeAid Release Version 32.4.0
 
 ### Minor Version Upgrades
