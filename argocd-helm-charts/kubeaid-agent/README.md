@@ -31,9 +31,11 @@ cluster-wide read — the coupling that separating them removed in the first pla
 bounds the blast radius: a security collection pass holds every VulnerabilityReport in memory at once, and as
 a sidecar an OOM there would take down the agent, and with it the cluster-liveness ping.
 
-Each exporter is independently switchable. `security-exporter.enabled` defaults to `true`;
-`backup-exporter.enabled` defaults to **`false`**, because it cannot start without S3 credentials for
-the backends it reports on.
+Each exporter is independently switchable, and **both default to `false`**. `backup-exporter.enabled`
+because it cannot start without S3 credentials for the backends it reports on;
+`security-exporter.enabled` because it holds cluster-wide read across eight API groups, which a chart
+must not grant to every cluster that installs the agent. The security exporter needs no credentials, so
+turning it on is nothing more than `enabled: true`.
 
 Both exporters are discovered by the agent at runtime rather than wired by config, so their object names are
 **pinned** rather than release-derived. The agent finds backup-exporter by the label
@@ -54,7 +56,8 @@ on the `kubeaid` Argo CD project, stored in the `argocd-project-role-kubeaid-age
 - `argocd-project-role-kubeaid-agent` Secret in the `argocd` namespace, holding the Argo CD auth token under the
   `token` key (created automatically by `kubeaid-cli`). Name overridable via
   `appConfig.argocd.authTokenSecretName`.
-- kube-prometheus, if `serviceMonitor` / `security-exporter.prometheusRule` stay enabled (all default to `true`).
+- kube-prometheus, if `serviceMonitor` stays enabled (default `true`), and for
+  `security-exporter.prometheusRule` on clusters where the security exporter is turned on.
 
 The exporter additionally wants, but does not require:
 
@@ -83,7 +86,7 @@ the parent's values file carries only the agent's own settings.
 | `appConfig.securityPosture.pollInterval` | `1h` | Poll cadence. The submit is skipped when `collectedAt` has not advanced, so end-to-end freshness is bounded by `security-exporter.exporter.interval`, not by this. |
 | `obmondoAPITLSSecretName` | `obmondo-clientcert` | Secret with the mTLS keypair. |
 | `extraSecretReaderNamespaces` | `[]` | Extra namespaces where a secrets-read Role/RoleBinding is created for the agent. |
-| `security-exporter.enabled` | `true` | Deploy the security exporter alongside the agent. |
+| `security-exporter.enabled` | `false` | Deploy the security exporter alongside the agent. Off by default: it holds cluster-wide read across eight API groups, so granting it is a per-cluster decision. Needs no credentials. |
 | `backup-exporter.enabled` | `false` | Deploy the backup exporter alongside the agent. Off by default: it needs S3 credentials per backend, so enabling it without those deploys a pod that cannot work. See the [Backup Exporter guide](../../docs/guides/backup-exporter.md). |
 | `security-exporter.exporter.interval` | `12h` | Collection cadence. Trivy refreshes its reports on a 24h TTL, so polling faster re-reads identical data. |
 | `security-exporter.prometheusRule.upgradableThreshold` | `20` | `ImageOutdatedAndVulnerable` fires above this many images having both a fixable Critical/High CVE and a newer tag available. |

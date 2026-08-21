@@ -6,9 +6,16 @@
 # because a pod carries one ServiceAccount and co-locating them would hand the
 # credential-holding workload this one's cluster-wide read.
 
-# -- Set false to run the agent without it. The agent tolerates its absence:
-# the poll fails, a metric records it, nothing is submitted.
-enabled: true
+# -- OFF by default. The exporter holds cluster-wide read across eight API
+# groups, and a chart must not grant that to every cluster that installs the
+# agent -- enabling it is a deliberate per-cluster act.
+#
+# Unlike the backup exporter it needs no credentials, so `enabled: true` is the
+# only thing required to turn it on.
+#
+# The agent tolerates its absence: the poll fails, a metric records it, nothing
+# is submitted.
+enabled: false
 
 # -- Overrides the Service and ServiceAccount name. Leave empty. The default
 # matches kubeaid-agent's appConfig.securityPosture.exporterURL, and changing
