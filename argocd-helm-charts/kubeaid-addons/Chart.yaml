@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: v2
 name: kubeaid-addons
 description: KubeAid addons chart for per-namespace infrastructure primitives
 # A chart can be either an 'application' or a 'library' chart.
