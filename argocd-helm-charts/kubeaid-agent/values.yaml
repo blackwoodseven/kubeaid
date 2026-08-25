@@ -170,3 +170,11 @@ serviceMonitor:
 
   interval: 30s
   scrapeTimeout: 10s
+
+prometheusRule:
+  enabled: true
+
+  # -- Extra labels on the PrometheusRule object, for Prometheus selector
+  # matching.
+  additionalLabels: {}
+  additionalAnnotations: {}
