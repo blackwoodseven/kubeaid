@@ -2,9 +2,10 @@
 #
 # Loki is deployed in Monolithic (single binary) mode backed by a PVC. That is the
 # right shape for a single cluster ingesting up to a few tens of GB/day. For larger
-# installs switch deploymentMode to SimpleScalable or Distributed and point
-# loki.storage at object storage (S3, GCS, Azure Blob, or an in-cluster MinIO /
-# Garage / Rook Ceph RGW bucket) - those modes require object storage.
+# installs switch deploymentMode to Distributed and point loki.storage at object
+# storage (S3, GCS, Azure Blob, or an in-cluster MinIO / Garage / Rook Ceph RGW
+# bucket) - that mode requires object storage. Skip SimpleScalable, the upstream
+# chart marks it deprecated and slated for removal in Loki 4.
 #
 # This chart ships Loki only. Pick your own log shipper (fluent-bit,
 # opentelemetry-operator) and point it at the gateway service.
