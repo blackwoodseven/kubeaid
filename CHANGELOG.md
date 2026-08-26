@@ -2,6 +2,14 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 32.6.1
+
+### Other Changes
+
+- 127679d67 removed v0.13.0 and v0.16.0 kube-prom
+- c9368b15f docs: every output lands in the cluster's home, bootstrap needs no flag
+- ceb30f588 docs: apply readme feedback - inline install, app integration, decisions under docs
+
 ## KubeAid Release Version 32.6.0
 
 ### Minor Version Upgrades
