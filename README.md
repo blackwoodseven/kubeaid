@@ -125,7 +125,7 @@ curl -fsSL https://raw.githubusercontent.com/Obmondo/kubeaid-cli/main/scripts/in
 kubeaid-cli config generate
 
 # Review the generated config, then bring the cluster up
-kubeaid-cli cluster bootstrap
+kubeaid-cli cluster bootstrap --cluster-name <cluster>
 ```
 
 Your answers land under `~/.config/kubeaid-cli/<cluster>/configs` (use `--configs-directory` to choose another

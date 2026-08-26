@@ -108,11 +108,13 @@ curl -fsSL https://raw.githubusercontent.com/Obmondo/kubeaid-cli/main/scripts/in
 #    (written to ~/.config/kubeaid-cli/<cluster>/configs/)
 kubeaid-cli config generate
 
-# 3. Review the generated files, then bootstrap
+# 3. Review the generated files, then bootstrap — your only saved cluster is
+#    picked automatically (several clusters? add --cluster-name <cluster>)
 kubeaid-cli cluster bootstrap
 
-# 4. Access cluster
-export KUBECONFIG=./outputs/kubeconfigs/clusters/main.yaml
+# 4. Access the cluster — bootstrap ends by printing the exact export line
+#    for your platform and provider; on Linux it looks like:
+export KUBECONFIG=~/.config/kubeaid-cli/<cluster>/kubeconfigs/main.yaml
 kubectl cluster-info
 ```
 
