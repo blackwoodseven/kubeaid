@@ -2,6 +2,12 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 32.6.2
+
+### Other Changes
+
+- 4ef91758f removed terraform and terragrunt obsolete files
+
 ## KubeAid Release Version 32.6.1
 
 ### Other Changes
