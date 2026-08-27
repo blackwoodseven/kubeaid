@@ -1,8 +1,8 @@
 # Backup Exporter
 
 The backup exporter is a Prometheus exporter that monitors the health of your backup infrastructure.
-It exposes metrics and ships PrometheusRule alerts for **PostgreSQL**, **Velero**, **MongoDB**, and
-**Sealed Secrets** backups.
+It exposes metrics and ships PrometheusRule alerts for **PostgreSQL**, **Velero**, **MongoDB**,
+**MariaDB**, and **Sealed Secrets** backups.
 
 It ships in the [`kubeaid-agent`](../../argocd-helm-charts/kubeaid-agent/) chart, as its own
 Deployment alongside the agent, so one Argo CD application covers both.
@@ -22,12 +22,19 @@ Deployment alongside the agent, so one Argo CD application covers both.
 | MongoDB | `MongoDBBackupExporterJobFailed` | The exporter job itself reports an error (`backup_exporter_mongodb_error == 1`) |
 | MongoDB | `MongoDBDumpBackupExceededRPO` | Latest dump backup age exceeds `max_rpo` |
 | MongoDB | `MongoDBDumpBackupMissing` | No dump backup has ever been recorded |
+| MariaDB | `MariaDBBackupExporterJobFailed` | The exporter job itself reports an error (`backup_exporter_mariadb_error == 1`) |
+| MariaDB | `MariaDBDumpBackupExceededRPO` | Latest dump backup age exceeds `max_rpo` |
+| MariaDB | `MariaDBDumpBackupMissing` | No dump backup has ever been recorded |
 | Sealed Secrets | `SealedSecretsBackupExporterJobFailed` | The exporter job itself reports an error (`backup_exporter_sealedsecrets_error == 1`) |
 | Sealed Secrets | `SealedSecretsKeyBackupExceededRPO` | Latest key backup age exceeds `max_rpo` |
 | Sealed Secrets | `SealedSecretsKeyBackupMissing` | No key backup has ever been recorded |
 
+MariaDB clusters whose `Backup` resources are all suspended
+(`spec.schedule.suspend: true`) are not monitored — a schedule switched off on purpose is not a
+missing backup.
+
 All alerts default to `critical` severity and fire after 5 minutes. These are configurable via the
-values file. MongoDB and Sealed Secrets monitoring are opt-in (`enabled: false` by default) since
+values file. MongoDB, MariaDB and Sealed Secrets monitoring are opt-in (`enabled: false` by default) since
 not every cluster runs those backups.
 
 ## Deployment
@@ -58,6 +65,10 @@ backup-exporter:
       enabled: false
       s3:
         secretName: ""
+    mariadb:
+      enabled: false
+      s3:
+        secretName: ""
     sealedSecrets:
       enabled: false
       s3:
@@ -80,6 +91,11 @@ backup-exporter:
       alertForDuration: 5m
     mongodb:
       enabled: false               # Follows exporter.mongodb.enabled
+      namespace: monitoring
+      severity: critical
+      alertForDuration: 5m
+    mariadb:
+      enabled: false               # Follows exporter.mariadb.enabled
       namespace: monitoring
       severity: critical
       alertForDuration: 5m
