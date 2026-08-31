@@ -33,6 +33,13 @@ MariaDB clusters whose `Backup` resources are all suspended
 (`spec.schedule.suspend: true`) are not monitored — a schedule switched off on purpose is not a
 missing backup.
 
+The `*BackupExporterJobFailed` alerts fire on collector failures only. The exporter also emits
+`backup_exporter_*_error` series for resources that are deliberately out of scope
+(`type="backup_not_enabled"`, and for Postgres `cronjob_not_found` / `no_scheduled_backups`) — a PVC
+in a namespace no Velero schedule includes, for instance. Those types are excluded from the
+`JobFailed` alerts and suppress the matching `*BackupMissing` alert, so a resource nobody chose to
+back up stays silent.
+
 All alerts default to `critical` severity and fire after 5 minutes. These are configurable via the
 values file. MongoDB, MariaDB and Sealed Secrets monitoring are opt-in (`enabled: false` by default) since
 not every cluster runs those backups.
