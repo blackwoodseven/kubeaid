@@ -1,0 +1,19 @@
+{{- if .Values.global.podDisruptionBudget.enabled }}
+{{- range .Values.global.podDisruptionBudget.entries }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  {{- if .minAvailable }}
+  minAvailable: {{ .minAvailable }}
+  {{- else }}
+  maxUnavailable: {{ .maxUnavailable | default 1 }}
+  {{- end }}
+  selector:
+    matchLabels:
+{{ toYaml .matchLabels | indent 6 }}
+{{- end }}
+{{- end }}
