@@ -247,7 +247,7 @@ exporter:
     # These keys decrypt every SealedSecret in git, and the backup CronJob is
     # their only copy outside the cluster, so this is the backup with the least
     # margin for error.
-    enabled: false
+    enabled: true
 
     # Maximum acceptable Recovery Point Objective (RPO) for key backups.
     # Supported formats: "24h", "6h", "30m", "1d", "7d"
