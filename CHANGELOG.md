@@ -2,6 +2,58 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 32.7.0
+
+### Minor Version Upgrades
+
+- a115befaf Updated aws-ebs-csi-driver from version 2.64.0 to 2.65.0
+- a115befaf Updated hcloud-cloud-controller-manager from version 1.35.0 to 1.36.0
+- a115befaf Updated cluster-api-operator from version 0.28.0 to 0.29.0
+- a115befaf Updated keycloakx from version 7.2.3 to 7.3.0
+- a115befaf Updated mongodb-kubernetes from version 1.10.0 to 1.11.0
+- a115befaf Updated opentelemetry-collector from version 0.170.0 to 0.172.0
+- a115befaf Updated teleport-cluster from version 18.10.7 to 18.11.0
+- a115befaf Updated teleport-kube-agent from version 18.10.7 to 18.11.0
+- a115befaf Updated traefik from version 41.3.0 to 41.4.0
+- a115befaf Updated trivy-operator from version 0.35.0 to 0.36.0
+
+### Patch Version Upgrades
+
+- a115befaf Updated argo-cd from version 10.4.0 to 10.4.2
+- a115befaf Updated erpnext from version 8.0.75 to 8.0.76
+- a115befaf Updated gatekeeper from version 3.23.0 to 3.23.1
+- a115befaf Updated gitlab-runner from version 0.92.0 to 0.92.1
+- a115befaf Updated metal3 from version 0.15.1 to 0.15.2
+- a115befaf Updated opencost from version 2.5.29 to 2.5.30
+- a115befaf Updated tetragon from version 1.7.0 to 1.7.1
+- a115befaf Updated tigera-operator from version v3.32.1 to v3.32.2
+- a115befaf Updated yetibot from version 1.0.226 to 1.0.230
+
+### Features
+
+- 70ed8c7e3 feat(backup-exporter): alert on MariaDB dump backups
+- b32902c12 feat(backup-exporter): configure the MariaDB dump exporter
+- e55842845 feat(backup-exporter): grant read on the MariaDB CRDs
+
+### Bug Fixes
+
+- 985e04fb0 fix(security-exporter): take the v0.1.1 image with snake_case wire keys
+- c19be7284 fix(rustfs): pull s3-backup-cleanup v1.0.3
+- b10c50788 fix(backup-exporter): stop alerting on Velero backup_not_enabled
+- 8a987e62d fix(netbird): pin management, signal and relay to a single replica
+- c630cfe5f fix(rustfs): pull the batching s3-backup-cleanup image
+- 86930bc9a fix(kubeaid-addons): correct POSTGRES_OPERATOR typo and bump logical-backup default tag
+- 8c2b815a5 fix(trivy-operator): disable SBOM report generation
+- 6f728ba2a fix(prometheus): drop probe_success guard from cert expiry alert
+
+### Configuration Changes
+
+- 2ece19cbd chore(backup-exporter): bump the chart to 0.4.0
+
+### Other Changes
+
+- 558d59a0d docs(backup-exporter): document MariaDB monitoring
+
 ## KubeAid Release Version 32.6.2
 
 ### Other Changes
