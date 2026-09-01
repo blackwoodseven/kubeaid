@@ -23,7 +23,10 @@ dependencies:
   # The old grafana/loki-stack chart is deprecated and unmaintained upstream. The
   # community-maintained grafana-community/loki chart is the supported replacement.
   # helm repo update does not support OCI, so version bumps here are done manually
-  # and pulled with helm dependency update.
+  # and pulled with helm dependency update. When you do bump it, the vendored
+  # subchart is re-extracted from the upstream tarball, so check that
+  # bin/manage-helm-chart.sh applied .helm-prune afterwards. Without it the minio
+  # subchart we do not ship comes back.
   - name: loki
     version: "18.8.1"
     repository: "oci://ghcr.io/grafana-community/helm-charts"

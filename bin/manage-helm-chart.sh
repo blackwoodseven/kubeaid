@@ -355,6 +355,34 @@ function add_last_update_date() {
   fi
 }
 
+# Function to delete paths listed in a chart's .helm-prune file.
+#
+# `helm dependency update` unpacks whatever the upstream tarball happens to
+# contain, including subcharts we deliberately do not ship (a conditional
+# dependency left disabled, for example). Deleting those by hand does not
+# survive, because the next version bump untars them again. Listing them in
+# .helm-prune makes the removal stick.
+function prune_vendored_paths() {
+  local chart_path="$1"
+  local prune_file="$chart_path/.helm-prune"
+  local target
+
+  test -f "$prune_file" || return 0
+
+  while read -r target; do
+    # Never let an entry escape the chart directory.
+    if [[ "$target" = /* || "$target" == *..* ]]; then
+      echo "Refusing to prune '$target', path must stay inside $chart_path"
+      continue
+    fi
+
+    if test -e "$chart_path/$target"; then
+      echo "Pruning $chart_path/$target"
+      rm -rf "${chart_path:?}/${target:?}"
+    fi
+  done < <(sed 's/#.*//' "$prune_file" | awk 'NF {print $1}')
+}
+
 function update_helm_chart {
 
   HELM_CHART_PATH="$1"
@@ -478,6 +506,10 @@ function update_helm_chart {
       else
         echo "Helm chart $HELM_CHART_NAME is cached and on latest version $HELM_CHART_CURRENT_VERSION, locally on the filesystem"
       fi
+
+      # Runs whether or not we just untarred, so a stray subchart cannot
+      # survive by arriving through some other route.
+      prune_vendored_paths "$HELM_CHART_PATH"
 
       UPDATE_TYPE=""
       # Check if the file is present in the old tag, this could be when a new helm chart was added.

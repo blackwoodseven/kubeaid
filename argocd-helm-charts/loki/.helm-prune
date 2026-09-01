@@ -1,0 +1,10 @@
+# Paths deleted from the vendored subcharts after `helm dependency update`.
+# One path per line, relative to this chart directory. Comments with #.
+#
+# The upstream loki chart declares minio as a conditional dependency so that
+# someone trying the chart out gets object storage without an S3 account.
+# It is gated on minio.enabled, which defaults to false, and we point Loki at
+# s3.obmondo.com instead, so it renders nothing. The published tarball bundles
+# it regardless, which is why this file exists: without it the subchart comes
+# back on the next version bump.
+charts/loki/charts/minio
