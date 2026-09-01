@@ -81,6 +81,9 @@ global:
     # -- Number of PostgreSQL instances in the cluster
     instances: 1
 
+    # -- REFER : https://cloudnative-pg.io/docs/1.27/scheduling/#requiring-pod-anti-affinity.
+    podAntiAffinityType: required
+
     # -- Primary database name created during initdb
     database: app
 
