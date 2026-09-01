@@ -51,6 +51,14 @@ fluent-bit:
           Name                      kubernetes
           Match                     kube.*
           Kube_URL                  https://kubernetes.default.svc.cluster.local:443
+          # This filter enriches each log line by fetching that pod's object from
+          # the API server. Buffer_Size caps that HTTP response, not the log line,
+          # and the 32K default is smaller than a pod with a few containers and
+          # long env blocks. On overflow the filter discards the whole response,
+          # so the line still ships but arrives with no namespace_name or
+          # container_name and cannot be found by any query on pod metadata.
+          # 2M is above the ~1.5MB ceiling Kubernetes puts on a single object.
+          Buffer_Size               2M
           Merge_Log                 Off
           K8S-Logging.Parser        On
           K8S-Logging.Exclude       On
