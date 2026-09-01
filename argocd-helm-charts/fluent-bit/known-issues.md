@@ -34,3 +34,41 @@ This is sometimes necessary, as the CNI pods (Calico, Cilium, etc) handle the ne
 To debug from inside the pod, you will need to change the image of fluent bit to `-debug`, as the default image does not support
 an interactive shell. Add -debug to the end of the image, like `fluent/fluent-bit:4.0-debug`.
 Then you should be able to see if the pod can connect to the target graylog.
+
+## Logs arrive with no namespace or container labels
+
+Some pods' logs reach the log destination as a single unlabelled stream. A query that
+filters on pod metadata returns nothing, even though the container is clearly logging
+and the fluent-bit pod on that node is healthy and shipping everything else.
+
+The fluent-bit log shows this repeating:
+
+```
+[warn] [http_client] cannot increase buffer: current=32000 requested=64768 max=32000
+```
+
+A raw CRI log line carries only a timestamp, a stream and the message. To attach
+`namespace_name`, `container_name` and friends, the Kubernetes filter fetches that
+pod's object from the API server over HTTP. `Buffer_Size` caps the size of that
+response. It has nothing to do with the size of the log line.
+
+The default is 32K, which is smaller than a pod with a few containers and long env
+blocks. When the response does not fit, the filter discards all of it rather than
+truncating, and the record continues down the pipeline with no metadata at all. The
+log line is still shipped and still stored, it just lands in an unlabelled stream
+where no query on pod metadata can reach it. Pods with many containers are the usual
+offenders, as are CNI agents.
+
+Confirm by measuring the object the filter is trying to read:
+
+```
+kubectl get --raw /api/v1/namespaces/<namespace>/pods/<pod> | wc -c
+```
+
+Anything over 32000 is affected. This chart sets `Buffer_Size 2M`, above the ~1.5MB
+ceiling Kubernetes puts on a single object, so nothing can exceed it. If you have
+overridden `config.filters`, note that it is a string and replaces the block wholesale,
+so the setting has to be repeated in the override.
+
+The setting only applies to newly tailed files. Lines already shipped stay unlabelled,
+and fluent-bit has to restart for the change to take effect.
