@@ -37,7 +37,7 @@ metadata:
   name: weekly-backup
   namespace: velero
 spec:
-  schedule: '0 0 * * 0'
+  schedule: '0 {{ .Values.schedule.dailyHour | default 3 }} * * 0'
   template:
     hooks: {}
     resourcePolicy:
