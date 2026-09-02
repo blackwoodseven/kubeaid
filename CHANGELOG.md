@@ -2,6 +2,36 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 32.7.1
+
+### Features
+
+- 2f9ff3412 feat(kubeaid-addons): add  generic PriorityClass and PodDisruptionBudget primitives
+
+### Bug Fixes
+
+- 0a15630e6 fix(backup-exporter): alert VeleroBackupExceededRPO once per namespace, listing every volume past RPO with its age
+- 5db2630d5 fix(backup-exporter): print backup age as a duration in the ExceededRPO alerts instead of raw seconds
+- 928dd3adb fix(velero): run the weekly backup at the daily hour so the Sunday to Monday gap is 24h, not 27h
+- 7b9114744 fix(rustfs): set memory limit and resource requests
+- 3ac34c1af fix(orphan-pvc): single-line markdown KubeDetectOrphanPvc description with real PVC count and list
+- 8401628b8 fix(fluent-bit): raise the kubernetes filter buffer, 32K silently dropped pod labels
+
+### Configuration Changes
+
+- d1ed4b5fb chore(kubeaid-addons/postgresql): defaulting to required pod anti-affinity for CNPG cluster pods
+- 194da2c05 chore(backup-exporter): enable sealedSecrets exporter, bump to v1.2.5
+- f7110bf75 chore: update container image kubeaid-agent to v1.1.1
+- cf1b4a30f chore(loki): drop the unused minio subchart and keep it out on future updates
+- 4947933a7 chore(loki): fix leftover loki-stack references after the chart rename
+- 0e98958d2 chore(loki-stack): switch to community-maintained grafana loki chart
+
+### Other Changes
+
+- a2e10b0c6 docs(loki): recommend Distributed over the deprecated SimpleScalable mode
+- 970aa62fe (chore): fix the loki chart name maintained by us
+- 41ef2e330 docs(loki-stack): rewrite readme for the loki chart and list loki as a supported log option
+
 ## KubeAid Release Version 32.7.0
 
 ### Minor Version Upgrades
