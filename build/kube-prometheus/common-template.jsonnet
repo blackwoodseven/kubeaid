@@ -765,6 +765,7 @@ local kp =
               ],
             }],
             vars.grafana_ingress_annotations,
+            vars.grafana_ingress_class_name,
           ),
         },
       } else {}
@@ -799,6 +800,7 @@ local kp =
               ],
             }],
             vars.alertmanager_ingress_annotations,
+            vars.alertmanager_ingress_class_name,
           ),
         },
       } else {}
@@ -833,6 +835,7 @@ local kp =
               ],
             }],
             vars.prometheus_ingress_annotations,
+            vars.prometheus_ingress_class_name,
           ),
         },
       } else {}
@@ -980,8 +983,12 @@ else kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
     for name in std.objectFields(kp.prometheusAdapter)
   } else {}
 ) +
-(if std.objectHas(vars, 'grafana_ingress_host') then { [name + '-ingress']: kp.ingress[name] for name in std.objectFields(kp.ingress) } else {}) +
-(if std.objectHas(vars, 'prometheus_ingress_host') then { [name + '-ingress']: kp.ingress[name] for name in std.objectFields(kp.ingress) } else {}) +
+// Every entry in kp.ingress was already built under its own *_ingress_host
+// guard, so emitting the whole set once covers all three components.
+(if std.objectHas(vars, 'grafana_ingress_host')
+    || std.objectHas(vars, 'prometheus_ingress_host')
+    || std.objectHas(vars, 'alertmanager_ingress_host')
+ then { [name + '-ingress']: kp.ingress[name] for name in std.objectFields(kp.ingress) } else {}) +
 // Rendering prometheusRules object. This is an object compatible with prometheus-operator CRD definition for prometheusRule
 { [o._config.name + '-prometheus-rules']: o.prometheusRules for o in std.filter((function(o) o.prometheusRules != null), mixins) } +
 (if std.objectHas(vars, 'prometheus_ingress_host') && vars.prometheus_blackbox_probe_enabled then {

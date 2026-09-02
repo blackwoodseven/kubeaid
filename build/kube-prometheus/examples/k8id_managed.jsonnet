@@ -24,7 +24,5 @@
     limits: { memory: '3Gi' },
     requests: { cpu: '200m', memory: '1.5Gi' },
   },
-  grafana_ingress_annotations: {
-    'kubernetes.io/ingress.class': 'traefik-cert-manager',
-  },
+  grafana_ingress_class_name: 'traefik',
 }

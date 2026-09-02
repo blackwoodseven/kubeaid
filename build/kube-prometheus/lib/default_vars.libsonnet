@@ -97,6 +97,13 @@
   alertmanager_ingress_annotations: {
     'cert-manager.io/cluster-issuer': 'letsencrypt',
   },
+  // spec.ingressClassName on the monitoring ingresses. Clusters whose Traefik
+  // IngressClass is not named 'traefik' (e.g. traefik-private) must override
+  // this, otherwise nothing claims the ingress and requests 404. Set to null
+  // to omit the field and fall back to the cluster's default IngressClass.
+  grafana_ingress_class_name: 'traefik',
+  prometheus_ingress_class_name: 'traefik',
+  alertmanager_ingress_class_name: 'traefik',
   // app.kubernetes.io/name carried by the Traefik pods that serve the
   // monitoring ingresses. Clusters running Traefik under a differently-named
   // Helm release (e.g. traefik-private) must override this, otherwise the
