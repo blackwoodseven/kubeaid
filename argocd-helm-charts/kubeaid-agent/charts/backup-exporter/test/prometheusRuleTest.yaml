@@ -38,7 +38,7 @@ tests:
               severity: critical
             exp_annotations:
               summary: 'PostgreSQL logical backup exceeded RPO'
-              description: 'Logical backup for test/pg1 exceeded RPO (age: 95000)'
+              description: 'Logical backup for test/pg1 exceeded RPO (age: 1d 2h 23m 20s)'
 
   - interval: 1m
     input_series:
@@ -55,7 +55,7 @@ tests:
               severity: critical
             exp_annotations:
               summary: 'PostgreSQL CNPG WAL backup exceeded RPO'
-              description: 'WAL backup for test/pg1 exceeded RPO (age: 95000)'
+              description: 'WAL backup for test/pg1 exceeded RPO (age: 1d 2h 23m 20s)'
 
   - interval: 1m
     input_series:
