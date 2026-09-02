@@ -199,6 +199,48 @@ tests:
         eval_time: 6m
         exp_alerts: []
 
+  # ExceededRPO is one alert per namespace. Two volumes past RPO in one
+  # namespace and one healthy volume in another must yield exactly one alert,
+  # carrying only the namespace label, whose description lists both late
+  # volumes with humanized ages (sorted by name) and nothing from the healthy
+  # namespace.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="test-ns",resource_name="pvc-late-b",resource_type="pvc"}'
+        values: '100000x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="test-ns",resource_name="pvc-late-a",resource_type="pvc"}'
+        values: '95000x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="test-ns",resource_name="pvc-fresh",resource_type="pvc"}'
+        values: '3600x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="other-ns",resource_name="pvc-other",resource_type="pvc"}'
+        values: '3600x6'
+    alert_rule_test:
+      - alertname: VeleroBackupExceededRPO
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: VeleroBackupExceededRPO
+              severity: critical
+              namespace: test-ns
+            exp_annotations:
+              summary: 'Velero backups in test-ns exceeded RPO'
+              description: |-
+                2 Velero backup(s) in namespace test-ns exceeded the RPO of 26h:
+                pvc-late-a (pvc, method: test-backup, age: 1d 2h 23m 20s)
+                pvc-late-b (pvc, method: test-backup, age: 1d 3h 46m 40s)
+
+  # Nothing past RPO, no alert, even with many volumes.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="test-ns",resource_name="pvc-a",resource_type="pvc"}'
+        values: '3600x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="test-ns",resource_name="pvc-b",resource_type="pvc"}'
+        values: '93600x6'
+    alert_rule_test:
+      - alertname: VeleroBackupExceededRPO
+        eval_time: 6m
+        exp_alerts: []
+
   # A genuine failure type must still fire VeleroBackupExporterJobFailed.
   - interval: 1m
     input_series:
