@@ -28,7 +28,7 @@ spec:
             severity: {{ .Values.prometheusRule.mongodb.severity | default "critical" }}
           annotations:
             summary: 'MongoDB dump backup exceeded RPO'
-            description: 'Dump for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }} exceeded RPO (age: {{ `{{ $value }}` }})'
+            description: 'Dump for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }} exceeded RPO (age: {{ `{{ $value | humanizeDuration }}` }})'
         # Age 0 is the exporter's "no backup" sentinel, not a fresh backup: a
         # dump taken this second still reports a positive age.
         - alert: MongoDBDumpBackupMissing

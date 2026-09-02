@@ -28,7 +28,7 @@ spec:
             severity: {{ .Values.prometheusRule.postgres.severity | default "critical" }}
           annotations:
             summary: 'PostgreSQL logical backup exceeded RPO'
-            description: 'Logical backup for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }} exceeded RPO (age: {{ `{{ $value }}` }})'
+            description: 'Logical backup for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }} exceeded RPO (age: {{ `{{ $value | humanizeDuration }}` }})'
         - alert: PostgresCNPGWALBackupExceededRPO
           expr: postgres_latest_cnpg_wal_backup_age > {{ include "backup-exporter.durationToSeconds" .Values.exporter.postgres.max_rpo }}
           for: {{ .Values.prometheusRule.postgres.alertForDuration | default "5m" }}
@@ -36,7 +36,7 @@ spec:
             severity: {{ .Values.prometheusRule.postgres.severity | default "critical" }}
           annotations:
             summary: 'PostgreSQL CNPG WAL backup exceeded RPO'
-            description: 'WAL backup for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }} exceeded RPO (age: {{ `{{ $value }}` }})'
+            description: 'WAL backup for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }} exceeded RPO (age: {{ `{{ $value | humanizeDuration }}` }})'
         - alert: PostgresLogicalBackupMissing
           expr: postgres_latest_logical_backup_age == 0 unless on (namespace, cluster_name) (backup_exporter_postgres_error{backup="logical", type=~"backup_not_enabled|cronjob_not_found"} == 1)
           for: {{ .Values.prometheusRule.postgres.alertForDuration | default "5m" }}
