@@ -1,4 +1,10 @@
 rustfs:
+  resources:
+    requests:
+      cpu: 200m
+      memory: 1Gi
+    limits:
+      memory: 8Gi
   replicaCount: 4
   mode:
     standalone:
