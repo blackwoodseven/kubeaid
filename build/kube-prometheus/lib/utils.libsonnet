@@ -13,7 +13,7 @@
     },
   },
 
-  ingress(name, namespace, rules, tls, annotations):: {
+  ingress(name, namespace, rules, tls, annotations, ingressClassName=null):: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'Ingress',
     metadata: {
@@ -22,6 +22,7 @@
       annotations: annotations,
     },
     spec: {
+      [if ingressClassName != null then 'ingressClassName']: ingressClassName,
       rules: rules,
       [if tls != null then 'tls']: tls,
     },
