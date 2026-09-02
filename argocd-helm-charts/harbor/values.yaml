@@ -5,6 +5,39 @@ global:
   harbor:
     netpol: false
 
+  # Opt-in PriorityClass for Harbor's own components. Worth enabling when Harbor is
+  # used as a pull-through cache, since image pulls across the whole cluster end up
+  # depending on its availability. Reference the name via harbor.<component>.priorityClassName.
+  priorityClass:
+    enabled: false
+    entries:
+      - name: harbor-critical
+        value: 900000
+        description: "Used by Harbor components; cluster-wide image pulls may depend on Harbor's availability."
+
+  # Opt-in PodDisruptionBudgets for portal/core/jobservice/registry. Only enable this
+  # for components whose replicas is >= 2 (harbor.<component>.replicas) - with a single
+  # replica, maxUnavailable: 1 would block voluntary node drains/evictions entirely.
+  podDisruptionBudget:
+    enabled: false
+    entries:
+      - name: harbor-portal
+        maxUnavailable: 1
+        matchLabels:
+          component: portal
+      - name: harbor-core
+        maxUnavailable: 1
+        matchLabels:
+          component: core
+      - name: harbor-jobservice
+        maxUnavailable: 1
+        matchLabels:
+          component: jobservice
+      - name: harbor-registry
+        maxUnavailable: 1
+        matchLabels:
+          component: registry
+
   postgresql:
     enabled: true
     instanceName: harbor
