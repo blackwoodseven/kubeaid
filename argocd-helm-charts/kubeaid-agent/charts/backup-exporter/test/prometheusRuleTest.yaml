@@ -283,7 +283,7 @@ tests:
   # A genuine failure type must still fire VeleroBackupExporterJobFailed.
   - interval: 1m
     input_series:
-      - series: 'backup_exporter_velero_error{namespace="monitoring",resource_name="prometheus-k8s-db-prometheus-k8s-0",resource_type="pvc",type="s3_connection_failed"}'
+      - series: 'backup_exporter_velero_error{namespace="test-ns",resource_name="pvc-a",resource_type="pvc",type="s3_connection_failed"}'
         values: '1x6'
     alert_rule_test:
       - alertname: VeleroBackupExporterJobFailed

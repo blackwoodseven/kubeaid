@@ -7,59 +7,59 @@ rule_files:
 tests:
   - interval: 1m
     input_series:
-      - series: 'puppet_report{host="atat.enableit",environment="1_0_0"}'
+      - series: 'puppet_report{host="atat.example",environment="1_0_0"}'
         values: 0x3000
-      - series: 'puppet_status{state="failed",host="atat01.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat01.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat02.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat02.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat03.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat03.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat04.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat04.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat05.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat05.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat06.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat06.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat07.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat07.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat08.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat08.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat09.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat09.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat10.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat10.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat11.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat11.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat12.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat12.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat13.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat13.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat14.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat14.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat15.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat15.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat16.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat16.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat17.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat17.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat18.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat18.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat19.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat19.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat20.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat20.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat21.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat21.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat22.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat22.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat23.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat23.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat24.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat24.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat25.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat25.example",environment="master"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat26.enableit",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat26.example",environment="master"}'
         values: 1x3000  # 2 days
 
     alert_rule_test:
@@ -69,13 +69,13 @@ tests:
         exp_alerts:
           - exp_labels:
               severity: warning
-              host: atat.enableit
+              host: atat.example
               alert_id: 'monitor::system::puppet::last_run'
               environment: "1_0_0"
             exp_annotations:
-              summary: 'Puppet has not run on **atat.enableit** for more than 2d 2h 0m 0s'
+              summary: 'Puppet has not run on **atat.example** for more than 2d 2h 0m 0s'
               description: |-2
-                Last Puppet run on **atat.enableit** was on 1970-01-01 00:00:00 +0000 UTC, more than the limit of 2 days ago.
+                Last Puppet run on **atat.example** was on 1970-01-01 00:00:00 +0000 UTC, more than the limit of 2 days ago.
 
                 This could be due to any number of things, e.g. Puppet crashing or hanging, or cron/systemd timers being broken.
       - alertname: 'monitor::system::puppet::total_resources'

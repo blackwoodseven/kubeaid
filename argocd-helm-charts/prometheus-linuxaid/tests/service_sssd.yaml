@@ -27,9 +27,9 @@ tests:
 
   - interval: 1m
     input_series:
-      - series: obmondo_monitoring{certname="gitlab01.enableit", alert_id="monitor::system::service::sssd::check"}
+      - series: obmondo_monitoring{certname="gitlab01.example", alert_id="monitor::system::service::sssd::check"}
         values: 1x1000
-      - series: obmondo_sssd_status_check{certname="gitlab01.enableit", instance="gitlab01.enableit:9100", job="pushprox", pushprox_target="node_exporter"}
+      - series: obmondo_sssd_status_check{certname="gitlab01.example", instance="gitlab01.example:9100", job="pushprox", pushprox_target="node_exporter"}
         values: 1x1000
 
     alert_rule_test:
@@ -38,11 +38,11 @@ tests:
         exp_alerts:
           - exp_labels:
               severity: 'critical'
-              certname: 'gitlab01.enableit'
+              certname: 'gitlab01.example'
               alert_id: 'monitor::system::service::sssd::check'
-              instance: 'gitlab01.enableit:9100'
+              instance: 'gitlab01.example:9100'
               job: 'pushprox'
               pushprox_target: 'node_exporter'
             exp_annotations:
-              summary: 'SSSD is not online on **gitlab01.enableit**'
-              description: 'SSSD is not online on **gitlab01.enableit**. Please look into it'
+              summary: 'SSSD is not online on **gitlab01.example**'
+              description: 'SSSD is not online on **gitlab01.example**. Please look into it'

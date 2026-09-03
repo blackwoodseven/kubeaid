@@ -215,19 +215,19 @@ Show routing network with only netbird interface.
 
 ```sh
 $ ip route show table netbird   
-10.230.56.31 dev enableit-in 
-10.230.56.33 dev enableit-in 
-10.230.56.43 dev enableit-in 
-10.230.56.45 dev enableit-in 
-10.230.56.60 dev enableit-in 
-10.230.56.62 dev enableit-in 
+10.0.0.31 dev example-in 
+10.0.0.33 dev example-in 
+10.0.0.43 dev example-in 
+10.0.0.45 dev example-in 
+10.0.0.60 dev example-in 
+10.0.0.62 dev example-in 
 ```
 
 #### Check which IP will route to which interface
 
 ```sh
-$ ip route get 10.230.56.60
-10.230.56.60 dev enableit-in table netbird src 100.108.22.129 uid 1000 
+$ ip route get 10.0.0.60
+10.0.0.60 dev example-in table netbird src 100.64.0.10 uid 1000 
     cache 
 ```
 
@@ -239,17 +239,17 @@ $ ip route get 10.230.56.60
     $ tcpdump -i wt0
     tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
     listening on wt0, link-type RAW (Raw IP), snapshot length 262144 bytes
-    09:25:55.471331 IP sidharth-jawale.netbird.example.52214 > 10.230.56.60.25: Flags [S], seq 4130107208, win 64480, options [mss 1240,sackOK,TS val 1588962935 ecr 0,nop,wscale 7], length 0
-    09:25:55.477104 IP 10.230.56.60.25 > sidharth-jawale.netbird.example.52214: Flags [S.], seq 1275207684, ack 4130107209, win 8192, options [mss 1240,nop,wscale 8,sackOK,TS val 942730381 ecr 1588962935], length 0
-    09:25:55.705020 IP sidharth-jawale.netbird.example.52214 > 10.230.56.60.25: Flags [.], ack 1, win 504, options [nop,nop,TS val 1588963212 ecr 942730381], length 0
-    09:25:55.710578 IP 10.230.56.60.25 > sidharth-jawale.netbird.example.52214: Flags [P.], seq 1:118, ack 1, win 1026, options [nop,nop,TS val 942730613 ecr 1588963212], length 117: SMTP: 220 example-web01 Microsoft ESMTP MAIL Service, Version: 10.0.14393.4169 ready at  Mon, 22 Dec 2025 09:25:55 +0100 
-    09:25:55.964251 IP sidharth-jawale.netbird.example.52214 > 10.230.56.60.25: Flags [.], ack 118, win 504, options [nop,nop,TS val 1588963463 ecr 942730613], length 0
-    09:26:04.354941 IP sidharth-jawale.netbird.example.52214 > 10.230.56.60.25: Flags [P.], seq 1:7, ack 118, win 504, options [nop,nop,TS val 1588971809 ecr 942730613], length 6: SMTP: quit
-    09:26:04.360327 IP 10.230.56.60.25 > sidharth-jawale.netbird.example.52214: Flags [P.], seq 118:180, ack 7, win 1026, options [nop,nop,TS val 942739253 ecr 1588971809], length 62: SMTP: 221 2.0.0 example-web01 Service closing transmission channel
-    09:26:04.360341 IP 10.230.56.60.25 > sidharth-jawale.netbird.example.52214: Flags [F.], seq 180, ack 7, win 1026, options [nop,nop,TS val 942739253 ecr 1588971809], length 0
-    09:26:04.674374 IP sidharth-jawale.netbird.example.52214 > 10.230.56.60.25: Flags [.], ack 180, win 504, options [nop,nop,TS val 1588972168 ecr 942739253], length 0
-    09:26:04.675017 IP sidharth-jawale.netbird.example.52214 > 10.230.56.60.25: Flags [F.], seq 7, ack 181, win 504, options [nop,nop,TS val 1588972168 ecr 942739253], length 0
-    09:26:04.680312 IP 10.230.56.60.25 > sidharth-jawale.netbird.example.52214: Flags [.], ack 8, win 1026, options [nop,nop,TS val 942739584 ecr 1588972168], length 0
+    09:25:55.471331 IP my-laptop.netbird.example.52214 > 10.0.0.60.25: Flags [S], seq 4130107208, win 64480, options [mss 1240,sackOK,TS val 1588962935 ecr 0,nop,wscale 7], length 0
+    09:25:55.477104 IP 10.0.0.60.25 > my-laptop.netbird.example.52214: Flags [S.], seq 1275207684, ack 4130107209, win 8192, options [mss 1240,nop,wscale 8,sackOK,TS val 942730381 ecr 1588962935], length 0
+    09:25:55.705020 IP my-laptop.netbird.example.52214 > 10.0.0.60.25: Flags [.], ack 1, win 504, options [nop,nop,TS val 1588963212 ecr 942730381], length 0
+    09:25:55.710578 IP 10.0.0.60.25 > my-laptop.netbird.example.52214: Flags [P.], seq 1:118, ack 1, win 1026, options [nop,nop,TS val 942730613 ecr 1588963212], length 117: SMTP: 220 example-web01 Microsoft ESMTP MAIL Service, Version: 10.0.14393.4169 ready at  Mon, 22 Dec 2025 09:25:55 +0100 
+    09:25:55.964251 IP my-laptop.netbird.example.52214 > 10.0.0.60.25: Flags [.], ack 118, win 504, options [nop,nop,TS val 1588963463 ecr 942730613], length 0
+    09:26:04.354941 IP my-laptop.netbird.example.52214 > 10.0.0.60.25: Flags [P.], seq 1:7, ack 118, win 504, options [nop,nop,TS val 1588971809 ecr 942730613], length 6: SMTP: quit
+    09:26:04.360327 IP 10.0.0.60.25 > my-laptop.netbird.example.52214: Flags [P.], seq 118:180, ack 7, win 1026, options [nop,nop,TS val 942739253 ecr 1588971809], length 62: SMTP: 221 2.0.0 example-web01 Service closing transmission channel
+    09:26:04.360341 IP 10.0.0.60.25 > my-laptop.netbird.example.52214: Flags [F.], seq 180, ack 7, win 1026, options [nop,nop,TS val 942739253 ecr 1588971809], length 0
+    09:26:04.674374 IP my-laptop.netbird.example.52214 > 10.0.0.60.25: Flags [.], ack 180, win 504, options [nop,nop,TS val 1588972168 ecr 942739253], length 0
+    09:26:04.675017 IP my-laptop.netbird.example.52214 > 10.0.0.60.25: Flags [F.], seq 7, ack 181, win 504, options [nop,nop,TS val 1588972168 ecr 942739253], length 0
+    09:26:04.680312 IP 10.0.0.60.25 > my-laptop.netbird.example.52214: Flags [.], ack 8, win 1026, options [nop,nop,TS val 942739584 ecr 1588972168], length 0
     ^C
     11 packets captured
     11 packets received by filter
@@ -261,9 +261,9 @@ $ ip route get 10.230.56.60
     > Ensure the masquerade toggle is enabled to allow netbird to update the nftables accordingly.
 
     ```sh
-    $ telnet 10.230.56.60 25
-    Trying 10.230.56.60...
-    Connected to 10.230.56.60.
+    $ telnet 10.0.0.60 25
+    Trying 10.0.0.60...
+    Connected to 10.0.0.60.
     Escape character is '^]'.
     220 example-web01 Microsoft ESMTP MAIL Service, Version: 10.0.14393.4169 ready at  Mon, 22 Dec 2025 09:25:55 +0100 
     quit
@@ -281,25 +281,25 @@ table ip netbird {
  set nb0000722 {
   type ipv4_addr
   flags dynamic
-  elements = { 100.108.22.129, 100.108.200.32 }
+  elements = { 100.64.0.10, 100.64.0.11 }
  }
 
  set nb0000757 {
   type ipv4_addr
   flags dynamic
-  elements = { 100.108.22.129, 100.108.200.32 }
+  elements = { 100.64.0.10, 100.64.0.11 }
  }
 
  set nb0000886 {
   type ipv4_addr
   flags dynamic
-  elements = { 100.108.22.129, 100.108.200.32 }
+  elements = { 100.64.0.10, 100.64.0.11 }
  }
 
  set nb-dccc54ad {
   type ipv4_addr
   flags interval
-  elements = { 100.108.22.129, 100.108.200.32 }
+  elements = { 100.64.0.10, 100.64.0.11 }
  }
 
  chain netbird-rt-fwd {
@@ -307,9 +307,9 @@ table ip netbird {
   ip saddr @nb-dccc54ad ip daddr 192.168.4.0/24 tcp dport 25 counter packets 0 bytes 0 accept
   ip saddr @nb-dccc54ad ip daddr 192.168.4.0/24 tcp dport 8089 counter packets 0 bytes 0 accept
   ip saddr @nb-dccc54ad ip daddr 192.168.4.0/24 tcp dport 53 counter packets 0 bytes 0 accept
-  ip saddr @nb-dccc54ad ip daddr 10.230.56.33 tcp dport 25 counter packets 7 bytes 420 accept
-  ip saddr @nb-dccc54ad ip daddr 10.230.56.33 tcp dport 8089 counter packets 0 bytes 0 accept
-  ip saddr @nb-dccc54ad ip daddr 10.230.56.33 tcp dport 53 counter packets 0 bytes 0 accept
+  ip saddr @nb-dccc54ad ip daddr 10.0.0.33 tcp dport 25 counter packets 7 bytes 420 accept
+  ip saddr @nb-dccc54ad ip daddr 10.0.0.33 tcp dport 8089 counter packets 0 bytes 0 accept
+  ip saddr @nb-dccc54ad ip daddr 10.0.0.33 tcp dport 53 counter packets 0 bytes 0 accept
  }
 
  chain netbird-rt-postrouting {
@@ -329,8 +329,8 @@ table ip netbird {
 
  chain netbird-mangle-prerouting {
   type filter hook prerouting priority mangle; policy accept;
-  iifname != "wt0" ct state new ip saddr 10.230.56.33 meta mark set 0x0001bd22
-  iifname "wt0" ct state new ip daddr 10.230.56.33 meta mark set 0x0001bd21
+  iifname != "wt0" ct state new ip saddr 10.0.0.33 meta mark set 0x0001bd22
+  iifname "wt0" ct state new ip daddr 10.0.0.33 meta mark set 0x0001bd21
   iifname != "wt0" ct state new ip saddr 192.168.4.0/24 meta mark set 0x0001bd22
   iifname "wt0" ct state new ip daddr 192.168.4.0/24 meta mark set 0x0001bd21
   iifname "wt0" ct state new ct mark set 0x0001bd10

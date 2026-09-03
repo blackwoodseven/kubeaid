@@ -216,7 +216,7 @@ Backup sealed secrets via [cronjob](./templates/cronjob.yaml). Controlled by `ba
 Create the s3 bucket
 
 ```sh
-aws s3api create-bucket --bucket kbm-sealed-secrets-backups --region eu-west-1 --endpoint-url=https://s3.obmondo.com
+aws s3api create-bucket --bucket my-sealed-secrets-backups --region eu-west-1 --endpoint-url=https://s3.example.com
 ```
 
 ## Docs

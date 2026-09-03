@@ -89,8 +89,8 @@ This document covers configuring Keycloak with external identity providers (Goog
 * Switch to the `<customer_name>` realm
 * Click on Identity Provider -> Add provider -> Keycloak OIDC
 * Set the alias and displayname
-* Set the `Authorization Url` as `https://keycloakx.kam.obmondo.com/auth/realms/Obmondo/protocol/openid-account/auth`
-* Set the `Token Url` as `https://keycloakx.kam.obmondo.com/auth/realms/Obmondo/protocol/openid-account/token`
+* Set the `Authorization Url` as `https://keycloakx.example.com/auth/realms/Obmondo/protocol/openid-account/auth`
+* Set the `Token Url` as `https://keycloakx.example.com/auth/realms/Obmondo/protocol/openid-account/token`
 * Set the `Client Authentication` as `Client secret sent as basic auth`
 * Set the `Client ID` as `kubeaid-employee`
 * Set the `Client Secret` as `secret-from-obmondo`
