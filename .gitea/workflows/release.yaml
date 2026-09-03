@@ -41,13 +41,14 @@ jobs:
 
       - name: Log in to Harbor
         env:
+          HARBOR_REGISTRY: ${{ secrets.HARBOR_REGISTRY }}
           HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
           HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
         run: |
           echo "$HARBOR_PASSWORD" \
-            | helm registry login harbor.obmondo.com -u "$HARBOR_USERNAME" --password-stdin
+            | helm registry login "$HARBOR_REGISTRY" -u "$HARBOR_USERNAME" --password-stdin
 
-      - name: Publish charts listed in .helm-charts-publish
+      - name: Publish charts listed in .helm-charts-publish.yaml
         env:
-          HELM_OCI_REGISTRY: oci://harbor.obmondo.com/obmondo/charts
+          HELM_OCI_REGISTRY: oci://${{ secrets.HARBOR_REGISTRY }}/obmondo/charts
         run: ./bin/publish-helm-chart.sh

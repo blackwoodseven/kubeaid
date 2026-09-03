@@ -53,7 +53,7 @@ jobs:
           echo "$GHCR_TOKEN" \
             | helm registry login ghcr.io -u "$GHCR_USER" --password-stdin
 
-      - name: Publish charts listed in .helm-charts-publish
+      - name: Publish charts listed in .helm-charts-publish.yaml
         env:
           HELM_OCI_REGISTRY: oci://ghcr.io/obmondo/charts
         run: ./bin/publish-helm-chart.sh

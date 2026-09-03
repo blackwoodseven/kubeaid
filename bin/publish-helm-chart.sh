@@ -2,11 +2,11 @@
 
 set -eou pipefail
 
-# Packages the first-party charts listed in .helm-charts-publish and pushes
+# Packages the first-party charts listed in .helm-charts-publish.yaml and pushes
 # them to an OCI registry, tagged with each chart's own Chart.yaml version.
 
 declare ARGOCD_CHART_PATH="argocd-helm-charts"
-declare PUBLISH_LIST=".helm-charts-publish"
+declare PUBLISH_LIST=".helm-charts-publish.yaml"
 declare REGISTRY="${HELM_OCI_REGISTRY:-oci://ghcr.io/obmondo/charts}"
 declare DRY_RUN=false
 declare -a CHARTS=()
@@ -15,7 +15,7 @@ function usage() {
   cat <<'USAGE'
 Usage: ./bin/publish-helm-chart.sh [OPTIONS] [CHART...]
 
-Packages every chart listed in .helm-charts-publish and pushes it to an OCI
+Packages every chart listed in .helm-charts-publish.yaml and pushes it to an OCI
 registry, using the chart's own Chart.yaml version as the tag. A version that
 already exists in the registry is skipped, so a release that did not touch a
 chart republishes nothing.
@@ -26,12 +26,12 @@ OPTIONS:
 
 ARGUMENTS:
   CHART...      Publish only these charts. Each must appear in
-                .helm-charts-publish. Defaults to every listed chart.
+                .helm-charts-publish.yaml. Defaults to every listed chart.
 
 ENVIRONMENT:
   HELM_OCI_REGISTRY   Target registry.
                       Default:  oci://ghcr.io/obmondo/charts
-                      Gitea CI: oci://harbor.obmondo.com/obmondo/charts
+                      Gitea CI: oci://$HARBOR_REGISTRY/obmondo/charts
 
 The caller is responsible for `helm registry login` against the target.
 
@@ -64,10 +64,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if ! command -v helm >/dev/null; then
-  echo "Error: Required program 'helm' is not installed or not in PATH"
-  exit 1
-fi
+for program in helm yq; do
+  if ! command -v "$program" >/dev/null; then
+    echo "Error: Required program '$program' is not installed or not in PATH"
+    echo "Please install $program and try again"
+    exit 1
+  fi
+done
 
 helm_version_full=$(helm version --template="{{.Version}}" | sed 's/^v//')
 helm_version=$(echo "$helm_version_full" | awk -F. '{printf "%d%02d%02d", $1, $2, $3}')
@@ -82,8 +85,14 @@ if [ ! -f "$PUBLISH_LIST" ]; then
   exit 1
 fi
 
-# Entries are "<chart>  # reason" - drop comments and blank lines.
-mapfile -t ALLOWED < <(sed -e 's/#.*//' -e 's/[[:space:]]*$//' "$PUBLISH_LIST" | grep -v '^$' || true)
+missing_reason="$(yq '[.charts[] | select((.reason // "") == "") | .name] | join(", ")' "$PUBLISH_LIST")"
+
+if [ -n "$missing_reason" ]; then
+  echo "Error: these entries in ${PUBLISH_LIST} carry no reason: ${missing_reason}"
+  exit 1
+fi
+
+mapfile -t ALLOWED < <(yq '.charts[].name' "$PUBLISH_LIST")
 
 if [ "${#ALLOWED[@]}" -eq 0 ]; then
   echo "No charts listed in ${PUBLISH_LIST}, nothing to publish."
@@ -114,11 +123,11 @@ for chart in "${CHARTS[@]}"; do
     exit 1
   fi
 
-  chart_meta="$(helm show chart "$chart_dir")"
-  chart_name="$(echo "$chart_meta" | awk '/^name:/ {gsub(/["'\'']/, "", $2); print $2; exit}')"
-  chart_version="$(echo "$chart_meta" | awk '/^version:/ {gsub(/["'\'']/, "", $2); print $2; exit}')"
+  chart_name="$(yq '.name' "${chart_dir}/Chart.yaml")"
+  chart_version="$(yq '.version' "${chart_dir}/Chart.yaml")"
 
-  if [ -z "$chart_name" ] || [ -z "$chart_version" ]; then
+  if [ -z "$chart_name" ] || [ "$chart_name" = "null" ] ||
+     [ -z "$chart_version" ] || [ "$chart_version" = "null" ]; then
     echo "Error: could not read name/version from ${chart_dir}/Chart.yaml"
     exit 1
   fi

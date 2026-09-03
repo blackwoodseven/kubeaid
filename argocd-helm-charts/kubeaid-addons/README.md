@@ -140,9 +140,10 @@ global:
 
 ### 3. From outside this repository (OCI)
 
-A chart in another repository cannot use the symlink above, so `kubeaid-addons` is published as an
-OCI artifact on every release - `ghcr.io/obmondo/charts` from GitHub, `harbor.obmondo.com/obmondo/charts`
-from Gitea.
+`kubeaid-addons` is also published as an OCI artifact on every release: `ghcr.io/obmondo/charts`
+from GitHub, and an internal Harbor mirror from Gitea. Use it wherever the symlink above is not
+available, typically from a chart in another repository. Both routes are supported and neither is
+preferred - pick whichever suits the consumer.
 
 **`Chart.yaml`**:
 ```yaml
