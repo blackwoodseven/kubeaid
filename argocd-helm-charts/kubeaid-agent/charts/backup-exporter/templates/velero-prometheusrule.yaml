@@ -40,11 +40,15 @@ spec:
               {{ `{{ .Labels.resource_name }} ({{ .Labels.resource_type }}, method: {{ .Labels.backup }}, age: {{ .Value | humanizeDuration }})` }}
               {{ `{{- end }}` }}
         - alert: VeleroBackupMissing
-          expr: backup_exporter_velero_latest_backup_age == 0 unless on (namespace, resource_name, resource_type) (backup_exporter_velero_error{type="backup_not_enabled"} == 1)
+          expr: count by (namespace) (backup_exporter_velero_latest_backup_age == 0 unless on (namespace, resource_name, resource_type) (backup_exporter_velero_error{type="backup_not_enabled"} == 1))
           for: {{ .Values.prometheusRule.velero.alertForDuration | default "5m" }}
           labels:
             severity: {{ .Values.prometheusRule.velero.severity | default "critical" }}
           annotations:
-            summary: 'Velero backup missing'
-            description: 'No backup found for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.resource_name }}` }} ({{ `{{ $labels.resource_type }}` }}, method: {{ `{{ $labels.backup }}` }})'
+            summary: 'Velero backups missing in {{ `{{ $labels.namespace }}` }}'
+            description: |-
+              {{ `{{ $value }}` }} volume(s) in namespace {{ `{{ $labels.namespace }}` }} have never been backed up by Velero:
+              {{ `{{- range printf "backup_exporter_velero_latest_backup_age{namespace=%q} == 0 unless on (namespace, resource_name, resource_type) (backup_exporter_velero_error{namespace=%q,type='backup_not_enabled'} == 1)" $labels.namespace $labels.namespace | query | sortByLabel "resource_name" }}` }}
+              {{ `{{ .Labels.resource_name }} ({{ .Labels.resource_type }})` }}
+              {{ `{{- end }}` }}
 {{- end }}
