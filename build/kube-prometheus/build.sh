@@ -8,7 +8,7 @@
 # cluster name: staging, jsonnet file: staging-vars.jsonnet).
 # The manifests will be put in the cluster folder in a kube-prometheus subdir.
 # And it must be run from the root of the argocd-apps repo. Example:
-# ./build/kube-prometheus/build.sh ../kubernetes-config-enableit/k8s/kam.obmondo.com
+# ./build/kube-prometheus/build.sh ../kubeaid-config/k8s/<cluster-name>
 
 set -euo pipefail
 

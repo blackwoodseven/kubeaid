@@ -10,7 +10,7 @@ tests:
   # Metric value = 7200 (eval_time 2h) + 40*86400 = 3,463,200
   - interval: 1m
     input_series:
-      - series: 'security_exporter_os_support_end_timestamp{phase="eol",id="ubuntu",version="20.04",date="1970-02-10",certname="web01.enableit"}'
+      - series: 'security_exporter_os_support_end_timestamp{phase="eol",id="ubuntu",version="20.04",date="1970-02-10",certname="web01.example"}'
         values: 3463200x150
 
     alert_rule_test:
@@ -24,11 +24,11 @@ tests:
               id: 'ubuntu'
               version: '20.04'
               date: '1970-02-10'
-              certname: 'web01.enableit'
+              certname: 'web01.example'
             exp_annotations:
-              summary: 'Ubuntu 20.04 on web01.enableit — end of free security support in 40 days'
+              summary: 'Ubuntu 20.04 on web01.example — end of free security support in 40 days'
               description: |-2
-                Host **web01.enableit** runs **Ubuntu 20.04**, which reaches end of free security updates on **1970-02-10** (in 40 days).
+                Host **web01.example** runs **Ubuntu 20.04**, which reaches end of free security updates on **1970-02-10** (in 40 days).
 
                 Plan an OS upgrade or move the host to paid extended support before
                 the cutoff.
@@ -53,9 +53,9 @@ tests:
   # Metric values: eol=1 (past), extended=7200 + 30*86400 = 2,599,200
   - interval: 1m
     input_series:
-      - series: 'security_exporter_os_support_end_timestamp{phase="eol",id="debian",version="10",date="1970-01-01",certname="web02.enableit"}'
+      - series: 'security_exporter_os_support_end_timestamp{phase="eol",id="debian",version="10",date="1970-01-01",certname="web02.example"}'
         values: 1x150
-      - series: 'security_exporter_os_support_end_timestamp{phase="extended",id="debian",version="10",date="1970-01-31",certname="web02.enableit"}'
+      - series: 'security_exporter_os_support_end_timestamp{phase="extended",id="debian",version="10",date="1970-01-31",certname="web02.example"}'
         values: 2599200x150
 
     alert_rule_test:
@@ -69,11 +69,11 @@ tests:
               id: 'debian'
               version: '10'
               date: '1970-01-31'
-              certname: 'web02.enableit'
+              certname: 'web02.example'
             exp_annotations:
-              summary: 'Debian 10 on web02.enableit — past free eol, paid extended support ends in 30 days'
+              summary: 'Debian 10 on web02.example — past free eol, paid extended support ends in 30 days'
               description: |-2
-                Host **web02.enableit** runs **Debian 10**, which is past its free end-of-life. The host currently depends on paid extended support (Debian ELTS), which ends on **1970-01-31** (30 days remaining).
+                Host **web02.example** runs **Debian 10**, which is past its free end-of-life. The host currently depends on paid extended support (Debian ELTS), which ends on **1970-01-31** (30 days remaining).
 
                 Plan an OS upgrade before paid extended support also expires —
                 after that there are no more patches at any tier.
@@ -98,7 +98,7 @@ tests:
   # Metric value = 7200 + 200*86400 = 17,287,200
   - interval: 1m
     input_series:
-      - series: 'security_exporter_os_support_end_timestamp{phase="eol",id="ubuntu",version="24.04",date="1970-07-20",certname="web03.enableit"}'
+      - series: 'security_exporter_os_support_end_timestamp{phase="eol",id="ubuntu",version="24.04",date="1970-07-20",certname="web03.example"}'
         values: 17287200x150
 
     alert_rule_test:
@@ -113,9 +113,9 @@ tests:
   # Days remaining at eval_time=2h: (94,608,000 - 7200) / 86400 ≈ 1094.92
   - interval: 1m
     input_series:
-      - series: 'security_exporter_os_support_end_timestamp{phase="eol",id="rhel",version="9",date="1970-01-01",certname="web04.enableit"}'
+      - series: 'security_exporter_os_support_end_timestamp{phase="eol",id="rhel",version="9",date="1970-01-01",certname="web04.example"}'
         values: 1x150
-      - series: 'security_exporter_os_support_end_timestamp{phase="extended",id="rhel",version="9",date="1972-12-31",certname="web04.enableit"}'
+      - series: 'security_exporter_os_support_end_timestamp{phase="extended",id="rhel",version="9",date="1972-12-31",certname="web04.example"}'
         values: 94608000x150
 
     alert_rule_test:
@@ -129,11 +129,11 @@ tests:
               id: 'rhel'
               version: '9'
               date: '1972-12-31'
-              certname: 'web04.enableit'
+              certname: 'web04.example'
             exp_annotations:
-              summary: 'Rhel 9 on web04.enableit — past free eol, paid extended support ends in 1.095k days'
+              summary: 'Rhel 9 on web04.example — past free eol, paid extended support ends in 1.095k days'
               description: |-2
-                Host **web04.enableit** runs **Rhel 9**, which is past its free end-of-life. The host currently depends on paid extended support (RHEL ELS), which ends on **1972-12-31** (1.095k days remaining).
+                Host **web04.example** runs **Rhel 9**, which is past its free end-of-life. The host currently depends on paid extended support (RHEL ELS), which ends on **1972-12-31** (1.095k days remaining).
 
                 Plan an OS upgrade before paid extended support also expires —
                 after that there are no more patches at any tier.
@@ -162,9 +162,9 @@ tests:
   #                extended = 3y future ≈ 94,608,000
   - interval: 1m
     input_series:
-      - series: 'security_exporter_os_support_end_timestamp{phase="eol",id="ubuntu",version="22.04",date="1970-02-10",certname="web05.enableit"}'
+      - series: 'security_exporter_os_support_end_timestamp{phase="eol",id="ubuntu",version="22.04",date="1970-02-10",certname="web05.example"}'
         values: 3463200x150
-      - series: 'security_exporter_os_support_end_timestamp{phase="extended",id="ubuntu",version="22.04",date="1973-02-10",certname="web05.enableit"}'
+      - series: 'security_exporter_os_support_end_timestamp{phase="extended",id="ubuntu",version="22.04",date="1973-02-10",certname="web05.example"}'
         values: 94608000x150
 
     alert_rule_test:
@@ -178,11 +178,11 @@ tests:
               id: 'ubuntu'
               version: '22.04'
               date: '1970-02-10'
-              certname: 'web05.enableit'
+              certname: 'web05.example'
             exp_annotations:
-              summary: 'Ubuntu 22.04 on web05.enableit — end of free security support in 40 days'
+              summary: 'Ubuntu 22.04 on web05.example — end of free security support in 40 days'
               description: |-2
-                Host **web05.enableit** runs **Ubuntu 22.04**, which reaches end of free security updates on **1970-02-10** (in 40 days).
+                Host **web05.example** runs **Ubuntu 22.04**, which reaches end of free security updates on **1970-02-10** (in 40 days).
 
                 Plan an OS upgrade or move the host to paid extended support before
                 the cutoff.

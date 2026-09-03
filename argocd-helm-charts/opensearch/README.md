@@ -273,7 +273,7 @@ spec:
       jsonPointers:
         - /spec
   sources:
-    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+    - repoURL: https://github.com/Obmondo/KubeAid.git
       path: argocd-helm-charts/opensearch
       targetRevision: HEAD
       helm:

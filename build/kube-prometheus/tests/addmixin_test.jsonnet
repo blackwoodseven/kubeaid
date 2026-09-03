@@ -23,7 +23,7 @@ local cfgVeleroAndOpensearch = bw7Base {
   addMixins: { ceph: false, velero: true, opensearch: true },
 };
 
-// k8s.enableittest — connect_obmondo: false, v0.11.0, everything still off for hpa-maxed-out
+// minimal: connect_obmondo false, v0.11.0, everything still off for hpa-maxed-out
 local cfgMinimal = bw7Base {
   addMixins: { ceph: false, velero: true },
 };

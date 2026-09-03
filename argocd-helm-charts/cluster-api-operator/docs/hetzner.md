@@ -25,15 +25,15 @@
   ```sh
   #!/bin/bash
 
-  export CLUSTER_NAME=k8s03.obmondo.com \
-  export CUSTOMER_ID=lkaeu2839 \
+  export CLUSTER_NAME=k8s.example.com \
+  export CUSTOMER_ID=xxx \
   export HCLOUD_SSH_KEY="cluster" \
   export HCLOUD_TOKEN="xxx" \
   export HETZNER_ROBOT_USER="xxx" \
   export HETZNER_ROBOT_PASSWORD="xxx" \
   export HETZNER_SSH_PUB_PATH= "/home/foo/.ssh/robot_id_rsa.pub" \
   export HETZNER_SSH_PRIV_PATH="/home/foo/.ssh/robot_id_rsa" \
-  export ARGOCD_KUBEAID_CONFIG_REPO_URL=https://github.com/Obmondo/kubeaid-config-enableit.git \
+  export ARGOCD_KUBEAID_CONFIG_REPO_URL=https://github.com/<your-org>/kubeaid-config.git \
   export ARGOCD_REPO_TOKEN=xxx \
   export ARGOCD_REPO_USERNAME=kubeaid-bot \
   export GIT_KUBEAID_CONFIG_REPO_URL=https://github.com/Obmondo/kubeaid-config.git \

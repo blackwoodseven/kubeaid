@@ -20,7 +20,7 @@ For example, in Obmondo, *traefik* is deployed as **external**, **private**, etc
 
 ## Update the tags for a cluster
 
-* should be run at this folder level `/kubeaid-config-enableit/k8s/`
+* should be run at this folder level `/kubeaid-config/k8s/`
 
 The Docker image below (`harbor.obmondo.com/...`) is Obmondo-internal tooling, hosted on Obmondo's private registry;
 if you're not an Obmondo operator, run `bin/update-kubeaid-argocd-app.sh` directly instead.
