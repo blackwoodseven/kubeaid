@@ -1,4 +1,10 @@
 rustfs:
+  image:
+    rustfs:
+      # beta.12 serialises concurrent UploadPart on one upload-ID-scoped lock
+      # and 503s after the 5s lock timeout, breaking every Velero backup.
+      # Fixed by rustfs#5990 in rc.2; rc.5 also carries the follow-up fixes.
+      tag: 1.0.0-rc.5
   resources:
     requests:
       cpu: 200m
