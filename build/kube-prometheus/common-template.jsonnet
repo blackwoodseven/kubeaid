@@ -943,6 +943,28 @@ local kp =
                 group.rules
               ),
             }
+          else if group.name == 'kubernetes-system' && vars.platform == 'aks' then
+            // The aks apiserver constantly 500s against its own loopback
+            // client. kubeadm clusters show none of these.
+            group {
+              rules: std.map(
+                (
+                  function(o)
+                    if std.objectHas(o, 'alert') && o.alert == 'KubeClientErrors' then
+                      o {
+                        expr: |||
+                          (sum(rate(rest_client_requests_total{job="apiserver",code=~"5..",host!="[::1]:443"}[5m])) by (cluster, instance, job, namespace)
+                            /
+                          sum(rate(rest_client_requests_total{job="apiserver"}[5m])) by (cluster, instance, job, namespace))
+                          > 0.01
+                        |||,
+                      }
+                    else
+                      o
+                ),
+                group.rules
+              ),
+            }
           else
             group
       ),
