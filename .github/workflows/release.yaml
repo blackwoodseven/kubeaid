@@ -30,3 +30,30 @@ jobs:
           args: release --clean --config .goreleaser-github.yaml --release-notes=.release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-charts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v5
+        with:
+          version: 'v3.21.3'
+
+      - name: Log in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        run: |
+          echo "$GHCR_TOKEN" \
+            | helm registry login ghcr.io -u "$GHCR_USER" --password-stdin
+
+      - name: Publish charts listed in .helm-charts-publish.yaml
+        env:
+          HELM_OCI_REGISTRY: oci://ghcr.io/obmondo/charts
+        run: ./bin/publish-helm-chart.sh

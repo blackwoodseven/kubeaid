@@ -138,6 +138,34 @@ global:
     passwordSecretName: my-app-mongodb-user-password
 ```
 
+### 3. From outside this repository (OCI)
+
+`kubeaid-addons` is also published as an OCI artifact on every release: `ghcr.io/obmondo/charts`
+from GitHub, and an internal Harbor mirror from Gitea. Use it wherever the symlink above is not
+available, typically from a chart in another repository. Both routes are supported and neither is
+preferred - pick whichever suits the consumer.
+
+**`Chart.yaml`**:
+```yaml
+dependencies:
+  - name: kubeaid-addons
+    version: "1.0.0"
+    repository: oci://ghcr.io/obmondo/charts
+```
+
+Run `helm dependency update`, then commit the resulting `charts/*.tgz` and `Chart.lock`. Vendoring
+keeps the ArgoCD render hermetic: the repo-server needs no registry credentials, and a registry
+outage cannot break a sync.
+
+Values behave exactly as they do for an in-repo subchart. Everything consumable lives under
+`global:`, which Helm propagates from parent to subchart, so the examples above apply unchanged.
+`defaultDeny` deliberately sits outside `global:` so a parent chart can never render a
+namespace-wide deny by accident.
+
+This chart only emits custom resources, so the operators must already exist in the target cluster:
+`cloudnative-pg` for PostgreSQL and its backups, the MongoDB Community operator,
+`rabbitmq-cluster-operator`, `cert-manager` for `tlsChains`, and Cilium for any `netpol`.
+
 ## Enabling network policies
 
 ### Master switch
