@@ -2,6 +2,28 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 32.7.2
+
+### Features
+
+- fcdd6d364 feat(helm): publish allowlisted charts as OCI artifacts on release
+- 03326e5c6 feat(kube-prometheus): set spec.ingressClassName on the grafana, alertmanager and prometheus ingresses
+
+### Bug Fixes
+
+- 785355d69 fix(backup-exporter): alert VeleroBackupMissing once per namespace, listing every volume without a backup
+- f20e30380 fix(kubeaid-agent): add summary annotation to MissingNodeCountDetected
+- f2cb7ea40 fix(kube-prometheus): exclude aks loopback client from KubeClientErrors
+- 58552791b fix(backup-exporter): bump image to v1.2.6
+
+### Configuration Changes
+
+- 575918e99 chore: replace internal cluster, customer and host names with example values in docs, examples and tests
+
+### Other Changes
+
+- c96c69855 refactor(helm): parse publishing metadata with yq, parameterise the Harbor host
+
 ## KubeAid Release Version 32.7.1
 
 ### Features
