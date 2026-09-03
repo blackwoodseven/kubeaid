@@ -18,7 +18,7 @@ Deployment alongside the agent, so one Argo CD application covers both.
 | PostgreSQL | `PostgresWALBackupMissing` | No WAL backup has ever been recorded |
 | Velero | `VeleroBackupExporterJobFailed` | The exporter job itself reports an error (`backup_exporter_velero_error == 1`) |
 | Velero | `VeleroBackupExceededRPO` | One or more volumes in a namespace have a latest backup older than `max_rpo` (one alert per namespace, the description lists each volume and its age) |
-| Velero | `VeleroBackupMissing` | No backup has ever been recorded |
+| Velero | `VeleroBackupMissing` | One or more volumes in a namespace have never had a backup recorded (one alert per namespace, the description lists each volume) |
 | MongoDB | `MongoDBBackupExporterJobFailed` | The exporter job itself reports an error (`backup_exporter_mongodb_error == 1`) |
 | MongoDB | `MongoDBDumpBackupExceededRPO` | Latest dump backup age exceeds `max_rpo` |
 | MongoDB | `MongoDBDumpBackupMissing` | No dump backup has ever been recorded |
