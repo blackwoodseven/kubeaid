@@ -106,6 +106,57 @@ ceph-csi can actually use the new cipher before rolling it out to every node. A 
 here breaks new attachments (`rados: ret=-22`) while the existing ones are already
 hung, and rebooting will not help because the replacement mount cannot be made either.
 
+### Clearing AUTH_EMERGENCY_CIPHERS_SET
+
+Ceph 20.2.4 raises `AUTH_EMERGENCY_CIPHERS_SET` — *"Monitors are configured to use
+emergency allowed ciphers"*. This is Rook's **default**, not leftover from an incident:
+with `security.cephx.allowedCiphers` unset, Rook enables every cipher by passing
+`mon_auth_emergency_allowed_ciphers=aes,aes256k` on the mon command line.
+
+That means it does not appear in `ceph config dump` and `ceph config rm` cannot remove
+it. The source is `cmdline`:
+
+```shell
+ceph config show mon.<id> | grep -i ciph
+```
+
+To clear it, restrict the ciphers in the cluster's values:
+
+```yaml
+    security:
+      cephx:
+        allowedCiphers:
+          - aes256k
+```
+
+Rook then sets `auth_allowed_ciphers` and stops passing the emergency flag. It is a
+command-line argument, so the mons roll one at a time to pick it up.
+
+**Verify every key first.** The CRD warns that this setting "can disrupt cluster
+availability", and it means it: restricting the list locks out any entity still holding
+a key of an excluded cipher — including `mon.` and `client.admin`, which costs you the
+cluster with no way back in, since `ceph config` lives in the mon store.
+
+`status.cephx` cannot answer this. A missing `keyType` there means Rook never recorded
+one, **not** that the key is insecure. Compare key lengths instead — an `aes` key is
+visibly shorter than an `aes256k` one:
+
+```shell
+ceph auth ls -f json | jq -r '.auth_dump[].entity' | while read -r e; do
+  printf '%-38s %s\n' "$e" "$(ceph auth get-key "$e" 2>/dev/null | wc -c)"
+done
+```
+
+Every entity reporting the same length means nothing would be locked out. That includes
+the retained prior-generation keys (`<entity>.N`), which `keepPriorKeyCountMax` keeps
+alive and which are equally capable of stranding a mount that still authenticates with
+one.
+
+This chart deliberately leaves `allowedCiphers` unset. Setting it cluster-wide would
+contradict the `csi.keyType: aes` override above — clusters below Ubuntu 26.04 need the
+`aes` cipher allowed — so it belongs in per-cluster values, once that cluster has been
+verified fully migrated.
+
 ## About upstream charts
 
 This includes both of the two upstream rook-ceph charts listed here
