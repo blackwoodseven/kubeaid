@@ -39,7 +39,7 @@ Defaults set in `values.yaml`, applied to `csi`, `daemon` and `rbdMirrorPeer` al
 | --- | --- | --- |
 | `keyRotationPolicy` | `Disabled` | rotation must be a deliberate act, never a side effect of an upgrade |
 | `keepPriorKeyCountMax` | `1` | the old key stays valid while mounts migrate |
-| `keyType` | *not set* | depends on the cluster — see below |
+| `keyType` | `aes256k` | replaces the `aes` cipher Ceph 20.2.4 flags as insecure — see the node requirement below |
 
 Set `keepPriorKeyCountMax` on **every** entity, not just `csi`. Rook reports each one
 separately under `status.cephx`; anything showing `keyGeneration` without a
@@ -62,26 +62,42 @@ fails Multi-Attach on whatever node it lands on — down until the original node
 anyway. Draining starts the outage earlier and leaves pods scattered for the next
 reboot to disturb again. Cordon stops new scheduling; the reboot does the rest.
 
-### Choosing keyType
+### keyType and the Ubuntu 26.04 requirement
 
-Ceph 20.2.4 flags the long-standing `aes` cipher as insecure, which is what prompts
-most people to rotate in the first place. Neither value is right for every cluster,
-which is why this chart does not pin one:
+Ceph 20.2.4 flags the long-standing `aes` cipher as insecure — that warning is what
+prompts most people to rotate in the first place. This chart pins **`aes256k`** so the
+cipher is a deliberate choice rather than whatever a Ceph upgrade happens to default
+to; an unpinned `keyType` means an upgrade can re-key the cluster unattended, which
+behaves exactly like an unplanned rotation.
 
-- **`aes`** works with any kernel, but on Ceph 20.2.4+ it raises
-  `AUTH_INSECURE_CLIENT_KEY_TYPE` and needs `mon_auth_allow_insecure_key: true` for the
-  mons to accept and create such keys.
-- **`aes256k`** clears the warning but requires **kernel 7.0+ on every node** and a
-  ceph-csi new enough to handle it. Add a node on an older kernel later and its mounts
-  fail with no obvious explanation.
+**`aes256k` requires Linux kernel 7.0 or newer — Ubuntu 26.04 and up.**
 
-Whichever you pick, pin it explicitly per cluster. Leaving it unset means a Ceph
-upgrade can move the default underneath you, and the resulting re-key behaves exactly
-like an unplanned rotation. Change `keyType` and `keyGeneration` in separate steps, and
-verify the deployed ceph-csi can actually use the new type before rolling it out to
-every node — a failure here breaks new attachments (`rados: ret=-22`) while existing
-ones are already hung, and rebooting will not help because the replacement mount cannot
-be made either.
+That requirement applies to **`csi.keyType` only**. Those keys are consumed by the
+in-kernel clients (`krbd`, `kcephfs`), so every node that mounts a Ceph volume has to
+be able to use the cipher. `daemon` and `rbdMirrorPeer` keys are only ever used by
+userspace Ceph daemons and carry no kernel dependency.
+
+So on a cluster whose nodes are older than Ubuntu 26.04, override just that one:
+
+```yaml
+rook-ceph-cluster:
+  cephClusterSpec:
+    security:
+      cephx:
+        csi:
+          keyType: aes
+```
+
+`aes` keeps working on any kernel, at the cost of `AUTH_INSECURE_CLIENT_KEY_TYPE` in
+`ceph status` and needing `mon_auth_allow_insecure_key: true` for the mons to accept
+and create such keys. Adding a pre-26.04 node to an `aes256k` cluster later will strand
+that node's mounts with no obvious explanation, so treat the node OS floor as part of
+the cluster's contract.
+
+Change `keyType` and `keyGeneration` in separate steps, and verify the deployed
+ceph-csi can actually use the new cipher before rolling it out to every node. A failure
+here breaks new attachments (`rados: ret=-22`) while the existing ones are already
+hung, and rebooting will not help because the replacement mount cannot be made either.
 
 ## About upstream charts
 
