@@ -48,14 +48,21 @@ failing.
 ## Accepting a disk you have judged healthy
 
 CheckDisk records its verdict as a permanent error, so the host stays rejected until you clear it.
-Two annotations, on the management cluster:
+Two annotations, on the management cluster. With `kubeaid-cli` that is the local k3d cluster it
+creates for the bootstrap, and the kubeconfig is written relative to the directory you ran the CLI
+from:
 
 ```bash
+export KUBECONFIG=outputs/kubeconfigs/clusters/management/host.yaml
+
 kubectl -n capi-cluster annotate hetznerbaremetalhost <server-id> \
   capi.syself.com/ignore-check-disk=true --overwrite
 kubectl -n capi-cluster annotate hetznerbaremetalhost <server-id> \
   capi.syself.com/permanent-error-
 ```
+
+Once `clusterctl move` has run, the `HetznerBareMetalHost` objects live in the provisioned cluster
+instead, so use `outputs/kubeconfigs/clusters/main.yaml` from that point.
 
 The latch lives on the custom resource, so it does not survive into a new management cluster. A
 fresh bootstrap re-runs the checks and you apply these again.
