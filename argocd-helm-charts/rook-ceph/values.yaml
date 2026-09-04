@@ -108,6 +108,36 @@ rook-ceph-cluster:
       # block eviction of OSDs by default and unblock them safely when drains are detected.
       managePodBudgets: false
 
+    # CephX key rotation strands live kernel mounts: krbd and kcephfs hold the key
+    # they mapped with, so dropping the prior key makes every existing mount fail
+    # authentication and hang in uninterruptible D state, recoverable only by
+    # rebooting the node. Keep one prior key on every entity and keep rotation
+    # opt-in.
+    #
+    # aes256k replaces the aes cipher that Ceph 20.2.4 flags as insecure. Pin it
+    # rather than leaving it unset, so a Ceph upgrade cannot move the default and
+    # re-key the cluster unattended.
+    #
+    # csi.keyType is the one with a node requirement: those keys are consumed by
+    # the kernel clients, so aes256k needs kernel 7.0+, i.e. Ubuntu 26.04 or newer,
+    # on every node. Override it to aes on clusters with older nodes. daemon and
+    # rbdMirrorPeer keys are used only by userspace Ceph daemons and have no such
+    # requirement. See README.md.
+    security:
+      cephx:
+        csi:
+          keyRotationPolicy: Disabled
+          keepPriorKeyCountMax: 1
+          keyType: aes256k
+        daemon:
+          keyRotationPolicy: Disabled
+          keepPriorKeyCountMax: 1
+          keyType: aes256k
+        rbdMirrorPeer:
+          keyRotationPolicy: Disabled
+          keepPriorKeyCountMax: 1
+          keyType: aes256k
+
   # NOTE copied from rook-ceph-cluster/values.yaml file
   # Since we cannot really overwrite the resource usage
   cephFileSystems:
