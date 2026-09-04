@@ -88,6 +88,24 @@ rook-ceph-cluster:
       # block eviction of OSDs by default and unblock them safely when drains are detected.
       managePodBudgets: false
 
+    # CephX key rotation strands live kernel mounts: krbd and kcephfs hold the key
+    # they mapped with, so dropping the prior key makes every existing mount fail
+    # authentication and hang in uninterruptible D state, recoverable only by
+    # rebooting the node. Keep one prior key on every entity and keep rotation
+    # opt-in. keyType is deliberately not pinned here: the right value depends on
+    # the nodes' kernel version and the deployed ceph-csi. See README.md.
+    security:
+      cephx:
+        csi:
+          keyRotationPolicy: Disabled
+          keepPriorKeyCountMax: 1
+        daemon:
+          keyRotationPolicy: Disabled
+          keepPriorKeyCountMax: 1
+        rbdMirrorPeer:
+          keyRotationPolicy: Disabled
+          keepPriorKeyCountMax: 1
+
   # NOTE copied from rook-ceph-cluster/values.yaml file
   # Since we cannot really overwrite the resource usage
   cephFileSystems:
