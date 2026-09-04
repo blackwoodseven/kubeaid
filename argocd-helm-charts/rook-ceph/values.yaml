@@ -71,10 +71,10 @@ rook-ceph-cluster:
         requests:
           cpu: "500m"
           memory: "1500Mi"
-      prepareosod:
-        limits:
-          cpu: "100m"
-          memory: "50Mi"
+      # No limits here on purpose: the OSD prepare job is a one-time memory burst
+      # that must not be OOM-killed, and upstream suggests 1200Mi-2Gi if a
+      # LimitRange forces you to set one. cf. rook/rook#11103
+      prepareosd:
         requests:
           cpu: "100m"
           memory: "50Mi"
