@@ -10,6 +10,26 @@ rook-ceph:
       memory: 200Mi
 
 rook-ceph-cluster:
+  # Velero selects a snapshot class by this label plus a driver match. Without a
+  # class for a driver in use, every backup touching such a PVC errors with
+  # "failed to get VolumeSnapshotClass for provisioner ...", leaving the backup
+  # PartiallyFailed - which backup-exporter does not count, so VeleroBackupMissing
+  # never clears. isDefault stays false so an existing default class is not
+  # displaced; clusters that want one can override it.
+  cephBlockPoolsVolumeSnapshotClass:
+    enabled: true
+    name: velero-snapshot-rbd
+    isDefault: false
+    deletionPolicy: Retain
+    labels:
+      velero.io/csi-volumesnapshot-class: "true"
+  cephFileSystemVolumeSnapshotClass:
+    enabled: true
+    name: velero-snapshot-cephfs
+    isDefault: false
+    deletionPolicy: Retain
+    labels:
+      velero.io/csi-volumesnapshot-class: "true"
   monitoring:
     enabled: false
 

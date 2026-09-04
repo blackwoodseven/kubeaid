@@ -35,7 +35,9 @@ rustfs:
 
 backupCleanup:
   enabled: false
-  schedule: "0 3 * * *"
+  # Not 03:00: the velero chart's daily schedule defaults to that same hour, and
+  # rustfs sheds writes when the cleanup walk and a backup upload overlap.
+  schedule: "0 5 * * *"
   retentionDays: 7
   buckets: []
   excludePrefixes: []
