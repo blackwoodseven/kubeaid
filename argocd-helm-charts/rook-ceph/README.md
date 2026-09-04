@@ -120,7 +120,7 @@ it. The source is `cmdline`:
 ceph config show mon.<id> | grep -i ciph
 ```
 
-To clear it, restrict the ciphers in the cluster's values:
+This chart therefore sets it explicitly:
 
 ```yaml
     security:
@@ -131,6 +131,21 @@ To clear it, restrict the ciphers in the cluster's values:
 
 Rook then sets `auth_allowed_ciphers` and stops passing the emergency flag. It is a
 command-line argument, so the mons roll one at a time to pick it up.
+
+**It pairs with `csi.keyType`.** A cluster below Ubuntu 26.04 that overrides
+`csi.keyType: aes` **must** widen this to match, or the mons reject its own CSI keys:
+
+```yaml
+    security:
+      cephx:
+        allowedCiphers:
+          - aes
+          - aes256k
+        csi:
+          keyType: aes
+```
+
+Change the two together, always.
 
 **Verify every key first.** The CRD warns that this setting "can disrupt cluster
 availability", and it means it: restricting the list locks out any entity still holding
@@ -152,10 +167,11 @@ the retained prior-generation keys (`<entity>.N`), which `keepPriorKeyCountMax` 
 alive and which are equally capable of stranding a mount that still authenticates with
 one.
 
-This chart deliberately leaves `allowedCiphers` unset. Setting it cluster-wide would
-contradict the `csi.keyType: aes` override above — clusters below Ubuntu 26.04 need the
-`aes` cipher allowed — so it belongs in per-cluster values, once that cluster has been
-verified fully migrated.
+**Run that sweep before upgrading an existing cluster to a chart version carrying this
+default.** A cluster that still holds any `aes` key — including a retained prior
+generation — will have that key rejected the moment the mons pick up the restriction.
+Either finish the migration first, or set `allowedCiphers: [aes, aes256k]` in that
+cluster's values until it has.
 
 ## About upstream charts
 
