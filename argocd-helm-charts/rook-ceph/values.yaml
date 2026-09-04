@@ -9,6 +9,13 @@ rook-ceph:
       cpu: 500m
       memory: 200Mi
 
+  csi:
+    cephcsi:
+      # v3.17.0 fails every attach and snapshot against a rotated CephX key with
+      # "rados: ret=-22" (Malformed input). Drop this override once the vendored
+      # chart ships v3.17.1 or newer by default.
+      tag: v3.17.1
+
 rook-ceph-cluster:
   # Velero selects a snapshot class by this label plus a driver match. Without a
   # class for a driver in use, every backup touching such a PVC errors with
