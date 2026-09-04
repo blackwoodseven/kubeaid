@@ -133,9 +133,20 @@ rook-ceph-cluster:
     # the kernel clients, so aes256k needs kernel 7.0+, i.e. Ubuntu 26.04 or newer,
     # on every node. Override it to aes on clusters with older nodes. daemon and
     # rbdMirrorPeer keys are used only by userspace Ceph daemons and have no such
-    # requirement. See README.md.
+    # requirement.
+    #
+    # allowedCiphers restricts what the mons accept. Leaving it unset makes Rook
+    # enable every cipher via mon_auth_emergency_allowed_ciphers on the mon command
+    # line, which raises AUTH_EMERGENCY_CIPHERS_SET on Ceph 20.2.4+.
+    #
+    # It pairs with csi.keyType: a cluster that overrides that to aes MUST widen this
+    # to [aes, aes256k] as well, or it locks out its own CSI keys. Before adopting
+    # this on an existing cluster, verify no entity still holds an aes key -- see
+    # README.md, an excluded cipher locks out mon. and client.admin with no way back.
     security:
       cephx:
+        allowedCiphers:
+          - aes256k
         csi:
           keyRotationPolicy: Disabled
           keepPriorKeyCountMax: 1
