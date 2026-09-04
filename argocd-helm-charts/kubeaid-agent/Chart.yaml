@@ -5,7 +5,7 @@ icon: https://avatars.githubusercontent.com/u/13882947?s=250&v=4
 
 type: application
 
-version: 0.5.5
+version: 0.5.6
 appVersion: 0.0.3
 
 keywords:
@@ -29,7 +29,7 @@ maintainers:
 # agent alone, or the agent plus either exporter.
 dependencies:
   - name: security-exporter
-    version: 0.3.1
+    version: 0.3.2
     condition: security-exporter.enabled
 
   - name: backup-exporter
