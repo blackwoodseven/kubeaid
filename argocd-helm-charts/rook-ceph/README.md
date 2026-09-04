@@ -33,23 +33,30 @@ nothing is logged because the kernel itself is healthy. Only a reboot clears it.
 Processes stuck this way cannot be killed, so RBD images stay mapped,
 `VolumeAttachment` objects never clear, and rescheduled pods fail with Multi-Attach.
 
-Defaults set in `values.yaml`, applied to `csi`, `daemon` and `rbdMirrorPeer` alike:
+Defaults set in `values.yaml`:
 
-| Setting | Value | Why |
-| --- | --- | --- |
-| `keyRotationPolicy` | `Disabled` | rotation must be a deliberate act, never a side effect of an upgrade |
-| `keepPriorKeyCountMax` | `1` | the old key stays valid while mounts migrate |
-| `keyType` | `aes256k` | replaces the `aes` cipher Ceph 20.2.4 flags as insecure — see the node requirement below |
+| Setting | Value | Applies to | Why |
+| --- | --- | --- | --- |
+| `keyRotationPolicy` | `Disabled` | all three | rotation must be a deliberate act, never a side effect of an upgrade |
+| `keyType` | `aes256k` | all three | replaces the `aes` cipher Ceph 20.2.4 flags as insecure — see the node requirement below |
+| `keepPriorKeyCountMax` | `1` | **`csi` only** | the old key stays valid while mounts migrate |
 
-Set `keepPriorKeyCountMax` on **every** entity, not just `csi`. Rook reports each one
-separately under `status.cephx`; anything showing `keyGeneration` without a
-`priorKeyCount` has no grace period and will strand on the next rotation.
+`keepPriorKeyCountMax` exists only under `csi` in the CephCluster CRD — `daemon` and
+`rbdMirrorPeer` accept `keyGeneration`, `keyRotationPolicy` and `keyType` only. Setting
+it there is silently pruned by the API server and leaves the ArgoCD app permanently
+OutOfSync.
+
+That asymmetry is deliberate on Rook's part rather than an oversight: only the `csi`
+keys are handed to the **in-kernel** clients (`krbd`, `kcephfs`), which hold the key
+they mapped with and cannot re-key without a reboot. Daemon keys are used by Ceph's own
+processes, which Rook restarts as it rotates them, so they need no grace period.
 
 ### Rotating
 
-1. Confirm `keepPriorKeyCountMax` is at least `1` on every entity **before** bumping
+1. Confirm `csi.keepPriorKeyCountMax` is at least `1` **before** bumping
    `keyGeneration`. With it unset, Rook deletes the old key immediately and every
-   mounted volume on every node hangs at once.
+   mounted volume on every node hangs at once. Check the live cluster, not just git —
+   `status.cephx.csi.priorKeyCount` is what Rook actually applied.
 2. Bump `keyGeneration` and let Rook issue the new keys. Existing mounts keep working
    on the retained prior key.
 3. **Cordon and reboot** the workers one at a time, waiting for `active+clean` between
