@@ -166,6 +166,44 @@ tests:
         eval_time: 6m
         exp_alerts: []
 
+  # A PVC younger than max_rpo that Velero has not had a scheduled run for yet
+  # (exporter-classified, type=awaiting_first_backup) must not fire
+  # VeleroBackupMissing, even though the age sentinel is 0.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_latest_backup_age{backup="",namespace="test-ns",resource_name="pvc-new",resource_type="pvc"}'
+        values: '0x6'
+      - series: 'backup_exporter_velero_error{namespace="test-ns",resource_name="pvc-new",resource_type="pvc",type="awaiting_first_backup"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: VeleroBackupMissing
+        eval_time: 6m
+        exp_alerts: []
+
+  # A namespace holding both a genuinely missing PVC and one still awaiting its
+  # first backup fires for the missing one only, and lists only that one.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_latest_backup_age{backup="",namespace="mixed-ns",resource_name="pvc-never",resource_type="pvc"}'
+        values: '0x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="",namespace="mixed-ns",resource_name="pvc-new",resource_type="pvc"}'
+        values: '0x6'
+      - series: 'backup_exporter_velero_error{namespace="mixed-ns",resource_name="pvc-new",resource_type="pvc",type="awaiting_first_backup"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: VeleroBackupMissing
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: VeleroBackupMissing
+              severity: critical
+              namespace: mixed-ns
+            exp_annotations:
+              summary: 'Velero backups missing in mixed-ns'
+              description: |-
+                1 volume(s) in namespace mixed-ns have never been backed up by Velero:
+                pvc-never (pvc)
+
   # A genuinely missing, in-scope PVC (no matching not-enabled error) must
   # still fire VeleroBackupMissing.
   - interval: 1m
@@ -277,6 +315,18 @@ tests:
         values: '93600x6'
     alert_rule_test:
       - alertname: VeleroBackupExceededRPO
+        eval_time: 6m
+        exp_alerts: []
+
+  # A PVC still inside its first-backup grace window is exporter bookkeeping,
+  # not a collector failure: awaiting_first_backup must not fire
+  # VeleroBackupExporterJobFailed either.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_error{namespace="test-ns",resource_name="pvc-new",resource_type="pvc",type="awaiting_first_backup"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: VeleroBackupExporterJobFailed
         eval_time: 6m
         exp_alerts: []
 
