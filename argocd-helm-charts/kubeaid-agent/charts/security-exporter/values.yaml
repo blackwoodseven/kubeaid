@@ -60,12 +60,17 @@ deployment:
   image:
     repository: ghcr.io/obmondo/kubeaid-security-exporter
 
-    # -- Keep the quotes when overriding. A tag matching digits-e-digits is
-    # valid YAML scientific notation, and Go's parser -- the one Helm and Argo
-    # CD use -- resolves it to a float: a commit tag of 75621e3 renders as
-    # 7.5621e+07 and the pod comes up InvalidImageName. PyYAML disagrees and
-    # returns a string, so validating with python yaml does not catch it.
-    tag: "v0.1.2"
+    # -- Overrides the image tag. Left empty so it follows the chart appVersion,
+    # which keeps the deployed version in one place rather than two that can
+    # disagree.
+    #
+    # Keep the quotes when overriding, and when setting appVersion. A tag
+    # matching digits-e-digits is valid YAML scientific notation, and Go's
+    # parser -- the one Helm and Argo CD use -- resolves it to a float: a commit
+    # tag of 75621e3 renders as 7.5621e+07 and the pod comes up
+    # InvalidImageName. PyYAML disagrees and returns a string, so validating
+    # with python yaml does not catch it.
+    tag: ""
     pullPolicy: IfNotPresent
 
   env: []
