@@ -330,6 +330,36 @@ tests:
         eval_time: 6m
         exp_alerts: []
 
+  # A cluster without Velero's CRDs has nothing to check, and Argo CD already
+  # reports a Velero that should be installed and is not. Reporting it here
+  # would page on a permanent, expected state.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_error{type="velero_not_installed"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: VeleroBackupExporterJobFailed
+        eval_time: 6m
+        exp_alerts: []
+
+  # A listing failure that is not a missing CRD -- API server down, RBAC
+  # revoked -- is a real failure and must still page.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_error{type="schedule_list_failed"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: VeleroBackupExporterJobFailed
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: VeleroBackupExporterJobFailed
+              severity: critical
+              type: schedule_list_failed
+            exp_annotations:
+              summary: 'Velero backup exporter job failed'
+              description: 'Velero backup exporter error (type: schedule_list_failed)'
+
   # A genuine failure type must still fire VeleroBackupExporterJobFailed.
   - interval: 1m
     input_series:
