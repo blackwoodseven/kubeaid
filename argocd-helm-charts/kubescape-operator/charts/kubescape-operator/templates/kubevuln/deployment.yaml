@@ -49,6 +49,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         runAsUser: 65532
+        runAsGroup: 65532
         fsGroup: 65532
       containers:
         - name: {{ .Values.kubevuln.name }}
@@ -58,6 +59,9 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
           ports:
           - containerPort: {{ .Values.kubevuln.service.port }}
             protocol: TCP
@@ -159,6 +163,9 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
           resources:
 {{ toYaml .Values.kubevuln.sbomScanner.resources | indent 12 }}
           env:
@@ -177,6 +184,23 @@ spec:
               mountPath: /sbom-comm
             - name: tmp-dir
               mountPath: /tmp
+{{- if ne .Values.global.proxySecretFile "" }}
+            - name: proxy-secret
+              mountPath: /etc/ssl/certs/proxy.crt
+              subPath: proxy.crt
+{{- end }}
+{{- if .Values.global.overrideDefaultCaCertificates.enabled }}
+            - name: custom-ca-certificates
+              mountPath: /etc/ssl/certs/ca-certificates.crt
+              subPath: ca-certificates.crt
+{{- end }}
+{{- if .Values.global.extraCaCertificates.enabled }}
+        {{- range $key, $value := (lookup "v1" "Secret" .Values.ksNamespace .Values.global.extraCaCertificates.secretName).data }}
+            - name: extra-ca-certificates
+              mountPath: /etc/ssl/certs/{{ $key }}
+              subPath: {{ $key }}
+        {{- end }}
+{{- end }}
 {{- end }}
       volumes:
         - name: {{ $components.cloudSecret.name }}
