@@ -1,6 +1,6 @@
 dependencies:
 - name: workload-identity-webhook
   repository: https://azure.github.io/azure-workload-identity/charts
-  version: 1.6.0
-digest: sha256:96c6ab73901d88d1cbbbe561df474998a7eda2f26c7be59f1984ef7c6dc872d6
-generated: "2026-06-15T19:47:36.494635142+05:30"
+  version: 1.6.1
+digest: sha256:b32f8bcb91c06bac8485fcf366d7db13b5ebf7941a152d803409e58a61ac0899
+generated: "2026-09-07T06:38:10.922314287Z"
