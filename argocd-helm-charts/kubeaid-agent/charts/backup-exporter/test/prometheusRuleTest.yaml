@@ -342,6 +342,18 @@ tests:
         eval_time: 6m
         exp_alerts: []
 
+  # Velero installed but declaring no Schedules is a configuration statement,
+  # not a collector failure: Argo CD reports schedules that should exist and
+  # do not, so paging here would duplicate it.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_error{type="no_schedules_found"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: VeleroBackupExporterJobFailed
+        eval_time: 6m
+        exp_alerts: []
+
   # A listing failure that is not a missing CRD -- API server down, RBAC
   # revoked -- is a real failure and must still page.
   - interval: 1m
