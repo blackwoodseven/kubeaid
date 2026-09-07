@@ -33,5 +33,5 @@ dependencies:
     condition: security-exporter.enabled
 
   - name: backup-exporter
-    version: 0.4.4
+    version: 0.4.5
     condition: backup-exporter.enabled
