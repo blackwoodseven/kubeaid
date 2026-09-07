@@ -342,6 +342,55 @@ tests:
         eval_time: 6m
         exp_alerts: []
 
+  # Neither bookkeeping state pages as a failure, but both mean the cluster
+  # protects nothing, so VeleroNoBackupSchedules reports it once, as a warning,
+  # only after a full day so a cluster rebuild does not trip it.
+  - interval: 5m
+    input_series:
+      - series: 'backup_exporter_velero_error{type="velero_not_installed"}'
+        values: '1x300'
+    alert_rule_test:
+      - alertname: VeleroNoBackupSchedules
+        eval_time: 1h
+        exp_alerts: []
+      - alertname: VeleroNoBackupSchedules
+        eval_time: 25h
+        exp_alerts:
+          - exp_labels:
+              alertname: VeleroNoBackupSchedules
+              severity: warning
+              type: velero_not_installed
+            exp_annotations:
+              summary: 'No Velero backup schedules on this cluster'
+              description: 'Velero is backing up nothing on this cluster (reason: velero_not_installed). No PVC is protected.'
+
+  # Same for a Velero that is installed but has no Schedules.
+  - interval: 5m
+    input_series:
+      - series: 'backup_exporter_velero_error{type="no_schedules_found"}'
+        values: '1x300'
+    alert_rule_test:
+      - alertname: VeleroNoBackupSchedules
+        eval_time: 25h
+        exp_alerts:
+          - exp_labels:
+              alertname: VeleroNoBackupSchedules
+              severity: warning
+              type: no_schedules_found
+            exp_annotations:
+              summary: 'No Velero backup schedules on this cluster'
+              description: 'Velero is backing up nothing on this cluster (reason: no_schedules_found). No PVC is protected.'
+
+  # A cluster with real backups never reports either type, so it stays quiet.
+  - interval: 5m
+    input_series:
+      - series: 'backup_exporter_velero_latest_backup_age{backup="CSISnapshot",namespace="test-ns",resource_name="pvc-a",resource_type="pvc"}'
+        values: '3600x300'
+    alert_rule_test:
+      - alertname: VeleroNoBackupSchedules
+        eval_time: 25h
+        exp_alerts: []
+
   # Velero installed but declaring no Schedules is a configuration statement,
   # not a collector failure: Argo CD reports schedules that should exist and
   # do not, so paging here would duplicate it.

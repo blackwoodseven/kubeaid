@@ -27,6 +27,19 @@ spec:
         # single failed run would otherwise page once per volume. The description
         # still names every volume past RPO with its own age: it runs the
         # per-volume query at notification time.
+        # velero_not_installed and no_schedules_found are excluded from
+        # JobFailed because neither is a collector failure. They still mean no
+        # volume on this cluster is protected, which Argo CD does not report
+        # when Velero was removed in git, so they surface here instead: one
+        # alert per cluster, warning rather than critical.
+        - alert: VeleroNoBackupSchedules
+          expr: max by (type) (backup_exporter_velero_error{type=~"velero_not_installed|no_schedules_found"}) == 1
+          for: {{ .Values.prometheusRule.velero.noSchedulesForDuration | default "24h" }}
+          labels:
+            severity: {{ .Values.prometheusRule.velero.noSchedulesSeverity | default "warning" }}
+          annotations:
+            summary: 'No Velero backup schedules on this cluster'
+            description: 'Velero is backing up nothing on this cluster (reason: {{ `{{ $labels.type }}` }}). No PVC is protected.'
         - alert: VeleroBackupExceededRPO
           expr: count by (namespace) (backup_exporter_velero_latest_backup_age > {{ $rpoSeconds }})
           for: {{ .Values.prometheusRule.velero.alertForDuration | default "5m" }}
