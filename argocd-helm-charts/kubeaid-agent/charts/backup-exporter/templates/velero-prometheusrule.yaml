@@ -15,7 +15,7 @@ spec:
     - name: {{ include "backup-exporter.name" . }}-velero
       rules:
         - alert: VeleroBackupExporterJobFailed
-          expr: max by (type) (backup_exporter_velero_error{type!~"backup_not_enabled"} == 1) > 0
+          expr: max by (type) (backup_exporter_velero_error{type!~"backup_not_enabled|awaiting_first_backup|velero_not_installed|no_schedules_found"} == 1) > 0
           for: {{ .Values.prometheusRule.velero.alertForDuration | default "5m" }}
           labels:
             severity: {{ .Values.prometheusRule.velero.severity | default "critical" }}
@@ -27,6 +27,19 @@ spec:
         # single failed run would otherwise page once per volume. The description
         # still names every volume past RPO with its own age: it runs the
         # per-volume query at notification time.
+        # velero_not_installed and no_schedules_found are excluded from
+        # JobFailed because neither is a collector failure. They still mean no
+        # volume on this cluster is protected, which Argo CD does not report
+        # when Velero was removed in git, so they surface here instead: one
+        # alert per cluster, warning rather than critical.
+        - alert: VeleroNoBackupSchedules
+          expr: max by (type) (backup_exporter_velero_error{type=~"velero_not_installed|no_schedules_found"}) == 1
+          for: {{ .Values.prometheusRule.velero.noSchedulesForDuration | default "24h" }}
+          labels:
+            severity: {{ .Values.prometheusRule.velero.noSchedulesSeverity | default "warning" }}
+          annotations:
+            summary: 'No Velero backup schedules on this cluster'
+            description: 'Velero is backing up nothing on this cluster (reason: {{ `{{ $labels.type }}` }}). No PVC is protected.'
         - alert: VeleroBackupExceededRPO
           expr: count by (namespace) (backup_exporter_velero_latest_backup_age > {{ $rpoSeconds }})
           for: {{ .Values.prometheusRule.velero.alertForDuration | default "5m" }}
@@ -40,7 +53,7 @@ spec:
               {{ `{{ .Labels.resource_name }} ({{ .Labels.resource_type }}, method: {{ .Labels.backup }}, age: {{ .Value | humanizeDuration }})` }}
               {{ `{{- end }}` }}
         - alert: VeleroBackupMissing
-          expr: count by (namespace) (backup_exporter_velero_latest_backup_age == 0 unless on (namespace, resource_name, resource_type) (backup_exporter_velero_error{type="backup_not_enabled"} == 1))
+          expr: count by (namespace) (backup_exporter_velero_latest_backup_age == 0 unless on (namespace, resource_name, resource_type) (backup_exporter_velero_error{type=~"backup_not_enabled|awaiting_first_backup"} == 1))
           for: {{ .Values.prometheusRule.velero.alertForDuration | default "5m" }}
           labels:
             severity: {{ .Values.prometheusRule.velero.severity | default "critical" }}
@@ -48,7 +61,7 @@ spec:
             summary: 'Velero backups missing in {{ `{{ $labels.namespace }}` }}'
             description: |-
               {{ `{{ $value }}` }} volume(s) in namespace {{ `{{ $labels.namespace }}` }} have never been backed up by Velero:
-              {{ `{{- range printf "backup_exporter_velero_latest_backup_age{namespace=%q} == 0 unless on (namespace, resource_name, resource_type) (backup_exporter_velero_error{namespace=%q,type='backup_not_enabled'} == 1)" $labels.namespace $labels.namespace | query | sortByLabel "resource_name" }}` }}
+              {{ `{{- range printf "backup_exporter_velero_latest_backup_age{namespace=%q} == 0 unless on (namespace, resource_name, resource_type) (backup_exporter_velero_error{namespace=%q,type=~'backup_not_enabled|awaiting_first_backup'} == 1)" $labels.namespace $labels.namespace | query | sortByLabel "resource_name" }}` }}
               {{ `{{ .Labels.resource_name }} ({{ .Labels.resource_type }})` }}
               {{ `{{- end }}` }}
 {{- end }}
