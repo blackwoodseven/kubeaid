@@ -105,7 +105,10 @@ deployment:
 
   image:
     repository: ghcr.io/obmondo/kubeaid-agent
-    tag: v1.1.1
+    # Overrides the image tag. Left empty so it follows the chart appVersion,
+    # which keeps the deployed version in one place rather than two that can
+    # disagree -- as they did until v1.1.2, when appVersion still read 0.0.3.
+    tag: ""
     pullPolicy: Always
 
   env: []
