@@ -65,14 +65,34 @@ spec:
         data:
           spec:
             hard:
-              pods: {{ $defaults.resourceQuota.pods | quote }}
-              requests.cpu: {{ $defaults.resourceQuota.cpu.request | quote }}
-              requests.memory: {{ $defaults.resourceQuota.memory.request | quote }}
-              limits.memory: {{ $defaults.resourceQuota.memory.limit | quote }}
-              persistentvolumeclaims: {{ $defaults.resourceQuota.storage.persistentVolumeClaims | quote }}
-              requests.storage: {{ $defaults.resourceQuota.storage.request | quote }}
-              requests.ephemeral-storage: {{ $defaults.resourceQuota.ephemeralStorage.request | quote }}
-              limits.ephemeral-storage: {{ $defaults.resourceQuota.ephemeralStorage.limit | quote }}
+              {{- $quota := $defaults.resourceQuota }}
+              {{- if $quota.pods }}
+              pods: {{ $quota.pods | quote }}
+              {{- end }}
+              {{- if $quota.jobs }}
+              count/jobs.batch: {{ $quota.jobs | quote }}
+              {{- end }}
+              {{- if $quota.cpu.request }}
+              requests.cpu: {{ $quota.cpu.request | quote }}
+              {{- end }}
+              {{- if $quota.memory.request }}
+              requests.memory: {{ $quota.memory.request | quote }}
+              {{- end }}
+              {{- if $quota.memory.limit }}
+              limits.memory: {{ $quota.memory.limit | quote }}
+              {{- end }}
+              {{- if $quota.storage.persistentVolumeClaims }}
+              persistentvolumeclaims: {{ $quota.storage.persistentVolumeClaims | quote }}
+              {{- end }}
+              {{- if $quota.storage.request }}
+              requests.storage: {{ $quota.storage.request | quote }}
+              {{- end }}
+              {{- if $quota.ephemeralStorage.request }}
+              requests.ephemeral-storage: {{ $quota.ephemeralStorage.request | quote }}
+              {{- end }}
+              {{- if $quota.ephemeralStorage.limit }}
+              limits.ephemeral-storage: {{ $quota.ephemeralStorage.limit | quote }}
+              {{- end }}
     {{- end }}
 
     # ──────────────────────────────────
@@ -98,14 +118,42 @@ spec:
         data:
           spec:
             hard:
-              pods: {{ (($override.resourceQuota).pods) | default $defaults.resourceQuota.pods | quote }}
-              requests.cpu: {{ ((($override.resourceQuota).cpu).request) | default $defaults.resourceQuota.cpu.request | quote }}
-              requests.memory: {{ ((($override.resourceQuota).memory).request) | default $defaults.resourceQuota.memory.request | quote }}
-              limits.memory: {{ ((($override.resourceQuota).memory).limit) | default $defaults.resourceQuota.memory.limit | quote }}
-              persistentvolumeclaims: {{ ((($override.resourceQuota).storage).persistentVolumeClaims) | default $defaults.resourceQuota.storage.persistentVolumeClaims | quote }}
-              requests.storage: {{ ((($override.resourceQuota).storage).request) | default $defaults.resourceQuota.storage.request | quote }}
-              requests.ephemeral-storage: {{ ((($override.resourceQuota).ephemeralStorage).request) | default $defaults.resourceQuota.ephemeralStorage.request | quote }}
-              limits.ephemeral-storage: {{ ((($override.resourceQuota).ephemeralStorage).limit) | default $defaults.resourceQuota.ephemeralStorage.limit | quote }}
+              {{- $pods := (($override.resourceQuota).pods) | default $defaults.resourceQuota.pods }}
+              {{- if $pods }}
+              pods: {{ $pods | quote }}
+              {{- end }}
+              {{- $jobs := (($override.resourceQuota).jobs) | default $defaults.resourceQuota.jobs }}
+              {{- if $jobs }}
+              count/jobs.batch: {{ $jobs | quote }}
+              {{- end }}
+              {{- $cpuRequest := ((($override.resourceQuota).cpu).request) | default $defaults.resourceQuota.cpu.request }}
+              {{- if $cpuRequest }}
+              requests.cpu: {{ $cpuRequest | quote }}
+              {{- end }}
+              {{- $memoryRequest := ((($override.resourceQuota).memory).request) | default $defaults.resourceQuota.memory.request }}
+              {{- if $memoryRequest }}
+              requests.memory: {{ $memoryRequest | quote }}
+              {{- end }}
+              {{- $memoryLimit := ((($override.resourceQuota).memory).limit) | default $defaults.resourceQuota.memory.limit }}
+              {{- if $memoryLimit }}
+              limits.memory: {{ $memoryLimit | quote }}
+              {{- end }}
+              {{- $persistentVolumeClaims := ((($override.resourceQuota).storage).persistentVolumeClaims) | default $defaults.resourceQuota.storage.persistentVolumeClaims }}
+              {{- if $persistentVolumeClaims }}
+              persistentvolumeclaims: {{ $persistentVolumeClaims | quote }}
+              {{- end }}
+              {{- $storageRequest := ((($override.resourceQuota).storage).request) | default $defaults.resourceQuota.storage.request }}
+              {{- if $storageRequest }}
+              requests.storage: {{ $storageRequest | quote }}
+              {{- end }}
+              {{- $ephemeralStorageRequest := ((($override.resourceQuota).ephemeralStorage).request) | default $defaults.resourceQuota.ephemeralStorage.request }}
+              {{- if $ephemeralStorageRequest }}
+              requests.ephemeral-storage: {{ $ephemeralStorageRequest | quote }}
+              {{- end }}
+              {{- $ephemeralStorageLimit := ((($override.resourceQuota).ephemeralStorage).limit) | default $defaults.resourceQuota.ephemeralStorage.limit }}
+              {{- if $ephemeralStorageLimit }}
+              limits.ephemeral-storage: {{ $ephemeralStorageLimit | quote }}
+              {{- end }}
     {{- end }}
     {{- end }}
 
