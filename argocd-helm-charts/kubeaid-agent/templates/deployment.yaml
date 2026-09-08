@@ -34,7 +34,7 @@ spec:
       {{- end }}
       containers:
         - name: {{ include "kubeaid-agent.name" . }}
-          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag }}"
+          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           env:
             {{- with .Values.deployment.env }}
