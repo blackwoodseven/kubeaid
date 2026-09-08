@@ -140,12 +140,14 @@ exporter:
     # backup age exceeds RPO.
 
     # Rate at which the exporter checks backup health, expressed as a fraction
-    # of max_rpo. For example, 0.25 means the exporter runs every 25% of
-    # max_rpo (e.g. every 6h if max_rpo is 24h), giving multiple chances to
-    # detect a missed backup before the RPO window expires.
+    # of max_rpo. For example, 0.1 means the exporter runs every 10% of
+    # max_rpo (e.g. every 2h if max_rpo is 26h), giving multiple chances to
+    # detect a missed backup before the RPO window expires. It also bounds how
+    # stale a reported age can be: each value is a snapshot that does not move
+    # between runs, so the check rate is the reporting lag.
     # Must be between 0 and 1. Defaults to 0.25 (every 25% of max_rpo) if
     # not set
-    interval_rate: 0.25
+    interval_rate: 0.1
 
     # S3 configuration common for both logical and WAL backups (except region).
     s3:
@@ -163,12 +165,14 @@ exporter:
     max_rpo: 26h
 
     # Rate at which the exporter checks backup health, expressed as a fraction
-    # of max_rpo. For example, 0.25 means the exporter runs every 25% of
-    # max_rpo (e.g. every 6h if max_rpo is 24h), giving multiple chances to
-    # detect a missed backup before the RPO window expires.
+    # of max_rpo. For example, 0.1 means the exporter runs every 10% of
+    # max_rpo (e.g. every 2h if max_rpo is 26h), giving multiple chances to
+    # detect a missed backup before the RPO window expires. It also bounds how
+    # stale a reported age can be: each value is a snapshot that does not move
+    # between runs, so the check rate is the reporting lag.
     # Must be between 0 and 1. Defaults to 0.25 (every 25% of max_rpo) if
     # not set
-    interval_rate: 0.25
+    interval_rate: 0.1
 
     # S3 configuration.
     # Credentials can be provided either via a Kubernetes Secret (secretName)
@@ -198,8 +202,9 @@ exporter:
     max_rpo: 26h
 
     # Rate at which the exporter checks backup health, expressed as a fraction
-    # of max_rpo. Must be between 0 and 1. Defaults to 0.25.
-    interval_rate: 0.25
+    # of max_rpo, which is also the reporting lag: a published age is a snapshot
+    # that does not move between runs. Must be between 0 and 1. Defaults to 0.25.
+    interval_rate: 0.1
 
     # Credentials for listing the dump bucket. Required when enabled: the
     # exporter uses its own read-only keys and never reads the backup CronJob's
@@ -225,8 +230,9 @@ exporter:
     max_rpo: 26h
 
     # Rate at which the exporter checks backup health, expressed as a fraction
-    # of max_rpo. Must be between 0 and 1. Defaults to 0.25.
-    interval_rate: 0.25
+    # of max_rpo, which is also the reporting lag: a published age is a snapshot
+    # that does not move between runs. Must be between 0 and 1. Defaults to 0.25.
+    interval_rate: 0.1
 
     # Credentials for listing the dump bucket. Required when enabled: the
     # exporter uses its own read-only keys and never follows the Backup's
@@ -254,8 +260,9 @@ exporter:
     max_rpo: 26h
 
     # Rate at which the exporter checks backup health, expressed as a fraction
-    # of max_rpo. Must be between 0 and 1. Defaults to 0.25.
-    interval_rate: 0.25
+    # of max_rpo, which is also the reporting lag: a published age is a snapshot
+    # that does not move between runs. Must be between 0 and 1. Defaults to 0.25.
+    interval_rate: 0.1
 
     s3:
       # Bucket and endpoint the key archives are written to. Unlike the other
