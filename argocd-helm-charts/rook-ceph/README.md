@@ -109,28 +109,38 @@ hung, and rebooting will not help because the replacement mount cannot be made e
 ### Clearing AUTH_EMERGENCY_CIPHERS_SET
 
 Ceph 20.2.4 raises `AUTH_EMERGENCY_CIPHERS_SET` — *"Monitors are configured to use
-emergency allowed ciphers"*. This is Rook's **default**, not leftover from an incident:
-with `security.cephx.allowedCiphers` unset, Rook enables every cipher by passing
-`mon_auth_emergency_allowed_ciphers=aes,aes256k` on the mon command line.
+emergency allowed ciphers"* — whenever a mon runs with
+`--mon-auth-emergency-allowed-ciphers` on its command line. Rook 1.20.7 adds that flag
+(`pkg/operator/ceph/cluster/mon/spec.go:403`) to every mon **whenever
+`security.cephx.daemon.keyType` is set**, regardless of `allowedCiphers`. It is meant as
+a bootstrap workaround, and the Rook docs say to remove `daemon.keyType` afterwards.
+`csi.keyType` and `rbdMirrorPeer.keyType` do not trigger it.
 
-That means it does not appear in `ceph config dump` and `ceph config rm` cannot remove
-it. The source is `cmdline`:
+The flag is a command-line argument, so it does not appear in `ceph config dump` and
+`ceph config rm` cannot remove it. The source is `cmdline`:
 
 ```shell
 ceph config show mon.<id> | grep -i ciph
 ```
 
-This chart therefore sets it explicitly:
+This chart therefore leaves `daemon.keyType` unset and sets `allowedCiphers` explicitly:
 
 ```yaml
     security:
       cephx:
         allowedCiphers:
           - aes256k
+        daemon:
+          keyRotationPolicy: Disabled
 ```
 
-Rook then sets `auth_allowed_ciphers` and stops passing the emergency flag. It is a
-command-line argument, so the mons roll one at a time to pick it up.
+With `daemon.keyType` unset, Rook sets `auth_allowed_ciphers` from `allowedCiphers` via
+CLI once the mons are running and passes no emergency flag; the mons roll one at a
+time to drop it. If a cluster's values still pin `daemon.keyType`, remove the line.
+Helm cannot null a subchart default from an override (the rendered manifest carries
+`keyType: null`, which the CephCluster CRD rejects), which is why this chart must not
+ship a `daemon.keyType` default. With `keyRotationPolicy: Disabled`, unsetting
+`keyType` never triggers a rotation.
 
 **It pairs with `csi.keyType`.** A cluster below Ubuntu 26.04 that overrides
 `csi.keyType: aes` **must** widen this to match, or the mons reject its own CSI keys:

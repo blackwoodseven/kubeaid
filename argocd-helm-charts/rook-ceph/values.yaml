@@ -125,9 +125,10 @@ rook-ceph-cluster:
     # is fine: only the csi keys are consumed by in-kernel clients, so only they can
     # strand a mount. Rook restarts the daemons it re-keys.
     #
-    # aes256k replaces the aes cipher that Ceph 20.2.4 flags as insecure. Pin it
-    # rather than leaving it unset, so a Ceph upgrade cannot move the default and
-    # re-key the cluster unattended.
+    # aes256k replaces the aes cipher that Ceph 20.2.4 flags as insecure. With
+    # keyRotationPolicy Disabled a keyType change never re-keys anything (Rook
+    # ShouldRotateCephxKeys returns early), so pinning it is documentation of the
+    # desired cipher, not a safety net.
     #
     # csi.keyType is the one with a node requirement: those keys are consumed by
     # the kernel clients, so aes256k needs kernel 7.0+, i.e. Ubuntu 26.04 or newer,
@@ -135,9 +136,16 @@ rook-ceph-cluster:
     # rbdMirrorPeer keys are used only by userspace Ceph daemons and have no such
     # requirement.
     #
-    # allowedCiphers restricts what the mons accept. Leaving it unset makes Rook
-    # enable every cipher via mon_auth_emergency_allowed_ciphers on the mon command
-    # line, which raises AUTH_EMERGENCY_CIPHERS_SET on Ceph 20.2.4+.
+    # daemon.keyType stays UNSET on purpose. Rook 1.20.7 (pkg/operator/ceph/
+    # cluster/mon/spec.go:403) passes --mon-auth-emergency-allowed-ciphers to
+    # every mon whenever daemon.keyType is set, whatever allowedCiphers says, and
+    # Ceph 20.2.4 answers with AUTH_EMERGENCY_CIPHERS_SET (HEALTH_WARN, ArgoCD
+    # Degraded). csi.keyType and rbdMirrorPeer.keyType do not trigger the flag.
+    # Helm cannot null a subchart default from a values override, so do not add
+    # a daemon.keyType default here; clusters that need one set it themselves.
+    #
+    # allowedCiphers restricts what the mons accept (auth_allowed_ciphers). With
+    # daemon.keyType unset, Rook sets it via CLI after the mons are running.
     #
     # It pairs with csi.keyType: a cluster that overrides that to aes MUST widen this
     # to [aes, aes256k] as well, or it locks out its own CSI keys. Before adopting
@@ -153,7 +161,6 @@ rook-ceph-cluster:
           keyType: aes256k
         daemon:
           keyRotationPolicy: Disabled
-          keyType: aes256k
         rbdMirrorPeer:
           keyRotationPolicy: Disabled
           keyType: aes256k
