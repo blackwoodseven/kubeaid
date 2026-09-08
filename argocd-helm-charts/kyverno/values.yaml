@@ -12,6 +12,7 @@ resourceQuotaLimitRangeGenerator:
   defaults:
     resourceQuota:
       pods: "100"
+      jobs: "100"
 
       cpu:
         request: "100"
@@ -21,12 +22,12 @@ resourceQuotaLimitRangeGenerator:
         limit: 400Gi
 
       storage:
-        persistentVolumeClaims:
-        request:
+        persistentVolumeClaims: null
+        request: null
 
       ephemeralStorage:
-        request:
-        limit:
+        request: null
+        limit: null
 
     limitRange:
       container:
