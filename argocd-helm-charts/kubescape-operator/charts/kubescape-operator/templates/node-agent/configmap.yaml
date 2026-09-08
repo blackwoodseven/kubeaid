@@ -21,15 +21,16 @@ metadata:
 data:
   config.json: |
     {
+        {{- $extra := default dict .Values.nodeAgent.config.extra }}
+        {{- if $configurations.backendStorageEnabled }}
+        "backendStorageEnabled": true,
+        {{- end }}
         "applicationProfileServiceEnabled": {{ or $configurations.runtimeObservability (eq .Values.capabilities.relevancy "enable") }},
-        "backendStorageEnabled": {{ $configurations.backendStorageEnabled }},
         "prometheusExporterEnabled": {{ eq .Values.nodeAgent.config.prometheusExporter "enable" }},
         "runtimeDetectionEnabled": {{ eq .Values.capabilities.runtimeDetection "enable" }},
         "httpDetectionEnabled": {{ $gates.httpDetectionEnabled }},
         "networkServiceEnabled": {{ eq .Values.capabilities.networkPolicyService "enable" }},
-        "malwareDetectionEnabled": {{ eq .Values.capabilities.malwareDetection "enable" }},
-        "hostMalwareSensorEnabled": {{ eq .Values.nodeAgent.config.hostMalwareSensor "enable" }},
-        "hostNetworkSensorEnabled": {{ eq .Values.nodeAgent.config.hostNetworkSensor "enable" }},
+        "malwareDetectionEnabled": {{ $gates.malwareDetectionEnabled }},
         "hostSensorEnabled": {{ .Values.nodeAgent.config.hostSensor.enabled }},
         "hostSensorInterval": "{{ .Values.nodeAgent.config.hostSensor.interval }}",
         "nodeProfileServiceEnabled": {{ $gates.nodeProfileServiceEnabled }},
@@ -68,19 +69,36 @@ data:
         },
         "alertDeduplication": {
             "bypass": {{ .Values.nodeAgent.config.alertDeduplication.bypass }}
-        }
+        },
+        "dCapSys": {{ eq .Values.nodeAgent.config.tracers.capSys "disable" }},
+        "dDns": {{ eq .Values.nodeAgent.config.tracers.dns "disable" }},
+        "dExec": {{ eq .Values.nodeAgent.config.tracers.exec "disable" }},
+        "dExit": {{ eq .Values.nodeAgent.config.tracers.exit "disable" }},
+        "dFork": {{ eq .Values.nodeAgent.config.tracers.fork "disable" }},
+        "dHardlink": {{ eq .Values.nodeAgent.config.tracers.hardlink "disable" }},
+        "dHttp": {{ eq .Values.nodeAgent.config.tracers.http "disable" }},
+        "dIouring": {{ eq .Values.nodeAgent.config.tracers.iouring "disable" }},
+        "dNetwork": {{ eq .Values.nodeAgent.config.tracers.network "disable" }},
+        "dOpen": {{ eq .Values.nodeAgent.config.tracers.open "disable" }},
+        "dPtrace": {{ eq .Values.nodeAgent.config.tracers.ptrace "disable" }},
+        "dRandomx": {{ eq .Values.nodeAgent.config.tracers.randomx "disable" }},
+        "dSeccomp": {{ eq .Values.nodeAgent.config.tracers.seccomp "disable" }},
+        "dSsh": {{ eq .Values.nodeAgent.config.tracers.ssh "disable" }},
+        "dSymlink": {{ eq .Values.nodeAgent.config.tracers.symlink "disable" }},
+        "dKmod": {{ eq .Values.nodeAgent.config.tracers.kmod "disable" }},
+        "dUnshare": {{ eq .Values.nodeAgent.config.tracers.unshare "disable" }},
+        "dBpf": {{ eq .Values.nodeAgent.config.tracers.bpf "disable" }},
+        "dTop": {{ eq .Values.nodeAgent.config.tracers.top "disable" }}
+        {{- /*
+        nodeAgent.config.extra is an unvalidated passthrough intended for downstream/private
+        consumers to set fields not exposed by this public chart (e.g. hostNetworkSensorEnabled).
+        It is emitted at the end so any explicit overrides take precedence without requiring
+        a fragile, hardcoded list of chart-managed keys.
+        */}}
+        {{- range $k, $v := $extra }}
+        {{- if ne $k "backendStorageEnabled" }},
+        {{ $k | toJson }}: {{ $v | toJson }}
+        {{- end }}
+        {{- end }}
     }
----
-{{- if $components.clamAV.enabled }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Values.clamav.name }}
-  namespace: {{ .Values.ksNamespace }}
-data:
-  clamd.conf: |-
-{{ .Files.Get "clamav/clamd.conf" | indent 4 }}
-  freshclam.conf: |-
-{{ .Files.Get "clamav/freshclam.conf" | indent 4 }}
-{{- end}}
 {{- end }}

@@ -48,10 +48,15 @@ spec:
       {{- end }}
       {{- end }}
       serviceAccountName: {{ .Values.storage.name }}
+      {{- if .Values.storage.hostNetwork }}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
       securityContext:
         seccompProfile:
           type: RuntimeDefault
         runAsUser: 65532
+        runAsGroup: 65532
         fsGroup: 65532
       {{- if and .Values.storage.mtls.enabled (eq (include "kubescape.certificates.strategy" .) "initContainer") }}
       {{- $certgenImage := printf "%s:%s" .Values.certificates.certgen.image.repository (.Values.certificates.certgen.image.tag | toString) }}
@@ -63,6 +68,7 @@ spec:
           imagePullPolicy: {{ .Values.certificates.certgen.image.pullPolicy }}
           securityContext:
             runAsUser: 65532
+            runAsGroup: 65532
             runAsNonRoot: true
             allowPrivilegeEscalation: false
             capabilities:
@@ -95,6 +101,7 @@ spec:
           imagePullPolicy: {{ .Values.certificates.certgen.image.pullPolicy }}
           securityContext:
             runAsUser: 65532
+            runAsGroup: 65532
             runAsNonRoot: true
             allowPrivilegeEscalation: false
             capabilities:
@@ -128,6 +135,9 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
+          capabilities:
+            drop:
+              - ALL
         livenessProbe:
           httpGet:
             path: /livez
