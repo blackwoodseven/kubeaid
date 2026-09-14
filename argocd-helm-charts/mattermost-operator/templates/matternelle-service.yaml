@@ -1,0 +1,20 @@
+{{- if .Values.matternelle }}
+{{- $name := .Values.mattermost.name | default "mattermost" }}
+---
+# The operator builds svc/{{ $name }} with only 8065/8067 and never exposes
+# podExtensions.containerPorts, so the matternelle port gets its own Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-matternelle
+spec:
+  selector:
+    app: mattermost
+    installation.mattermost.com/installation: {{ $name }}
+    installation.mattermost.com/resource: {{ $name }}
+  ports:
+    - name: matternelle
+      port: {{ .Values.matternelle.port | default 8989 }}
+      targetPort: {{ .Values.matternelle.port | default 8989 }}
+      protocol: TCP
+{{- end }}

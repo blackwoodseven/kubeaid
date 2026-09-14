@@ -18,9 +18,9 @@ spec:
       - path: /
         backend:
           service:
-            name: mattermost
+            name: {{ .Values.mattermost.name | default "mattermost" }}-matternelle
             port:
-              number: 8989
+              number: {{ .Values.matternelle.port | default 8989 }}
         pathType: Prefix
   tls:
     - hosts:
