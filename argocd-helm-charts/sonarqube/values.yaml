@@ -36,6 +36,8 @@ global:
 
   postgresql:
     enabled: true
+    database: sonarqube
+    owner: sonarqube
     instanceName: sonarqube
     revision: 0
     instances: 1
