@@ -12,6 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 KUBE_PROM_DIR="$(dirname "${SCRIPT_DIR}")"
 VARS_DIR="${SCRIPT_DIR}/vars"
 BUILD_SCRIPT="${KUBE_PROM_DIR}/build.sh"
+KUBEAID_REPO_ROOT="$(cd "${KUBE_PROM_DIR}/../.." && pwd)"
 
 pass=0
 fail=0
@@ -29,7 +30,7 @@ for version_dir in "${VARS_DIR}"/*/; do
     mkdir -p "${cluster_dir}"
     cp "${vars_file}" "${cluster_dir}/${name}-vars.jsonnet"
 
-    if bash "${BUILD_SCRIPT}" "${cluster_dir}" >"${outdir}/build.log" 2>&1; then
+    if bash "${BUILD_SCRIPT}" --kubeaid-repo "${KUBEAID_REPO_ROOT}" "${cluster_dir}" >"${outdir}/build.log" 2>&1; then
       echo "  PASS  ${version}/${name}"
       pass=$((pass + 1))
     else
