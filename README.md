@@ -205,3 +205,13 @@ patented, and then turn and litigate companies that use the software.
 The Affero GNU Public License has always been focused on ensuring everyone gets the same privileges, protecting against
 methods like [TiVoization](https://en.wikipedia.org/wiki/Tivoization), which means it's very much aligned with the goals
 of this project, namely to allow everyone to work on a level playing ground.
+
+AGPLv3 isn't just a preference here, either. Some of the charts KubeAid vendors in are themselves licensed under plain
+GPLv3 (`argocd-helm-charts/k8s-event-logger`, for example). Once a GPL component is part of the combined work, that
+work can't be licensed more permissively than GPL, so AGPL is the license this project actually requires. Charts
+KubeAid merely vendors in keep whatever license they originally shipped with; AGPL only covers what Obmondo itself
+wrote (the jsonnet build system, wrapper charts, and bundled operators).
+
+[`kubeaid-cli`](https://github.com/Obmondo/kubeaid-cli) is a separate project under Apache 2.0. It doesn't vendor or
+bundle any of these charts. It just reads a chart repository URL from config and renders whatever's there, so its
+license is independent of what license any given target chart repo uses.
