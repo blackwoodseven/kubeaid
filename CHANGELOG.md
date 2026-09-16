@@ -2,6 +2,58 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 32.9.0
+
+### Minor Version Upgrades
+
+- 0a4c38720 Updated argo-cd from version 10.8.2 to 10.9.1
+- 0a4c38720 Updated aws-ebs-csi-driver from version 2.65.1 to 2.66.0
+- 0a4c38720 Updated aws-efs-csi-driver from version 4.4.2 to 4.5.0
+- 0a4c38720 Updated hcloud-cloud-controller-manager from version 1.36.0 to 1.37.0
+- 0a4c38720 Updated external-dns from version 1.21.1 to 1.22.0
+- 0a4c38720 Updated garage from version 0.7.1 to 0.8.0
+- 0a4c38720 Updated mongodb-kubernetes from version 1.11.0 to 1.12.0
+- 0a4c38720 Updated opentelemetry-collector from version 0.172.1 to 0.173.1
+- 0a4c38720 Updated seaweedfs from version 4.45.0 to 4.47.0
+- 0a4c38720 Updated trust-manager from version v0.24.0 to v0.25.0
+
+### Patch Version Upgrades
+
+- 0a4c38720 Updated cert-manager from version v1.21.1 to v1.21.2
+- 0a4c38720 Updated erpnext from version 8.0.78 to 8.0.79
+- 0a4c38720 Updated fluent-bit from version 0.58.1 to 0.58.2
+- 0a4c38720 Updated graylog from version 3.0.30 to 3.0.32
+- 0a4c38720 Updated kyverno from version 3.9.0 to 3.9.1
+- 0a4c38720 Updated opencost from version 2.5.30 to 2.5.31
+- 0a4c38720 Updated reloader from version 2.2.16 to 2.2.17
+- 0a4c38720 Updated ceph-csi-drivers from version 1.0.4 to 1.0.5
+
+### Features
+
+- 8e86ba058 feat(kubeaid-addons/mongodb): TLS, multiple instances, appdb ServiceAccount
+
+### Bug Fixes
+
+- 56c76084e fix(rustfs): upgrade to rc.6 for the pool-metadata write block fix
+- 5e5ef43d5 fix(e2e): kube-prometheus e2e tests fail on every branch
+- facb3cc02 fix(mattermost): give matternelle its own Service so webchat has a backend
+- c50bfacc8 fix: update ssh_known_hosts and shorten time for ownership changes
+- 28dcf0aed fix(argo-cd-mixin): remove WhiteListedApplicationOutOfSync and CronSyncFailed alerts
+- e19c7d0c2 fix(orphan-pvc): scope KubeDetectOrphanPvc to KubeAid apps, fix broken PVC-list query
+- 747ec3e73 fix(security-exporter): take the v0.2.1 image that stops dropping clean images
+- 7b0bd3359 fix(kubescape): pin vulnerabilityScan and relevancy explicitly
+- 64287827d fix(rook-ceph): drop the daemon.keyType default, it forces the mon emergency-cipher flag
+- 5df0f5f8d fix(kyverno/resourcequota-limitrange-generator): allow to modify Job quota | allow removing quotas
+
+### Configuration Changes
+
+- b5f8d4e24 chore: update gfetch to the latest v1.4.0 tag
+
+### Other Changes
+
+- cebf8c205 docs: clarify AGPL requirement from vendored GPL charts
+- 6fe086b80 Fix cnpg database name for sonarqube
+
 ## KubeAid Release Version 32.8.0
 
 ### Minor Version Upgrades
