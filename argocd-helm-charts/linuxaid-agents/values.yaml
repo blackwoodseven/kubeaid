@@ -1,32 +1,49 @@
-# linuxaid-agents — run the LinuxAid OpenVox agent on every node, hourly.
+# linuxaid-agents — run the LinuxAid OpenVox agent on every node.
 #
-# A non-privileged launcher CronJob (linuxaid-agent) lists the cluster's nodes and
-# creates one ephemeral privileged agent Job per node each run — so there is no
-# static node list. Deploy into the namespace that holds the obmondo-clientcert
-# secret (e.g. monitoring); it must permit privileged pods (PSA).
+# An unprivileged operator Deployment lists the cluster's nodes and reconciles one
+# ephemeral privileged agent Job per node every `interval` — so there is no static
+# node list and new nodes are picked up on the next cycle. Each Job clones the
+# control-repo onto its node and runs masterless `puppet apply`, with the `hiera`
+# values below as the highest-precedence hiera layer.
+#
+# Deploy into the namespace that holds the obmondo-clientcert secret (e.g.
+# monitoring); it must permit privileged pods (PSA).
 
-# Fan-out launcher image (the linuxaid-agent binary; a k8s API client, non-root).
-launcher:
+# Unprivileged operator: a Kubernetes API client that only lists nodes and creates Jobs.
+operator:
   image:
-    repository: ghcr.io/obmondo/linuxaid-agent
-    tag: spike
-    pullPolicy: Always
-  schedule: "0 * * * *"          # hourly
+    repository: gitea.obmondo.com/enableit/linuxaid-agent
+    tag: latest
+    pullPolicy: IfNotPresent
   resources:
     requests:
-      cpu: 25m
+      cpu: 10m
       memory: 32Mi
     limits:
       memory: 64Mi
 
-# Per-node agent image (linuxaid-cli + entrypoint), run by the spawned Jobs.
+# Per-node agent image (linuxaid-cli + entrypoint), run by the reconciled Jobs.
 agentImage:
-  repository: ghcr.io/obmondo/linuxaid-agents
-  tag: spike
-  pullPolicy: Always
+  repository: gitea.obmondo.com/enableit/linuxaid-cli
+  tag: latest
+  pullPolicy: IfNotPresent
 
-# certname = the CN of the obmondo-clientcert, shared by all nodes. REQUIRED.
+# certname = the CN of the obmondo-clientcert, shared by all nodes. REQUIRED:
+# the operator exits immediately if it is empty.
 certname: ""
+
+# How often the operator reconciles one agent Job per node.
+interval: 4h
+
+# Masterless puppet apply: the control-repo each node clones and applies.
+controlRepo:
+  url: https://github.com/Obmondo/linuxaid.git
+  # Tag (or ref) to check out, and the value recorded in hiera as
+  # common::system::openvox::environment. Empty = the repo's latest tag.
+  ref: ""
+  # Secret holding git credentials for a private control-repo: key `ssh-privatekey`
+  # (SSH remotes) or `token` (https remotes). Empty = public repo, no credentials.
+  secretName: ""
 
 # Pre-signed client cert the agent pods mount (keys: tls.crt / tls.key / ca.crt).
 obmondoClientCert:
@@ -43,16 +60,18 @@ puppetServer: ""
 # Only manage nodes matching this label selector ("" = all nodes).
 nodeSelector: ""
 
-# Host directory used to stage the linuxaid-cli binary onto each node.
+# Host directory used to stage the linuxaid-cli binary and puppet code onto each node.
 hostObmondoPath: /opt/obmondo
 
-# Per-node agent Job controls (passed to the launcher's fanout).
+# Per-node agent Job controls.
 agentJob:
   ttlSecondsAfterFinished: 600
   activeDeadlineSeconds: 1200
-  backoffLimit: 0          # one pod per node per run; a failed run retries next hour
+  backoffLimit: 0          # one pod per node per cycle; a failure retries next cycle
 
-# Launcher CronJob controls.
-startingDeadlineSeconds: 120
-successfulJobsHistoryLimit: 1
-failedJobsHistoryLimit: 3
+# Free-form hiera data applied to every node in this cluster, rendered verbatim into
+# the ConfigMap the Jobs mount at /hiera-data. Anything hiera-legal works, e.g.:
+#   classes:
+#     - role::kubeaid
+#   common::monitor::prometheus::server: prometheus.demo.example.com
+hiera: {}

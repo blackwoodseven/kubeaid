@@ -1,0 +1,18 @@
+# The rendered Helm values ARE the node's hiera data: the operator mounts this
+# ConfigMap into every per-node Job at /hiera-data, the Job stages it onto the host,
+# and puppet apply reads it as the global (highest-precedence) hiera layer, so chart
+# values win over control-repo defaults. controlRepo.ref is recorded as
+# common::system::openvox::environment so the puppet code knows which tag it ran from.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linuxaid-agents.fullname" . }}-hiera
+  labels:
+    {{- include "linuxaid-agents.labels" . | nindent 4 }}
+data:
+  values.yaml: |
+    {{- $hiera := .Values.hiera | default dict }}
+    {{- if .Values.controlRepo.ref }}
+    {{- $hiera = merge (dict "common::system::openvox::environment" .Values.controlRepo.ref) $hiera }}
+    {{- end }}
+    {{- toYaml $hiera | nindent 4 }}

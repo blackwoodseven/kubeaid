@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ include "linuxaid-agents.fullname" . }}-launcher
+  name: {{ include "linuxaid-agents.fullname" . }}-operator
   labels:
     {{- include "linuxaid-agents.labels" . | nindent 4 }}
 ---
-# Cluster-scoped: the launcher lists nodes to discover them.
+# Nodes are cluster-scoped: list drives the fan-out, get backs single-node runs.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "linuxaid-agents.fullname" . }}-launcher-nodes
+  name: {{ include "linuxaid-agents.fullname" . }}-operator-nodes
   labels:
     {{- include "linuxaid-agents.labels" . | nindent 4 }}
 rules:
@@ -20,43 +20,45 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "linuxaid-agents.fullname" . }}-launcher-nodes
+  name: {{ include "linuxaid-agents.fullname" . }}-operator-nodes
   labels:
     {{- include "linuxaid-agents.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "linuxaid-agents.fullname" . }}-launcher-nodes
+  name: {{ include "linuxaid-agents.fullname" . }}-operator-nodes
 subjects:
   - kind: ServiceAccount
-    name: {{ include "linuxaid-agents.fullname" . }}-launcher
+    name: {{ include "linuxaid-agents.fullname" . }}-operator
     namespace: {{ .Release.Namespace }}
 ---
-# Namespaced: the launcher creates the per-node agent Jobs here.
+# Namespaced, create-only: the operator never reads or deletes Jobs. A creation that
+# returns 409 means this node's Job still exists and the cycle is skipped, which is
+# what gives at-most-one Job per node. Cleanup is ttlSecondsAfterFinished.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "linuxaid-agents.fullname" . }}-launcher-jobs
+  name: {{ include "linuxaid-agents.fullname" . }}-operator-jobs
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "linuxaid-agents.labels" . | nindent 4 }}
 rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
-    verbs: ["get", "list", "create", "delete"]
+    verbs: ["create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ include "linuxaid-agents.fullname" . }}-launcher-jobs
+  name: {{ include "linuxaid-agents.fullname" . }}-operator-jobs
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "linuxaid-agents.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ include "linuxaid-agents.fullname" . }}-launcher-jobs
+  name: {{ include "linuxaid-agents.fullname" . }}-operator-jobs
 subjects:
   - kind: ServiceAccount
-    name: {{ include "linuxaid-agents.fullname" . }}-launcher
+    name: {{ include "linuxaid-agents.fullname" . }}-operator
     namespace: {{ .Release.Namespace }}
