@@ -38,6 +38,14 @@ backupCleanup:
   retentionDays: 7
   buckets: []
   excludePrefixes: []
+  # Prefixes where only the latest version of each object is kept and older ones are
+  # deleted. Live objects always survive, so unlike excludePrefixes this is safe for a
+  # prefix whose contents must be kept - a Velero/kopia repository, where kopia deletes
+  # superseded blobs but a versioned bucket retains them for ever.
+  keepOnlyLatestVersion: []
+  # Defaults to retentionDays when unset.
+  keepOnlyLatestRetentionDays: ""
+  keepOnlyLatestBatchSize: ""
   region: us-east-1
   # endpoint: S3-compatible endpoint. Defaults to http://<release-name>-svc.<namespace>.svc.cluster.local:9000
   # secretName: secret providing the credentials. Defaults to rustfs.secret.existingSecret.
@@ -45,4 +53,4 @@ backupCleanup:
   secretSecretAccessKeyKey: RUSTFS_SECRET_KEY
   image:
     repository: ghcr.io/obmondo/s3-backup-cleanup
-    tag: v1.0.3
+    tag: v1.1.0
