@@ -43,11 +43,17 @@ mounted into each Job at `/hiera-data`, staged onto the host, and read by `puppe
 the **global** layer — so chart values beat control-repo defaults.
 
 By default every node gets `role::kubeaid`, LinuxAid's role for KubeAid nodes (it includes
-`common::system`). Other keys merge with that default, while setting `classes` replaces it:
+`common::system`), with `monitor::enable: false`: the cluster's own Prometheus monitors the
+nodes, and with LinuxAid's host monitoring off it also skips the rest of its `common` class
+(the Obmondo apt repository, ZFS, backup, user management). Other keys merge with that
+default, while setting `classes` replaces the role:
 
 ```yaml
 hiera:
-  common::monitor::prometheus::server: prometheus.demo.example.com
+  common::system::users:
+    demo-admin:
+      ssh_authorized_keys:
+        - "ssh-ed25519 AAAAC3Nza… demo@example.com"
 ```
 
 The environment is named after `controlRepo.ref` with dots as underscores (`v1.8.8` →
@@ -80,7 +86,7 @@ was applied from.
 | `openvoxEnvironment` | `""` | Environment name; empty = `controlRepo.ref` with dots as underscores, or `master` without a ref. |
 | `nodeSelector` | `""` | Label selector; empty = all nodes. |
 | `agentJob.*` | | `ttlSecondsAfterFinished`, `activeDeadlineSeconds`, `backoffLimit`. |
-| `hiera` | `classes: [role::kubeaid]` | Hiera data for every node; setting `classes` replaces the role. |
+| `hiera` | `classes: [role::kubeaid]`, `monitor::enable: false` | Hiera data for every node; setting `classes` replaces the role. |
 
 ## Caveats
 

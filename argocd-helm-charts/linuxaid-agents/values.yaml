@@ -67,9 +67,11 @@ agentJob:
   backoffLimit: 0          # one pod per node per cycle; a failure retries next cycle
 
 # Hiera data applied to every node in this cluster, rendered verbatim into the ConfigMap
-# the Jobs mount at /hiera-data. role::kubeaid is LinuxAid's role for KubeAid nodes;
-# other hiera keys merge in (e.g. common::monitor::prometheus::server), while setting
-# classes replaces the role.
+# the Jobs mount at /hiera-data. role::kubeaid is LinuxAid's role for KubeAid nodes, and
+# monitor::enable: false keeps LinuxAid's host monitoring, and with it the rest of its
+# common class, off: the cluster's own Prometheus monitors the nodes. Other hiera keys
+# merge in (e.g. common::system::users), while setting classes replaces the role.
 hiera:
   classes:
     - role::kubeaid
+  monitor::enable: false
