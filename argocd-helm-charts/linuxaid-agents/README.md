@@ -72,7 +72,7 @@ puppet code can tell which control-repo tag it was applied from.
 | `enforce` | `false` | `false` = report-only (`puppet --noop`); `true` = apply changes. |
 | `interval` | `4h` | How often the operator reconciles one Job per node. |
 | `controlRepo.url` | Obmondo linuxaid | Control-repo cloned onto each node. |
-| `controlRepo.ref` | `""` | Tag to check out; empty = the repo's latest tag. |
+| `controlRepo.ref` | `v1.8.7` | Tag to check out; empty = the repo's latest tag on every run. |
 | `controlRepo.secretName` | `""` | Secret with `ssh-privatekey` or `token` for a private repo. |
 | `obmondoClientCert.secretName` | `obmondo-clientcert` | Secret the Jobs mount. |
 | `openvoxEnvironment` | `master` | OpenVox environment applied. |

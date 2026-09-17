@@ -40,8 +40,9 @@ interval: 4h
 controlRepo:
   url: https://github.com/Obmondo/linuxaid.git
   # Tag (or ref) to check out, and the value recorded in hiera as
-  # common::system::openvox::environment. Empty = the repo's latest tag.
-  ref: ""
+  # common::system::openvox::environment. Pinned, so a new LinuxAid tag reaches nodes
+  # only when this is bumped; empty = the repo's latest tag on every run.
+  ref: v1.8.7
   # Secret holding git credentials for a private control-repo: key `ssh-privatekey`
   # (SSH remotes) or `token` (https remotes). Empty = public repo, no credentials.
   secretName: ""
