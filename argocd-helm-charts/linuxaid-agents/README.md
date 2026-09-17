@@ -13,9 +13,10 @@ operator Deployment            one Job per node              on the node
       |                                |                          |
       | every `interval`:              |                          |
       |  list nodes  ----------------->|                          |
-      |  create Job per node           | stage linuxaid-cli ----->| /opt/obmondo/bin
+      |  create Job per node           | stage the binaries ----->| /opt/obmondo/bin
       |    201 -> new run              | install client cert ---->| puppet SSL tree
-      |    409 -> still running, skip  | clone control-repo ----->| /opt/obmondo/openvox
+      |    409 -> still running, skip  | linuxaid-install ------->| openvox agent, if missing
+      |                                | clone control-repo ----->| /opt/obmondo/openvox
       |                                | nsenter into host -------> puppet apply
 ```
 
@@ -29,9 +30,11 @@ Three properties worth knowing:
 - **Privilege is short-lived.** The operator itself is unprivileged; only the per-node
   Jobs are privileged, and they exit and are reaped by `ttlSecondsAfterFinished`.
 
-The pod is only a delivery shell: it stages a static binary and the client cert onto the
-host, then `nsenter`s into the host's namespaces to run puppet there — package and user
-management must happen on the host, not in a container.
+The pod is only a delivery shell: it stages the static `linuxaid-cli` and `linuxaid-install`
+binaries and the client cert onto the host, then `nsenter`s into the host's namespaces —
+package and user management must happen on the host, not in a container. There,
+`linuxaid-install --masterless` installs the OpenVox agent if it is missing and writes a
+server-less `puppet.conf`, and `linuxaid-cli run-openvox --apply` runs `puppet apply`.
 
 ## Hiera
 
@@ -72,9 +75,7 @@ puppet code can tell which control-repo tag it was applied from.
 | `controlRepo.secretName` | `""` | Secret with `ssh-privatekey` or `token` for a private repo. |
 | `obmondoClientCert.secretName` | `obmondo-clientcert` | Secret the Jobs mount. |
 | `openvoxEnvironment` | `master` | OpenVox environment applied. |
-| `puppetServer` | `""` | Override; empty = resolved from the Obmondo API. |
 | `nodeSelector` | `""` | Label selector; empty = all nodes. |
-| `hostObmondoPath` | `/opt/obmondo` | Host dir for the staged binary and puppet code. |
 | `agentJob.*` | | `ttlSecondsAfterFinished`, `activeDeadlineSeconds`, `backoffLimit`. |
 | `hiera` | `{}` | Free-form hiera data for every node. |
 

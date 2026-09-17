@@ -38,7 +38,6 @@ spec:
             - --interval={{ .Values.interval }}
             - --openvox-environment={{ .Values.openvoxEnvironment }}
             - --cert-secret={{ .Values.obmondoClientCert.secretName }}
-            - --host-path={{ .Values.hostObmondoPath }}
             - --name-prefix={{ include "linuxaid-agents.fullname" . }}
             - --ttl-seconds={{ .Values.agentJob.ttlSecondsAfterFinished }}
             - --active-deadline-seconds={{ .Values.agentJob.activeDeadlineSeconds }}
@@ -55,9 +54,6 @@ spec:
             {{- end }}
             {{- with .Values.nodeSelector }}
             - --node-selector={{ . }}
-            {{- end }}
-            {{- with .Values.puppetServer }}
-            - --puppet-server={{ . }}
             {{- end }}
           resources:
             {{- toYaml .Values.operator.resources | nindent 12 }}

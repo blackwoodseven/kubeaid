@@ -55,14 +55,8 @@ enforce: false
 
 openvoxEnvironment: master
 
-# Optional puppetserver override; empty = resolved from the Obmondo API.
-puppetServer: ""
-
 # Only manage nodes matching this label selector ("" = all nodes).
 nodeSelector: ""
-
-# Host directory used to stage the linuxaid-cli binary and puppet code onto each node.
-hostObmondoPath: /opt/obmondo
 
 # Per-node agent Job controls.
 agentJob:
