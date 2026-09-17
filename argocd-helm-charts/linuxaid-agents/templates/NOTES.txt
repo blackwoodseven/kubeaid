@@ -15,7 +15,7 @@ node list and no per-node CronJobs.
 
 Prerequisites:
   * Deploy into the namespace holding {{ .Values.obmondoClientCert.secretName }} (e.g. monitoring); it must permit privileged pods (PSA).
-  * Both images must be pushed to a registry the cluster can pull.
+  * The cluster must be able to pull both images (public on ghcr.io).
   * A private control-repo needs controlRepo.secretName set (key ssh-privatekey or token).
 
 Watch:

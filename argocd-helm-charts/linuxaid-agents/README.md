@@ -54,12 +54,16 @@ puppet code can tell which control-repo tag it was applied from.
 - The `obmondo-clientcert` secret (`tls.crt` / `tls.key` / `ca.crt`) in the release
   namespace. The cert is pre-signed — nodes enroll nothing.
 - That namespace must permit privileged pods (PSA), since the per-node Jobs are privileged.
-- Both images pushed to a registry the cluster can pull.
+- Pull access to `ghcr.io/obmondo`, where both images are public and published with every
+  linuxaid-cli release.
 
 ## Values
 
 | Key | Default | Purpose |
 | --- | --- | --- |
+| `operator.image.repository` | `ghcr.io/obmondo/linuxaid-agent` | Operator image. |
+| `agentImage.repository` | `ghcr.io/obmondo/linuxaid-cli` | Per-node agent image. |
+| `operator.image.tag`, `agentImage.tag` | `v1.11.2` | linuxaid-cli release; keep both on the same one. |
 | `certname` | `""` | CN of the obmondo-clientcert, shared by all nodes. **Required** — the operator exits if unset. |
 | `enforce` | `false` | `false` = report-only (`puppet --noop`); `true` = apply changes. |
 | `interval` | `4h` | How often the operator reconciles one Job per node. |

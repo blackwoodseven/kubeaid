@@ -12,8 +12,8 @@
 # Unprivileged operator: a Kubernetes API client that only lists nodes and creates Jobs.
 operator:
   image:
-    repository: gitea.obmondo.com/enableit/linuxaid-agent
-    tag: latest
+    repository: ghcr.io/obmondo/linuxaid-agent
+    tag: v1.11.2
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -22,10 +22,11 @@ operator:
     limits:
       memory: 64Mi
 
-# Per-node agent image (linuxaid-cli + entrypoint), run by the reconciled Jobs.
+# Per-node agent image (linuxaid-cli + entrypoint), run by the reconciled Jobs. Keep its
+# tag on the same linuxaid-cli release as operator.image.tag.
 agentImage:
-  repository: gitea.obmondo.com/enableit/linuxaid-cli
-  tag: latest
+  repository: ghcr.io/obmondo/linuxaid-cli
+  tag: v1.11.2
   pullPolicy: IfNotPresent
 
 # certname = the CN of the obmondo-clientcert, shared by all nodes. REQUIRED:
