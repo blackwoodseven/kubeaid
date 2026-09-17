@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "linuxaid-agents.fullname" . }}-operator
+  labels:
+    {{- include "linuxaid-agents.labels" . | nindent 4 }}
+    linuxaid-agents.obmondo.com/component: operator
+spec:
+  replicas: 1
+  # One writer only: two operators would race to create the same per-node Jobs.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "linuxaid-agents.selectorLabels" . | nindent 6 }}
+      linuxaid-agents.obmondo.com/component: operator
+  template:
+    metadata:
+      labels:
+        {{- include "linuxaid-agents.selectorLabels" . | nindent 8 }}
+        linuxaid-agents.obmondo.com/component: operator
+      annotations:
+        # Restart the operator when the hiera data changes: it reconciles on start,
+        # so nodes get the new values now rather than at the next interval.
+        checksum/hiera: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "linuxaid-agents.fullname" . }}-operator
+      containers:
+        - name: operator
+          image: "{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}"
+          imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
+          args:
+            - operator
+            - --image={{ .Values.agentImage.repository }}:{{ .Values.agentImage.tag }}
+            - --image-pull-policy={{ .Values.agentImage.pullPolicy }}
+            - --certname={{ .Values.certname }}
+            - --enforce={{ .Values.enforce }}
+            - --interval={{ .Values.interval }}
+            - --openvox-environment={{ include "linuxaid-agents.openvoxEnvironment" . }}
+            - --cert-secret={{ .Values.obmondoClientCert.secretName }}
+            - --name-prefix={{ include "linuxaid-agents.fullname" . }}
+            - --ttl-seconds={{ .Values.agentJob.ttlSecondsAfterFinished }}
+            - --active-deadline-seconds={{ .Values.agentJob.activeDeadlineSeconds }}
+            - --backoff-limit={{ .Values.agentJob.backoffLimit }}
+            - --hiera-configmap={{ include "linuxaid-agents.fullname" . }}-hiera
+            {{- with .Values.controlRepo.url }}
+            - --control-repo-url={{ . }}
+            {{- end }}
+            {{- with .Values.controlRepo.ref }}
+            - --control-repo-ref={{ . }}
+            {{- end }}
+            {{- with .Values.controlRepo.secretName }}
+            - --git-secret={{ . }}
+            {{- end }}
+            {{- with .Values.nodeSelector }}
+            - --node-selector={{ . }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.operator.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

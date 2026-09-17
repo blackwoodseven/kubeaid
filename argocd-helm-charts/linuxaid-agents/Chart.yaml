@@ -1,0 +1,15 @@
+apiVersion: v2
+name: linuxaid-agents
+description: >-
+  Run the LinuxAid OpenVox agent on KubeAid nodes to manage OS packages, SSH keys
+  and sudo: an unprivileged operator Deployment reconciles one ephemeral privileged
+  Job per node, each running masterless puppet apply from the pinned control-repo.
+icon: https://avatars.githubusercontent.com/u/13882947?s=250&v=4
+type: application
+version: 0.1.0
+appVersion: v1.11.3
+keywords:
+  - obmondo
+  - kubeaid
+  - linuxaid
+  - openvox

@@ -1,0 +1,77 @@
+# linuxaid-agents — run the LinuxAid OpenVox agent on every node.
+#
+# An unprivileged operator Deployment lists the cluster's nodes and reconciles one
+# ephemeral privileged agent Job per node every `interval` — so there is no static
+# node list and new nodes are picked up on the next cycle. Each Job clones the
+# control-repo onto its node and runs masterless `puppet apply`, with the `hiera`
+# values below as the highest-precedence hiera layer.
+#
+# Deploy into the namespace that holds the obmondo-clientcert secret (e.g.
+# obmondo); it must permit privileged pods (PSA).
+
+# Unprivileged operator: a Kubernetes API client that only lists nodes and creates Jobs.
+operator:
+  image:
+    repository: ghcr.io/obmondo/linuxaid-agent
+    tag: v1.11.3
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 64Mi
+
+# Per-node agent image (linuxaid-cli + entrypoint), run by the reconciled Jobs. Keep its
+# tag on the same linuxaid-cli release as operator.image.tag.
+agentImage:
+  repository: ghcr.io/obmondo/linuxaid-cli
+  tag: v1.11.3
+  pullPolicy: IfNotPresent
+
+# certname = the CN of the obmondo-clientcert, shared by all nodes. REQUIRED:
+# the operator exits immediately if it is empty.
+certname: ""
+
+# How often the operator reconciles one agent Job per node.
+interval: 4h
+
+# Masterless puppet apply: the control-repo each node clones and applies.
+controlRepo:
+  url: https://github.com/Obmondo/linuxaid.git
+  # Tag (or ref) to check out. Pinned, so a new LinuxAid tag reaches nodes only when
+  # this is bumped; empty = the repo's latest tag on every run.
+  ref: v1.8.8
+  # Secret holding git credentials for a private control-repo: key `ssh-privatekey`
+  # (SSH remotes) or `token` (https remotes). Empty = public repo, no credentials.
+  secretName: ""
+
+# Pre-signed client cert the agent pods mount (keys: tls.crt / tls.key / ca.crt).
+obmondoClientCert:
+  secretName: obmondo-clientcert
+
+# false = report-only (puppet --noop); true = apply changes (--no-noop).
+enforce: false
+
+# OpenVox environment name. Empty = controlRepo.ref with dots as underscores (v1.8.8 ->
+# v1_8_8), as the server setup names tag environments; master when that is empty too.
+openvoxEnvironment: ""
+
+# Only manage nodes matching this label selector ("" = all nodes).
+nodeSelector: ""
+
+# Per-node agent Job controls.
+agentJob:
+  ttlSecondsAfterFinished: 600
+  activeDeadlineSeconds: 1200
+  backoffLimit: 0          # one pod per node per cycle; a failure retries next cycle
+
+# Hiera data applied to every node in this cluster, rendered verbatim into the ConfigMap
+# the Jobs mount at /hiera-data. role::kubeaid is LinuxAid's role for KubeAid nodes, and
+# monitor::enable: false keeps LinuxAid's host monitoring, and with it the rest of its
+# common class, off: the cluster's own Prometheus monitors the nodes. Other hiera keys
+# merge in (e.g. common::system::users), while setting classes replaces the role.
+hiera:
+  classes:
+    - role::kubeaid
+  monitor::enable: false
