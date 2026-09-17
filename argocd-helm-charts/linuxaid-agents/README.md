@@ -67,7 +67,7 @@ puppet code can tell which control-repo tag it was applied from.
 | --- | --- | --- |
 | `operator.image.repository` | `ghcr.io/obmondo/linuxaid-agent` | Operator image. |
 | `agentImage.repository` | `ghcr.io/obmondo/linuxaid-cli` | Per-node agent image. |
-| `operator.image.tag`, `agentImage.tag` | `v1.11.2` | linuxaid-cli release; keep both on the same one. |
+| `operator.image.tag`, `agentImage.tag` | `v1.11.3` | linuxaid-cli release; keep both on the same one. |
 | `certname` | `""` | CN of the obmondo-clientcert, shared by all nodes. **Required** — the operator exits if unset. |
 | `enforce` | `false` | `false` = report-only (`puppet --noop`); `true` = apply changes. |
 | `interval` | `4h` | How often the operator reconciles one Job per node. |
