@@ -64,9 +64,10 @@ agentJob:
   activeDeadlineSeconds: 1200
   backoffLimit: 0          # one pod per node per cycle; a failure retries next cycle
 
-# Free-form hiera data applied to every node in this cluster, rendered verbatim into
-# the ConfigMap the Jobs mount at /hiera-data. Anything hiera-legal works, e.g.:
-#   classes:
-#     - role::kubeaid
-#   common::monitor::prometheus::server: prometheus.demo.example.com
-hiera: {}
+# Hiera data applied to every node in this cluster, rendered verbatim into the ConfigMap
+# the Jobs mount at /hiera-data. role::kubeaid is LinuxAid's role for KubeAid nodes;
+# other hiera keys merge in (e.g. common::monitor::prometheus::server), while setting
+# classes replaces the role.
+hiera:
+  classes:
+    - role::kubeaid

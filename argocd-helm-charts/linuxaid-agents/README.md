@@ -42,10 +42,11 @@ The `hiera` values are the node's hiera data. They are rendered verbatim into a 
 mounted into each Job at `/hiera-data`, staged onto the host, and read by `puppet apply` as
 the **global** layer — so chart values beat control-repo defaults.
 
+By default every node gets `role::kubeaid`, LinuxAid's role for KubeAid nodes (it includes
+`common::system`). Other keys merge with that default, while setting `classes` replaces it:
+
 ```yaml
 hiera:
-  classes:
-    - role::kubeaid
   common::monitor::prometheus::server: prometheus.demo.example.com
 ```
 
@@ -77,7 +78,7 @@ puppet code can tell which control-repo tag it was applied from.
 | `openvoxEnvironment` | `master` | OpenVox environment applied. |
 | `nodeSelector` | `""` | Label selector; empty = all nodes. |
 | `agentJob.*` | | `ttlSecondsAfterFinished`, `activeDeadlineSeconds`, `backoffLimit`. |
-| `hiera` | `{}` | Free-form hiera data for every node. |
+| `hiera` | `classes: [role::kubeaid]` | Hiera data for every node; setting `classes` replaces the role. |
 
 ## Caveats
 
