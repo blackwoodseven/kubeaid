@@ -10,8 +10,9 @@ linuxaid-agents — operator Deployment in namespace {{ .Release.Namespace }}.
   nodes:        {{ if .Values.nodeSelector }}selector "{{ .Values.nodeSelector }}"{{ else }}all nodes{{ end }}
 
 Every {{ .Values.interval }} the operator lists nodes and creates one ephemeral privileged agent
-Job per node (deterministic name, so a node whose Job is still running is skipped). No static
-node list and no per-node CronJobs.
+Job per node (deterministic name, so a node whose previous Job still exists, running or finished
+within ttlSecondsAfterFinished, is skipped until the next cycle). No static node list and no
+per-node CronJobs.
 
 Prerequisites:
   * Deploy into the namespace holding {{ .Values.obmondoClientCert.secretName }} (e.g. obmondo); it must permit privileged pods (PSA).
@@ -22,6 +23,6 @@ Watch:
   kubectl -n {{ .Release.Namespace }} logs deploy/{{ include "linuxaid-agents.fullname" . }}-operator
   kubectl -n {{ .Release.Namespace }} get jobs -l app.kubernetes.io/name={{ include "linuxaid-agents.name" . }}
 
-All nodes share the same certname (the obmondo-clientcert CN) => one puppet identity: fine for a
-uniform role, not for per-node reporting. Start with enforce=false; flip to true once runs report
-clean.
+All nodes share the same certname (the obmondo-clientcert CN) and hiera data => one puppet identity:
+fine for a uniform role, not for per-node settings. Start with enforce=false; flip to true once runs
+report clean.
