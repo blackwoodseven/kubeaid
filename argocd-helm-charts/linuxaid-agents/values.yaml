@@ -39,9 +39,8 @@ interval: 4h
 # Masterless puppet apply: the control-repo each node clones and applies.
 controlRepo:
   url: https://github.com/Obmondo/linuxaid.git
-  # Tag (or ref) to check out, and the value recorded in hiera as
-  # common::system::openvox::environment. Pinned, so a new LinuxAid tag reaches nodes
-  # only when this is bumped; empty = the repo's latest tag on every run.
+  # Tag (or ref) to check out. Pinned, so a new LinuxAid tag reaches nodes only when
+  # this is bumped; empty = the repo's latest tag on every run.
   ref: v1.8.8
   # Secret holding git credentials for a private control-repo: key `ssh-privatekey`
   # (SSH remotes) or `token` (https remotes). Empty = public repo, no credentials.
@@ -54,7 +53,9 @@ obmondoClientCert:
 # false = report-only (puppet --noop); true = apply changes (--no-noop).
 enforce: false
 
-openvoxEnvironment: master
+# OpenVox environment name. Empty = controlRepo.ref with dots as underscores (v1.8.8 ->
+# v1_8_8), as the server setup names tag environments; master when that is empty too.
+openvoxEnvironment: ""
 
 # Only manage nodes matching this label selector ("" = all nodes).
 nodeSelector: ""

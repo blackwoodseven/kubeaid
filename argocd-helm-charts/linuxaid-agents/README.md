@@ -50,8 +50,10 @@ hiera:
   common::monitor::prometheus::server: prometheus.demo.example.com
 ```
 
-`controlRepo.ref` is additionally recorded as `common::system::openvox::environment`, so the
-puppet code can tell which control-repo tag it was applied from.
+The environment is named after `controlRepo.ref` with dots as underscores (`v1.8.8` →
+`v1_8_8`), as in the server setup, and that name is additionally recorded as
+`common::system::openvox::environment`, so the puppet code can tell which control-repo tag it
+was applied from.
 
 ## Prerequisites
 
@@ -75,7 +77,7 @@ puppet code can tell which control-repo tag it was applied from.
 | `controlRepo.ref` | `v1.8.8` | Tag to check out; empty = the repo's latest tag on every run. |
 | `controlRepo.secretName` | `""` | Secret with `ssh-privatekey` or `token` for a private repo. |
 | `obmondoClientCert.secretName` | `obmondo-clientcert` | Secret the Jobs mount. |
-| `openvoxEnvironment` | `master` | OpenVox environment applied. |
+| `openvoxEnvironment` | `""` | Environment name; empty = `controlRepo.ref` with dots as underscores, or `master` without a ref. |
 | `nodeSelector` | `""` | Label selector; empty = all nodes. |
 | `agentJob.*` | | `ttlSecondsAfterFinished`, `activeDeadlineSeconds`, `backoffLimit`. |
 | `hiera` | `classes: [role::kubeaid]` | Hiera data for every node; setting `classes` replaces the role. |
