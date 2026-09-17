@@ -14,7 +14,7 @@ Job per node (deterministic name, so a node whose Job is still running is skippe
 node list and no per-node CronJobs.
 
 Prerequisites:
-  * Deploy into the namespace holding {{ .Values.obmondoClientCert.secretName }} (e.g. monitoring); it must permit privileged pods (PSA).
+  * Deploy into the namespace holding {{ .Values.obmondoClientCert.secretName }} (e.g. obmondo); it must permit privileged pods (PSA).
   * The cluster must be able to pull both images (public on ghcr.io).
   * A private control-repo needs controlRepo.secretName set (key ssh-privatekey or token).
 

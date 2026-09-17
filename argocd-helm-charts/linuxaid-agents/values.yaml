@@ -7,7 +7,7 @@
 # values below as the highest-precedence hiera layer.
 #
 # Deploy into the namespace that holds the obmondo-clientcert secret (e.g.
-# monitoring); it must permit privileged pods (PSA).
+# obmondo); it must permit privileged pods (PSA).
 
 # Unprivileged operator: a Kubernetes API client that only lists nodes and creates Jobs.
 operator:
