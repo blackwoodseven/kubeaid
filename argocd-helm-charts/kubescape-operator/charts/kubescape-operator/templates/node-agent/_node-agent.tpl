@@ -60,9 +60,9 @@ Parameters:
 - name: OTEL_COLLECTOR_SVC
   value: {{ .Values.configurations.otelUrl }}
 {{- end }}
-{{- if and .components.clamAV.enabled (not .autoscalerMode) }}
-- name: CLAMAV_SOCKET
-  value: "/clamav/clamd.sock"
+{{- if eq .Values.nodeAgent.config.prometheusExporter "enable" }}
+- name: OTEL_METRICS_EXPORTER
+  value: "prometheus"
 {{- end }}
 {{- if .components.sbomScanner.enabled }}
 - name: SBOM_SCANNER_SOCKET
@@ -227,34 +227,13 @@ Parameters:
         - IPC_LOCK
         - NET_RAW
     seLinuxOptions:
+      {{- if .autoscalerMode }}
+      type: "{{`{{ .SELinuxType }}`}}"
+      {{- else }}
       type: {{ .Values.nodeAgent.seLinuxType }}
+      {{- end }}
   volumeMounts:
     {{- include "node-agent.volumeMounts" (dict "Values" .Values "components" .components) | nindent 4 }}
-{{- end -}}
-
-{{/*
-ClamAV Container (optional)
-Parameters:
-  - Values: .Values
-  - components: $components
-*/}}
-{{- define "node-agent.clamavContainer" -}}
-{{- if .components.clamAV.enabled }}
-- name: {{ .Values.clamav.name }}
-  image: "{{ .Values.clamav.image.repository }}:{{ .Values.clamav.image.tag }}"
-  imagePullPolicy: {{ .Values.clamav.image.pullPolicy }}
-  securityContext:
-    runAsUser: 0
-    capabilities:
-      add:
-        - SYS_PTRACE
-  resources:
-{{ toYaml .Values.clamav.resources | indent 4 }}
-  {{- if .Values.clamav.volumeMounts }}
-  volumeMounts:
-    {{- toYaml .Values.clamav.volumeMounts | nindent 4 }}
-  {{- end }}
-{{- end }}
 {{- end -}}
 
 {{/*
@@ -305,9 +284,29 @@ Parameters:
           fieldPath: metadata.namespace
     - name: CLUSTER_NAME
       value: "{{ .Values.clusterName }}"
-  {{- if .Values.nodeAgent.sbomScanner.volumeMounts }}
   volumeMounts:
+  {{- if .Values.nodeAgent.sbomScanner.volumeMounts }}
     {{- toYaml .Values.nodeAgent.sbomScanner.volumeMounts | nindent 4 }}
+  {{- end }}
+  {{- if ne .Values.global.proxySecretFile "" }}
+    - name: proxy-secret
+      mountPath: /etc/ssl/certs/proxy.crt
+      subPath: proxy.crt
+      readOnly: true
+  {{- end }}
+  {{- if .Values.global.overrideDefaultCaCertificates.enabled }}
+    - name: custom-ca-certificates
+      mountPath: /etc/ssl/certs/ca-certificates.crt
+      subPath: ca-certificates.crt
+      readOnly: true
+  {{- end }}
+  {{- if .Values.global.extraCaCertificates.enabled }}
+  {{- range $key, $value := (lookup "v1" "Secret" .Values.ksNamespace .Values.global.extraCaCertificates.secretName).data }}
+    - name: extra-ca-certificates
+      mountPath: /etc/ssl/certs/{{ $key }}
+      subPath: {{ $key }}
+      readOnly: true
+  {{- end }}
   {{- end }}
 {{- end }}
 {{- end -}}
@@ -346,9 +345,6 @@ Parameters:
 {{- end }}
 {{- if .Values.volumes }}
 {{ toYaml .Values.volumes | trim }}
-{{- end }}
-{{- if .Values.clamav.volumes }}
-{{ toYaml .Values.clamav.volumes | trim }}
 {{- end }}
 {{- if .components.sbomScanner.enabled }}
 {{- if .Values.nodeAgent.sbomScanner.volumes }}
@@ -458,7 +454,6 @@ Parameters:
   - testingMode: boolean (for MULTIPLY env var and testing features)
   - resources: resources object (when autoscalerMode is false)
   - nodeSelector: optional custom nodeSelector
-  - includeClamAV: boolean - whether to include ClamAV container
   - includeSbomScanner: boolean - whether to include SBOM scanner sidecar container
 */}}
 {{- define "node-agent.podSpec" -}}
@@ -495,9 +490,6 @@ initContainers:
 volumes:
 {{ include "node-agent.volumes" (dict "Values" .Values "components" .components) | trim | nindent 0 }}
 containers:
-{{- if .includeClamAV }}
-{{ include "node-agent.clamavContainer" (dict "Values" .Values "components" .components) | trim | nindent 0 }}
-{{- end }}
 {{- if .includeSbomScanner }}
 {{ include "node-agent.sbomScannerContainer" (dict "Values" .Values "components" .components) | trim | nindent 0 }}
 {{- end }}
@@ -569,6 +561,6 @@ template:
     labels:
       {{- include "node-agent.podLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "components" .components "autoscalerMode" .autoscalerMode) | nindent 6 }}
   spec:
-    {{- include "node-agent.podSpec" (dict "Values" .Values "Chart" .Chart "Release" .Release "Capabilities" .Capabilities "components" .components "checksums" .checksums "no_proxy_envar_list" .no_proxy_envar_list "autoscalerMode" .autoscalerMode "testingMode" .testingMode "resources" .resources "nodeSelector" .nodeSelector "includeClamAV" .includeClamAV "includeSbomScanner" .includeSbomScanner) | nindent 4 }}
+    {{- include "node-agent.podSpec" (dict "Values" .Values "Chart" .Chart "Release" .Release "Capabilities" .Capabilities "components" .components "checksums" .checksums "no_proxy_envar_list" .no_proxy_envar_list "autoscalerMode" .autoscalerMode "testingMode" .testingMode "resources" .resources "nodeSelector" .nodeSelector "includeSbomScanner" .includeSbomScanner) | nindent 4 }}
 {{- end -}}
 

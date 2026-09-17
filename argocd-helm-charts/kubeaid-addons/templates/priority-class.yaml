@@ -1,0 +1,14 @@
+{{- if .Values.global.priorityClass.enabled }}
+{{- range .Values.global.priorityClass.entries }}
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ .name }}
+value: {{ .value }}
+globalDefault: false
+{{- if .description }}
+description: {{ .description | quote }}
+{{- end }}
+{{- end }}
+{{- end }}

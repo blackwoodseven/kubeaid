@@ -57,3 +57,44 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+
+  - it: lays down an EFI System Partition by default
+    template: HetznerBareMetalMachineTemplate.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.installImage.partitions
+          content:
+            fileSystem: esp
+            mount: /boot/efi
+            size: 512M
+
+  - it: omits the EFI System Partition on legacy BIOS servers
+    template: HetznerBareMetalMachineTemplate.yaml
+    set:
+      bareMetal.installImage.firmware: bios
+    asserts:
+      - notContains:
+          path: spec.template.spec.installImage.partitions
+          content:
+            fileSystem: esp
+            mount: /boot/efi
+            size: 512M
+      - equal:
+          path: spec.template.spec.installImage.partitions[0].mount
+          value: /boot
+
+  - it: omits the EFI System Partition on worker machines too
+    template: HetznerBareMetalMachine.yaml
+    documentIndex: 0
+    set:
+      bareMetal.installImage.firmware: bios
+    asserts:
+      - notContains:
+          path: spec.installImage.partitions
+          content:
+            fileSystem: esp
+            mount: /boot/efi
+            size: 512M
+      - equal:
+          path: spec.installImage.partitions[0].mount
+          value: /boot

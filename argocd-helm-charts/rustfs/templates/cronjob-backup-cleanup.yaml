@@ -24,7 +24,7 @@ spec:
             fsGroup: 10001
           containers:
             - name: cleanup
-              image: "{{ (.Values.backupCleanup.image).repository | default "ghcr.io/obmondo/s3-backup-cleanup" }}:{{ (.Values.backupCleanup.image).tag | default "v1.0.3" }}"
+              image: "{{ (.Values.backupCleanup.image).repository | default "ghcr.io/obmondo/s3-backup-cleanup" }}:{{ (.Values.backupCleanup.image).tag | default "v1.1.0" }}"
               imagePullPolicy: IfNotPresent
               env:
                 - name: ENDPOINT
@@ -35,6 +35,16 @@ spec:
                   value: {{ .Values.backupCleanup.retentionDays | default 7 | quote }}
                 - name: EXCLUDE_PREFIXES
                   value: {{ .Values.backupCleanup.excludePrefixes | default list | join " " | quote }}
+                - name: KEEP_ONLY_LATEST_PREFIXES
+                  value: {{ .Values.backupCleanup.keepOnlyLatestVersion | default list | join " " | quote }}
+                {{- with .Values.backupCleanup.keepOnlyLatestRetentionDays }}
+                - name: KEEP_ONLY_LATEST_RETENTION_DAYS
+                  value: {{ . | quote }}
+                {{- end }}
+                {{- with .Values.backupCleanup.keepOnlyLatestBatchSize }}
+                - name: KEEP_ONLY_LATEST_BATCH_SIZE
+                  value: {{ . | quote }}
+                {{- end }}
                 - name: AWS_DEFAULT_REGION
                   value: {{ .Values.backupCleanup.region | default "us-east-1" | quote }}
                 - name: AWS_ACCESS_KEY_ID

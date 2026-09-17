@@ -119,6 +119,15 @@ bareMetal:
     # description: Path on the rescue system to the OS image tarball.
     # @schema
     imagePath: /root/.oldroot/nfs/images/Ubuntu-2604-resolute-amd64-base.tar.zst
+    # @schema
+    # type: string
+    # enum: [efi, bios]
+    # description: |
+    #   Firmware mode of the bare-metal servers. efi lays down an EFI System Partition;
+    #   bios omits it, since installimage writes GRUB to the MBR instead. Setting efi on a
+    #   legacy-BIOS server produces an install that completes and then cannot boot.
+    # @schema
+    firmware: efi
     vg0:
       # @schema
       # type: integer

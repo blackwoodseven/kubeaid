@@ -8,6 +8,16 @@
         "installImage": {
           "additionalProperties": false,
           "properties": {
+            "firmware": {
+              "default": "efi",
+              "description": "Firmware mode of the bare-metal servers. efi lays down an EFI System Partition; bios omits it, since installimage writes GRUB to the MBR instead. Setting efi on a legacy-BIOS server produces an install that completes and then cannot boot.\n",
+              "enum": [
+                "efi",
+                "bios"
+              ],
+              "title": "firmware",
+              "type": "string"
+            },
             "imagePath": {
               "default": "/root/.oldroot/nfs/images/Ubuntu-2404-noble-amd64-base.tar.gz",
               "description": "Path on the rescue system to the OS image tarball.",

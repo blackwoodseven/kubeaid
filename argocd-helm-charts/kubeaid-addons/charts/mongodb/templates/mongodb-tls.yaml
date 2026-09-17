@@ -1,0 +1,63 @@
+{{- /*
+Per-instance cert chain for security.tls. Not global.tlsChains: a replica
+set needs a wildcard SAN for per-member pod DNS plus localhost.
+*/ -}}
+{{- range (include "kubeaid-addons.mongodb.instances" . | fromJsonArray) }}
+{{- if (.tls).enabled }}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ .instanceName }}-selfsigned
+  namespace: {{ $.Release.Namespace }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .instanceName }}-ca
+  namespace: {{ $.Release.Namespace }}
+spec:
+  isCA: true
+  commonName: {{ .instanceName }}-ca
+  secretName: {{ .tls.caSecretName | default (printf "%s-ca" .instanceName) }}
+  {{- /* Long-lived CA: on the 90-day default it rotates its key while the leaf
+         still chains to the old one and clients fail with UntrustedRoot. No
+         privateKey pin for the same reason. */}}
+  duration: {{ .tls.caDuration | default "43800h" }}
+  renewBefore: {{ .tls.caRenewBefore | default "2160h" }}
+  issuerRef:
+    name: {{ .instanceName }}-selfsigned
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ .instanceName }}-ca-issuer
+  namespace: {{ $.Release.Namespace }}
+spec:
+  ca:
+    secretName: {{ .tls.caSecretName | default (printf "%s-ca" .instanceName) }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .instanceName }}-tls
+  namespace: {{ $.Release.Namespace }}
+spec:
+  secretName: {{ .tls.certSecretName | default (printf "%s-tls" .instanceName) }}
+  {{- /* No commonName: SANs suffice, and adding one reissues existing certs. */}}
+  dnsNames:
+    - {{ .instanceName }}-svc
+    - {{ .instanceName }}-svc.{{ $.Release.Namespace }}
+    - {{ .instanceName }}-svc.{{ $.Release.Namespace }}.svc.cluster.local
+    - "*.{{ .instanceName }}-svc.{{ $.Release.Namespace }}.svc.cluster.local"
+    - localhost
+  duration: {{ .tls.certDuration | default "8760h" }}
+  renewBefore: {{ .tls.certRenewBefore | default "720h" }}
+  issuerRef:
+    name: {{ .instanceName }}-ca-issuer
+    kind: Issuer
+{{- end }}
+{{- end }}

@@ -1,6 +1,6 @@
 # Kubescape Operator
 
-![Version: 1.40.3](https://img.shields.io/badge/Version-1.40.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.40.3](https://img.shields.io/badge/AppVersion-v1.40.3-informational?style=flat-square)
+![Version: 1.40.4](https://img.shields.io/badge/Version-1.40.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.40.4](https://img.shields.io/badge/AppVersion-v1.40.4-informational?style=flat-square)
 
 [Kubescape operator documentation](https://kubescape.io/docs/install-operator/)
 
@@ -29,6 +29,32 @@ kubescape     kubevuln-6779c9d74b-wfgqf                           1/1     Runnin
 kubescape     operator-5d745b5b84-ts7zq                           1/1     Running   0               60m
 kubescape     storage-59567854fd-hg8n8                            1/1     Running   0               60m
 ```
+
+## Upgrade
+
+`helm upgrade` updates everything in the chart **except** the CRDs under `crds/`. Helm installs those
+once, on first install, and [never touches them again](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/).
+So when a release changes a CRD schema, the cluster keeps the old one: the API server rejects fields it
+does not know about under a strict apply, and silently prunes them otherwise.
+
+If a release notes a CRD change, apply the chart's CRDs yourself before upgrading:
+
+```shell
+helm repo update
+helm pull kubescape/kubescape-operator --untar --untardir /tmp
+kubectl apply --server-side --force-conflicts -f /tmp/kubescape-operator/crds/
+```
+
+Then run the usual `helm upgrade`. Applying the CRDs is safe to repeat and does not touch existing
+custom resources.
+
+> **`capabilities.riskAcceptance`:** the `SecurityException` and `ClusterSecurityException` schemas
+grew per-vulnerability `expiresAt`, `actionStatement`, `response`, `subcomponents`, and the `affected`
+status. Clusters that installed the chart before that change need the apply above, otherwise those
+fields are pruned or rejected.
+
+The CRDs under `templates/` (the node-agent sensing CRDs and `seccompprofiles`) are managed by Helm and
+do upgrade on their own.
 
 ## View results
 
@@ -101,6 +127,8 @@ However, we recommend that you give Kubescape no less than 500m CPU no matter th
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| defaultFrameworks | list | `[]` | Install-time posture frameworks when a scan omits `targetNames`. Empty = operator legacy fallbacks. Clear with `--set defaultFrameworks=null`. |
+| capabilities.agentRuntimePosture | string | `"disable"` | Grant the Kubescape scanner read-only access to Agent Sandbox and Agent Substrate CRDs currently covered by the scan contract. |
 | global.networkPolicy.enabled | bool | `false` | Create NetworkPolicies for all components |
 | global.networkPolicy.createEgressRules | bool | `false` | Create common Egress rules for NetworkPolicies |
 | global.kubescapePsp.enabled | bool | `false` | Enable all privileges in Pod Security Policies for Kubescape namespace |
@@ -120,14 +148,13 @@ However, we recommend that you give Kubescape no less than 500m CPU no matter th
 | kubescape.affinity | object | `{}` | Assign custom [affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) rules to the deployment |
 | kubescape.podLabels| object | `{}` | Optional labels to add to the pods |
 | kubescape.podAnnotations| object | `{}` | optional map of annotations to be applied to the Pods |
-| kubescape.downloadArtifacts | bool | `true` | download policies every scan, we recommend it should remain true, you should change to 'false' when running in an air-gapped environment or when scanning with high frequency (when running with Prometheus) |
+| kubescape.downloadArtifacts | bool | `true` | download policies every scan, we recommend it should remain true, you should change to 'false' when running in an air-gapped environment or when scanning with high frequency (when running with Prometheus). When 'false', the policy library baked into the image is used, so the controls are those of the image tag and do not change until the image does |
 | kubescape.enableHostScan | bool | `true` | enable [host scanner feature](https://kubescape.io/docs/components/host-sensor/) |
 | kubescape.image.repository | string | `"quay.io/kubescape/kubescape"` | [source code](https://github.com/kubescape/kubescape/tree/master/httphandler) (public repo) |
 | kubescape.nodeSelector | object | `{}` | [Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) |
 | kubescape.serviceMonitor.enabled | bool | `false` | enable/disable service monitor for prometheus (operator) integration |
 | kubescape.skipUpdateCheck | bool | `false` | skip check for a newer version |
 | kubescape.labels | `[]` | adds labels to the kubescape microservice |
-| kubescape.submit | bool | `true` | submit results to Kubescape SaaS: <https://cloud.armosec.io/> |
 | kubescape.volumes | object | `[]` | Additional volumes for Kubescape |
 | kubescape.volumeMounts | object | `[]` | Additional volumeMounts for Kubescape |
 | kubescapeScheduler.enabled | bool | `true` | enable/disable a kubescape scheduled scan using a CronJob |
@@ -162,6 +189,27 @@ However, we recommend that you give Kubescape no less than 500m CPU no matter th
 | operator.nodeSelector | object | `{}` | [Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) |
 | operator.volumes | object | `[]` | Additional volumes for the web socket |
 | operator.volumeMounts | object | `[]` | Additional volumeMounts for the web socket |
+| storage.hostNetwork | bool | `false` | Bind the storage APIServer to the host network. Required when using a custom CNI where the control plane cannot reach pod IPs |
+| nodeAgent.autoscaler.bottlerocketAutoDetect | bool | `true` | When the autoscaler is enabled, auto-detect AWS Bottlerocket nodes and set `seLinuxType: super_t` on the node-agent DaemonSet rendered for that node group, so you don't need to `--set nodeAgent.seLinuxType=super_t` manually |
+| nodeAgent.config.tracers.capSys | string | `enable` | Allow capSys tracing when required by enabled node-agent features. Set to disable to force-disable the capSys tracer |
+| nodeAgent.config.tracers.dns | string | `enable` | Allow dns tracing when required by enabled node-agent features. Set to disable to force-disable the dns tracer |
+| nodeAgent.config.tracers.exec | string | `enable` | Allow exec tracing when required by enabled node-agent features. Set to disable to force-disable the exec tracer |
+| nodeAgent.config.tracers.exit | string | `enable` | Allow exit tracing when required by enabled node-agent features. Set to disable to force-disable the exit tracer |
+| nodeAgent.config.tracers.fork | string | `enable` | Allow fork tracing when required by enabled node-agent features. Set to disable to force-disable the fork tracer |
+| nodeAgent.config.tracers.hardlink | string | `enable` | Allow hardlink tracing when required by enabled node-agent features. Set to disable to force-disable the hardlink tracer |
+| nodeAgent.config.tracers.http | string | `enable` | Allow HTTP tracing when required by enabled node-agent features. Set to disable to force-disable the HTTP tracer |
+| nodeAgent.config.tracers.iouring | string | `enable` | Allow io_uring tracing when required by enabled node-agent features. Set to disable to force-disable the io_uring tracer |
+| nodeAgent.config.tracers.network | string | `enable` | Allow network tracing when required by enabled node-agent features. Set to disable to force-disable the network tracer |
+| nodeAgent.config.tracers.open | string | `enable` | Allow file-open tracing when required by enabled node-agent features. Set to disable to force-disable the file-open tracer |
+| nodeAgent.config.tracers.ptrace | string | `enable` | Allow ptrace tracing when required by enabled node-agent features. Set to disable to force-disable the ptrace tracer |
+| nodeAgent.config.tracers.randomx | string | `enable` | Allow RandomX tracing when required by enabled node-agent features. Set to disable to force-disable the RandomX tracer |
+| nodeAgent.config.tracers.seccomp | string | `enable` | Allow seccomp tracing when required by enabled node-agent features. Set to disable to force-disable the seccomp tracer |
+| nodeAgent.config.tracers.ssh | string | `enable` | Allow SSH tracing when required by enabled node-agent features. Set to disable to force-disable the SSH tracer |
+| nodeAgent.config.tracers.symlink | string | `enable` | Allow symlink tracing when required by enabled node-agent features. Set to disable to force-disable the symlink tracer |
+| nodeAgent.config.tracers.kmod | string | `enable` | Allow kernel module tracing when required by enabled node-agent features. Set to disable to force-disable the kernel module tracer |
+| nodeAgent.config.tracers.unshare | string | `enable` | Allow unshare tracing when required by enabled node-agent features. Set to disable to force-disable the unshare tracer |
+| nodeAgent.config.tracers.bpf | string | `enable` | Allow BPF tracing when required by enabled node-agent features. Set to disable to force-disable the BPF tracer |
+| nodeAgent.config.tracers.top | string | `enable` | Allow top tracing when required by enabled node-agent features. Set to disable to force-disable the top tracer |
 | prometheusExporter.serviceMonitor.enabled | bool | `false` | enable/disable service monitor for prometheus-exporter integration |
 | awsIamRoleArn | string | `nil` | AWS IAM arn role |
 | cloudProviderMetadata.secretRef.name | string | `nil` | secret name to define values for the provider's metadata |

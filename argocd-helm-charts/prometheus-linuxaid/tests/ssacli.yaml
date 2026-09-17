@@ -7,9 +7,9 @@ rule_files:
 tests:
   - interval: 1m
     input_series:
-      - series: obmondo_monitoring{certname="jacen.enableit", alert_id="monitor::system::service::ssacli::disk_healthy"}
+      - series: obmondo_monitoring{certname="jacen.example", alert_id="monitor::system::service::ssacli::disk_healthy"}
         values: 1x1000
-      - series: hp_smart_array_disk_status{certname="jacen.enableit", bay="1"}
+      - series: hp_smart_array_disk_status{certname="jacen.example", bay="1"}
         values: 0x1000
 
     alert_rule_test:
@@ -18,9 +18,9 @@ tests:
         exp_alerts:
           - exp_labels:
               severity: 'critical'
-              certname: 'jacen.enableit'
+              certname: 'jacen.example'
               bay: 1
               alert_id: 'monitor::system::service::ssacli::disk_healthy'
             exp_annotations:
-              summary: 'Disk status for bay **1** on **jacen.enableit** has failed'
-              description: 'Disk status for bay **1** on **jacen.enableit** has failed'
+              summary: 'Disk status for bay **1** on **jacen.example** has failed'
+              description: 'Disk status for bay **1** on **jacen.example** has failed'

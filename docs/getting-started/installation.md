@@ -258,6 +258,16 @@ kubeaid-cli cluster delete management --cluster-name <cluster>
 kubeaid-cli cluster bootstrap --cluster-name <cluster>
 ```
 
+## Hardware Failures Found During Installation
+
+KubeAid checks every disk before it writes anything and refuses a server that fails, so the
+install is often the first time anyone has looked closely at those disks. Expect some servers to
+be rejected.
+
+See [Hetzner hardware failures](../guides/hetzner/hetzner-hardware-failures.md) for how to read a
+CheckDisk failure, when it is safe to accept a disk, and how to triage a server that installs and
+then never boots.
+
 ## Provider-Specific Notes
 
 ### AWS

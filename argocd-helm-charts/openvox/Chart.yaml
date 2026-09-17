@@ -5,13 +5,14 @@ dependencies:
   - name: kubeaid-addons
     version: 0.1.0
     repository: file://../kubeaid-addons
+  # Temporary local file dependency patch for puppetserver (includes custom local changes).
+  # Once upstream PRs are merged, this can revert to the remote repository below.
+  - name: puppetserver
+    version: 10.0.0
+    repository: file://charts/puppetserver
 # This has custom changes, upstream PR are still open
 # https://github.com/OpenVoxProject/openvox-helm-chart/issues/12
 # https://github.com/puppetlabs/puppetserver-helm-chart/pull/221
-# https://github.com/puppetlabs/puppetserver-helm-chart/pull/239
-#  - name: puppetserver
-#    version: 10.0.0
-#    repository: https://openvoxproject.github.io/openvox-helm-chart/
 # https://github.com/puppetlabs/puppetserver-helm-chart/pull/239
 #  - name: puppetserver
 #    version: 10.0.0

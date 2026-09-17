@@ -13,6 +13,16 @@ fullnameOverride: "kubescape"
 # --set clusterName=`kubectl config current-context`
 clusterName: "cluster"
 
+# Default posture frameworks used when a scan has no targetNames
+# (empty scheduler scanV1, startup scan, exception-triggered rescan).
+# Empty by default (opt-in) so upgrades do not narrow scheduled scans from "all".
+# Explicit scanV1/API targetNames override this list.
+# Clear with: --set defaultFrameworks=null
+# Example (AKS CIS): --set 'defaultFrameworks={cis-aks-t1.2.0}'
+# Example (allcontrols + current CIS): --set 'defaultFrameworks={allcontrols,cis-v1.10.0}'
+# Note: when operator.triggerSecurityFramework is true (default), "security" is also scanned.
+defaultFrameworks: []
+
 # The namespace for running the chart
 # If you wish to run the chart in a different namespace, make sure to update this value
 ksNamespace: kubescape
@@ -132,6 +142,14 @@ capabilities:
   seccompProfileBackend: crd
   manageWorkloads: disable
   syncSBOM: disable
+
+  # ====== Agent runtime posture ======
+  # Grants the scanner read-only access to the Agent Sandbox and Agent Substrate
+  # CRDs currently covered by the scan contract. Tracking issue:
+  # https://github.com/kubescape/kubescape/issues/2557
+  # Keep disabled until the Agent Runtime Hardening framework ships and is enabled
+  # by default for operator scans; that rollout is what should flip this default.
+  agentRuntimePosture: disable
 
   # ====== Risk acceptance ======
   riskAcceptance: disable
@@ -303,7 +321,7 @@ kubescape:
   image:
     # -- source code: https://github.com/kubescape/kubescape/tree/master/httphandler (public repo)
     repository: quay.io/kubescape/kubescape
-    tag: v4.0.11
+    tag: v4.0.13
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -320,7 +338,7 @@ kubescape:
       cpu: 600m
       memory: 1Gi
 
-  # -- download policies every scan, we recommend it should remain true, you should change to 'false' when running in an air-gapped environment or when scanning with high frequency (when running with Prometheus)
+  # -- download policies every scan, we recommend it should remain true, you should change to 'false' when running in an air-gapped environment or when scanning with high frequency (when running with Prometheus). When 'false', the policy library baked into the image is used, so the controls are those of the image tag and do not change until the image does
   downloadArtifacts: true
 
   # -- skip check for a newer version
@@ -365,7 +383,7 @@ operator:
   image:
     # -- source code: https://github.com/kubescape/operator
     repository: quay.io/kubescape/operator
-    tag: v0.2.159
+    tag: v0.2.169
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -440,7 +458,7 @@ kubevuln:
   image:
     # -- source code: https://github.com/kubescape/kubevuln
     repository: quay.io/kubescape/kubevuln
-    tag: v0.3.159
+    tag: v0.3.430
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -529,6 +547,8 @@ storage:
       retries: 60
       retryIntervalSeconds: 5
   serverPort: 8443
+  # -- Bind the storage APIServer to the host network. Required when using a custom CNI where the control plane cannot reach pod IPs
+  hostNetwork: false
   service:
     type: ClusterIP
     annotations: {}
@@ -537,7 +557,7 @@ storage:
   image:
     # -- source code: https://github.com/kubescape/storage
     repository: quay.io/kubescape/storage
-    tag: v0.0.297
+    tag: v0.0.331
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -558,6 +578,11 @@ storage:
       memory: 1500Mi
 
   disableVirtualCRDs: false # set to true or false to override auto-detection
+
+  # -- single-dedicated-writer and SQLite pool tuning
+  singleWriterEnabled: true
+  poolTimeout: "15s"
+  sqliteBusyTimeout: "60s"
 
   # -- queue manager configuration
   queueManagerEnabled: true # set to false to disable the queue manager, this will disable the queue manager for all kinds
@@ -606,7 +631,7 @@ nodeAgent:
   image:
     # -- source code: https://github.com/kubescape/node-agent
     repository: quay.io/kubescape/node-agent
-    tag: v0.3.158
+    tag: v0.3.219
     pullPolicy: IfNotPresent
 
   config:
@@ -615,6 +640,11 @@ nodeAgent:
     updatePeriod: 10m # duration string
     nodeProfileInterval: 10m # duration string
     networkStreamingInterval: 2m # duration string
+    # -- Enable the in-process OpenTelemetry Prometheus metrics exporter on node-agent port 8080 (/metrics).
+    # NOTE: Enabling this replaces any OTLP metric push configured by configurations.otelUrl with the
+    # Prometheus reader (OTLP traces and logs are unaffected).
+    # To scrape these metrics, also enable nodeAgent.serviceMonitor.enabled or configure Prometheus scraping.
+    # Note: This is distinct from capabilities.prometheusExporter, which deploys a separate Prometheus exporter.
     prometheusExporter: disable
     httpExporterConfig:
       url: http://synchronizer:8089/apis/v1/kubescape.io
@@ -625,8 +655,6 @@ nodeAgent:
     syslogExporterURL: ""
     skipKernelVersionCheck: false
     malwareScanAllFiles: false
-    hostMalwareSensor: disable
-    hostNetworkSensor: disable
     ruleCooldown:
       ruleCooldownDuration: 1h # duration string
       ruleCooldownAfterCount: 1
@@ -634,10 +662,39 @@ nodeAgent:
       ruleCooldownMaxSize: 20000
     alertDeduplication:
       bypass: false # DAST / security-testing only: disables ALL sensor-side dedup/cooldown
+    # -- Generic passthrough merged flat into config.json's top level. Intended
+    # for downstream/private chart consumers that need node-agent config fields
+    # this public chart intentionally does not expose by name. Note: a field set
+    # here can also affect other rendered output beyond config.json -- e.g.
+    # backendStorageEnabled additionally drives scan-gating in the
+    # "capabilities.gates" template helper (_common.tpl) -- so check _common.tpl
+    # before assuming a new extra.* key has no side effects elsewhere.
+    extra: {}
     # Host sensor configuration
     hostSensor:
       enabled: true
       interval: 5m # duration string
+    # Advanced/debug options for force-disabling individual node-agent tracers.
+    tracers:
+      capSys: enable
+      dns: enable
+      exec: enable
+      exit: enable
+      fork: enable
+      hardlink: enable
+      http: enable
+      iouring: enable
+      network: enable
+      open: enable
+      ptrace: enable
+      randomx: enable
+      seccomp: enable
+      ssh: enable
+      symlink: enable
+      kmod: enable
+      unshare: enable
+      bpf: enable
+      top: enable
 
   # GKE Autopilot allowlist
   gke:
@@ -714,9 +771,6 @@ nodeAgent:
     - mountPath: /boot
       name: boot
       readOnly: true
-    - mountPath: /clamav
-      name: clamrun
-      # readOnly: false # EmptyDir volume
   volumes:
     - hostPath:
         path: /
@@ -816,6 +870,8 @@ nodeAgent:
       memory: 4Gi
     # -- interval for reconciliation loop
     reconcileInterval: 5m
+    # -- auto-detect AWS Bottlerocket nodes and set seLinuxType: super_t on their rendered DaemonSets
+    bottlerocketAutoDetect: true
 
   priorityClassName: ""
 
@@ -853,60 +909,6 @@ nodeAgent:
       - name: sbom-scanner-tmp
         emptyDir: {}
 
-# +++++++++++++++++++++++++++++++ ClamAV ++++++++++++++++++++++++++++++++++++++++++++++++
-clamav:
-  name: clamav
-  image:
-    # -- source code: https://github.com/kubescape/node-agent/tree/main/clamav
-    repository: quay.io/kubescape/klamav
-    tag: 1.3.1-34_alpha
-    pullPolicy: IfNotPresent
-
-  resources:
-    limits:
-      cpu: 300m
-      memory: 512Mi
-    requests:
-      cpu: 100m
-      memory: 256Mi
-
-  volumeMounts:
-    - mountPath: /var/lib/clamav-tmp
-      name: clamdb
-      # readOnly: false
-    - mountPath: /run/clamav
-      name: clamrun
-      # readOnly: false
-    - mountPath: /etc/clamav
-      name: etc
-      readOnly: true
-
-  volumes:
-    - name: clamdb
-      emptyDir: {}
-    - name: clamrun
-      emptyDir: {}
-    - name: etc
-      configMap:
-        name: clamav
-        items:
-          - key: clamd.conf
-            path: clamd.conf
-          - key: freshclam.conf
-            path: freshclam.conf
-
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: kubernetes.io/os
-                operator: In
-                values:
-                  - linux
-
-  nodeSelector:
-    kubernetes.io/os: linux
 # +++++++++++++++++++++++++++++ Synchronizer ++++++++++++++++++++++++++++++++++++++++++++++++
 
 synchronizer:
@@ -914,7 +916,7 @@ synchronizer:
   image:
     # -- source code: https://github.com/kubescape/synchronizer
     repository: quay.io/kubescape/synchronizer
-    tag: v0.0.155
+    tag: v0.0.160
     pullPolicy: IfNotPresent
   nodeSelector:
     kubernetes.io/os: linux
@@ -995,7 +997,7 @@ prometheusExporter:
   name: "prometheus-exporter"
   image:
     repository: quay.io/kubescape/prometheus-exporter
-    tag: v0.2.22
+    tag: v0.2.23
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -1041,7 +1043,11 @@ helmReleaseUpgrader:
 
   nodeSelector:
     kubernetes.io/os: linux
+  affinity:
+  tolerations:
   priorityClassName: ""
+  podAnnotations: {}
+  podLabels: {}
 
   # A cron schedule of how often the updating CronJob should run
   schedule: "0 14 * * *"
@@ -1076,13 +1082,14 @@ helmReleaseUpgrader:
 kubescapeScheduler:
   # scan scheduler container name
   name: kubescape-scheduler
-  # Detemines what to scan. By default it will scan all resources in the cluster for all frameworks.
-  # Further details can be found here: https://github.com/kubescape/operator?tab=readme-ov-file#trigger-kubescape-scanning
+  # Determines what to scan. With an empty scanV1, the operator uses defaultFrameworks
+  # from clusterData. Set scanV1.targetNames to override those install-time defaults.
+  # Further details: https://github.com/kubescape/operator?tab=readme-ov-file#trigger-kubescape-scanning
   requestBody:
     commands:
       - CommandName: "kubescapeScan"
         args:
-          # To scan only specific frameworks, provide the list of frameworks to scan:
+          # Override defaultFrameworks for this CronJob only:
           # scanV1: {"targetType": "framework", "targetNames": [ "nsa" ] }
           scanV1: {}
 
@@ -1101,7 +1108,7 @@ kubescapeScheduler:
   image:
     # -- source code: https://github.com/kubescape/http-request (public repo)
     repository: quay.io/kubescape/http-request
-    tag: v0.2.20
+    tag: v0.2.23
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -1149,7 +1156,7 @@ kubevulnScheduler:
   image:
     # source code - https://github.com/kubescape/http-request
     repository: quay.io/kubescape/http-request
-    tag: v0.2.20
+    tag: v0.2.23
     pullPolicy: IfNotPresent
 
   nodeSelector:
@@ -1199,7 +1206,7 @@ registryScanScheduler:
   image:
     # -- source code: https://github.com/kubescape/http-request (public repo)
     repository: quay.io/kubescape/http-request
-    tag: v0.2.20
+    tag: v0.2.23
     pullPolicy: IfNotPresent
 
   nodeSelector:

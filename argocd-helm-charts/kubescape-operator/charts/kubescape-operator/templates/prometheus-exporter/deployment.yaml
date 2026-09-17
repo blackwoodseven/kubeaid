@@ -41,6 +41,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
         runAsUser: 65532
+        runAsGroup: 65532
         fsGroup: 65532
       containers:
         - name: {{ .Values.prometheusExporter.name }}
@@ -50,6 +51,9 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
           ports:
           - name: metrics
             containerPort: {{ .Values.prometheusExporter.service.port }}

@@ -1,0 +1,18 @@
+---
+# Charts published to an OCI registry by bin/publish-helm-chart.sh, run from the
+# release workflows on a *.*.* tag: GHCR from GitHub, Harbor from Gitea.
+#
+# This list is opt-IN. Most charts under argocd-helm-charts/ are wrappers around
+# an upstream chart, and republishing those under our namespace would
+# redistribute someone else's artifact while giving consumers nothing they
+# cannot pull upstream. Only first-party charts we author belong here.
+#
+# Opt-in also fails closed: --add-helm-chart creates wrapper charts routinely,
+# and a published OCI tag is public and gets pinned by consumers.
+#
+# Every entry needs a reason - publish-helm-chart.sh refuses to run without one.
+# A chart is tagged with its own Chart.yaml version, so bump that when you change
+# the chart; a version already present in the registry is skipped.
+charts:
+  - name: kubeaid-addons
+    reason: First-party chart consumed by charts outside this repository.

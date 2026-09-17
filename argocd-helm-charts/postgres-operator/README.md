@@ -48,15 +48,15 @@ Example [postgres-cluster](./examples/postgres-cluster.yaml)
   export AWS_PROFILE=obmondo
   ```
 
-  * Create the bucket manually (`kbm-postgres-buckets` below is an example name — pick your own per cluster)
+  * Create the bucket manually (`my-postgres-backups` below is an example name — pick your own per cluster)
 
   ```sh
-  # aws s3api create-bucket --bucket kbm-postgres-buckets --region eu-west-1 --endpoint-url=https://s3.obmondo.com
+  # aws s3api create-bucket --bucket my-postgres-backups --region eu-west-1 --endpoint-url=https://s3.example.com
   {
-    "Location": "/kbm-postgres-buckets"
+    "Location": "/my-postgres-backups"
   }
 
-  # aws s3api list-buckets --region eu-west-1 --endpoint-url=https://s3.obmondo.com
+  # aws s3api list-buckets --region eu-west-1 --endpoint-url=https://s3.example.com
   ```
 
   * Add the secret in the respective values files
@@ -227,7 +227,7 @@ CronJobs for postgresql logical backup cronjob template can be found [here](./ex
   - name: CLONE_METHOD
     value: CLONE_WITH_WALG
   - name: CLONE_AWS_ENDPOINT
-    value: https://s3.obmondo.com
+    value: https://s3.example.com
   - name: CLONE_WAL_S3_BUCKET
     value: kcm-postgres-backups
   - name: CLONE_WALG_BUCKET_SCOPE_SUFFIX
@@ -301,7 +301,7 @@ spec:
         - /spec/conversion/webhook/clientConfig/caBundle
         - /status
   sources:
-    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+    - repoURL: https://github.com/Obmondo/KubeAid.git
       path: argocd-helm-charts/postgres-operator
       targetRevision: HEAD
       helm:

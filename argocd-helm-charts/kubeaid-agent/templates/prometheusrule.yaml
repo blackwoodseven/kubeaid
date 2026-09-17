@@ -18,6 +18,7 @@ spec:
       rules:
         - alert: MissingNodeCountDetected
           annotations:
+            summary: Cluster **{{ "{{ $labels.certname }}" }}** failed to report its node count to the Obmondo API
             description: The cluster **{{ "{{ $labels.certname }}" }}** failed to fetch or report its node count to the Obmondo API. Node count data may be missing for the monthly average calculation.
           expr: kubeaid_agent_node_count_report_status == 1
           for: 1h

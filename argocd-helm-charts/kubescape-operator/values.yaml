@@ -18,6 +18,7 @@ kubescape-operator:
     # scanner is triggered daily at midnight.
     #
     # REFER : https://kubescape.io/docs/operator/vulnerabilities/.
+    vulnerabilityScan: enable
 
     # Scan SBOMs embedded inside a container, if found.
     scanEmbeddedSBOMs: enable
@@ -88,6 +89,7 @@ kubescape-operator:
     # Relevancy is installed by default when installing the Kubescape operator through Helm.
     #
     # REFER : https://kubescape.io/docs/operator/relevancy/.
+    relevancy: enable
 
     # Kubescape provides a way to automatically generate Network Policies for your cluster.
     # Once the Network Policy generation feature is enabled, Kubescape will listen to the

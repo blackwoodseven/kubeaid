@@ -52,7 +52,7 @@ spec:
     namespace: monitoring
   project: kubeaid
   sources:
-    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+    - repoURL: https://github.com/Obmondo/KubeAid.git
       path: argocd-helm-charts/keda
       targetRevision: HEAD
       helm:

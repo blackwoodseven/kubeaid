@@ -32,7 +32,7 @@ spec:
   externalClusters:
     - name: oncall-pgsql
       barmanObjectStore:
-        destinationPath: s3://kbm-oncall-postgres-backups
+        destinationPath: s3://my-postgres-backups
         endpointURL: https://s3.bucket.com
         s3Credentials:
           accessKeyId:

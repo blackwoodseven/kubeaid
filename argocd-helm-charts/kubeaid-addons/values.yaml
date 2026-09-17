@@ -81,6 +81,9 @@ global:
     # -- Number of PostgreSQL instances in the cluster
     instances: 1
 
+    # -- REFER : https://cloudnative-pg.io/docs/1.27/scheduling/#requiring-pod-anti-affinity.
+    podAntiAffinityType: required
+
     # -- Primary database name created during initdb
     database: app
 
@@ -148,7 +151,11 @@ global:
   # Provisions a MongoDBCommunity resource.
   # Requires the MongoDB Community operator to be installed in the cluster.
   mongodb:
-    # -- Provision a MongoDBCommunity resource.
+    # -- Provision a MongoDBCommunity resource. For more than one independent
+    # replica set in the same release (e.g. one app needing several
+    # databases), leave this false and use `instances` below instead — or set
+    # both; every enabled instance (this one plus every enabled entry of
+    # `instances`) is provisioned side by side.
     enabled: false
 
     # -- Enable the MongoDB CiliumNetworkPolicy (requires global.netpol.enabled)
@@ -157,34 +164,78 @@ global:
     # -- Name of the MongoDBCommunity resource / replica set.
     instanceName: ""
 
-    # -- Name of the ServiceAccount/Role/RoleBinding used by the MongoDB pods.
+    # -- Name of the ServiceAccount the MongoDB pods run as. Only written to
+    # the MongoDBCommunity when set. The MongoDB Controllers for Kubernetes
+    # (mongodb-kubernetes) operator re-applies "mongodb-kubernetes-appdb" to
+    # the StatefulSet on every reconcile regardless of what's requested, so
+    # this chart always provisions that ServiceAccount/Role/RoleBinding for
+    # you; setting a name here additionally provisions RBAC for that name.
     serviceAccountName: ""
 
     # -- Number of MongoDB replica set members.
     replicas: 2
 
-    # -- MongoDB server version.
+    # -- MongoDB server version. Deliberately not bumped here: MongoDB only
+    # supports upgrading one major at a time, so pin it per instance.
     version: "4.4.1"
 
-    # -- Database created for the application user.
-    database: app
+    # -- PVC for the mongod data directory. `size` is required — there is no
+    # default, since the right size depends entirely on your workload.
+    # `storageClass` is optional; omit it to use the cluster default.
+    dataVolume:
+      size: 5Gi
+      # storageClass: ""
 
-    # -- Application user created by the operator.
-    user: app-user
+    # -- Optional second PVC for the mongod logs directory, same shape as
+    # dataVolume. Omit `logsVolume` entirely to keep mongod logging to the
+    # data volume (or stdout) instead of provisioning a dedicated one.
+    # logsVolume:
+    #   size: 1Gi
 
-    # -- Secret containing the application user password.
-    passwordSecretName: ""
+    # -- TLS for client connections, backed by cert-manager (a self-signed CA
+    # scoped to this instance, not the generic global.tlsChains helper).
+    # Requires cert-manager installed in the cluster.
+    tls:
+      enabled: false
+      # optional: false            # allow non-TLS connections during a rollout/migration
+      # caSecretName: ""           # optional — defaults to <instanceName>-ca
+      # certSecretName: ""         # optional — defaults to <instanceName>-tls
+      # -- Certificate lifetimes. The CA is deliberately long-lived: on
+      # cert-manager's 90-day default it would rotate its keypair while the
+      # leaf still chains to the old one, and every client fails with
+      # UntrustedRoot. Override these to match an existing Certificate when
+      # migrating an already-running instance onto this chart, so the CA
+      # isn't reissued underneath it.
+      # caDuration: 43800h         # default 5 years
+      # caRenewBefore: 2160h       # default 90 days
+      # certDuration: 8760h        # default 1 year
+      # certRenewBefore: 720h      # default 30 days
+
+    # -- Application users/databases created by the operator on this replica
+    # set. Each entry needs its own generated-password Secret — see the
+    # `mongodb-secret.yaml` pattern (secret-generator.v1.mittwald.de) in
+    # consumer charts, or point passwordSecretRef at a Secret you manage
+    # yourself. passwordSecretRef.key defaults to "password" (matching the
+    # mittwald generator's own default key) if omitted.
+    # users:
+    #   - name: app-user
+    #     db: app
+    #     passwordSecretRef:
+    #       name: my-app-mongodb-credentials
+    #       # key: password
+    #     roles:
+    #       - name: readWrite
+    #         db: app
+    #     scramCredentialsSecretName: app-user-scram
+    users: []
 
     # -- Additional labels added to MongoDB pods. Built-in labels are also added.
     podLabels: {}
 
-    # -- Additional database roles granted to the application user.
-    # Each entry is { db: "<database>", name: "<role>" }.
-    additionalRoles: []
-
-    agent:
-      # -- MongoDB operator agent log level.
-      logLevel: INFO
+    # -- MongoDB agent log level. Only written to the MongoDBCommunity when
+    # set; the operator's own default is INFO.
+    # agent:
+    #   logLevel: INFO
 
     # -- Client applications allowed to connect on port 27017.
     # Each entry is { namespace: "<ns>" (optional), selectorLabels: { ... } }.
@@ -217,6 +268,26 @@ global:
       #     - name: AWS_RESPONSE_CHECKSUM_VALIDATION
       #       value: when_required
       extraEnv: []
+
+    # -- Additional, independent MongoDBCommunity replica sets provisioned in
+    # this same release — e.g. an app that needs a separate database per
+    # microservice. Each entry takes every field documented above for the
+    # single `mongodb` block (instanceName, replicas, version, dataVolume,
+    # logsVolume, tls, users, resources, podLabels, clients, operator,
+    # logicalbackup, netpol) plus its own `enabled` flag; entries are fully
+    # self-contained and do NOT inherit unset fields from the block above.
+    # instances:
+    #   - enabled: true
+    #     instanceName: my-app-orders-db
+    #     dataVolume: { size: 5Gi }
+    #     logsVolume: { size: 1Gi }
+    #     users: [...]
+    #   - enabled: true
+    #     instanceName: my-app-search-db
+    #     dataVolume: { size: 10Gi }
+    #     logsVolume: { size: 1Gi }
+    #     users: [...]
+    instances: []
 
   # rabbitmq
   # Provisions a RabbitmqCluster resource.
@@ -436,3 +507,33 @@ global:
   #   dnsNames: opensearch-cluster-master  # auto-generates standard K8s DNS SANs
   #   caSecretName: ""              # optional — defaults to <name>-ca-tls
   #   leafSecretName: ""            # optional — defaults to <name>-tls
+
+  # priorityClass
+  # Generic PriorityClass entries. Useful for shared infra a whole cluster ends up
+  # depending on (e.g. a pull-through image cache), so its pods aren't evicted first
+  # under node pressure.
+  priorityClass:
+    # -- Master switch. Set to true to render PriorityClass resources.
+    enabled: false
+
+    # -- List of PriorityClass entries.
+    entries: []
+    # - name: harbor-critical
+    #   value: 900000
+    #   description: "Used by Harbor components; cluster-wide image pulls may depend on Harbor's availability."
+
+  # podDisruptionBudget
+  # Generic PodDisruptionBudget entries, one PDB per entry. Only enable an entry for
+  # a component whose replica count is >= 2 - with a single replica, maxUnavailable: 1
+  # (or minAvailable: 1) blocks voluntary node drains/evictions entirely.
+  podDisruptionBudget:
+    # -- Master switch. Set to true to render PodDisruptionBudget resources.
+    enabled: false
+
+    # -- List of PodDisruptionBudget entries. Each renders one PDB in the release namespace.
+    # Set either maxUnavailable (default) or minAvailable per entry, not both.
+    entries: []
+    # - name: harbor-core
+    #   maxUnavailable: 1
+    #   matchLabels:
+    #     component: core

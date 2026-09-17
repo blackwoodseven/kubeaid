@@ -33,7 +33,7 @@ spec:
       {{- end }}
       containers:
         - name: {{ include "security-exporter.name" . }}
-          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag }}"
+          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           env:
             - name: SECURITY_EXPORTER_PORT

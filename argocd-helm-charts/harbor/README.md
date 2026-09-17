@@ -376,7 +376,7 @@ spec:
       jsonPointers:
         - /data
   sources:
-    - repoURL: https://gitea.obmondo.com/EnableIT/KubeAid
+    - repoURL: https://github.com/Obmondo/KubeAid.git
       path: argocd-helm-charts/harbor
       targetRevision: HEAD
       helm:

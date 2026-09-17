@@ -14,7 +14,7 @@ rules:
   verbs: ["get", "watch", "list"]
 - apiGroups: [""]
   resources: ["pods"]
-  verbs: ["get", "watch", "list", "delete"]
+  verbs: ["get", "watch", "list"]
 - apiGroups: [""]
   resources: ["events"]
   verbs: ["get", "watch", "list"]
@@ -23,9 +23,6 @@ rules:
   verbs: ["get", "watch", "list"]
 - apiGroups: ["apps"]
   resources: ["deployments", "daemonsets", "statefulsets", "replicasets"]
-  verbs: ["get", "watch", "list"]
-- apiGroups: ["spdx.softwarecomposition.kubescape.io"]
-  resources: ["applicationprofiles", "networkneighborhoods"]
   verbs: ["get", "watch", "list"]
 {{- if eq .Values.capabilities.seccompProfileBackend "crd" }}
 - apiGroups: ["kubescape.io"]

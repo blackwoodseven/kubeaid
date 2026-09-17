@@ -23,14 +23,14 @@ This covers troubleshooting once a peer is set up but not behaving.
 
    ```sh
    netbird down
-   netbird up --management-url https://netbird.vpn.obmondo.com
+   netbird up --management-url https://netbird.example.com
    ```
 
 3. If step 2 doesn't fix it, deregister and re-authenticate from scratch:
 
    ```sh
    netbird deregister   # alias: netbird logout
-   netbird login --management-url https://netbird.vpn.obmondo.com
+   netbird login --management-url https://netbird.example.com
    netbird up
    ```
 

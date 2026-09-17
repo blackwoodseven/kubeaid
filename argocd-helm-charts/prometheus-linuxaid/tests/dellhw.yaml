@@ -7,9 +7,9 @@ rule_files:
 tests:
   - interval: 1m
     input_series:
-      - series: obmondo_monitoring{certname="jacen.enableit", alert_id="monitor::system::service::dellhw::disk_healthy"}
+      - series: obmondo_monitoring{certname="jacen.example", alert_id="monitor::system::service::dellhw::disk_healthy"}
         values: 1x1000
-      - series: dell_hw_storage_pdisk_status{certname="jacen.enableit", disk="hdd1"}
+      - series: dell_hw_storage_pdisk_status{certname="jacen.example", disk="hdd1"}
         values: 1x1000
 
     alert_rule_test:
@@ -18,9 +18,9 @@ tests:
         exp_alerts:
           - exp_labels:
               severity: 'critical'
-              certname: 'jacen.enableit'
+              certname: 'jacen.example'
               disk: hdd1
               alert_id: 'monitor::system::service::dellhw::disk_healthy'
             exp_annotations:
-              summary: 'Disk status for disk **hdd1** on **jacen.enableit** has failed'
-              description: 'Disk status for disk **hdd1** on **jacen.enableit** has failed'
+              summary: 'Disk status for disk **hdd1** on **jacen.example** has failed'
+              description: 'Disk status for disk **hdd1** on **jacen.example** has failed'

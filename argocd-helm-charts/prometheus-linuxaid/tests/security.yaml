@@ -8,13 +8,13 @@ tests:
   # Test 1: scan failing on 3 nodes — should fire a single grouped alert
   - interval: 1m
     input_series:
-      - series: 'security_exporter_scan_up{certname="web01.enableit"}'
+      - series: 'security_exporter_scan_up{certname="web01.example"}'
         values: 0x1560
-      - series: 'security_exporter_scan_up{certname="web02.enableit"}'
+      - series: 'security_exporter_scan_up{certname="web02.example"}'
         values: 0x1560
-      - series: 'security_exporter_scan_up{certname="web03.enableit"}'
+      - series: 'security_exporter_scan_up{certname="web03.example"}'
         values: 0x1560
-      - series: 'security_exporter_scan_up{certname="db01.enableit"}'
+      - series: 'security_exporter_scan_up{certname="db01.example"}'
         values: 1x1560
 
     alert_rule_test:
@@ -39,9 +39,9 @@ tests:
   # Test 2: all scans succeeding — no alert should fire
   - interval: 1m
     input_series:
-      - series: 'security_exporter_scan_up{certname="web01.enableit"}'
+      - series: 'security_exporter_scan_up{certname="web01.example"}'
         values: 1x120
-      - series: 'security_exporter_scan_up{certname="web02.enableit"}'
+      - series: 'security_exporter_scan_up{certname="web02.example"}'
         values: 1x120
 
     alert_rule_test:
@@ -52,9 +52,9 @@ tests:
   # Test 3: stale scan — no successful scan in 25+ hours
   - interval: 1m
     input_series:
-      - series: 'security_exporter_last_scan_timestamp{certname="web01.enableit"}'
+      - series: 'security_exporter_last_scan_timestamp{certname="web01.example"}'
         values: 0x1700
-      - series: 'security_exporter_last_scan_timestamp{certname="web02.enableit"}'
+      - series: 'security_exporter_last_scan_timestamp{certname="web02.example"}'
         values: 0x1700
 
     alert_rule_test:

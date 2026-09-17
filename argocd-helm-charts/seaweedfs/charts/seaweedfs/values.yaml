@@ -55,7 +55,7 @@ global:
       gatewayHost: null
       gatewayPort: null
       additionalLabels: {}
-    # if enabled will use global.seaweedfs.replicationPlacement and override master & filer defaultReplicaPlacement config
+    # if enabled will use global.seaweedfs.replicationPlacement and override master.defaultReplication & filer.defaultReplicaPlacement config
     enableReplication: false
     #  replication type is XYZ:
     # X number of replica in other data centers
@@ -276,6 +276,7 @@ master:
     host: "master.seaweedfs.local"
     path: "/sw-master/?(.*)"
     pathType: ImplementationSpecific
+    labels: {}
     annotations: {}
       # nginx.ingress.kubernetes.io/auth-type: "basic"
       # nginx.ingress.kubernetes.io/auth-secret: "default/ingress-basic-auth-secret"
@@ -600,6 +601,7 @@ volume:
     host: "volume.seaweedfs.local"
     path: "/"
     pathType: Prefix
+    labels: {}
     annotations:
       nginx.ingress.kubernetes.io/app-root: /ui/index.html
       # nginx.ingress.kubernetes.io/use-regex: "true"
@@ -858,6 +860,7 @@ filer:
       host: "seaweedfs.cluster.local"
       path: "/sw-filer/?(.*)"
       pathType: ImplementationSpecific
+      labels: {}
       annotations: {}
         # nginx.ingress.kubernetes.io/backend-protocol: GRPC
         # nginx.ingress.kubernetes.io/auth-type: "basic"
@@ -884,6 +887,7 @@ filer:
       # whole host, not the HTTP UI's regex path.
       path: "/"
       pathType: Prefix
+      labels: {}
       annotations:
         # Ingress terminates TLS and re-originates gRPC (HTTP/2) to the filer.
         nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
@@ -1006,6 +1010,9 @@ s3:
   # Iceberg catalog REST port (Apache Iceberg REST Catalog API)
   # Set to a port number to enable, or 0/null to disable
   icebergPort: null
+  # Lance Namespace port; weed serves 9101 by default, 0 disables it
+  # (and, unless worker.namespaceUrl points elsewhere, the worker's Lance container)
+  lancePort: 9101
   loggingOverrideLevel: null
   # enable user & permission to s3 (need to inject to all services)
   enableAuth: false
@@ -1177,6 +1184,7 @@ s3:
     host: "seaweedfs.cluster.local"
     path: "/"
     pathType: Prefix
+    labels: {}
     # additional ingress annotations for the s3 endpoint
     annotations: {}
     tls: []
@@ -1184,11 +1192,16 @@ s3:
   # Service settings
   service:
     type: ClusterIP
+    # used only when type is LoadBalancer
+    loadBalancerClass: ""
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
     # fixed nodePorts, used only when type is NodePort or LoadBalancer
     nodePorts:
       http: null
       https: null
       iceberg: null
+      lance: null
       metrics: null
 
   icebergIngress:
@@ -1197,6 +1210,17 @@ s3:
     host: "seaweedfs-iceberg.cluster.local"
     path: "/"
     pathType: Prefix
+    labels: {}
+    annotations: {}
+    tls: []
+
+  lanceIngress:
+    enabled: false
+    className: ""
+    host: "seaweedfs-lance.cluster.local"
+    path: "/"
+    pathType: Prefix
+    labels: {}
     annotations: {}
     tls: []
 
@@ -1288,6 +1312,10 @@ sftp:
   # Service settings
   service:
     type: ClusterIP
+    # used only when type is LoadBalancer
+    loadBalancerClass: ""
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
     # fixed nodePorts, used only when type is NodePort or LoadBalancer
     nodePorts:
       sftp: null
@@ -1300,6 +1328,20 @@ admin:
   replicas: 1
   port: 23646  # Default admin port
   grpcPort: 33646  # Default gRPC port for worker connections
+  # IP address the admin server listens on. Since `weed admin` 4.46 defaults to
+  # loopback (127.0.0.1), the chart must bind a non-loopback address for the
+  # kubelet's httpGet readiness/liveness probes (which dial the pod IP) to ever
+  # succeed. "0.0.0.0" restores the pre-4.46 behaviour of listening on all
+  # interfaces. A non-loopback address requires authentication: set
+  # admin.secret.adminPassword or admin.secret.existingSecret, or supply
+  # WEED_ADMIN_PASSWORD via admin.extraEnvironmentVars /
+  # admin.secretExtraEnvironmentVars; otherwise the admin container will exit
+  # with a clear error rather than silently staying unready. The whole
+  # 127.0.0.0/8 range and ::1 are treated as loopback (matching weed admin).
+  # Set to a loopback address only if you also replace the httpGet probes.
+  # Note: the -ip flag requires SeaweedFS 4.46 or newer; pinning
+  # admin.imageOverride to an older image is not supported with this chart.
+  ip: "0.0.0.0"
   loggingOverrideLevel: null
 
   # Admin authentication
@@ -1424,12 +1466,17 @@ admin:
     host: "admin.seaweedfs.local"
     path: "/"
     pathType: Prefix
+    labels: {}
     annotations: {}
     tls: []
 
   service:
     type: ClusterIP
     annotations: {}
+    # used only when type is LoadBalancer
+    loadBalancerClass: ""
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
     # fixed nodePorts, used only when type is NodePort or LoadBalancer
     nodePorts:
       http: null
@@ -1447,6 +1494,15 @@ worker:
   loggingOverrideLevel: null
   metricsPort: 9327
   metricsIp: ""  # If empty, defaults to 0.0.0.0
+
+  # The lance_* jobs run in their own container, /usr/bin/weed-worker.
+  # amd64/arm64 only; pin mixed clusters with worker.affinity/nodeSelector.
+
+  # Lance namespace URL override; empty derives it from s3.lancePort.
+  namespaceUrl: ""
+
+  # Metrics port for the Lance worker container; the Go worker keeps metricsPort
+  lanceMetricsPort: 9328
 
   # Admin server to connect to
   adminServer: ""
@@ -1654,6 +1710,10 @@ allInOne:
     annotations: {}  # Annotations for the service
     type: ClusterIP  # Service type (ClusterIP, NodePort, LoadBalancer)
     internalTrafficPolicy: Cluster  # Internal traffic policy
+    # used only when type is LoadBalancer
+    loadBalancerClass: ""
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
     # fixed nodePorts, used only when type is NodePort or LoadBalancer
     nodePorts:
       master: null

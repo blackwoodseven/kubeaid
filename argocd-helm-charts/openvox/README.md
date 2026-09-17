@@ -4,9 +4,10 @@
 
 OpenVox is the community-driven Puppet fork ([OpenVoxProject](https://github.com/OpenVoxProject), chart repo
 `https://openvoxproject.github.io/openvox-helm-chart`) — puppetserver, puppetdb, puppetboard and their
-PostgreSQL backend, pulled in as the `puppetserver` subchart (see `charts/puppetserver`, `Chart.lock`; the
-dependency is currently commented out in `Chart.yaml` because this chart carries local patches and the
-upstream PRs to support them are still open — see the linked issues/PRs at the top of `Chart.yaml`). On top
+PostgreSQL backend, pulled in as the `puppetserver` subchart (see `charts/puppetserver`). Note: `Chart.yaml`
+uses a temporary local file dependency patch (`file://charts/puppetserver`) to satisfy `helm lint` in CI while
+carrying local custom patches. The upstream remote repository dependency is kept commented out until the
+upstream PRs are merged — see the linked issues/PRs at the top of `Chart.yaml`). On top
 of that, KubeAid adds:
 
 - `puppetAgentExporter` — exposes Prometheus metrics scraped from agent-reported Puppet run data.

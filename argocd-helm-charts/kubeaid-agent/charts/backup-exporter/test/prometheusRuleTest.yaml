@@ -38,7 +38,7 @@ tests:
               severity: critical
             exp_annotations:
               summary: 'PostgreSQL logical backup exceeded RPO'
-              description: 'Logical backup for test/pg1 exceeded RPO (age: 95000)'
+              description: 'Logical backup for test/pg1 exceeded RPO (age: 1d 2h 23m 20s)'
 
   - interval: 1m
     input_series:
@@ -55,7 +55,7 @@ tests:
               severity: critical
             exp_annotations:
               summary: 'PostgreSQL CNPG WAL backup exceeded RPO'
-              description: 'WAL backup for test/pg1 exceeded RPO (age: 95000)'
+              description: 'WAL backup for test/pg1 exceeded RPO (age: 1d 2h 23m 20s)'
 
   - interval: 1m
     input_series:
@@ -166,11 +166,49 @@ tests:
         eval_time: 6m
         exp_alerts: []
 
+  # A PVC younger than max_rpo that Velero has not had a scheduled run for yet
+  # (exporter-classified, type=awaiting_first_backup) must not fire
+  # VeleroBackupMissing, even though the age sentinel is 0.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_latest_backup_age{backup="",namespace="test-ns",resource_name="pvc-new",resource_type="pvc"}'
+        values: '0x6'
+      - series: 'backup_exporter_velero_error{namespace="test-ns",resource_name="pvc-new",resource_type="pvc",type="awaiting_first_backup"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: VeleroBackupMissing
+        eval_time: 6m
+        exp_alerts: []
+
+  # A namespace holding both a genuinely missing PVC and one still awaiting its
+  # first backup fires for the missing one only, and lists only that one.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_latest_backup_age{backup="",namespace="mixed-ns",resource_name="pvc-never",resource_type="pvc"}'
+        values: '0x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="",namespace="mixed-ns",resource_name="pvc-new",resource_type="pvc"}'
+        values: '0x6'
+      - series: 'backup_exporter_velero_error{namespace="mixed-ns",resource_name="pvc-new",resource_type="pvc",type="awaiting_first_backup"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: VeleroBackupMissing
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: VeleroBackupMissing
+              severity: critical
+              namespace: mixed-ns
+            exp_annotations:
+              summary: 'Velero backups missing in mixed-ns'
+              description: |-
+                1 volume(s) in namespace mixed-ns have never been backed up by Velero:
+                pvc-never (pvc)
+
   # A genuinely missing, in-scope PVC (no matching not-enabled error) must
   # still fire VeleroBackupMissing.
   - interval: 1m
     input_series:
-      - series: 'backup_exporter_velero_latest_backup_age{backup="",namespace="puppetserver-enableit",resource_name="code-claim",resource_type="pvc"}'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="",namespace="test-ns",resource_name="pvc-never",resource_type="pvc"}'
         values: '0x6'
     alert_rule_test:
       - alertname: VeleroBackupMissing
@@ -179,12 +217,51 @@ tests:
           - exp_labels:
               alertname: VeleroBackupMissing
               severity: critical
-              namespace: puppetserver-enableit
-              resource_name: code-claim
-              resource_type: pvc
+              namespace: test-ns
             exp_annotations:
-              summary: 'Velero backup missing'
-              description: 'No backup found for puppetserver-enableit/code-claim (pvc, method: )'
+              summary: 'Velero backups missing in test-ns'
+              description: |-
+                1 volume(s) in namespace test-ns have never been backed up by Velero:
+                pvc-never (pvc)
+
+  # One alert per namespace, listing only that namespace's missing volumes.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_latest_backup_age{backup="",namespace="test-ns",resource_name="pvc-missing-b",resource_type="pvc"}'
+        values: '0x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="",namespace="test-ns",resource_name="pvc-missing-a",resource_type="pvc"}'
+        values: '0x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="test-ns",resource_name="pvc-fine",resource_type="pvc"}'
+        values: '3600x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="",namespace="other-ns",resource_name="pvc-unscheduled",resource_type="pvc"}'
+        values: '0x6'
+      - series: 'backup_exporter_velero_error{namespace="other-ns",resource_name="pvc-unscheduled",resource_type="pvc",type="backup_not_enabled"}'
+        values: '1x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="",namespace="third-ns",resource_name="pvc-lonely",resource_type="pvc"}'
+        values: '0x6'
+    alert_rule_test:
+      - alertname: VeleroBackupMissing
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: VeleroBackupMissing
+              severity: critical
+              namespace: test-ns
+            exp_annotations:
+              summary: 'Velero backups missing in test-ns'
+              description: |-
+                2 volume(s) in namespace test-ns have never been backed up by Velero:
+                pvc-missing-a (pvc)
+                pvc-missing-b (pvc)
+          - exp_labels:
+              alertname: VeleroBackupMissing
+              severity: critical
+              namespace: third-ns
+            exp_annotations:
+              summary: 'Velero backups missing in third-ns'
+              description: |-
+                1 volume(s) in namespace third-ns have never been backed up by Velero:
+                pvc-lonely (pvc)
 
   # A PVC outside every schedule's included namespaces is exporter bookkeeping,
   # not a collector failure: backup_not_enabled must not fire
@@ -199,10 +276,155 @@ tests:
         eval_time: 6m
         exp_alerts: []
 
+  # ExceededRPO is one alert per namespace. Two volumes past RPO in one
+  # namespace and one healthy volume in another must yield exactly one alert,
+  # carrying only the namespace label, whose description lists both late
+  # volumes with humanized ages (sorted by name) and nothing from the healthy
+  # namespace.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="test-ns",resource_name="pvc-late-b",resource_type="pvc"}'
+        values: '100000x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="test-ns",resource_name="pvc-late-a",resource_type="pvc"}'
+        values: '95000x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="test-ns",resource_name="pvc-fresh",resource_type="pvc"}'
+        values: '3600x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="other-ns",resource_name="pvc-other",resource_type="pvc"}'
+        values: '3600x6'
+    alert_rule_test:
+      - alertname: VeleroBackupExceededRPO
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: VeleroBackupExceededRPO
+              severity: critical
+              namespace: test-ns
+            exp_annotations:
+              summary: 'Velero backups in test-ns exceeded RPO'
+              description: |-
+                2 Velero backup(s) in namespace test-ns exceeded the RPO of 26h:
+                pvc-late-a (pvc, method: test-backup, age: 1d 2h 23m 20s)
+                pvc-late-b (pvc, method: test-backup, age: 1d 3h 46m 40s)
+
+  # Nothing past RPO, no alert, even with many volumes.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="test-ns",resource_name="pvc-a",resource_type="pvc"}'
+        values: '3600x6'
+      - series: 'backup_exporter_velero_latest_backup_age{backup="test-backup",namespace="test-ns",resource_name="pvc-b",resource_type="pvc"}'
+        values: '93600x6'
+    alert_rule_test:
+      - alertname: VeleroBackupExceededRPO
+        eval_time: 6m
+        exp_alerts: []
+
+  # A PVC still inside its first-backup grace window is exporter bookkeeping,
+  # not a collector failure: awaiting_first_backup must not fire
+  # VeleroBackupExporterJobFailed either.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_error{namespace="test-ns",resource_name="pvc-new",resource_type="pvc",type="awaiting_first_backup"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: VeleroBackupExporterJobFailed
+        eval_time: 6m
+        exp_alerts: []
+
+  # A cluster without Velero's CRDs has nothing to check, and Argo CD already
+  # reports a Velero that should be installed and is not. Reporting it here
+  # would page on a permanent, expected state.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_error{type="velero_not_installed"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: VeleroBackupExporterJobFailed
+        eval_time: 6m
+        exp_alerts: []
+
+  # Neither bookkeeping state pages as a failure, but both mean the cluster
+  # protects nothing, so VeleroNoBackupSchedules reports it once, as a warning,
+  # only after a full day so a cluster rebuild does not trip it.
+  - interval: 5m
+    input_series:
+      - series: 'backup_exporter_velero_error{type="velero_not_installed"}'
+        values: '1x300'
+    alert_rule_test:
+      - alertname: VeleroNoBackupSchedules
+        eval_time: 1h
+        exp_alerts: []
+      - alertname: VeleroNoBackupSchedules
+        eval_time: 25h
+        exp_alerts:
+          - exp_labels:
+              alertname: VeleroNoBackupSchedules
+              severity: warning
+              type: velero_not_installed
+            exp_annotations:
+              summary: 'No Velero backup schedules on this cluster'
+              description: 'Velero is backing up nothing on this cluster (reason: velero_not_installed). No PVC is protected.'
+
+  # Same for a Velero that is installed but has no Schedules.
+  - interval: 5m
+    input_series:
+      - series: 'backup_exporter_velero_error{type="no_schedules_found"}'
+        values: '1x300'
+    alert_rule_test:
+      - alertname: VeleroNoBackupSchedules
+        eval_time: 25h
+        exp_alerts:
+          - exp_labels:
+              alertname: VeleroNoBackupSchedules
+              severity: warning
+              type: no_schedules_found
+            exp_annotations:
+              summary: 'No Velero backup schedules on this cluster'
+              description: 'Velero is backing up nothing on this cluster (reason: no_schedules_found). No PVC is protected.'
+
+  # A cluster with real backups never reports either type, so it stays quiet.
+  - interval: 5m
+    input_series:
+      - series: 'backup_exporter_velero_latest_backup_age{backup="CSISnapshot",namespace="test-ns",resource_name="pvc-a",resource_type="pvc"}'
+        values: '3600x300'
+    alert_rule_test:
+      - alertname: VeleroNoBackupSchedules
+        eval_time: 25h
+        exp_alerts: []
+
+  # Velero installed but declaring no Schedules is a configuration statement,
+  # not a collector failure: Argo CD reports schedules that should exist and
+  # do not, so paging here would duplicate it.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_error{type="no_schedules_found"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: VeleroBackupExporterJobFailed
+        eval_time: 6m
+        exp_alerts: []
+
+  # A listing failure that is not a missing CRD -- API server down, RBAC
+  # revoked -- is a real failure and must still page.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_velero_error{type="schedule_list_failed"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: VeleroBackupExporterJobFailed
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: VeleroBackupExporterJobFailed
+              severity: critical
+              type: schedule_list_failed
+            exp_annotations:
+              summary: 'Velero backup exporter job failed'
+              description: 'Velero backup exporter error (type: schedule_list_failed)'
+
   # A genuine failure type must still fire VeleroBackupExporterJobFailed.
   - interval: 1m
     input_series:
-      - series: 'backup_exporter_velero_error{namespace="monitoring",resource_name="prometheus-k8s-db-prometheus-k8s-0",resource_type="pvc",type="s3_connection_failed"}'
+      - series: 'backup_exporter_velero_error{namespace="test-ns",resource_name="pvc-a",resource_type="pvc",type="s3_connection_failed"}'
         values: '1x6'
     alert_rule_test:
       - alertname: VeleroBackupExporterJobFailed

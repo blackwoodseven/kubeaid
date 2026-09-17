@@ -88,6 +88,43 @@ true
 {{- end -}}
 {{- end -}}
 
+{{/* Classify an admin bind address as loopback, mirroring weed admin's
+     isLoopbackIp (net.ParseIP + IsLoopback). Helm templates cannot call
+     net.ParseIP, so we approximate: valid IPv4 addresses in 127.0.0.0/8
+     (validated via regex to reject malformed values like "127.not-an-ip")
+     and the IPv6 loopback "::1" / its expanded form "0:0:0:0:0:0:0:1" are
+     loopback. Hostnames (e.g. "localhost") and wildcard addresses
+     ("0.0.0.0", "::") are non-loopback, matching the binary, which
+     treats unparseable hostnames as non-loopback to be safe. Other IPv6
+     loopback representations are not matched; the binary's own runtime
+     validation is the authoritative guard. */}}
+{{- define "seaweedfs.admin.isLoopbackIp" -}}
+{{- $ip := toString . -}}
+{{- if or (regexMatch "^127\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$" $ip) (eq $ip "::1") (eq $ip "0:0:0:0:0:0:0:1") -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/* Whether admin authentication is enabled from any supported source:
+     admin.secret (adminPassword or existingSecret), or WEED_ADMIN_PASSWORD
+     supplied via extraEnvironmentVars / secretExtraEnvironmentVars (which
+     weed admin picks up through viper's AutomaticEnv). A secret-backed
+     entry counts as enabled even though the chart cannot read its value. */}}
+{{- define "seaweedfs.admin.authEnabled" -}}
+{{- if or .Values.admin.secret.existingSecret .Values.admin.secret.adminPassword -}}
+true
+{{- else -}}
+{{- $merged := dict -}}
+{{- $_ := include "seaweedfs.mergeExtraEnvironmentVars" (dict "global" .Values.global.seaweedfs "component" .Values.admin "target" $merged) -}}
+{{- $envPassword := index $merged "WEED_ADMIN_PASSWORD" -}}
+{{- if or (kindIs "map" $envPassword) (hasKey (.Values.admin.secretExtraEnvironmentVars | default dict) "WEED_ADMIN_PASSWORD") -}}
+true
+{{- else if and $envPassword (ne (toString $envPassword) "") -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Return the proper filer image */}}
 {{- define "seaweedfs.filer.image" -}}
 {{- if .Values.filer.imageOverride -}}
@@ -145,6 +182,15 @@ true
 {{- printf "%s" $imageOverride -}}
 {{- else -}}
 {{- include "seaweedfs.image" . }}
+{{- end -}}
+{{- end -}}
+
+{{/* Lance namespace URL the worker's Lance container maintains; empty when unreachable */}}
+{{- define "seaweedfs.worker.lanceNamespaceUrl" -}}
+{{- if .Values.worker.namespaceUrl -}}
+{{- .Values.worker.namespaceUrl -}}
+{{- else if and .Values.s3.enabled .Values.s3.lancePort -}}
+{{- printf "http://%s.%s:%d" (include "seaweedfs.componentName" (list . "s3")) .Release.Namespace (int .Values.s3.lancePort) -}}
 {{- end -}}
 {{- end -}}
 
@@ -547,4 +593,24 @@ true
 {{- if .value -}}
 {{- and (eq .value "PreferClose") (semverCompare ">=1.35-0" .Capabilities.KubeVersion.GitVersion) | ternary "PreferSameZone" .value -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Render LoadBalancer-specific service fields (loadBalancerClass, loadBalancerIP,
+loadBalancerSourceRanges), only when the service type is LoadBalancer.
+Usage: {{ include "seaweedfs.service.loadBalancerFields" .Values.s3.service }}
+*/}}
+{{- define "seaweedfs.service.loadBalancerFields" -}}
+{{- if eq (.type | default "ClusterIP") "LoadBalancer" }}
+{{- with .loadBalancerClass }}
+  loadBalancerClass: {{ . }}
+{{- end }}
+{{- with .loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+{{- end }}
+{{- with .loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+{{- end }}
 {{- end -}}

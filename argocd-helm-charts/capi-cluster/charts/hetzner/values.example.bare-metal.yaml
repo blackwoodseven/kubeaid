@@ -31,6 +31,9 @@ bareMetal:
   wipeDisks: false
   installImage:
     imagePath: /root/.oldroot/nfs/images/Ubuntu-2404-noble-amd64-base.tar.gz
+    # efi lays down an EFI System Partition; bios omits it. Older Robot
+    # servers are frequently BIOS-only.
+    firmware: efi
     vg0:
       size: 25
       rootVolumeSize: 10
