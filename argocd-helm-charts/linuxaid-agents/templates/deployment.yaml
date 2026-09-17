@@ -20,8 +20,8 @@ spec:
         {{- include "linuxaid-agents.selectorLabels" . | nindent 8 }}
         linuxaid-agents.obmondo.com/component: operator
       annotations:
-        # Restart the operator when the hiera data changes, so the next cycle's
-        # Jobs mount the new values.
+        # Restart the operator when the hiera data changes: it reconciles on start,
+        # so nodes get the new values now rather than at the next interval.
         checksum/hiera: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ include "linuxaid-agents.fullname" . }}-operator
