@@ -2,6 +2,39 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 32.9.1
+
+### Features
+
+- 896f185ac feat(kubeaid-agent): carry the node CVE exporter, and rename the cluster one
+- 1ef2ffedd feat(linuxaid-security-exporter): scan every node's packages for CVEs
+- 13f7cbbf4 feat(linuxaid-agents): keep LinuxAid host monitoring off by default
+- 36ecd5198 feat(linuxaid-agents): name the environment after the control repo tag
+- d78551ce6 feat(linuxaid-agents): pin the control repo to LinuxAid v1.8.8
+- 2394db0df feat(linuxaid-agents): pin the linuxaid-cli v1.11.3 images
+- 220ad3c7e feat(linuxaid-agents): pin the control repo to LinuxAid v1.8.7
+- 73a785024 feat(linuxaid-agents): give nodes role::kubeaid by default
+- dee6d71e8 feat(linuxaid-agents): pull the images from GHCR, pinned to v1.11.2
+- aaadac115 feat(rustfs): let backup cleanup keep only the latest object version
+- 60c879017 feat(linuxaid-agents): operator Deployment with masterless hiera
+- 886870871 feat(linuxaid-agents): fan-out launcher instead of a static node Job
+- c112e623f feat(linuxaid-agents): add ArgoCD Helm chart to run OpenVox agent as a per-node Job
+
+### Bug Fixes
+
+- 6580702f0 fix(kubeaid-agent): drop a compatibility Helm does not provide
+- 02fbdbb8d fix(kubeaid-backup-exporter): fail loudly if the name pin is disturbed
+- c9fdc55e4 fix(linuxaid-agents): drop the settings the masterless agent ignores
+- 76c792e15 fix(rustfs): upgrade to 1.0.0
+
+### Other Changes
+
+- 2870c44f0 refactor(kubeaid-agent): make all three exporters standalone charts
+- 400743719 docs(linuxaid-agents): rewrite the README for first-time readers
+- 1732729d7 docs(linuxaid-agents): suggest the obmondo namespace
+- daa5c2745 docs(linuxaid-agents): say why a hiera change restarts the operator
+- 4dac32f8d Add gpu-operator to Kubeaid
+
 ## KubeAid Release Version 32.9.0
 
 ### Minor Version Upgrades
