@@ -1,0 +1,22 @@
+# The exporter's config file. host_root points at the node mount, so dpkg-query
+# and rpm are run against the node's package database rather than the image's.
+# The node name comes from the downward API instead, since a ConfigMap cannot
+# hold a per-node value.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "linuxaid-security-exporter.fullname" . }}
+  labels:
+    {{- include "linuxaid-security-exporter.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    vuls_server:
+      url: {{ .Values.vulsServer.url | quote }}
+      timeout: {{ .Values.vulsServer.timeout | quote }}
+      cert_file: /obmondo-clientcert/tls.crt
+      key_file: /obmondo-clientcert/tls.key
+    listen_address: ":{{ .Values.metricsPort }}"
+    scan_interval: {{ .Values.scanInterval | quote }}
+    random_delay: {{ .Values.randomDelay | quote }}
+    upstream_retry_delay: {{ .Values.upstreamRetryDelay | quote }}
+    host_root: "/host"

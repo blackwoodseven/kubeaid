@@ -1,0 +1,57 @@
+# linuxaid-security-exporter — every node's packages, scanned for CVEs.
+#
+# A DaemonSet runs Obmondo's security exporter on each node. It reads that
+# node's package database through a read-only mount, sends the package list to
+# the Vuls server, which matches it against CVE data, and serves the findings as
+# Prometheus metrics. Nodes share the cluster's client certificate, so each scan
+# carries its node name to tell the reports apart.
+
+image:
+  repository: ghcr.io/obmondo/security-exporter
+  # the first security-exporter release that publishes a container image
+  tag: v2.5.0
+  pullPolicy: IfNotPresent
+
+# Vuls server the package lists are sent to, over mTLS with the certificate below.
+vulsServer:
+  url: https://vuls.obmondo.com
+  timeout: 5m
+
+# Client certificate the nodes authenticate with (keys: tls.crt / tls.key).
+obmondoClientCert:
+  secretName: obmondo-clientcert
+
+# How often each node scans, and the window it waits in before its first scan so
+# a cluster does not hit the Vuls server all at once.
+scanInterval: 12h
+randomDelay: 1h
+
+# Keep serving metrics this long after the Vuls server becomes unreachable, then
+# exit so Kubernetes restarts the pod.
+upstreamRetryDelay: 6h
+
+# Read-only mounts of the node, placed under /host in the pod. Mounting the root,
+# as node-exporter does, works on any distro; the exporter only ever reads
+# /var/lib/dpkg or /var/lib/rpm and /etc/os-release under it, so you can narrow
+# this to those paths instead.
+hostMounts:
+  - path: /
+
+metricsPort: 63396
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+
+nodeSelector: {}
+
+# Scan every node, control-plane and tainted ones included.
+tolerations:
+  - operator: Exists

@@ -1,0 +1,16 @@
+# Headless: the ServiceMonitor scrapes each node's pod, so there is nothing to
+# load-balance.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "linuxaid-security-exporter.fullname" . }}
+  labels:
+    {{- include "linuxaid-security-exporter.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "linuxaid-security-exporter.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: metrics
+      port: {{ .Values.metricsPort }}
+      targetPort: metrics
