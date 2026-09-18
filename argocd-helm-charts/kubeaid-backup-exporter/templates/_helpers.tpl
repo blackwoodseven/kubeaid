@@ -6,8 +6,9 @@
   which is indistinguishable from "not installed" -- backups simply stop being
   reported, with nothing failing.
 
-  Being a subchart, .Chart.Name is already "backup-exporter", so the default
-  gives the right answer; nameOverride is the only way to get it wrong.
+  The chart is named kubeaid-backup-exporter, so the .Chart.Name default would
+  now give the wrong answer: values.yaml pins nameOverride to backup-exporter,
+  and it must stay pinned.
 */}}
 {{- define "backup-exporter.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}

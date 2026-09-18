@@ -13,21 +13,21 @@ under `charts/`, resolved from the working tree — no repository, no `Chart.loc
 ```
 kubeaid-agent/
   templates/                           the agent
-  charts/kubeaid-security-exporter/    Chart.yaml + values.yaml + templates/
+  charts/kubeaid-security-exporter/    symlink to ../../kubeaid-security-exporter
   charts/linuxaid-security-exporter/   symlink to ../../linuxaid-security-exporter
-  charts/backup-exporter/              Chart.yaml + values.yaml + templates/
+  charts/kubeaid-backup-exporter/      symlink to ../../kubeaid-backup-exporter
 ```
 
-The node exporter is a **standalone chart symlinked in**, the way charts here already borrow
-`kubeaid-addons`, so a cluster can either switch it on with the agent or deploy it as its own Argo CD
-application — into `monitoring`, say, next to node-exporter.
+All three exporters are **standalone charts symlinked in**, the way charts here already borrow
+`kubeaid-addons`. A cluster switches one on beside the agent, or deploys it as its own Argo CD
+application — the node exporter into `monitoring`, say, next to node-exporter.
 
 | Workload | Purpose |
 |---|---|
 | `kubeaid-agent` | Talks to the Obmondo API over mTLS. Holds the credential; holds no CRD access. |
 | `kubeaid-security-exporter` | Collects the cluster's security posture and serves it at `/api/v1/security-posture`. Holds cluster-wide read; talks to nothing outside the cluster. |
 | `linuxaid-security-exporter` | A DaemonSet reporting each node's installed packages to a Vuls server for CVE scanning, and serving the findings as metrics. Reads two paths on its node; holds no cluster access. |
-| `backup-exporter` | Reports backup health for PostgreSQL, Velero, MongoDB and sealed-secrets, and ships their alerts. |
+| `kubeaid-backup-exporter` | Reports backup health for PostgreSQL, Velero, MongoDB and sealed-secrets, and ships their alerts. |
 
 The two `*-security-exporter` subcharts cover different layers: `kubeaid` looks at the cluster and the
 container images it runs, `linuxaid` at the operating system underneath them.
@@ -38,7 +38,7 @@ cluster-wide read — the coupling that separating them removed in the first pla
 bounds the blast radius: a security collection pass holds every VulnerabilityReport in memory at once, and as
 a sidecar an OOM there would take down the agent, and with it the cluster-liveness ping.
 
-Each exporter is independently switchable, and **all three default to `false`**. `backup-exporter.enabled`
+Each exporter is independently switchable, and **all three default to `false`**. `kubeaid-backup-exporter.enabled`
 because it cannot start without S3 credentials for the backends it reports on;
 `kubeaid-security-exporter.enabled` because it holds cluster-wide read across eight API groups, which a chart
 must not grant to every cluster that installs the agent; `linuxaid-security-exporter.enabled` because it puts
@@ -46,9 +46,11 @@ a pod on every node and reports to a Vuls server. Neither security exporter need
 the node one reuses the cluster's `obmondo-clientcert` — so turning either on is nothing more than
 `enabled: true`.
 
-backup-exporter and kubeaid-security-exporter are discovered by the agent at runtime rather than wired by
-config, so their object names are **pinned** rather than release-derived. The agent finds backup-exporter by the label
-`app.kubernetes.io/name=backup-exporter` and reaches kubeaid-security-exporter at the Service name in
+kubeaid-backup-exporter and kubeaid-security-exporter are discovered by the agent at runtime rather than
+wired by config, so their object names are **pinned** rather than release-derived. The agent finds the backup
+exporter by the label `app.kubernetes.io/name=backup-exporter` — which its `nameOverride` holds at that
+value, deliberately not following the chart's rename, since kubeaid-cli looks for the same label — and
+reaches kubeaid-security-exporter at the Service name in
 `appConfig.securityPosture.exporterURL`. Renaming either without the other end silently stops reporting.
 linuxaid-security-exporter is outside that arrangement: it reports to Vuls itself, and the agent never
 contacts it.
@@ -103,7 +105,7 @@ the parent's values file carries only the agent's own settings.
 | `obmondoAPITLSSecretName` | `obmondo-clientcert` | Secret with the mTLS keypair. |
 | `extraSecretReaderNamespaces` | `[]` | Extra namespaces where a secrets-read Role/RoleBinding is created for the agent. |
 | `kubeaid-security-exporter.enabled` | `false` | Deploy the security exporter alongside the agent. Off by default: it holds cluster-wide read across eight API groups, so granting it is a per-cluster decision. Needs no credentials. |
-| `backup-exporter.enabled` | `false` | Deploy the backup exporter alongside the agent. Off by default: it needs S3 credentials per backend, so enabling it without those deploys a pod that cannot work. See the [Backup Exporter guide](../../docs/guides/backup-exporter.md). |
+| `kubeaid-backup-exporter.enabled` | `false` | Deploy the backup exporter alongside the agent. Off by default: it needs S3 credentials per backend, so enabling it without those deploys a pod that cannot work. See the [Backup Exporter guide](../../docs/guides/backup-exporter.md). |
 | `kubeaid-security-exporter.exporter.interval` | `12h` | Collection cadence. Trivy refreshes its reports on a 24h TTL, so polling faster re-reads identical data. |
 | `kubeaid-security-exporter.prometheusRule.upgradableThreshold` | `20` | `ImageOutdatedAndVulnerable` fires above this many images having both a fixable Critical/High CVE and a newer tag available. |
 | `kubeaid-security-exporter.prometheusRule.upgradableFor` | `24h` | How long the count must hold before the alert fires. |

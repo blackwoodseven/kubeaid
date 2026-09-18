@@ -37,6 +37,7 @@ dependencies:
     version: 0.1.0
     condition: linuxaid-security-exporter.enabled
 
-  - name: backup-exporter
+  - name: kubeaid-backup-exporter
     version: 0.4.7
-    condition: backup-exporter.enabled
+    # the old key keeps working while cluster values catch up with the rename
+    condition: kubeaid-backup-exporter.enabled,backup-exporter.enabled
