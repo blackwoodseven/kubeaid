@@ -2,9 +2,9 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ include "security-exporter.fullname" . }}
+  name: {{ include "kubeaid-security-exporter.fullname" . }}
   labels:
-    {{- include "security-exporter.labels" . | nindent 4 }}
+    {{- include "kubeaid-security-exporter.labels" . | nindent 4 }}
     {{- with .Values.prometheusRule.additionalLabels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -14,7 +14,7 @@ metadata:
   {{- end }}
 spec:
   groups:
-    - name: security-exporter
+    - name: kubeaid-security-exporter
       rules:
         # Images with a fixable Critical/High finding AND a newer tag upstream
         # — the set worth acting on. The exporter computes the join, because

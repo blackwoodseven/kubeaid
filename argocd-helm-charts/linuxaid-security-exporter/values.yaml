@@ -6,6 +6,10 @@
 # Prometheus metrics. Nodes share the cluster's client certificate, so each scan
 # carries its node name to tell the reports apart.
 
+# Off by default: it scans every node and reports to a Vuls server, which is a
+# per-cluster decision.
+enabled: false
+
 image:
   repository: ghcr.io/obmondo/security-exporter
   # the first security-exporter release that publishes a container image

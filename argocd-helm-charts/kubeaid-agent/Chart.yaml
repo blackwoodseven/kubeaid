@@ -28,9 +28,14 @@ maintainers:
 # Chart.lock, no `helm dependency update`. The conditions let a cluster take the
 # agent alone, or the agent plus either exporter.
 dependencies:
-  - name: security-exporter
+  - name: kubeaid-security-exporter
     version: 0.3.5
-    condition: security-exporter.enabled
+    # the old key keeps working while cluster values catch up with the rename
+    condition: kubeaid-security-exporter.enabled,security-exporter.enabled
+
+  - name: linuxaid-security-exporter
+    version: 0.1.0
+    condition: linuxaid-security-exporter.enabled
 
   - name: backup-exporter
     version: 0.4.7

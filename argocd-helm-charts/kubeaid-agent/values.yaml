@@ -60,7 +60,7 @@ appConfig:
     # -- In-cluster URL of the security exporter. A bare Service name
     # resolves within the agent's own namespace; qualify it if the two charts
     # deploy to different namespaces.
-    exporterURL: http://security-exporter
+    exporterURL: http://kubeaid-security-exporter
 
     # -- How often the agent polls the exporter. Cheap, because the exporter
     # serves a cached snapshot and the agent skips the submit when collectedAt

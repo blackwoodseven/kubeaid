@@ -6,41 +6,52 @@ Argo CD syncs during agreed service windows. This chart is authored in KubeAid (
 
 ## What this chart deploys
 
-Three Deployments from one Argo CD application. The two exporters are **local subcharts** under
-`charts/`, resolved from the working tree — no repository, no `Chart.lock`, no
+Three Deployments and a DaemonSet from one Argo CD application. The exporters are **local subcharts**
+under `charts/`, resolved from the working tree — no repository, no `Chart.lock`, no
 `helm dependency update`:
 
 ```
 kubeaid-agent/
-  templates/                     the agent
-  charts/security-exporter/      Chart.yaml + values.yaml + templates/
-  charts/backup-exporter/        Chart.yaml + values.yaml + templates/
+  templates/                           the agent
+  charts/kubeaid-security-exporter/    Chart.yaml + values.yaml + templates/
+  charts/linuxaid-security-exporter/   symlink to ../../linuxaid-security-exporter
+  charts/backup-exporter/              Chart.yaml + values.yaml + templates/
 ```
 
-Three Deployments from one Argo CD application:
+The node exporter is a **standalone chart symlinked in**, the way charts here already borrow
+`kubeaid-addons`, so a cluster can either switch it on with the agent or deploy it as its own Argo CD
+application — into `monitoring`, say, next to node-exporter.
 
 | Workload | Purpose |
 |---|---|
 | `kubeaid-agent` | Talks to the Obmondo API over mTLS. Holds the credential; holds no CRD access. |
-| `security-exporter` | Collects the cluster's security posture and serves it at `/api/v1/security-posture`. Holds cluster-wide read; talks to nothing outside the cluster. |
+| `kubeaid-security-exporter` | Collects the cluster's security posture and serves it at `/api/v1/security-posture`. Holds cluster-wide read; talks to nothing outside the cluster. |
+| `linuxaid-security-exporter` | A DaemonSet reporting each node's installed packages to a Vuls server for CVE scanning, and serving the findings as metrics. Reads two paths on its node; holds no cluster access. |
 | `backup-exporter` | Reports backup health for PostgreSQL, Velero, MongoDB and sealed-secrets, and ships their alerts. |
 
-They are **three Deployments with three ServiceAccounts, not one pod with sidecars**. A pod carries a single
+The two `*-security-exporter` subcharts cover different layers: `kubeaid` looks at the cluster and the
+container images it runs, `linuxaid` at the operating system underneath them.
+
+The Deployments have **three ServiceAccounts and are not one pod with sidecars**. A pod carries a single
 ServiceAccount, so co-locating them would hand the workload holding the Obmondo credential the exporters'
 cluster-wide read — the coupling that separating them removed in the first place. Keeping them apart also
 bounds the blast radius: a security collection pass holds every VulnerabilityReport in memory at once, and as
 a sidecar an OOM there would take down the agent, and with it the cluster-liveness ping.
 
-Each exporter is independently switchable, and **both default to `false`**. `backup-exporter.enabled`
+Each exporter is independently switchable, and **all three default to `false`**. `backup-exporter.enabled`
 because it cannot start without S3 credentials for the backends it reports on;
-`security-exporter.enabled` because it holds cluster-wide read across eight API groups, which a chart
-must not grant to every cluster that installs the agent. The security exporter needs no credentials, so
-turning it on is nothing more than `enabled: true`.
+`kubeaid-security-exporter.enabled` because it holds cluster-wide read across eight API groups, which a chart
+must not grant to every cluster that installs the agent; `linuxaid-security-exporter.enabled` because it puts
+a pod on every node and reports to a Vuls server. Neither security exporter needs credentials of its own —
+the node one reuses the cluster's `obmondo-clientcert` — so turning either on is nothing more than
+`enabled: true`.
 
-Both exporters are discovered by the agent at runtime rather than wired by config, so their object names are
-**pinned** rather than release-derived. The agent finds backup-exporter by the label
-`app.kubernetes.io/name=backup-exporter` and reaches security-exporter at the Service name in
+backup-exporter and kubeaid-security-exporter are discovered by the agent at runtime rather than wired by
+config, so their object names are **pinned** rather than release-derived. The agent finds backup-exporter by the label
+`app.kubernetes.io/name=backup-exporter` and reaches kubeaid-security-exporter at the Service name in
 `appConfig.securityPosture.exporterURL`. Renaming either without the other end silently stops reporting.
+linuxaid-security-exporter is outside that arrangement: it reports to Vuls itself, and the agent never
+contacts it.
 
 ## Why it's in KubeAid
 
@@ -57,7 +68,12 @@ on the `kubeaid` Argo CD project, stored in the `argocd-project-role-kubeaid-age
   `token` key (created automatically by `kubeaid-cli`). Name overridable via
   `appConfig.argocd.authTokenSecretName`.
 - kube-prometheus, if `serviceMonitor` stays enabled (default `true`), and for
-  `security-exporter.prometheusRule` on clusters where the security exporter is turned on.
+  `kubeaid-security-exporter.prometheusRule` on clusters where the security exporter is turned on.
+- A Vuls server to report to, for `linuxaid-security-exporter`. Managed clusters use Obmondo's hosted
+  `https://vuls.obmondo.com`, the default, and need nothing further; anyone else hosts it themselves with
+  the [vuls-dictionary](../vuls-dictionary) chart — the nightly CVE database is roughly 7 GB on a 25 Gi
+  volume — and points `vulsServer.url` at it. Its nodes must run Debian, Ubuntu, RHEL, CentOS, Rocky,
+  Oracle Linux or SLES, whose package databases it can read.
 
 The exporter additionally wants, but does not require:
 
@@ -82,15 +98,19 @@ the parent's values file carries only the agent's own settings.
 | `appConfig.kubeaidUpdate.enabled` | `false` | Opt-in: schedule the service-window Argo CD sync cron job. |
 | `appConfig.kubeaidUpdate.checkInterval` | `15m` | Poll cadence for an active KubeAid update service window. |
 | `appConfig.securityPosture.enabled` | `true` | Poll the exporter and forward its snapshots to the Obmondo API. The agent collects nothing itself. |
-| `appConfig.securityPosture.exporterURL` | `http://security-exporter` | In-cluster URL of the exporter. Matches the Service this chart creates — change both or neither. |
-| `appConfig.securityPosture.pollInterval` | `1h` | Poll cadence. The submit is skipped when `collectedAt` has not advanced, so end-to-end freshness is bounded by `security-exporter.exporter.interval`, not by this. |
+| `appConfig.securityPosture.exporterURL` | `http://kubeaid-security-exporter` | In-cluster URL of the exporter. Matches the Service this chart creates — change both or neither. |
+| `appConfig.securityPosture.pollInterval` | `1h` | Poll cadence. The submit is skipped when `collectedAt` has not advanced, so end-to-end freshness is bounded by `kubeaid-security-exporter.exporter.interval`, not by this. |
 | `obmondoAPITLSSecretName` | `obmondo-clientcert` | Secret with the mTLS keypair. |
 | `extraSecretReaderNamespaces` | `[]` | Extra namespaces where a secrets-read Role/RoleBinding is created for the agent. |
-| `security-exporter.enabled` | `false` | Deploy the security exporter alongside the agent. Off by default: it holds cluster-wide read across eight API groups, so granting it is a per-cluster decision. Needs no credentials. |
+| `kubeaid-security-exporter.enabled` | `false` | Deploy the security exporter alongside the agent. Off by default: it holds cluster-wide read across eight API groups, so granting it is a per-cluster decision. Needs no credentials. |
 | `backup-exporter.enabled` | `false` | Deploy the backup exporter alongside the agent. Off by default: it needs S3 credentials per backend, so enabling it without those deploys a pod that cannot work. See the [Backup Exporter guide](../../docs/guides/backup-exporter.md). |
-| `security-exporter.exporter.interval` | `12h` | Collection cadence. Trivy refreshes its reports on a 24h TTL, so polling faster re-reads identical data. |
-| `security-exporter.prometheusRule.upgradableThreshold` | `20` | `ImageOutdatedAndVulnerable` fires above this many images having both a fixable Critical/High CVE and a newer tag available. |
-| `security-exporter.prometheusRule.upgradableFor` | `24h` | How long the count must hold before the alert fires. |
+| `kubeaid-security-exporter.exporter.interval` | `12h` | Collection cadence. Trivy refreshes its reports on a 24h TTL, so polling faster re-reads identical data. |
+| `kubeaid-security-exporter.prometheusRule.upgradableThreshold` | `20` | `ImageOutdatedAndVulnerable` fires above this many images having both a fixable Critical/High CVE and a newer tag available. |
+| `kubeaid-security-exporter.prometheusRule.upgradableFor` | `24h` | How long the count must hold before the alert fires. |
+| `linuxaid-security-exporter.enabled` | `false` | Scan every node's packages for CVEs. Off by default: it runs a pod on each node and reports to a Vuls server. |
+| `linuxaid-security-exporter.vulsServer.url` | `https://vuls.obmondo.com` | Where package lists are sent, over mTLS with `obmondo-clientcert`. |
+| `linuxaid-security-exporter.scanInterval` | `12h` | How often each node scans; `randomDelay` (`1h`) spreads a cluster's first scans. |
+| `linuxaid-security-exporter.hostMounts` | `[{path: /}]` | Node paths mounted read-only under `/host`. Only the package database and `/etc/os-release` are read, so it can be narrowed to those. |
 
 ## What the exporter collects
 
@@ -149,5 +169,7 @@ deliberately not alerted on: a collection failure is a debugging signal, not som
 
 - Chart source: `templates/` and [values.yaml](./values.yaml) in this directory (documented inline).
 - Security exporter source: <https://gitea.obmondo.com/EnableIT/kubeaid-security-exporter>
+- Node package exporter source: <https://github.com/Obmondo/security-exporter>, with chart docs in
+  [charts/linuxaid-security-exporter](./charts/linuxaid-security-exporter)
 - Backup exporter: [guide](../../docs/guides/backup-exporter.md)
 - Obmondo: <https://obmondo.com>
