@@ -74,6 +74,29 @@ appConfig:
     # missed. Each check is one Obmondo API call, not a cluster scan.
     windowCheckInterval: 15m
 
+# Exporters. Each is a subchart, so Helm keys its values by the chart's name and
+# both the switch and the settings live under that key. All three are off by
+# default; the comments on each say what turning it on costs.
+#
+# Renaming one of these charts moves its key, and Helm offers no fallback: a
+# cluster's values must be renamed in the same change that moves it to a
+# release carrying the rename.
+
+# Cluster and image scanning. Off by default: it holds cluster-wide read across
+# eight API groups.
+kubeaid-security-exporter:
+  enabled: false
+
+# Node package CVE scanning, reported to a Vuls server. Off by default: it puts
+# a pod on every node and needs a Vuls server to report to.
+linuxaid-security-exporter:
+  enabled: false
+
+# Backup health. Off by default: every backend it reports on needs S3
+# credentials, so enabling it without those deploys a pod that cannot work.
+kubeaid-backup-exporter:
+  enabled: false
+
 # -- Kubernetes Secret name containing the TLS certificate key-pair, used to communicate with
 # Obmondo API.
 obmondoAPITLSSecretName: obmondo-clientcert

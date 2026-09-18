@@ -38,6 +38,12 @@ cluster-wide read — the coupling that separating them removed in the first pla
 bounds the blast radius: a security collection pass holds every VulnerabilityReport in memory at once, and as
 a sidecar an OOM there would take down the agent, and with it the cluster-liveness ping.
 
+Each exporter's switch and settings live under its **chart name**, which is how Helm keys subchart
+values; the parent `values.yaml` lists all three. A chart rename therefore moves a cluster's key,
+and Helm has no fallback for the old one — a dependency `condition` takes the first path that
+exists, and the subchart's own defaults always provide it. Rename a cluster's keys in the same
+change that moves it to a release carrying the rename.
+
 Each exporter is independently switchable, and **all three default to `false`**. `kubeaid-backup-exporter.enabled`
 because it cannot start without S3 credentials for the backends it reports on;
 `kubeaid-security-exporter.enabled` because it holds cluster-wide read across eight API groups, which a chart
