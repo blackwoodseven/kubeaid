@@ -11,6 +11,11 @@
 #
 # kubeaid-cli cannot supply those credentials, so it never turns this on.
 # Enabling it is a deliberate per-cluster act alongside exporter.<backend>.s3.
+# Pins app.kubernetes.io/name to the label kubeaid-agent and kubeaid-cli discover
+# this exporter by. The chart is called kubeaid-backup-exporter; the label must
+# not follow that rename (see templates/_helpers.tpl).
+nameOverride: backup-exporter
+
 enabled: false
 
 # -- OFF by default, unlike the security exporter, because this one cannot

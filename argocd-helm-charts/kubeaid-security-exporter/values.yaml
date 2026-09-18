@@ -1,4 +1,4 @@
-# Values for the security-exporter subchart.
+# Values for the kubeaid-security-exporter subchart.
 #
 # Collects the cluster's security posture and serves it at
 # /api/v1/security-posture, which kubeaid-agent forwards. The parent chart

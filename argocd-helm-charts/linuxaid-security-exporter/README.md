@@ -34,18 +34,35 @@ reports apart.
 
 ## Prerequisites
 
-- **The `obmondo-clientcert` Secret** in the release namespace, with `tls.crt` and `tls.key`. It is
-  the certificate Obmondo issues for the cluster; `kubeaid-cli` seals it into both the `obmondo` and
+- **The `obmondo-clientcert` Secret** in the release namespace, with `tls.crt` and `tls.key`. Besides
+  authenticating to the Vuls server, its common name is what the reports are filed under, so a
+  self-hosted setup needs a certificate too. It is the certificate Obmondo issues for the cluster; `kubeaid-cli` seals it into both the `obmondo` and
   `monitoring` namespaces on clusters with `obmondo.monitoring` enabled, so either works. The
   examples here use `monitoring`, next to node-exporter and the Prometheus stack.
 - **Nodes running Debian, Ubuntu, RHEL, CentOS, Rocky, Oracle Linux or SLES.** The package database
   of anything else is not read.
+- **A Vuls server to report to.** Obmondo-managed clusters use the hosted `https://vuls.obmondo.com`,
+  which is the default and needs nothing else. Anyone else hosts it themselves: the
+  [vuls-dictionary](../vuls-dictionary) chart deploys the server together with the nightly CVE database,
+  roughly 7 GB uncompressed on a 25 Gi volume, plus a second volume for scan results. Point
+  `vulsServer.url` at it.
 - **Network access** from the pods to the Vuls server, and from the cluster to `ghcr.io/obmondo`.
 - **kube-prometheus**, if `serviceMonitor.enabled` stays `true`.
 
 ## Install
 
-Add an Argo CD Application to your kubeaid-config repository, at
+Either switch it on with the agent, or deploy it on its own.
+
+**With kubeaid-agent.** The chart is symlinked into
+[kubeaid-agent](../kubeaid-agent)'s `charts/`, so one value in that release's
+`values-kubeaid-agent.yaml` turns it on, and it lands in the agent's namespace:
+
+```yaml
+linuxaid-security-exporter:
+  enabled: true
+```
+
+**On its own.** Add an Argo CD Application to your kubeaid-config repository, at
 `k8s/<cluster>/argocd-apps/templates/linuxaid-security-exporter.yaml`:
 
 ```yaml
@@ -75,8 +92,12 @@ spec:
       - ApplyOutOfSyncOnly=true
 ```
 
-The values file can be empty to start with: the defaults point at `https://vuls.obmondo.com` and the
-`obmondo-clientcert` Secret.
+The values file can be empty to start with: the defaults point at `https://vuls.obmondo.com`, Obmondo's
+hosted Vuls server, and the `obmondo-clientcert` Secret. Self-hosters can point `vulsServer.url` at their
+own server, for example one deployed with the [vuls-dictionary](../vuls-dictionary) chart.
+
+`enabled` is read only when this chart runs as kubeaid-agent's subchart; a standalone Application deploys
+it whatever that value says.
 
 ## Key values
 

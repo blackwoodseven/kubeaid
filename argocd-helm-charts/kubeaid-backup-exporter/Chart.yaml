@@ -1,5 +1,5 @@
 apiVersion: v2
-name: backup-exporter
+name: kubeaid-backup-exporter
 description: Reports backup health for PostgreSQL, Velero, MongoDB, MariaDB and sealed-secrets.
 type: application
 version: 0.4.7

@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "security-exporter.fullname" . }}
+  name: {{ include "kubeaid-security-exporter.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "security-exporter.labels" . | nindent 4 }}
+    {{- include "kubeaid-security-exporter.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.deployment.replicas }}
   selector:
     matchLabels:
-      {{- include "security-exporter.selectorLabels" . | nindent 6 }}
+      {{- include "kubeaid-security-exporter.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "security-exporter.selectorLabels" . | nindent 8 }}
+        {{- include "kubeaid-security-exporter.selectorLabels" . | nindent 8 }}
         {{- with .Values.deployment.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -26,13 +26,13 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "security-exporter.fullname" . }}
+      serviceAccountName: {{ include "kubeaid-security-exporter.fullname" . }}
       {{- with .Values.deployment.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: {{ include "security-exporter.name" . }}
+        - name: {{ include "kubeaid-security-exporter.name" . }}
           image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           env:
