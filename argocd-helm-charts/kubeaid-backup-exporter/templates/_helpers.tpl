@@ -11,7 +11,11 @@
   and it must stay pinned.
 */}}
 {{- define "backup-exporter.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if ne $name "backup-exporter" -}}
+{{- fail "kubeaid-backup-exporter: nameOverride must stay \"backup-exporter\" — kubeaid-agent and kubeaid-cli find this exporter by app.kubernetes.io/name, and a different value makes them report it as not installed. The pin goes once every cluster runs versions that select on app.kubernetes.io/component." -}}
+{{- end -}}
+{{- $name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "backup-exporter.fullname" -}}
