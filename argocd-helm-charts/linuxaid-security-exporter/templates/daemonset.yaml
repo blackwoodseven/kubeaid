@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "linuxaid-security-exporter.fullname" . }}
+  labels:
+    {{- include "linuxaid-security-exporter.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "linuxaid-security-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "linuxaid-security-exporter.labels" . | nindent 8 }}
+      annotations:
+        # Restart the pods when the rendered config changes; the exporter reads
+        # it once at startup.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      # The exporter talks to the Vuls server and reads two files. It needs
+      # nothing from the Kubernetes API, so it holds no token and no RBAC.
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: security-exporter
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            # Nodes share the cluster's certificate, so the scan carries the
+            # node name to tell the reports apart.
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.metricsPort }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/obmondo/security-exporter
+              readOnly: true
+            - name: obmondo-clientcert
+              mountPath: /obmondo-clientcert
+              readOnly: true
+            {{- range .Values.hostMounts }}
+            - name: {{ include "linuxaid-security-exporter.hostVolumeName" .path }}
+              mountPath: {{ include "linuxaid-security-exporter.hostMountPath" .path }}
+              readOnly: true
+              # see filesystems the node mounts after this pod started
+              mountPropagation: HostToContainer
+            {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "linuxaid-security-exporter.fullname" . }}
+        - name: obmondo-clientcert
+          secret:
+            secretName: {{ .Values.obmondoClientCert.secretName }}
+        {{- range .Values.hostMounts }}
+        - name: {{ include "linuxaid-security-exporter.hostVolumeName" .path }}
+          hostPath:
+            path: {{ .path }}
+        {{- end }}

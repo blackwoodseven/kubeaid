@@ -1,0 +1,22 @@
+linuxaid-security-exporter — DaemonSet in namespace {{ .Release.Namespace }}.
+
+  image:       {{ .Values.image.repository }}:{{ .Values.image.tag }}
+  vuls server: {{ .Values.vulsServer.url }}
+  cert:        secret/{{ .Values.obmondoClientCert.secretName }} (tls.crt / tls.key)
+  scans:       every {{ .Values.scanInterval }}, first one within {{ .Values.randomDelay }} of startup
+  node mounts: {{ range .Values.hostMounts }}{{ .path }} {{ end }}(read-only)
+  metrics:     :{{ .Values.metricsPort }}{{ if .Values.serviceMonitor.enabled }}, scraped every {{ .Values.serviceMonitor.interval }}{{ else }} (no ServiceMonitor){{ end }}
+
+Each pod reads its node's package database, sends the list to the Vuls server over
+mTLS, and serves the CVEs it gets back. Reports are named after the certificate's
+common name plus the node name, which the pod takes from the downward API.
+
+Watch a node's first scan:
+  kubectl -n {{ .Release.Namespace }} logs -l app.kubernetes.io/name={{ include "linuxaid-security-exporter.name" . }} --tail=20
+
+A pod scans once at startup, within its random delay, so a rollout restart of the
+DaemonSet brings every node forward to a fresh scan.
+
+Available updates are not reported for a node: apt, dnf and zypper need the host's
+repository metadata, which this pod does not mount. CVE matching uses installed
+versions and is unaffected.
