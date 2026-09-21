@@ -312,6 +312,7 @@ spec:
               name: socket-dir
             - mountPath: /etc/kubernetes/
               name: azure-cred
+              readOnly: true
             {{- if or (eq .Values.cloud "AzureStackCloud") (eq .Values.linux.distro "fedora") }}
             - name: ssl
               mountPath: /etc/ssl/certs
@@ -321,6 +322,9 @@ spec:
             - name: ssl-pki
               mountPath: /etc/pki/ca-trust/extracted
               readOnly: true
+            {{- end }}
+            {{- with .Values.controller.extraVolumeMounts }}
+{{ toYaml . | indent 12 }}
             {{- end }}
           resources: {{- toYaml .Values.controller.resources.azuredisk | nindent 12 }}
           securityContext:
@@ -343,4 +347,7 @@ spec:
         - name: ssl-pki
           hostPath:
             path: /etc/pki/ca-trust/extracted
+        {{- end }}
+        {{- with .Values.controller.extraVolumes }}
+{{ toYaml . | indent 8 }}
         {{- end }}
