@@ -6,6 +6,9 @@ metadata:
   annotations:
     api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/814"
     controller-gen.kubebuilder.io/version: v0.15.0
+{{- if .KeepCRDs }}
+    helm.sh/resource-policy: keep
+{{- end }}
   name: volumesnapshotclasses.snapshot.storage.k8s.io
 spec:
   group: snapshot.storage.k8s.io
@@ -148,6 +151,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
     api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/814"
+{{- if .KeepCRDs }}
+    helm.sh/resource-policy: keep
+{{- end }}
   name: volumesnapshots.snapshot.storage.k8s.io
 spec:
   group: snapshot.storage.k8s.io
@@ -488,6 +494,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
     api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/955"
+{{- if .KeepCRDs }}
+    helm.sh/resource-policy: keep
+{{- end }}
   name: volumesnapshotcontents.snapshot.storage.k8s.io
 spec:
   group: snapshot.storage.k8s.io
@@ -937,6 +946,9 @@ metadata:
   annotations:
     api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/1337"
     controller-gen.kubebuilder.io/version: v0.15.0
+{{- if .KeepCRDs }}
+    helm.sh/resource-policy: keep
+{{- end }}
   name: volumegroupsnapshotclasses.groupsnapshot.storage.k8s.io
 spec:
   group: groupsnapshot.storage.k8s.io
@@ -1193,6 +1205,9 @@ metadata:
     api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/1337"
     controller-gen.kubebuilder.io/version: v0.15.0
     {{ if .InsertCaFrom }}cert-manager.io/inject-ca-from: '{{ .InsertCaFrom }}'{{ end }}
+{{- if .KeepCRDs }}
+    helm.sh/resource-policy: keep
+{{- end }}
   name: volumegroupsnapshotcontents.groupsnapshot.storage.k8s.io
 spec:
   group: groupsnapshot.storage.k8s.io
@@ -2143,6 +2158,9 @@ metadata:
   annotations:
     api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/1337"
     controller-gen.kubebuilder.io/version: v0.15.0
+{{- if .KeepCRDs }}
+    helm.sh/resource-policy: keep
+{{- end }}
   name: volumegroupsnapshots.groupsnapshot.storage.k8s.io
 spec:
   group: groupsnapshot.storage.k8s.io
