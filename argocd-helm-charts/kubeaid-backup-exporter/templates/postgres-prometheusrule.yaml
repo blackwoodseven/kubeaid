@@ -1,4 +1,11 @@
 {{- if and .Values.prometheusRule.enabled (hasKey .Values.prometheusRule "postgres") ( .Values.prometheusRule.postgres.enabled ) }}
+{{- /*
+  An exporter error holds until the next collection pass, so one failed read
+  looks like a whole pass of failure. JobFailed waits out a pass plus 30m to
+  page only on consecutive failures; max_over_time keeps a missed scrape or an
+  exporter restart from resetting that wait.
+*/}}
+{{- $passSeconds := include "backup-exporter.passSeconds" (list .Values.exporter.postgres.max_rpo .Values.exporter.postgres.interval_rate) | trim | int }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -14,8 +21,8 @@ spec:
     - name: {{ include "backup-exporter.name" . }}-postgres
       rules:
         - alert: PostgresBackupExporterJobFailed
-          expr: max by (namespace, cluster_name, backup, type) (backup_exporter_postgres_error{type!~"backup_not_enabled|cronjob_not_found|no_scheduled_backups"} == 1) > 0
-          for: {{ .Values.prometheusRule.postgres.alertForDuration | default "5m" }}
+          expr: max by (namespace, cluster_name, backup, type) (max_over_time(backup_exporter_postgres_error{type!~"backup_not_enabled|cronjob_not_found|no_scheduled_backups"}[10m]) == 1) > 0
+          for: {{ add $passSeconds 1800 }}s
           labels:
             severity: {{ .Values.prometheusRule.postgres.severity | default "critical" }}
           annotations:
@@ -38,7 +45,7 @@ spec:
             summary: 'PostgreSQL CNPG WAL backup exceeded RPO'
             description: 'WAL backup for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }} exceeded RPO (age: {{ `{{ $value | humanizeDuration }}` }})'
         - alert: PostgresLogicalBackupMissing
-          expr: postgres_latest_logical_backup_age == 0 unless on (namespace, cluster_name) (backup_exporter_postgres_error{backup="logical", type=~"backup_not_enabled|cronjob_not_found"} == 1)
+          expr: postgres_latest_logical_backup_age == 0 unless on (namespace, cluster_name) (backup_exporter_postgres_error{backup="logical", type=~"backup_not_enabled|cronjob_not_found|backup_status_failed"} == 1)
           for: {{ .Values.prometheusRule.postgres.alertForDuration | default "5m" }}
           labels:
             severity: {{ .Values.prometheusRule.postgres.severity | default "critical" }}
@@ -46,7 +53,7 @@ spec:
             summary: 'PostgreSQL logical backup missing'
             description: 'No logical backup found for {{ `{{ $labels.namespace }}` }}/{{ `{{ $labels.cluster_name }}` }}'
         - alert: PostgresWALBackupMissing
-          expr: postgres_latest_cnpg_wal_backup_age == 0 unless on (namespace, cluster_name) (backup_exporter_postgres_error{backup="wal", type=~"backup_not_enabled|cronjob_not_found|no_scheduled_backups"} == 1)
+          expr: postgres_latest_cnpg_wal_backup_age == 0 unless on (namespace, cluster_name) (backup_exporter_postgres_error{backup="wal", type=~"backup_not_enabled|cronjob_not_found|no_scheduled_backups|s3_connection_failed"} == 1)
           for: {{ .Values.prometheusRule.postgres.alertForDuration | default "5m" }}
           labels:
             severity: {{ .Values.prometheusRule.postgres.severity | default "critical" }}

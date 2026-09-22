@@ -7,10 +7,10 @@ tests:
   - interval: 1m
     input_series:
       - series: 'backup_exporter_postgres_error{backup="logical",namespace="test",cluster_name="pg1",type="process"}'
-        values: '1x6'
+        values: '1x240'
     alert_rule_test:
       - alertname: PostgresBackupExporterJobFailed
-        eval_time: 6m
+        eval_time: 2h40m
         exp_alerts:
           - exp_labels:
               alertname: PostgresBackupExporterJobFailed
@@ -96,24 +96,25 @@ tests:
   - interval: 1m
     input_series:
       - series: 'backup_exporter_postgres_error{backup="logical",namespace="disabled-ns",cluster_name="pg-disabled",type="backup_not_enabled"}'
-        values: '1x6'
+        values: '1x240'
       - series: 'backup_exporter_postgres_error{backup="logical",namespace="disabled-ns2",cluster_name="pg-disabled2",type="cronjob_not_found"}'
-        values: '1x6'
+        values: '1x240'
       - series: 'backup_exporter_postgres_error{backup="wal",namespace="disabled-ns3",cluster_name="pg-disabled3",type="no_scheduled_backups"}'
-        values: '1x6'
+        values: '1x240'
     alert_rule_test:
       - alertname: PostgresBackupExporterJobFailed
-        eval_time: 6m
+        eval_time: 2h40m
         exp_alerts: []
 
-  # A genuine failure type must still fire PostgresBackupExporterJobFailed.
+  # A genuine failure that persists across consecutive passes must still fire
+  # PostgresBackupExporterJobFailed.
   - interval: 1m
     input_series:
       - series: 'backup_exporter_postgres_error{backup="logical",namespace="test",cluster_name="pg1",type="s3_connection_failed"}'
-        values: '1x6'
+        values: '1x240'
     alert_rule_test:
       - alertname: PostgresBackupExporterJobFailed
-        eval_time: 6m
+        eval_time: 2h40m
         exp_alerts:
           - exp_labels:
               alertname: PostgresBackupExporterJobFailed
@@ -125,6 +126,43 @@ tests:
             exp_annotations:
               summary: 'Postgres backup exporter error'
               description: 'Postgres backup exporter error for test/pg1 (backup: logical, error: s3_connection_failed)'
+
+  # One failed pass holds the error until the next pass (2h at the chart
+  # default) and must not page, even at its longest.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_postgres_error{backup="logical",namespace="test",cluster_name="pg1",type="backup_status_failed"}'
+        values: '1x120 stale'
+    alert_rule_test:
+      - alertname: PostgresBackupExporterJobFailed
+        eval_time: 1h
+        exp_alerts: []
+      - alertname: PostgresBackupExporterJobFailed
+        eval_time: 2h9m
+        exp_alerts: []
+      - alertname: PostgresBackupExporterJobFailed
+        eval_time: 2h40m
+        exp_alerts: []
+
+  # A missed scrape mid-failure must not restart the wait.
+  - interval: 1m
+    input_series:
+      - series: 'backup_exporter_postgres_error{backup="logical",namespace="test",cluster_name="pg1",type="backup_status_failed"}'
+        values: '1x100 stale 1x140'
+    alert_rule_test:
+      - alertname: PostgresBackupExporterJobFailed
+        eval_time: 2h40m
+        exp_alerts:
+          - exp_labels:
+              alertname: PostgresBackupExporterJobFailed
+              severity: critical
+              backup: logical
+              namespace: test
+              cluster_name: pg1
+              type: backup_status_failed
+            exp_annotations:
+              summary: 'Postgres backup exporter error'
+              description: 'Postgres backup exporter error for test/pg1 (backup: logical, error: backup_status_failed)'
 
   # A cluster with the zero-age "missing" sentinel AND a recorded
   # backup_not_enabled/cronjob_not_found error must not fire
@@ -151,6 +189,52 @@ tests:
       - alertname: PostgresWALBackupMissing
         eval_time: 6m
         exp_alerts: []
+
+  # A failed S3 read leaves the zero-age sentinel too, but not being able to
+  # look is not a missing backup: JobFailed reports it if it repeats.
+  - interval: 1m
+    input_series:
+      - series: 'postgres_latest_logical_backup_age{namespace="test",cluster_name="pg1"}'
+        values: '0x6'
+      - series: 'backup_exporter_postgres_error{backup="logical",namespace="test",cluster_name="pg1",type="backup_status_failed"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: PostgresLogicalBackupMissing
+        eval_time: 6m
+        exp_alerts: []
+
+  # Same, for WAL, whose S3 read failures are s3_connection_failed.
+  - interval: 1m
+    input_series:
+      - series: 'postgres_latest_cnpg_wal_backup_age{namespace="test",cluster_name="pg1"}'
+        values: '0x6'
+      - series: 'backup_exporter_postgres_error{backup="wal",namespace="test",cluster_name="pg1",type="s3_connection_failed"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: PostgresWALBackupMissing
+        eval_time: 6m
+        exp_alerts: []
+
+  # WAL's backup_status_failed is not a read failure -- the bucket was read and
+  # held no valid base backup -- so it is still a missing backup.
+  - interval: 1m
+    input_series:
+      - series: 'postgres_latest_cnpg_wal_backup_age{namespace="test",cluster_name="pg1"}'
+        values: '0x6'
+      - series: 'backup_exporter_postgres_error{backup="wal",namespace="test",cluster_name="pg1",type="backup_status_failed"}'
+        values: '1x6'
+    alert_rule_test:
+      - alertname: PostgresWALBackupMissing
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels:
+              alertname: PostgresWALBackupMissing
+              cluster_name: pg1
+              namespace: test
+              severity: critical
+            exp_annotations:
+              summary: 'PostgreSQL WAL backup missing'
+              description: 'No WAL backup found for test/pg1'
 
   # A PVC outside every schedule's included namespaces (exporter-classified,
   # backup_exporter_velero_error type=backup_not_enabled) must not fire
