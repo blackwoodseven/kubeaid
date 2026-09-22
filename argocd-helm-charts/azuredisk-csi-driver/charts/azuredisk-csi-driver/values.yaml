@@ -2,7 +2,7 @@ image:
   baseRepo: mcr.microsoft.com
   azuredisk:
     repository: /oss/v2/kubernetes-csi/azuredisk-csi
-    tag: v1.34.5
+    tag: v1.35.0
     pullPolicy: IfNotPresent
   csiProvisioner:
     repository: /oss/v2/kubernetes-csi/csi-provisioner
@@ -14,7 +14,7 @@ image:
     pullPolicy: IfNotPresent
   csiResizer:
     repository: /oss/v2/kubernetes-csi/csi-resizer
-    tag: v2.2.0
+    tag: v2.2.1
     pullPolicy: IfNotPresent
   livenessProbe:
     repository: /oss/v2/kubernetes-csi/livenessprobe
@@ -99,6 +99,8 @@ controller:
   annotations: {}
   podLabels: {}
   podAnnotations: {}
+  extraVolumeMounts: []
+  extraVolumes: []
   nodeSelector: {}
   affinity: {}
   resources:
@@ -146,6 +148,7 @@ node:
   reservedDataDiskSlotNum: 0
   supportZone: true
   allowEmptyCloudConfig: true
+  enableKataMount: false
   getNodeIDFromIMDS: false
   removeNotReadyTaint: true
   maxUnavailable: 1
@@ -231,6 +234,8 @@ linux:
   annotations: {}
   podLabels: {}
   podAnnotations: {}
+  extraVolumeMounts: []
+  extraVolumes: []
   nodeSelector: {}
   affinity: {}
   nodeAffinity:
