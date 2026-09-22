@@ -2,6 +2,38 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 33.0.0
+
+### Major Version Upgrades
+
+- d8547c089 Updated rustfs from version 0.12.0 to 1.0.0
+
+### Minor Version Upgrades
+
+- d8547c089 Updated azuredisk-csi-driver from version 1.34.5 to 1.35.0
+- d8547c089 Updated gitlab-runner from version 0.92.1 to 0.93.0
+- d8547c089 Updated mariadb-operator from version 26.6.0 to 26.10.0
+- d8547c089 Updated opentelemetry-operator from version 0.122.0 to 0.123.0
+- d8547c089 Updated snapshot-controller from version 5.2.0 to 5.3.0
+- d8547c089 Updated traefik from version 41.5.0 to 41.6.0
+- d8547c089 Updated velero from version 12.1.0 to 12.2.0
+
+### Patch Version Upgrades
+
+- d8547c089 Updated argo-cd from version 10.9.1 to 10.9.2
+- d8547c089 Updated cilium from version 1.20.1 to 1.20.2
+- d8547c089 Updated crossplane from version 2.4.0 to 2.4.1
+- d8547c089 Updated erpnext from version 8.0.79 to 8.0.80
+- d8547c089 Updated graylog from version 3.0.32 to 3.0.33
+- d8547c089 Updated haproxy from version 1.30.1 to 1.30.2
+- d8547c089 Updated teleport-cluster from version 18.11.0 to 18.11.1
+- d8547c089 Updated teleport-kube-agent from version 18.11.0 to 18.11.1
+- d8547c089 Updated yetibot from version 1.0.230 to 1.0.235
+
+### Bug Fixes
+
+- a5cde7126 fix(kubeaid-backup-exporter): page only after two failed passes
+
 ## KubeAid Release Version 32.9.1
 
 ### Features
