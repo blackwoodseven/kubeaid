@@ -10,6 +10,10 @@ erpnext:
       storageClass: "ceph-filesystem"
   mariadb:
     enabled: false
+  # ERPNext runs on MariaDB here. Postgres is an alternative backend we never
+  # enable, so its subchart is pruned — see .helm-prune.
+  postgresql:
+    enabled: false
   redis-cache:
     enabled: false
     host: "redis://erpnext-redis-cache:6379"

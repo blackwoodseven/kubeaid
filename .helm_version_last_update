@@ -20,7 +20,6 @@
 2026-09-21 2.4.0 cerebro
 2026-09-21 v1.21.2 cert-manager
 2026-09-21 1.20.2 cilium
-2026-09-21 0.1.0 circleci-runner
 2026-09-21 0.29.0 cloudnative-pg
 2026-09-21 0.8.0 plugin-barman-cloud
 2026-09-21 0.29.0 cluster-api-operator
@@ -64,12 +63,10 @@
 2026-09-21 0.15.2 metal3
 2026-09-21 6.4.22 metallb
 2026-09-21 3.14.0 metrics-server
-2026-09-21 5.4.0 minio
 2026-09-21 1.12.0 mongodb-kubernetes
 2026-09-21 1.9.0 netbird
 2026-09-21 0.8.0 netbird-operator
 2026-09-21 0.5.19 ntfy
-2026-09-21 1.16.5 oncall
 2026-09-21 8.48.481 appsuite
 2026-09-21 2.5.31 opencost
 2026-09-21 1.0.1 openobserve
@@ -110,5 +107,4 @@
 2026-09-21 12.2.0 velero
 2026-09-21 v0.11.0 version-checker
 2026-09-21 6.0.0 whoami
-2026-09-21 1.0.235 yetibot
 2026-09-21 2.11.1 zfs-localpv

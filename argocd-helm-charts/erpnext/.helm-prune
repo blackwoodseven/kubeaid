@@ -1,0 +1,10 @@
+# Paths deleted from the vendored subcharts after `helm dependency update`.
+# One path per line, relative to this chart directory. Comments with #.
+#
+# The upstream chart offers postgresql as an alternative backend, bundled as a
+# conditional dependency. We run ERPNext on MariaDB (see the mariadb block in
+# values.yaml, served by mariadb-operator), so postgresql.enabled stays false
+# and the bundled copy renders nothing. The published tarball carries it
+# regardless, which is why this file exists: without it the subchart comes back
+# on the next version bump.
+charts/erpnext/charts/postgresql

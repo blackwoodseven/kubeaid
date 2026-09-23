@@ -69,6 +69,12 @@ odoo:
     - name: PASSWORD_FILE
       value: /opt/bitnami/odoo/secrets/password
 
+  # The database is the CloudNativePG cluster declared in global.postgresql,
+  # reached through externalDatabase below; the bundled subchart is pruned —
+  # see .helm-prune.
+  postgresql:
+    enabled: false
+
   externalDatabase:
     host: odoo-pgsql-rw
     port: 5432

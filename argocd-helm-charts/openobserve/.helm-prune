@@ -1,0 +1,10 @@
+# Paths deleted from the vendored subcharts after `helm dependency update`.
+# One path per line, relative to this chart directory. Comments with #.
+#
+# The upstream chart declares minio as a conditional dependency so that a plain
+# install gets object storage without an S3 account. It is gated on
+# minio.enabled, which defaults to false, and we point OpenObserve at our own
+# S3 endpoint instead, so it renders nothing. The published tarball carries it
+# regardless, which is why this file exists: without it the subchart comes back
+# on the next version bump.
+charts/openobserve/charts/minio
