@@ -1,0 +1,12 @@
+# Paths deleted from the vendored subcharts after `helm dependency update`.
+# One path per line, relative to this chart directory. Comments with #.
+#
+# The coturn chart declares CloudNativePG and Percona XtraDB as conditional
+# dependencies, so that anyone enabling coturn's own user database gets one
+# without bringing an operator. Both are gated off here - coturn uses its
+# built-in sqlite userdb, and databases belong to the db operators, not to an
+# application chart - so the bundled copies render nothing. The published
+# tarball carries them regardless, which is why this file exists: without it
+# they come back on the next version bump.
+charts/coturn/charts/cluster
+charts/coturn/charts/pxc-db
