@@ -13,5 +13,5 @@ dependencies:
     version: 10.2.0
     repository: oci://ghcr.io/obmondo/charts
   - name: kubeaid-addons
-    version: 0.1.0
+    version: 1.1.0
     repository: file://../kubeaid-addons
