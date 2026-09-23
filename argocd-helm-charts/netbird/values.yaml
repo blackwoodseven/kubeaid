@@ -319,16 +319,13 @@ coturn:
       denied-peer-ip=::1
       denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
       denied-peer-ip=fe80::-febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+  # coturn keeps its own user database in the built-in sqlite userdb. Databases
+  # belong to the db operators, not to an application chart, so both bundled
+  # database subcharts stay off and are pruned from the vendored copy — see
+  # .helm-prune. NetBird's own database is a separate CNPG cluster.
   externalDatabase:
     enabled: false
-  # coturn 10.x defaults this to true, which deploys a CloudNativePG Cluster for
-  # coturn's own user database and requires the CNPG operator. coturn only needs
-  # the sqlite userdb here — NetBird's database is a separate CNPG cluster.
   cnpg:
     enabled: false
-  # Workaround, not configuration: 10.1.0 migrated deployment.yaml off the
-  # removed .Values.postgresql but left daemonset.yaml still referencing it, so
-  # the DaemonSet renders only when the key exists. Remove once upstream fixes
-  # the template.
-  postgresql:
+  mysql:
     enabled: false
