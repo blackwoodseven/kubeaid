@@ -1,0 +1,10 @@
+# Paths deleted from the vendored subcharts after `helm dependency update`.
+# One path per line, relative to this chart directory. Comments with #.
+#
+# The upstream chart declares Bitnami postgresql as a conditional dependency so
+# that a plain install gets a database without an operator. We run the database
+# as a CloudNativePG cluster instead (global.postgresql, served by
+# kubeaid-addons), so postgresql.enabled is false and the bundled copy renders
+# nothing. The published tarball carries it regardless, which is why this file
+# exists: without it the subchart comes back on the next version bump.
+charts/odoo/charts/postgresql
