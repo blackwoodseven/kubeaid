@@ -273,10 +273,59 @@ netbird:
 coturn:
   image:
     tag: 4.14.0
+  # STUN/TURN needs a fixed port (3478) plus a dynamically chosen UDP relay port,
+  # and no Service type can express a port range — so coturn runs on the host
+  # network and the Services below exist only for in-cluster discovery. As a
+  # DaemonSet every node answers on its own public IP, so the stun/turn DNS
+  # records can point at any of them.
+  deployment:
+    type: DaemonSet
+    hostNetwork: true
+    dnsPolicy: ClusterFirstWithHostNet
+    # A DaemonSet with no toleration schedules nowhere on tainted nodes: if the
+    # stun/turn records point at control planes, add the toleration here.
+    tolerations: []
+    nodeSelector: {}
+  service:
+    type: ClusterIP
+    # The API server rejects this on a ClusterIP Service; the chart renders the
+    # field only when it is non-empty.
+    externalTrafficPolicy: ""
   coturn:
     realm: "turn.vpn.example.com"
-  service:
-    type: NodePort
-    externalTrafficPolicy: Cluster
+    ports:
+      # Above the kernel's ephemeral range (32768-60999) so relay allocations
+      # don't race the host's own outbound sockets. 2000 ports is 2000 concurrent
+      # relays, and 2000 UDP ports to open on the firewall rather than 16384.
+      min: 61000
+      max: 63000
+    # Every peer is handed the same static TURN credentials, so the relay has to
+    # be treated as reachable by anyone on the mesh. no-tcp-relay drops RFC 6062,
+    # which is the route to the node's own TCP services (apiserver, kubelet,
+    # etcd); the deny list closes the UDP side. Add the node public IPs per
+    # cluster — the chart cannot know them.
+    extraTurnserverConfiguration: |
+      verbose
+      no-multicast-peers
+      no-tcp-relay
+      denied-peer-ip=0.0.0.0-0.255.255.255
+      denied-peer-ip=10.0.0.0-10.255.255.255
+      denied-peer-ip=100.64.0.0-100.127.255.255
+      denied-peer-ip=127.0.0.0-127.255.255.255
+      denied-peer-ip=169.254.0.0-169.254.255.255
+      denied-peer-ip=172.16.0.0-172.31.255.255
+      denied-peer-ip=192.168.0.0-192.168.255.255
+      denied-peer-ip=240.0.0.0-255.255.255.255
+      denied-peer-ip=::1
+      denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+      denied-peer-ip=fe80::-febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+  # coturn keeps its own user database in the built-in sqlite userdb. Databases
+  # belong to the db operators, not to an application chart, so both bundled
+  # database subcharts stay off and are pruned from the vendored copy — see
+  # .helm-prune. NetBird's own database is a separate CNPG cluster.
   externalDatabase:
+    enabled: false
+  cnpg:
+    enabled: false
+  mysql:
     enabled: false

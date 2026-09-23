@@ -1,22 +1,24 @@
 apiVersion: v2
-name: coturn
-type: application
-description: A Helm chart to deploy coturn
-home: "https://codeberg.org/small-hack/coturn-chart"
-version: 9.7.1
-# renovate: image=coturn/coturn
-appVersion: 4.13.1
-sources:
-  - "https://codeberg.org/small-hack/coturn-chart"
-maintainers:
-  - name: "jessebot"
-    url: "https://codeberg.org/jessebot/"
+appVersion: 4.18.0
 dependencies:
-  - name: postgresql
-    version: 16.7.27
-    repository: oci://registry-1.docker.io/bitnamicharts
-    condition: postgresql.enabled
-  - name: mysql
-    version: 13.0.4
-    repository: oci://registry-1.docker.io/bitnamicharts
-    condition: mysql.enabled
+- alias: cnpg
+  condition: cnpg.enabled
+  name: cluster
+  repository: https://cloudnative-pg.github.io/charts
+  version: 0.8.1
+- alias: mysql
+  condition: mysql.enabled
+  name: pxc-db
+  repository: https://percona.github.io/percona-helm-charts
+  version: 1.20.0
+description: A Helm chart to deploy coturn
+home: https://codeberg.org/open-engineering/coturn-chart
+maintainers:
+- name: jessebot
+  url: https://codeberg.org/jessebot/
+name: coturn
+sources:
+- https://codeberg.org/open-engineering/coturn-chart
+- https://github.com/Obmondo/coturn-chart
+type: application
+version: 10.2.0

@@ -1,4 +1,4 @@
-{{- if eq ((.Values.deployment).type | default "Deployment") "DaemonSet" }}
+{{- if (eq ((.Values.deployment).type | default "Deployment") "DaemonSet") }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -18,6 +18,18 @@ spec:
     spec:
       hostNetwork: {{ (.Values.deployment).hostNetwork | default false }}
       dnsPolicy: {{ (.Values.deployment).dnsPolicy | default "ClusterFirst" }}
+      {{- with (.Values.deployment).nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (.Values.deployment).tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (.Values.deployment).affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -33,9 +45,9 @@ spec:
       {{- end }}
       {{- end }}
       initContainers:
-        {{- if or .Values.postgresql.enabled (and .Values.externalDatabase.enabled (eq .Values.externalDatabase.type "postgresql")) }}
+        {{- if or .Values.cnpg.enabled (and .Values.externalDatabase.enabled (eq .Values.externalDatabase.type "postgresql")) }}
         - name: postgresql-isready
-          image: {{ include "db.isReady.image.repository" . }}:{{ include "db.isReady.image.tag" . }}
+          image: {{ .Values.dbReadiness.image.repository }}:{{ .Values.dbReadiness.image.tag }}
           env:
             - name: POSTGRES_USER
               valueFrom:
@@ -44,17 +56,9 @@ spec:
                   {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.username }}
                   key: {{ .Values.externalDatabase.secretKeys.username }}
                   {{ else }}
-                  key: {{ .Values.postgresql.global.postgresql.auth.secretKeys.username }}
+                  key: username
                   {{- end }}
-            - name: DATABASE_HOSTNAME
-            {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.hostname }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "database.secretName" . }}
-                  key: {{ .Values.externalDatabase.secretKeys.hostname }}
-            {{ else }}
-              value: {{ template "postgresql.v1.primary.fullname" .Subcharts.postgresql }}
-            {{- end }}
+            {{- include "db.envVars" . | nindent 12 }}
           command:
             - "sh"
             - "-c"
@@ -70,7 +74,7 @@ spec:
           {{- end }}
         {{- else if or .Values.mysql.enabled (and .Values.externalDatabase.enabled (eq .Values.externalDatabase.type "mysql")) }}
         - name: mysql-isready
-          image: {{ include "db.isReady.image.repository" . }}:{{ include "db.isReady.image.tag" . }}
+          image: {{ .Values.dbReadiness.image.repository }}:{{ .Values.dbReadiness.image.tag }}
           env:
             - name: MYSQL_USER
               valueFrom:
@@ -79,7 +83,7 @@ spec:
                   {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.username }}
                   key: {{ .Values.externalDatabase.secretKeys.username }}
                   {{ else }}
-                  key: {{ .Values.mysql.auth.secretKeys.username }}
+                  key: username
                   {{ end }}
             - name: MYSQL_PASSWORD
               valueFrom:
@@ -88,17 +92,9 @@ spec:
                   {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.password }}
                   key: {{ .Values.externalDatabase.secretKeys.password }}
                   {{ else }}
-                  key: {{ .Values.mysql.auth.secretKeys.password }}
+                  key: password
                   {{ end }}
-            - name: DATABASE_HOSTNAME
-            {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.hostname }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "database.secretName" . }}
-                  key: {{ .Values.externalDatabase.secretKeys.hostname }}
-            {{ else }}
-              value: {{ template "mysql.primary.fullname" .Subcharts.mysql }}
-            {{- end }}
+            {{- include "db.envVars" . | nindent 12 }}
           command:
             - "sh"
             - "-c"
@@ -138,52 +134,7 @@ spec:
                   name: {{ include "coturn.auth.secretName" . }}
                   key: {{ .Values.coturn.auth.secretKeys.staticAuthSecret | default "staticAuthSecret" }}
             {{- end }}
-            {{- if or .Values.externalDatabase.enabled .Values.postgresql.enabled .Values.mysql.enabled }}
-            - name: DATABASE_HOSTNAME
-            {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.hostname }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "database.secretName" . }}
-                  key: {{ .Values.externalDatabase.secretKeys.hostname }}
-            {{ else if .Values.postgresql.enabled }}
-              value: {{ template "postgresql.v1.primary.fullname" .Subcharts.postgresql }}
-            {{ else if .Values.mysql.enabled }}
-              value: {{ template "mysql.primary.fullname" .Subcharts.mysql }}
-            {{- end }}
-            - name: DATABASE_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "database.secretName" . }}
-                  {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.username }}
-                  key: {{ .Values.externalDatabase.secretKeys.username }}
-                  {{ else if .Values.postgresql.enabled }}
-                  key: {{ .Values.postgresql.global.postgresql.auth.secretKeys.username }}
-                  {{ else if .Values.mysql.enabled }}
-                  key: username
-                  {{- end }}
-            - name: DATABASE_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "database.secretName" . }}
-                  {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.password }}
-                  key: {{ .Values.externalDatabase.secretKeys.password }}
-                  {{ else if .Values.postgresql.enabled }}
-                  key: {{ .Values.postgresql.global.postgresql.auth.secretKeys.userPasswordKey }}
-                  {{ else if .Values.mysql.enabled }}
-                  key: password
-                  {{- end }}
-            - name: DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "database.secretName" . }}
-                  {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.database }}
-                  key: {{ .Values.externalDatabase.secretKeys.database }}
-                  {{ else if .Values.postgresql.enabled }}
-                  key: {{ .Values.postgresql.global.postgresql.auth.secretKeys.database }}
-                  {{ else if .Values.mysql.enabled }}
-                  key: database
-                  {{- end }}
-            {{- end }}
+            {{- include "db.envVars" . | nindent 12 }}
           command:
             - /bin/sh
             - -ec
@@ -191,7 +142,7 @@ spec:
               cp /initial/turnserver.conf /data/turnserver.yaml && \
               export USER_STR="$USER:$PASSWORD" && \
               yq eval -i '.user = env(USER_STR)' /data/turnserver.yaml && \
-              {{- if or (and .Values.externalDatabase.enabled (eq .Values.externalDatabase.type "postgresql")) .Values.postgresql.enabled }}
+              {{- if or (and .Values.externalDatabase.enabled (eq .Values.externalDatabase.type "postgresql")) .Values.cnpg.enabled }}
               export CONNECTION_STRING="host=$DATABASE_HOSTNAME dbname=$DATABASE user=$DATABASE_USER password=$DATABASE_PASS connect_timeout=30" && \
               yq eval -i '.psql-userdb = env(CONNECTION_STRING)' /data/turnserver.yaml && \
               {{- else if or (and .Values.externalDatabase.enabled (eq .Values.externalDatabase.type "mysql")) .Values.mysql.enabled }}
@@ -257,7 +208,7 @@ spec:
             {{- end }}
             - name: var-tmp
               mountPath: /var/tmp
-            {{- if and (not .Values.externalDatabase.enabled) (not .Values.postgresql.enabled) (not .Values.mysql.enabled) }}
+            {{- if and (not .Values.externalDatabase.enabled) (not .Values.cnpg.enabled) (not .Values.mysql.enabled) }}
             - name: sqllite
               mountPath: /var/db
             {{- end }}
@@ -291,7 +242,7 @@ spec:
           emptyDir: {}
         - name: var-tmp
           emptyDir: {}
-        {{- if and (not .Values.externalDatabase.enabled) (not .Values.postgresql.enabled) (not .Values.mysql.enabled) }}
+        {{- if and (not .Values.externalDatabase.enabled) (not .Values.cnpg.enabled) (not .Values.mysql.enabled) }}
         - name: sqllite
           emptyDir: {}
         {{- end }}
