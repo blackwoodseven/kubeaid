@@ -1,13 +1,16 @@
 apiVersion: v2
 name: mastodon
 version: 1.0.0
-#dependencies:
-#  - name: mastodon
-#    version: 6.5.8
-# Manually copied from upstream https://github.com/mastodon/chart
-# Chart does not have a helm repository yet
-# Chart does not have a helm repository yet
+# charts/mastodon is a hand-vendored copy of upstream 6.5.8
+# (https://github.com/mastodon/chart), which has no Helm repository. It is
+# declared below with an empty repository, which is how Helm is told a subchart
+# already lives in charts/: `helm dependency update` then leaves it alone
+# instead of refetching. Leaving it undeclared makes `helm lint` fail on missing
+# dependency metadata.
 dependencies:
+  - name: mastodon
+    version: 6.5.8
+    repository: ""
   - name: kubeaid-addons
-    version: 0.1.0
+    version: 1.1.0
     repository: file://../kubeaid-addons

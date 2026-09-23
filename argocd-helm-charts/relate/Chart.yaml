@@ -1,7 +1,16 @@
 apiVersion: v2
 name: relate
 version: 0.9.0
+# charts/relate is a hand-vendored copy. It is declared below with an empty
+# repository, which is how Helm is told a subchart already lives in charts/:
+# `helm dependency update` then leaves it alone instead of refetching. Leaving
+# it undeclared makes `helm lint` fail on missing dependency metadata. The
+# version is quoted because the subchart declares "0.1", which YAML would
+# otherwise read as a float.
 dependencies:
+  - name: relate
+    version: "0.1"
+    repository: ""
   - name: kubeaid-addons
-    version: 0.1.0
+    version: 1.1.0
     repository: file://../kubeaid-addons

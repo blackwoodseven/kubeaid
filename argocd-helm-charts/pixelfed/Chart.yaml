@@ -14,7 +14,7 @@ description: A Helm chart for deploying Pixelfed - a federated social media app 
 # undeclared instead makes `helm lint` fail on missing dependency metadata.
 dependencies:
   - name: kubeaid-addons
-    version: 0.1.0
+    version: 1.1.0
     repository: file://../kubeaid-addons
   - name: pixelfed
     version: 0.23.0

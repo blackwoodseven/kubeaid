@@ -7,5 +7,5 @@ dependencies:
     repository: https://obmondo.github.io/calcom-helm
 
   - name: kubeaid-addons
-    version: 0.1.0
+    version: 1.1.0
     repository: file://../kubeaid-addons
