@@ -2,8 +2,8 @@ name: Helm Repo Update
 
 on:
   schedule:
-    # 06:00 UTC every Monday.
-    - cron: '0 6 * * 1'
+    # 03:00 UTC every Sunday.
+    - cron: '0 3 * * 0'
   workflow_dispatch: {}
 
 permissions:
@@ -24,7 +24,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7.0.1
         with:
-          # Don't set this to 1, the script script does 
+          # Don't set this to 1, the script does
           # git switch -c "$GIT_BRANCH_NAME" --track origin/master - this
           # requires origin/master to exist as a ref, so actions/checkout
           # must not be a shallow-default-branch-only checkout in a way
