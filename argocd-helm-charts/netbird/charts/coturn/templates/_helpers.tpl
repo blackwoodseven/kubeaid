@@ -33,8 +33,12 @@ Helper function to get the coturn secret containing db credentials
 {{- define "database.secretName" -}}
 {{- if .Values.externalDatabase.existingSecret -}}
 {{ .Values.externalDatabase.existingSecret }}
-{{- else if .Values.postgresql.global.postgresql.auth.existingSecret -}}
-{{ .Values.postgresql.global.postgresql.auth.existingSecret }}
+{{- else if and .Values.cnpg.enabled .Values.cnpg.cluster.initdb.secret.name -}}
+{{ .Values.cnpg.cluster.initdb.secret.name }}
+{{- else if .Values.mysql.enabled -}}
+{{- with (first .Values.mysql.users) -}}
+{{ .passwordSecretRef.name }}
+{{- end }}
 {{- else -}}
 {{ .Release.Name }}-db-secret
 {{- end -}}
@@ -51,26 +55,50 @@ Helper function to get the coturn secret containing admin coturn credentials
 {{- end }}
 {{- end }}
 
-{{- define "db.isReady.image.repository" -}}
-{{- if and .Values.externalDatabase.enabled (eq .Values.externalDatabase.type "postgresql") -}}
-{{ .Values.externalDatabase.image.repository | default "postgres" }}
-{{- else if and .Values.externalDatabase.enabled (eq .Values.externalDatabase.type "mysql") -}}
-{{ .Values.externalDatabase.image.repository | default "mysql" }}
-{{- else if .Values.postgresql.enabled -}}
-{{ .Values.postgresql.image.repository }}
-{{- else if .Values.mysql.enabled -}}
-{{ .Values.mysql.image.repository }}
-{{- end -}}
-{{- end -}}
+{{- define "db.envVars" -}}
+{{- if .Values.externalDatabase.enabled -}}
+- name: DATABASE_HOSTNAME
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "database.secretName" . }}
+      {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.hostname }}
+      key: {{ .Values.externalDatabase.secretKeys.hostname }}
+      {{- else }}
+      key: hostname
+      {{- end }}
 
-{{- define "db.isReady.image.tag" -}}
-{{- if and .Values.externalDatabase.enabled (eq .Values.externalDatabase.type "postgresql") -}}
-{{ .Values.externalDatabase.image.tag | default "15-alpine" }}
-{{- else if and .Values.externalDatabase.enabled (eq .Values.externalDatabase.type "mysql") -}}
-{{ .Values.externalDatabase.image.tag | default "8.0.35" }}
-{{- else if .Values.postgresql.enabled -}}
-{{ .Values.postgresql.image.tag }}
-{{- else if .Values.mysql.enabled -}}
-{{ .Values.mysql.image.tag }}
-{{- end -}}
-{{- end -}}
+- name: DATABASE_USER
+  {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.username }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "database.secretName" . }}
+      key: {{ .Values.externalDatabase.secretKeys.username }}
+  {{- else if .Values.cnpg.enabled }}
+  value: {{ .Values.cnpg.cluster.initdb.owner }}
+  {{- else if .Values.mysql.enabled }}
+  {{- with (first .Values.mysql.users) }}
+  value: {{ .name | b64enc | quote }}
+  {{- end }}
+  {{- end }}
+
+- name: DATABASE_PASS
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "database.secretName" . }}
+      {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.password }}
+      key: {{ .Values.externalDatabase.secretKeys.password }}
+      {{- else }}
+      key: password
+      {{- end }}
+
+- name: DATABASE
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "database.secretName" . }}
+      {{- if and .Values.externalDatabase.enabled .Values.externalDatabase.secretKeys.database }}
+      key: {{ .Values.externalDatabase.secretKeys.database }}
+      {{- else }}
+      key: database
+      {{- end }}
+{{- end }}
+{{- end }}

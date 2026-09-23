@@ -115,6 +115,36 @@ netbird:
               pathType: ImplementationSpecific
 ```
 
+### STUN/TURN (coturn) networking
+
+coturn is deployed as a DaemonSet on the host network, so every node serves
+UDP `3478` (STUN/TURN), UDP/TCP `5349` (TLS) and the relay range `61000-63000`
+on its own public IP. This is not a preference: a TURN allocation is a
+dynamically chosen UDP port, and no Service type can publish a port range.
+Fronting coturn with a NodePort Service instead leaves nothing listening on
+3478, and every peer falls back to the relay with `Connection type: Relayed`.
+
+What has to be true for it to work:
+
+- The `stun.`/`turn.` DNS records resolve to the public IPs of nodes that run a
+  coturn pod. The URIs themselves come from the `stunServer`/`turnServer` keys
+  of the `netbird` secret (`netbird.management.envFromSecret`) and are
+  substituted into `netbird.management.configmap`.
+- UDP `3478`, `5349` and `61000-63000` are open to those IPs in the provider
+  firewall, and in the cluster host firewall policy if one is enforced.
+- If those nodes are tainted — control planes usually are — set
+  `coturn.deployment.tolerations`. A DaemonSet with no matching toleration
+  schedules nowhere and STUN/TURN stops answering entirely.
+- If a node reaches the internet through a floating or NAT'd address, add
+  `external-ip=<public-ip>/<private-ip>` to
+  `coturn.coturn.extraTurnserverConfiguration`; coturn otherwise advertises the
+  address it is bound to.
+
+The chart ships a `denied-peer-ip` deny list and `no-tcp-relay`, because
+`TURNConfig.TimeBasedCredentials` is `false` and every enrolled peer therefore
+holds the same static TURN credentials. Add the cluster's own node public IPs
+to that list per cluster — the chart cannot know them.
+
 ## Setup Netbird Client
 
 Install netbird cli and connect to netbird vpn.

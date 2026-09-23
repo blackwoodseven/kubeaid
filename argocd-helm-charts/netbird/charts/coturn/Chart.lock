@@ -1,9 +1,9 @@
 dependencies:
-- name: postgresql
-  repository: oci://registry-1.docker.io/bitnamicharts
-  version: 16.7.27
-- name: mysql
-  repository: oci://registry-1.docker.io/bitnamicharts
-  version: 13.0.4
-digest: sha256:3588e087810573f93a9324a41118b60fe3dfb7934329e4f3097ea8f19dab5d0e
-generated: "2026-06-17T16:23:03.45435176+05:30"
+- name: cluster
+  repository: https://cloudnative-pg.github.io/charts
+  version: 0.8.1
+- name: pxc-db
+  repository: https://percona.github.io/percona-helm-charts
+  version: 1.20.0
+digest: sha256:542062235214581769f6331f86525736d19551e2fc85f2b82ebbd9c6c90daea4
+generated: "2026-09-23T05:02:59.777595855Z"
