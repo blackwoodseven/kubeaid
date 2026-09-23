@@ -377,12 +377,22 @@ coturn:
   extraTurnserverConfiguration: |
     verbose
 
+  # -- additional denied-peer-ip entries, one config line per item. Accepts a
+  #    single address or a coturn range. For addresses the chart cannot know,
+  #    such as the node public IPs when coturn runs with hostNetwork.
+  extraDeniedPeerIPs: []
+
   initContainer:
     image:
       # -- registry and repository for init container config generator image
       repository: mikefarah/yq
       # -- tag for init container config generator image
-      tag: latest
+      tag: 4.53.6
+      # -- optional multi-arch manifest digest; when set, the image is resolved
+      #    by digest so a moved tag cannot change what runs
+      digest: ""
+      # -- image pull policy for the init container
+      pullPolicy: IfNotPresent
 
 # k8s pod security context:
 # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/

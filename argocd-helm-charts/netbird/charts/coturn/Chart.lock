@@ -6,4 +6,4 @@ dependencies:
   repository: https://percona.github.io/percona-helm-charts
   version: 1.20.0
 digest: sha256:542062235214581769f6331f86525736d19551e2fc85f2b82ebbd9c6c90daea4
-generated: "2026-09-23T05:02:59.777595855Z"
+generated: "2026-09-23T07:43:57.688963519Z"
