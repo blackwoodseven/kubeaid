@@ -29,7 +29,6 @@ kubeaid_apps:
   - gitea-runner
   - odoo
   - ciso-assistant
-  - oncall
   - strimzi-kafka-operator
   - kubeaid-security-config
   - crossplane
@@ -88,10 +87,7 @@ kubeaid_apps:
   - whoami
   - hcloud-csi-driver
   - kubeaid-custom-azure
-  - circleci-runner
   - filebeat
-  - minio
-  - yetibot
   - prometheus-linuxaid
   - funkwhale
   - keycloakx
