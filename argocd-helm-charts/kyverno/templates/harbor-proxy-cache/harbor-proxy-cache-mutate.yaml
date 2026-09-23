@@ -1,15 +1,5 @@
 {{- if (.Values.harborProxyCache).enabled }}
-
-{{- $registry := .Values.harborProxyCache.registry | required "harborProxyCache.registry is required when enabled" }}
-{{- $dockerHubProj := .Values.harborProxyCache.dockerHubProject | default (.Values.harborProxyCache.project | default "docker-hub-proxy-cache") }}
-{{- $ghcrProj := .Values.harborProxyCache.ghcrProject | default "" }}
-{{- $k8sProj := .Values.harborProxyCache.k8sProject | default "" }}
-{{- $secretName := .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" }}
-{{- $ghcrSecretName := .Values.harborProxyCache.ghcrImagePullSecretName | default "harbor-ghcr-proxy-cache" }}
-{{- $k8sSecretName := .Values.harborProxyCache.k8sImagePullSecretName | default "harbor-registry-k8s-proxy-cache" }}
-{{- $excluded := .Values.harborProxyCache.excludeNamespaces | default (list) }}
-
-{{- $rw := dict "img" "c.image" "registry" $registry "dockerHub" $dockerHubProj "ghcr" $ghcrProj "k8s" $k8sProj }}
+{{- $_ := required "harborProxyCache.registry is required when enabled" .Values.harborProxyCache.registry }}
 
 apiVersion: policies.kyverno.io/v1
 kind: MutatingPolicy
@@ -23,7 +13,7 @@ metadata:
     policies.kyverno.io/description: >-
       Rewrites container and initContainer images that point at Docker Hub, ghcr.io or
       registry.k8s.io (each only when a Harbor project is configured for it) to the
-      proxy-cache projects on {{ $registry }} and adds the matching imagePullSecret,
+      proxy-cache projects on {{ .Values.harborProxyCache.registry }} and adds the matching imagePullSecret,
       so pulls bypass upstream rate limits. Mutates at admission time on CREATE.
     kyverno.io/kubernetes-version: "1.27"
     policies.kyverno.io/minversion: 1.19.0
@@ -49,9 +39,9 @@ spec:
         resources: ["jobs", "cronjobs"]
         operations: ["CREATE"]
   matchConditions:
-    {{- if $excluded }}
+    {{- if .Values.harborProxyCache.excludeNamespaces }}
     - name: not-excluded-namespace
-      expression: "!(object.metadata.namespace in [{{ range $idx, $ns := $excluded }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
+      expression: "!(object.metadata.namespace in [{{ range $idx, $ns := .Values.harborProxyCache.excludeNamespaces }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
     {{- end }}
     # Skip entirely when no image needs rewriting, so unrelated workloads see no patch.
     - name: needs-rewrite
@@ -78,27 +68,27 @@ spec:
     # Which upstream registries are in use decides which pull secrets to add.
     - name: dockerHubImages
       expression: >-
-        variables.images.filter(i, !i.startsWith("{{ $registry }}/") && (
+        variables.images.filter(i, !i.startsWith("{{ .Values.harborProxyCache.registry }}/") && (
           i.startsWith("index.docker.io/") || i.startsWith("registry-1.docker.io/") || i.startsWith("docker.io/")
           || i.matches("^[^/.:]+/.+$") || i.matches("^[^/]+$")))
-    {{- if $ghcrProj }}
+    {{- if .Values.harborProxyCache.ghcrProject }}
     - name: ghcrImages
       expression: >-
-        variables.images.filter(i, !i.startsWith("{{ $registry }}/") && i.startsWith("ghcr.io/"))
+        variables.images.filter(i, !i.startsWith("{{ .Values.harborProxyCache.registry }}/") && i.startsWith("ghcr.io/"))
     {{- end }}
-    {{- if $k8sProj }}
+    {{- if .Values.harborProxyCache.k8sProject }}
     - name: k8sImages
       expression: >-
-        variables.images.filter(i, !i.startsWith("{{ $registry }}/") && i.startsWith("registry.k8s.io/"))
+        variables.images.filter(i, !i.startsWith("{{ .Values.harborProxyCache.registry }}/") && i.startsWith("registry.k8s.io/"))
     {{- end }}
     - name: pullSecrets
       expression: >-
-        (variables.dockerHubImages.size() > 0 ? [{{ $secretName | quote }}] : [])
-        {{- if $ghcrProj }}
-        + (variables.ghcrImages.size() > 0 ? [{{ $ghcrSecretName | quote }}] : [])
+        (variables.dockerHubImages.size() > 0 ? [{{ .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" | quote }}] : [])
+        {{- if .Values.harborProxyCache.ghcrProject }}
+        + (variables.ghcrImages.size() > 0 ? [{{ .Values.harborProxyCache.ghcrImagePullSecretName | default "harbor-ghcr-proxy-cache" | quote }}] : [])
         {{- end }}
-        {{- if $k8sProj }}
-        + (variables.k8sImages.size() > 0 ? [{{ $k8sSecretName | quote }}] : [])
+        {{- if .Values.harborProxyCache.k8sProject }}
+        + (variables.k8sImages.size() > 0 ? [{{ .Values.harborProxyCache.k8sImagePullSecretName | default "harbor-registry-k8s-proxy-cache" | quote }}] : [])
         {{- end }}
     - name: existingPullSecrets
       expression: "has(variables.podSpec.imagePullSecrets) ? variables.podSpec.imagePullSecrets.map(s, s.name) : []"
@@ -112,12 +102,12 @@ spec:
           variables.containers.map(c, JSONPatch{
             op: "replace",
             path: variables.base + "/containers/" + string(variables.containers.indexOf(c)) + "/image",
-            value: {{ include "kubeaid.kyverno.harborRewrite" $rw | nindent 14 }}
+            value: {{ include "kubeaid.kyverno.harborRewrite" (dict "img" "c.image" "cfg" .Values.harborProxyCache) | nindent 14 }}
           })
           + variables.initContainers.map(c, JSONPatch{
             op: "replace",
             path: variables.base + "/initContainers/" + string(variables.initContainers.indexOf(c)) + "/image",
-            value: {{ include "kubeaid.kyverno.harborRewrite" $rw | nindent 14 }}
+            value: {{ include "kubeaid.kyverno.harborRewrite" (dict "img" "c.image" "cfg" .Values.harborProxyCache) | nindent 14 }}
           })
           + (variables.existingPullSecrets.size() == 0
               ? [JSONPatch{op: "add", path: variables.base + "/imagePullSecrets", value: variables.pullSecrets.map(s, {"name": s})}]

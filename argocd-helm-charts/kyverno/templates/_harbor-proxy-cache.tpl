@@ -15,17 +15,18 @@
 */}}
 {{- define "kubeaid.kyverno.harborRewrite" -}}
 {{- $i := .img -}}
-{{ $i }}.startsWith("{{ .registry }}/") ? {{ $i }}
-: {{ $i }}.startsWith("index.docker.io/") ? "{{ .registry }}/{{ .dockerHub }}/" + ({{ $i }}.substring(16).contains("/") ? {{ $i }}.substring(16) : "library/" + {{ $i }}.substring(16))
-: {{ $i }}.startsWith("registry-1.docker.io/") ? "{{ .registry }}/{{ .dockerHub }}/" + ({{ $i }}.substring(21).contains("/") ? {{ $i }}.substring(21) : "library/" + {{ $i }}.substring(21))
-: {{ $i }}.startsWith("docker.io/") ? "{{ .registry }}/{{ .dockerHub }}/" + ({{ $i }}.substring(10).contains("/") ? {{ $i }}.substring(10) : "library/" + {{ $i }}.substring(10))
-{{- if .ghcr }}
-: {{ $i }}.startsWith("ghcr.io/") ? "{{ .registry }}/{{ .ghcr }}/" + {{ $i }}.substring(8)
+{{- $dockerHub := .cfg.dockerHubProject | default (.cfg.project | default "docker-hub-proxy-cache") -}}
+{{ $i }}.startsWith("{{ .cfg.registry }}/") ? {{ $i }}
+: {{ $i }}.startsWith("index.docker.io/") ? "{{ .cfg.registry }}/{{ $dockerHub }}/" + ({{ $i }}.substring(16).contains("/") ? {{ $i }}.substring(16) : "library/" + {{ $i }}.substring(16))
+: {{ $i }}.startsWith("registry-1.docker.io/") ? "{{ .cfg.registry }}/{{ $dockerHub }}/" + ({{ $i }}.substring(21).contains("/") ? {{ $i }}.substring(21) : "library/" + {{ $i }}.substring(21))
+: {{ $i }}.startsWith("docker.io/") ? "{{ .cfg.registry }}/{{ $dockerHub }}/" + ({{ $i }}.substring(10).contains("/") ? {{ $i }}.substring(10) : "library/" + {{ $i }}.substring(10))
+{{- if .cfg.ghcrProject }}
+: {{ $i }}.startsWith("ghcr.io/") ? "{{ .cfg.registry }}/{{ .cfg.ghcrProject }}/" + {{ $i }}.substring(8)
 {{- end }}
-{{- if .k8s }}
-: {{ $i }}.startsWith("registry.k8s.io/") ? "{{ .registry }}/{{ .k8s }}/" + {{ $i }}.substring(16)
+{{- if .cfg.k8sProject }}
+: {{ $i }}.startsWith("registry.k8s.io/") ? "{{ .cfg.registry }}/{{ .cfg.k8sProject }}/" + {{ $i }}.substring(16)
 {{- end }}
-: {{ $i }}.matches("^[^/.:]+/.+$") ? "{{ .registry }}/{{ .dockerHub }}/" + {{ $i }}
-: {{ $i }}.matches("^[^/]+$") ? "{{ .registry }}/{{ .dockerHub }}/library/" + {{ $i }}
+: {{ $i }}.matches("^[^/.:]+/.+$") ? "{{ .cfg.registry }}/{{ $dockerHub }}/" + {{ $i }}
+: {{ $i }}.matches("^[^/]+$") ? "{{ .cfg.registry }}/{{ $dockerHub }}/library/" + {{ $i }}
 : {{ $i }}
 {{- end }}

@@ -1,8 +1,7 @@
 {{- if and .Values.syncSecrets (default false .Values.syncSecrets.enabled) }}
 {{- range .Values.syncSecrets.items }}
-{{- $match := default "*" .namespaceMatch }}
 {{- /* legacy wildcard names ("*", "team-?") become an anchored regex */}}
-{{- $re := printf "^%s$" ($match | replace "." "\\." | replace "*" ".*" | replace "?" ".") }}
+{{- $re := printf "^%s$" (default "*" .namespaceMatch | replace "." "\\." | replace "*" ".*" | replace "?" ".") }}
 ---
 apiVersion: policies.kyverno.io/v1
 kind: GeneratingPolicy
@@ -39,9 +38,9 @@ spec:
         # copy unless the policy re-evaluates on it. Re-evaluation also re-reads
         # the source, which is how a rotated credential reaches the copies.
         operations: ["CREATE", "UPDATE"]
-  {{- if or (ne $match "*") .excludeNamespaces }}
+  {{- if or (ne (default "*" .namespaceMatch) "*") .excludeNamespaces }}
   matchConditions:
-    {{- if ne $match "*" }}
+    {{- if ne (default "*" .namespaceMatch) "*" }}
     - name: namespace-matches
       expression: "object.metadata.name.matches({{ $re | squote }})"
     {{- end }}

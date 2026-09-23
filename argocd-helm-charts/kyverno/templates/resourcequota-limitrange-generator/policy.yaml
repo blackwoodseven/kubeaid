@@ -1,24 +1,14 @@
 {{- if .Values.resourceQuotaLimitRangeGenerator.enabled }}
 
-{{- $cfg := .Values.resourceQuotaLimitRangeGenerator }}
-{{- $defaults := $cfg.defaults }}
-{{- $overrides := $cfg.overrides | default dict }}
-{{- $generateExisting := true }}
-{{- if hasKey $cfg "generateExisting" }}{{ $generateExisting = $cfg.generateExisting }}{{ end }}
-{{- $defaultResourceQuotaRuleEnabled := true }}
-{{- if hasKey $cfg "defaultResourceQuotaRuleEnabled" }}{{ $defaultResourceQuotaRuleEnabled = $cfg.defaultResourceQuotaRuleEnabled }}{{ end }}
-{{- $rqExcluded := ($cfg.excludeNamespaces).resourceQuota | default (list) }}
-{{- $lrExcluded := ($cfg.excludeNamespaces).limitRange | default (list) }}
-
 {{/* Namespaces with a resourceQuota / limitRange override, and their merged specs */}}
 {{- $rqOverrides := dict }}
 {{- $lrOverrides := dict }}
-{{- range $ns, $o := $overrides }}
-  {{- if $o.resourceQuota }}{{ $_ := set $rqOverrides $ns (include "kubeaid.kyverno.quotaHard" (dict "quota" $o.resourceQuota "defaults" $defaults.resourceQuota)) }}{{ end }}
-  {{- if hasKey $o "limitRange" }}{{ $_ := set $lrOverrides $ns (include "kubeaid.kyverno.limitRangeLimits" (dict "lr" $o.limitRange "defaults" $defaults.limitRange)) }}{{ end }}
+{{- range $ns, $o := .Values.resourceQuotaLimitRangeGenerator.overrides }}
+  {{- if $o.resourceQuota }}{{ $_ := set $rqOverrides $ns (include "kubeaid.kyverno.quotaHard" (dict "quota" $o.resourceQuota "defaults" $.Values.resourceQuotaLimitRangeGenerator.defaults.resourceQuota)) }}{{ end }}
+  {{- if hasKey $o "limitRange" }}{{ $_ := set $lrOverrides $ns (include "kubeaid.kyverno.limitRangeLimits" (dict "lr" $o.limitRange "defaults" $.Values.resourceQuotaLimitRangeGenerator.defaults.limitRange)) }}{{ end }}
 {{- end }}
 
-{{- if or $defaultResourceQuotaRuleEnabled $rqOverrides }}
+{{- if or (ternary .Values.resourceQuotaLimitRangeGenerator.defaultResourceQuotaRuleEnabled true (hasKey .Values.resourceQuotaLimitRangeGenerator "defaultResourceQuotaRuleEnabled")) $rqOverrides }}
 ---
 # When several teams share a cluster, a ResourceQuota per namespace stops one
 # team from using more than its fair share. This generates a "default" quota in
@@ -37,22 +27,22 @@ spec:
     synchronize:
       enabled: true
     generateExisting:
-      enabled: {{ $generateExisting }}
+      enabled: {{ ternary .Values.resourceQuotaLimitRangeGenerator.generateExisting true (hasKey .Values.resourceQuotaLimitRangeGenerator "generateExisting") }}
   matchConstraints:
     resourceRules:
       - apiGroups: [""]
         apiVersions: ["v1"]
         resources: ["namespaces"]
         operations: ["CREATE"]
-  {{- if or $rqExcluded (not $defaultResourceQuotaRuleEnabled) }}
+  {{- if or (.Values.resourceQuotaLimitRangeGenerator.excludeNamespaces).resourceQuota (not (ternary .Values.resourceQuotaLimitRangeGenerator.defaultResourceQuotaRuleEnabled true (hasKey .Values.resourceQuotaLimitRangeGenerator "defaultResourceQuotaRuleEnabled"))) }}
   matchConditions:
-    {{- if not $defaultResourceQuotaRuleEnabled }}
+    {{- if not (ternary .Values.resourceQuotaLimitRangeGenerator.defaultResourceQuotaRuleEnabled true (hasKey .Values.resourceQuotaLimitRangeGenerator "defaultResourceQuotaRuleEnabled")) }}
     - name: override-namespaces-only
       expression: "object.metadata.name in [{{ range $idx, $ns := (keys $rqOverrides | sortAlpha) }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}]"
     {{- end }}
-    {{- if $rqExcluded }}
+    {{- if (.Values.resourceQuotaLimitRangeGenerator.excludeNamespaces).resourceQuota }}
     - name: not-excluded
-      expression: "!(object.metadata.name in [{{ range $idx, $ns := $rqExcluded }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
+      expression: "!(object.metadata.name in [{{ range $idx, $ns := (.Values.resourceQuotaLimitRangeGenerator.excludeNamespaces).resourceQuota }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
     {{- end }}
   {{- end }}
   variables:
@@ -65,7 +55,7 @@ spec:
     - name: hard
       expression: >-
         variables.ns in variables.overrides ? variables.overrides[variables.ns]
-        : {{ include "kubeaid.kyverno.quotaHard" (dict "quota" dict "defaults" $defaults.resourceQuota) }}
+        : {{ include "kubeaid.kyverno.quotaHard" (dict "quota" dict "defaults" .Values.resourceQuotaLimitRangeGenerator.defaults.resourceQuota) }}
     - name: downstream
       expression: >-
         [{
@@ -94,17 +84,17 @@ spec:
     synchronize:
       enabled: true
     generateExisting:
-      enabled: {{ $generateExisting }}
+      enabled: {{ ternary .Values.resourceQuotaLimitRangeGenerator.generateExisting true (hasKey .Values.resourceQuotaLimitRangeGenerator "generateExisting") }}
   matchConstraints:
     resourceRules:
       - apiGroups: [""]
         apiVersions: ["v1"]
         resources: ["namespaces"]
         operations: ["CREATE"]
-  {{- if $lrExcluded }}
+  {{- if (.Values.resourceQuotaLimitRangeGenerator.excludeNamespaces).limitRange }}
   matchConditions:
     - name: not-excluded
-      expression: "!(object.metadata.name in [{{ range $idx, $ns := $lrExcluded }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
+      expression: "!(object.metadata.name in [{{ range $idx, $ns := (.Values.resourceQuotaLimitRangeGenerator.excludeNamespaces).limitRange }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
   {{- end }}
   variables:
     - name: ns
@@ -115,7 +105,7 @@ spec:
     - name: limits
       expression: >-
         variables.ns in variables.overrides ? variables.overrides[variables.ns]
-        : {{ include "kubeaid.kyverno.limitRangeLimits" (dict "lr" dict "defaults" $defaults.limitRange) }}
+        : {{ include "kubeaid.kyverno.limitRangeLimits" (dict "lr" dict "defaults" .Values.resourceQuotaLimitRangeGenerator.defaults.limitRange) }}
     - name: downstream
       expression: >-
         [{
