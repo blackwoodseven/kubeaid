@@ -22,5 +22,5 @@ dependencies:
     version: 0.4.6
     repository: https://charts.openobserve.ai/
   - name: kubeaid-addons
-    version: 0.1.0
+    version: 1.1.0
     repository: file://../kubeaid-addons
