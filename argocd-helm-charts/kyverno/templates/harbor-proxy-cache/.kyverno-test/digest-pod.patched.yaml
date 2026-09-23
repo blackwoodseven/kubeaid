@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: digest-pod
+  namespace: default
+spec:
+  containers:
+  - name: app
+    image: harbor.example.com/ghcr-proxy-cache/obmondo/backup-sealed-secrets-keys@sha256:21119359a94efdbf6ce81e8887e0ae35e9988d9e5ce0c485879ffc4f42aaf1ae
+  imagePullSecrets:
+  - name: harbor-ghcr-proxy-cache
