@@ -15,10 +15,12 @@ spec:
       port: {{ .Values.coturn.ports.listening }}
       protocol: UDP
       targetPort: {{ .Values.coturn.ports.listening }}
+    {{- if .Values.certificate.enabled }}
     - name: turn-udp-dtls
       port: {{ .Values.coturn.ports.tlsListening }}
       protocol: UDP
       targetPort: {{ .Values.coturn.ports.tlsListening }}
+    {{- end }}
   selector:
     app.kubernetes.io/name: {{ .Release.Name }}-coturn
     app.kubernetes.io/instance: {{ .Release.Name }}

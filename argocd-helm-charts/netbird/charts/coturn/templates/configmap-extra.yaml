@@ -5,4 +5,10 @@ metadata:
   labels:
 {{ include "labels" . | nindent 4}}
 data:
-  turnserver.conf: {{ tpl .Values.coturn.extraTurnserverConfiguration . | toYaml | indent 4 }}
+  turnserver.conf: |-
+  {{- with tpl .Values.coturn.extraTurnserverConfiguration . }}
+  {{- . | trim | nindent 4 }}
+  {{- end }}
+  {{- range .Values.coturn.extraDeniedPeerIPs }}
+  {{- printf "denied-peer-ip=%s" . | nindent 4 }}
+  {{- end }}

@@ -111,8 +111,8 @@ spec:
           {{- end }}
         {{- end }}
         - name: add-secret-values-to-config
-          image: {{ .Values.coturn.initContainer.image.repository }}:{{ .Values.coturn.initContainer.image.tag }}
-          imagePullPolicy: Always
+          image: {{ .Values.coturn.initContainer.image.repository }}:{{ .Values.coturn.initContainer.image.tag }}{{ with .Values.coturn.initContainer.image.digest }}@{{ . }}{{ end }}
+          imagePullPolicy: {{ .Values.coturn.initContainer.image.pullPolicy | default "IfNotPresent" }}
           env:
             - name: USER
               valueFrom:
@@ -191,12 +191,14 @@ spec:
             - name: turn-tcp
               containerPort: {{ .Values.coturn.ports.listening }}
               protocol: TCP
+            {{- if .Values.certificate.enabled }}
             - name: turn-tcp-tls
               containerPort: {{ .Values.coturn.ports.tlsListening }}
               protocol: TCP
             - name: turn-udp-dtls
               containerPort: {{ .Values.coturn.ports.tlsListening }}
               protocol: UDP
+            {{- end }}
           volumeMounts:
             - name: {{ .Release.Name }}-config
               mountPath: "/turnserver.conf"

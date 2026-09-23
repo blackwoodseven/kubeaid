@@ -302,8 +302,8 @@ coturn:
     # Every peer is handed the same static TURN credentials, so the relay has to
     # be treated as reachable by anyone on the mesh. no-tcp-relay drops RFC 6062,
     # which is the route to the node's own TCP services (apiserver, kubelet,
-    # etcd); the deny list closes the UDP side. Add the node public IPs per
-    # cluster — the chart cannot know them.
+    # etcd); the deny list closes the UDP side. Per-cluster addresses the chart
+    # cannot know — the node public IPs above all — go in extraDeniedPeerIPs.
     extraTurnserverConfiguration: |
       verbose
       no-multicast-peers

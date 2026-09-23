@@ -10,13 +10,17 @@ data:
     realm: {{ .Values.coturn.realm }}
     listening-ip: {{ .Values.coturn.listeningIP }}
     listening-port: {{ .Values.coturn.ports.listening }}
+    {{- if .Values.certificate.enabled }}
     tls-listening-port: {{ .Values.coturn.ports.tlsListening }}
+    {{- end }}
     min-port: {{ .Values.coturn.ports.min }}
     max-port: {{ .Values.coturn.ports.max }}
     log-file: {{ .Values.coturn.logFile }}
     pidfile: "/var/tmp/turnserver.pid"
+    {{- if .Values.certificate.enabled }}
     pkey: "/tls/tls.key"
     cert: "/tls/tls.crt"
+    {{- end }}
     {{- if and (not .Values.externalDatabase.enabled) (not .Values.cnpg.enabled) (not .Values.mysql.enabled) }}
     userdb: "/var/db/turndb"
     {{- end }}
