@@ -94,6 +94,29 @@ resourceQuotaLimitRangeGenerator:
 Deleting these policies deletes the generated quotas and limit ranges (synchronize is on,
 and they are data-generated, not cloned). Copied Secrets are retained on policy deletion.
 
+## How the templates are built
+
+Each policy is one Helm template under `templates/<policy>/`. There are no shared helper
+files. Values are read where they are used, so every rendered string traces back to a
+`.Values` key. Rendering a policy with `helm template ... --show-only` gives the object a
+cluster receives; that is the version to read when reviewing.
+
+- **harbor-proxy-cache-mutate** is a pipeline of variables: `podSpec` and `base` locate the
+  pod spec for the kind, `containers` lists every container and initContainer as
+  `{path, image}`, `canonical` turns implicit Docker Hub references into explicit ones
+  (`nginx` becomes `docker.io/library/nginx`), `rewritten` swaps the public host for the
+  Harbor project, `pullSecrets` derives which secrets are needed. The mutation is a JSONPatch
+  that replaces the changed images and appends the missing pull secrets.
+- **sync-secrets** fetches the source with `resource.Get`, builds the copy from its `type`
+  and `data`, and hands it to `generator.Apply`. One policy per item.
+- **resourcequota-generator** and **limitrange-generator** use Kyverno's YAML template mode:
+  the generated object is written as a manifest with `(( ... ))` CEL placeholders. Two
+  variables feed it, a map of override namespaces to their merged spec (rendered by Helm)
+  and a one-line lookup that picks the override or the defaults. The LimitRange template
+  lists every field; the ResourceQuota keys are renamed from the values keys by a small
+  `define` at the top of the file, which also drops unset keys, since a null Quantity is
+  invalid.
+
 ## Testing the harbor policy locally
 
 `templates/harbor-proxy-cache/.kyverno-test/` is a Kyverno CLI (v1.19+) suite. The policy is
