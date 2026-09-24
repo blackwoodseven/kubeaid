@@ -1,18 +1,18 @@
 {{- if .Values.resourceQuotaLimitRangeGenerator.enabled }}
 
-{{/* Namespaces with a resourceQuota / limitRange override, and their merged specs */}}
-{{- $rqOverrides := dict }}
-{{- $lrOverrides := dict }}
+{{- /* Namespaces that carry an override, per kind. Their merged spec is rendered below. */}}
+{{- $quotaOverrides := list }}
+{{- $limitRangeOverrides := list }}
 {{- range $ns, $o := .Values.resourceQuotaLimitRangeGenerator.overrides }}
-  {{- if $o.resourceQuota }}{{ $_ := set $rqOverrides $ns (include "kubeaid.kyverno.quotaHard" (dict "quota" $o.resourceQuota "defaults" $.Values.resourceQuotaLimitRangeGenerator.defaults.resourceQuota)) }}{{ end }}
-  {{- if hasKey $o "limitRange" }}{{ $_ := set $lrOverrides $ns (include "kubeaid.kyverno.limitRangeLimits" (dict "lr" $o.limitRange "defaults" $.Values.resourceQuotaLimitRangeGenerator.defaults.limitRange)) }}{{ end }}
+  {{- if $o.resourceQuota }}{{ $quotaOverrides = append $quotaOverrides $ns }}{{ end }}
+  {{- if hasKey $o "limitRange" }}{{ $limitRangeOverrides = append $limitRangeOverrides $ns }}{{ end }}
 {{- end }}
 
-{{- if or (ternary .Values.resourceQuotaLimitRangeGenerator.defaultResourceQuotaRuleEnabled true (hasKey .Values.resourceQuotaLimitRangeGenerator "defaultResourceQuotaRuleEnabled")) $rqOverrides }}
+{{- if or .Values.resourceQuotaLimitRangeGenerator.defaultResourceQuotaRuleEnabled $quotaOverrides }}
 ---
-# When several teams share a cluster, a ResourceQuota per namespace stops one
-# team from using more than its fair share. This generates a "default" quota in
-# every namespace (or only in the override namespaces when the default rule is off).
+# A ResourceQuota per namespace stops one team from using more than its fair
+# share of a shared cluster. "default" quota in every namespace, or only in
+# the override namespaces when the default rule is off.
 apiVersion: policies.kyverno.io/v1
 kind: GeneratingPolicy
 metadata:
@@ -27,49 +27,48 @@ spec:
     synchronize:
       enabled: true
     generateExisting:
-      enabled: {{ ternary .Values.resourceQuotaLimitRangeGenerator.generateExisting true (hasKey .Values.resourceQuotaLimitRangeGenerator "generateExisting") }}
+      enabled: {{ .Values.resourceQuotaLimitRangeGenerator.generateExisting }}
   matchConstraints:
     resourceRules:
       - apiGroups: [""]
         apiVersions: ["v1"]
         resources: ["namespaces"]
         operations: ["CREATE"]
-  {{- if or (.Values.resourceQuotaLimitRangeGenerator.excludeNamespaces).resourceQuota (not (ternary .Values.resourceQuotaLimitRangeGenerator.defaultResourceQuotaRuleEnabled true (hasKey .Values.resourceQuotaLimitRangeGenerator "defaultResourceQuotaRuleEnabled"))) }}
+  {{- if or (.Values.resourceQuotaLimitRangeGenerator.excludeNamespaces).resourceQuota (not .Values.resourceQuotaLimitRangeGenerator.defaultResourceQuotaRuleEnabled) }}
   matchConditions:
-    {{- if not (ternary .Values.resourceQuotaLimitRangeGenerator.defaultResourceQuotaRuleEnabled true (hasKey .Values.resourceQuotaLimitRangeGenerator "defaultResourceQuotaRuleEnabled")) }}
+    {{- if not .Values.resourceQuotaLimitRangeGenerator.defaultResourceQuotaRuleEnabled }}
     - name: override-namespaces-only
-      expression: "object.metadata.name in [{{ range $idx, $ns := (keys $rqOverrides | sortAlpha) }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}]"
+      expression: "object.metadata.name in [{{ range $idx, $ns := $quotaOverrides }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}]"
     {{- end }}
     {{- if (.Values.resourceQuotaLimitRangeGenerator.excludeNamespaces).resourceQuota }}
     - name: not-excluded
-      expression: "!(object.metadata.name in [{{ range $idx, $ns := (.Values.resourceQuotaLimitRangeGenerator.excludeNamespaces).resourceQuota }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
+      expression: "!(object.metadata.name in [{{ range $idx, $ns := .Values.resourceQuotaLimitRangeGenerator.excludeNamespaces.resourceQuota }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
     {{- end }}
   {{- end }}
   variables:
-    - name: ns
-      expression: "object.metadata.name"
-    # Per-namespace overrides, already merged with the defaults by Helm.
+    # Override namespaces and their quota, already merged with the defaults by Helm.
     - name: overrides
       expression: >-
-        {{ "{" }}{{ range $idx, $ns := (keys $rqOverrides | sortAlpha) }}{{ if $idx }}, {{ end }}{{ $ns | quote }}: {{ index $rqOverrides $ns }}{{ end }}{{ "}" }}
+        {{ "{" }}{{ range $idx, $ns := $quotaOverrides }}{{ if $idx }}, {{ end }}{{ $ns | quote }}: {{ include "kubeaid.kyverno.quotaHard" (dict "quota" (index $.Values.resourceQuotaLimitRangeGenerator.overrides $ns).resourceQuota "defaults" $.Values.resourceQuotaLimitRangeGenerator.defaults.resourceQuota) }}{{ end }}{{ "}" }}
     - name: hard
       expression: >-
-        variables.ns in variables.overrides ? variables.overrides[variables.ns]
+        object.metadata.name in variables.overrides ? variables.overrides[object.metadata.name]
         : {{ include "kubeaid.kyverno.quotaHard" (dict "quota" dict "defaults" .Values.resourceQuotaLimitRangeGenerator.defaults.resourceQuota) }}
-    - name: downstream
-      expression: >-
-        [{
-          "apiVersion": dyn("v1"),
-          "kind": dyn("ResourceQuota"),
-          "metadata": dyn({"name": "default", "namespace": string(variables.ns)}),
-          "spec": dyn({"hard": variables.hard})
-        }]
   generate:
-    - expression: generator.Apply(variables.ns, variables.downstream)
+    - template:
+        interpolate: cel
+        value: |
+          apiVersion: v1
+          kind: ResourceQuota
+          metadata:
+            name: default
+            namespace: (( object.metadata.name ))
+          spec:
+            hard: (( variables.hard ))
 {{- end }}
 ---
-# A LimitRange gives containers default requests/limits and caps single objects,
-# so one Pod or PVC cannot monopolise a namespace's quota.
+# A LimitRange gives containers default requests and limits and caps single
+# objects, so one Pod or PVC cannot monopolise a namespace's quota.
 apiVersion: policies.kyverno.io/v1
 kind: GeneratingPolicy
 metadata:
@@ -84,7 +83,7 @@ spec:
     synchronize:
       enabled: true
     generateExisting:
-      enabled: {{ ternary .Values.resourceQuotaLimitRangeGenerator.generateExisting true (hasKey .Values.resourceQuotaLimitRangeGenerator "generateExisting") }}
+      enabled: {{ .Values.resourceQuotaLimitRangeGenerator.generateExisting }}
   matchConstraints:
     resourceRules:
       - apiGroups: [""]
@@ -94,26 +93,25 @@ spec:
   {{- if (.Values.resourceQuotaLimitRangeGenerator.excludeNamespaces).limitRange }}
   matchConditions:
     - name: not-excluded
-      expression: "!(object.metadata.name in [{{ range $idx, $ns := (.Values.resourceQuotaLimitRangeGenerator.excludeNamespaces).limitRange }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
+      expression: "!(object.metadata.name in [{{ range $idx, $ns := .Values.resourceQuotaLimitRangeGenerator.excludeNamespaces.limitRange }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
   {{- end }}
   variables:
-    - name: ns
-      expression: "object.metadata.name"
     - name: overrides
       expression: >-
-        {{ "{" }}{{ range $idx, $ns := (keys $lrOverrides | sortAlpha) }}{{ if $idx }}, {{ end }}{{ $ns | quote }}: {{ index $lrOverrides $ns }}{{ end }}{{ "}" }}
+        {{ "{" }}{{ range $idx, $ns := $limitRangeOverrides }}{{ if $idx }}, {{ end }}{{ $ns | quote }}: {{ include "kubeaid.kyverno.limitRangeLimits" (dict "lr" (index $.Values.resourceQuotaLimitRangeGenerator.overrides $ns).limitRange "defaults" $.Values.resourceQuotaLimitRangeGenerator.defaults.limitRange) }}{{ end }}{{ "}" }}
     - name: limits
       expression: >-
-        variables.ns in variables.overrides ? variables.overrides[variables.ns]
+        object.metadata.name in variables.overrides ? variables.overrides[object.metadata.name]
         : {{ include "kubeaid.kyverno.limitRangeLimits" (dict "lr" dict "defaults" .Values.resourceQuotaLimitRangeGenerator.defaults.limitRange) }}
-    - name: downstream
-      expression: >-
-        [{
-          "apiVersion": dyn("v1"),
-          "kind": dyn("LimitRange"),
-          "metadata": dyn({"name": "default", "namespace": string(variables.ns)}),
-          "spec": dyn({"limits": variables.limits})
-        }]
   generate:
-    - expression: generator.Apply(variables.ns, variables.downstream)
+    - template:
+        interpolate: cel
+        value: |
+          apiVersion: v1
+          kind: LimitRange
+          metadata:
+            name: default
+            namespace: (( object.metadata.name ))
+          spec:
+            limits: (( variables.limits ))
 {{- end }}
