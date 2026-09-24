@@ -1,3 +1,24 @@
+{{- /*
+  ResourceQuota "hard" for one namespace: override values win, defaults fill
+  the gaps, unset keys are dropped (a null Quantity is invalid). The values
+  keys are renamed to the ResourceQuota ones here. Returns JSON, which CEL
+  reads as a map.
+*/}}
+{{- define "kubeaid.kyverno.quotaHard" -}}
+{{- $q := mergeOverwrite (deepCopy .defaults) (.quota | default dict) }}
+{{- $hard := dict }}
+{{- with $q.pods }}{{ $_ := set $hard "pods" (toString .) }}{{ end }}
+{{- with $q.jobs }}{{ $_ := set $hard "count/jobs.batch" (toString .) }}{{ end }}
+{{- with $q.cpu.request }}{{ $_ := set $hard "requests.cpu" (toString .) }}{{ end }}
+{{- with $q.memory.request }}{{ $_ := set $hard "requests.memory" (toString .) }}{{ end }}
+{{- with $q.memory.limit }}{{ $_ := set $hard "limits.memory" (toString .) }}{{ end }}
+{{- with $q.storage.persistentVolumeClaims }}{{ $_ := set $hard "persistentvolumeclaims" (toString .) }}{{ end }}
+{{- with $q.storage.request }}{{ $_ := set $hard "requests.storage" (toString .) }}{{ end }}
+{{- with $q.ephemeralStorage.request }}{{ $_ := set $hard "requests.ephemeral-storage" (toString .) }}{{ end }}
+{{- with $q.ephemeralStorage.limit }}{{ $_ := set $hard "limits.ephemeral-storage" (toString .) }}{{ end }}
+{{- toJson $hard }}
+{{- end }}
+
 {{- if .Values.resourceQuotaLimitRangeGenerator.enabled }}
 
 {{- /* Namespaces that carry an override, per kind. Their merged spec is rendered below. */}}
@@ -96,13 +117,14 @@ spec:
       expression: "!(object.metadata.name in [{{ range $idx, $ns := .Values.resourceQuotaLimitRangeGenerator.excludeNamespaces.limitRange }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
   {{- end }}
   variables:
+    # Override namespaces with their limit range, merged with the defaults by Helm.
     - name: overrides
       expression: >-
-        {{ "{" }}{{ range $idx, $ns := $limitRangeOverrides }}{{ if $idx }}, {{ end }}{{ $ns | quote }}: {{ include "kubeaid.kyverno.limitRangeLimits" (dict "lr" (index $.Values.resourceQuotaLimitRangeGenerator.overrides $ns).limitRange "defaults" $.Values.resourceQuotaLimitRangeGenerator.defaults.limitRange) }}{{ end }}{{ "}" }}
-    - name: limits
+        {{ "{" }}{{ range $idx, $ns := $limitRangeOverrides }}{{ if $idx }}, {{ end }}{{ $ns | quote }}: {{ mergeOverwrite (deepCopy $.Values.resourceQuotaLimitRangeGenerator.defaults.limitRange) ((index $.Values.resourceQuotaLimitRangeGenerator.overrides $ns).limitRange | default dict) | toJson }}{{ end }}{{ "}" }}
+    - name: lr
       expression: >-
         object.metadata.name in variables.overrides ? variables.overrides[object.metadata.name]
-        : {{ include "kubeaid.kyverno.limitRangeLimits" (dict "lr" dict "defaults" .Values.resourceQuotaLimitRangeGenerator.defaults.limitRange) }}
+        : {{ .Values.resourceQuotaLimitRangeGenerator.defaults.limitRange | toJson }}
   generate:
     - template:
         interpolate: cel
@@ -113,5 +135,19 @@ spec:
             name: default
             namespace: (( object.metadata.name ))
           spec:
-            limits: (( variables.limits ))
+            limits:
+              - type: Container
+                defaultRequest:
+                  cpu: (( variables.lr.container.cpu.defaultRequest ))
+                  memory: (( variables.lr.container.memory.defaultRequest ))
+                default:
+                  memory: (( variables.lr.container.memory.default ))
+                max:
+                  memory: (( variables.lr.container.memory.max ))
+              - type: Pod
+                max:
+                  memory: (( variables.lr.pod.memory.max ))
+              - type: PersistentVolumeClaim
+                max:
+                  storage: (( variables.lr.pvc.storage.max ))
 {{- end }}
