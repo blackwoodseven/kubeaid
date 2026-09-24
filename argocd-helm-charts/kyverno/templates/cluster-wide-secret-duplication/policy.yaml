@@ -1,37 +1,70 @@
 {{- if and .Values.syncSecrets (default false .Values.syncSecrets.enabled) }}
 {{- range .Values.syncSecrets.items }}
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+{{- /* legacy wildcard names ("*", "team-?") become an anchored regex */}}
+{{- $re := printf "^%s$" (default "*" .namespaceMatch | replace "." "\\." | replace "*" ".*" | replace "?" ".") }}
+---
+apiVersion: policies.kyverno.io/v1
+kind: GeneratingPolicy
 metadata:
   name: sync-secrets-{{ .name }}
+  annotations:
+    policies.kyverno.io/title: "Copy {{ .sourceSecret.namespace }}/{{ .sourceSecret.name }} into namespaces"
+    policies.kyverno.io/category: "Secrets"
+    policies.kyverno.io/subject: "Namespace,Secret"
+    policies.kyverno.io/description: >-
+      Copies the Secret {{ .sourceSecret.name }} from namespace {{ .sourceSecret.namespace }}
+      into every matching namespace as {{ .targetSecret.name }}, and keeps the copies in
+      sync with the source. Existing namespaces are covered on policy creation.
+    policies.kyverno.io/minversion: 1.19.0
 spec:
-  validationFailureAction: Enforce
-  generateExisting: true
-  rules: 
-    - name: sync-image-pull-secret
-      match:
-        resources:
-          kinds:
-            - Namespace
-          names:
-            - {{ default "*" .namespaceMatch | quote }}
-{{- if .excludeNamespaces }}
-      exclude:
-        resources:
-          namespaces:
-{{- range .excludeNamespaces }}
-            - {{ . | quote }}
-{{- end }}
-{{- end }}
-      generate:
-        apiVersion: v1
-        kind: Secret
-        name: {{ .targetSecret.name | quote }}
-        namespace: "{{`{{ request.object.metadata.name }}`}}"
-        synchronize: true
-        clone:
-          namespace: {{ .sourceSecret.namespace | quote }}
-          name: {{ .sourceSecret.name | quote }}
----
+  evaluation:
+    # Recreate a copy that is deleted and revert one that is edited.
+    # Kyverno 1.19 does not push a change of the source Secret to the copies by
+    # itself; see the chart README for the rotation procedure.
+    synchronize:
+      enabled: true
+    # Also generate for namespaces that already exist when the policy is created.
+    generateExisting:
+      enabled: true
+    # Never delete the pull secrets just because the policy is replaced.
+    orphanDownstreamOnPolicyDelete:
+      enabled: true
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["namespaces"]
+        # UPDATE matters: with synchronize on, a namespace update deletes the
+        # copy unless the policy re-evaluates on it. Re-evaluation also re-reads
+        # the source, which is how a rotated credential reaches the copies.
+        operations: ["CREATE", "UPDATE"]
+  {{- if or (ne (default "*" .namespaceMatch) "*") .excludeNamespaces }}
+  matchConditions:
+    {{- if ne (default "*" .namespaceMatch) "*" }}
+    - name: namespace-matches
+      expression: "object.metadata.name.matches({{ $re | squote }})"
+    {{- end }}
+    {{- if .excludeNamespaces }}
+    - name: not-excluded
+      expression: "!(object.metadata.name in [{{ range $idx, $ns := .excludeNamespaces }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
+    {{- end }}
+  {{- end }}
+  variables:
+    - name: targetNs
+      expression: "object.metadata.name"
+    # resource.Get needs get permission on secrets for the background controller.
+    - name: source
+      expression: resource.Get("v1", "secrets", {{ .sourceSecret.namespace | squote }}, {{ .sourceSecret.name | squote }})
+    - name: downstream
+      expression: >-
+        [{
+          "apiVersion": dyn("v1"),
+          "kind": dyn("Secret"),
+          "metadata": dyn({"name": {{ .targetSecret.name | quote }}, "namespace": string(variables.targetNs)}),
+          "type": variables.source.type,
+          "data": variables.source.data
+        }]
+  generate:
+    - expression: generator.Apply(variables.targetNs, variables.downstream)
 {{- end }}
 {{- end }}

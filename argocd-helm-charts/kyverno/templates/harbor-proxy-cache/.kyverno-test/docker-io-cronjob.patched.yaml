@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: docker-io-cronjob
+  namespace: default
+spec:
+  schedule: 0 * * * *
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: job
+            image: harbor.example.com/docker-hub-proxy-cache/library/traefik:v3.7.12
+          imagePullSecrets:
+          - name: harbor-proxy-cache

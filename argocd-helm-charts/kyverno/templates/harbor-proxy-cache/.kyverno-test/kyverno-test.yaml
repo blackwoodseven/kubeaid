@@ -1,3 +1,8 @@
+# Run from the chart dir after rendering policy.yaml (see chart README):
+#   helm template kyverno . -f templates/harbor-proxy-cache/.kyverno-test/values.yaml \
+#     --show-only templates/harbor-proxy-cache/harbor-proxy-cache-mutate.yaml \
+#     > templates/harbor-proxy-cache/.kyverno-test/policy.yaml
+#   kyverno test templates/harbor-proxy-cache/.kyverno-test
 apiVersion: cli.kyverno.io/v1alpha1
 kind: Test
 metadata:
@@ -7,55 +12,63 @@ policies:
 resources:
   - docker-io-pod.yaml
   - index-docker-io-pod.yaml
-  - docker-io-statefulset.yaml
-  - already-harbor-pod.yaml
   - implicit-org-pod.yaml
   - implicit-official-pod.yaml
+  - docker-io-statefulset.yaml
+  - docker-io-cronjob.yaml
+  - mixed-pod.yaml
+  - digest-pod.yaml
+  - already-harbor-pod.yaml
+  - excluded-ns-pod.yaml
 results:
+  # explicit docker.io / index.docker.io hosts are stripped and "library/" added for official images
   - policy: harbor-proxy-cache-mutate
-    rule: mutate-docker-io-containers
     kind: Pod
-    resources:
-      - docker-io-pod
+    resources: [default/docker-io-pod]
     patchedResources: docker-io-pod.patched.yaml
     result: pass
-
   - policy: harbor-proxy-cache-mutate
-    rule: mutate-docker-io-containers
     kind: Pod
-    resources:
-      - index-docker-io-pod
+    resources: [default/index-docker-io-pod]
     patchedResources: index-docker-io-pod.patched.yaml
     result: pass
-
+  # implicit Docker Hub forms: "org/name:tag" and "name:tag"
   - policy: harbor-proxy-cache-mutate
-    rule: mutate-docker-io-workload-containers
-    kind: StatefulSet
-    resources:
-      - docker-io-statefulset
-    patchedResources: docker-io-statefulset.patched.yaml
-    result: pass
-
-  - policy: harbor-proxy-cache-mutate
-    rule: mutate-docker-io-containers
     kind: Pod
-    resources:
-      - already-harbor-pod
-    patchedResources: already-harbor-pod.patched.yaml
-    result: skip
-
-  - policy: harbor-proxy-cache-mutate
-    rule: mutate-docker-io-containers
-    kind: Pod
-    resources:
-      - implicit-org-pod
+    resources: [default/implicit-org-pod]
     patchedResources: implicit-org-pod.patched.yaml
     result: pass
-
   - policy: harbor-proxy-cache-mutate
-    rule: mutate-docker-io-containers
     kind: Pod
-    resources:
-      - implicit-official-pod
+    resources: [default/implicit-official-pod]
     patchedResources: implicit-official-pod.patched.yaml
     result: pass
+  # pod controllers: the pod spec is found at the kind-specific path
+  - policy: harbor-proxy-cache-mutate
+    kind: StatefulSet
+    resources: [default/docker-io-statefulset]
+    patchedResources: docker-io-statefulset.patched.yaml
+    result: pass
+  - policy: harbor-proxy-cache-mutate
+    kind: CronJob
+    resources: [default/docker-io-cronjob]
+    patchedResources: docker-io-cronjob.patched.yaml
+    result: pass
+  # initContainers, ghcr.io, registry.k8s.io, a private registry left alone,
+  # and pull secrets appended to an existing list without duplicates
+  - policy: harbor-proxy-cache-mutate
+    kind: Pod
+    resources: [default/mixed-pod]
+    patchedResources: mixed-pod.patched.yaml
+    result: pass
+  # digest references keep their digest
+  - policy: harbor-proxy-cache-mutate
+    kind: Pod
+    resources: [default/digest-pod]
+    patchedResources: digest-pod.patched.yaml
+    result: pass
+  # already on Harbor, or in an excluded namespace: no patch at all
+  - policy: harbor-proxy-cache-mutate
+    kind: Pod
+    resources: [default/already-harbor-pod, harbor/excluded-ns-pod]
+    result: skip

@@ -2,4 +2,10 @@ harborProxyCache:
   enabled: true
   registry: "harbor.example.com"
   project: "docker-hub-proxy-cache"
+  ghcrProject: "ghcr-proxy-cache"
+  k8sProject: "registry-k8s-proxy-cache"
   imagePullSecretName: "harbor-proxy-cache"
+  ghcrImagePullSecretName: "harbor-ghcr-proxy-cache"
+  k8sImagePullSecretName: "harbor-registry-k8s-proxy-cache"
+  excludeNamespaces:
+    - harbor

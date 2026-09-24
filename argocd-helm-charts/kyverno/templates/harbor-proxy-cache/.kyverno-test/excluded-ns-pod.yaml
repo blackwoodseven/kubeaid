@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: excluded-ns-pod
+  namespace: harbor
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.27.1

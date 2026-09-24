@@ -1,1065 +1,117 @@
 {{- if (.Values.harborProxyCache).enabled }}
+{{- $_ := required "harborProxyCache.registry is required when enabled" .Values.harborProxyCache.registry }}
+{{- $dockerHub := printf "%s/%s/" .Values.harborProxyCache.registry (.Values.harborProxyCache.dockerHubProject | default (.Values.harborProxyCache.project | default "docker-hub-proxy-cache")) }}
+{{- $ghcr := "" }}{{ if .Values.harborProxyCache.ghcrProject }}{{ $ghcr = printf "%s/%s/" .Values.harborProxyCache.registry .Values.harborProxyCache.ghcrProject }}{{ end }}
+{{- $k8s := "" }}{{ if .Values.harborProxyCache.k8sProject }}{{ $k8s = printf "%s/%s/" .Values.harborProxyCache.registry .Values.harborProxyCache.k8sProject }}{{ end }}
 
-{{- $registry := .Values.harborProxyCache.registry | required "harborProxyCache.registry is required when enabled" }}
-{{- $dockerHubProj := .Values.harborProxyCache.dockerHubProject | default (.Values.harborProxyCache.project | default "docker-hub-proxy-cache") }}
-{{- $ghcrProj := .Values.harborProxyCache.ghcrProject | default "" }}
-{{- $k8sProj := .Values.harborProxyCache.k8sProject | default "" }}
-{{- $secretName := .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" }}
-{{- $ghcrSecretName := .Values.harborProxyCache.ghcrImagePullSecretName | default "harbor-ghcr-proxy-cache" }}
-{{- $k8sSecretName := .Values.harborProxyCache.k8sImagePullSecretName | default "harbor-registry-k8s-proxy-cache" }}
-
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: policies.kyverno.io/v1
+kind: MutatingPolicy
 metadata:
   name: harbor-proxy-cache-mutate
   annotations:
-    policies.kyverno.io/title: "Redirect Docker Hub images to Harbor proxy cache"
+    policies.kyverno.io/title: "Redirect public registry images to Harbor proxy cache"
     policies.kyverno.io/category: "Image Registry"
     policies.kyverno.io/severity: medium
     policies.kyverno.io/subject: "Pod,Deployment,StatefulSet,DaemonSet,Job,CronJob"
     policies.kyverno.io/description: >-
-      Automatically redirects docker.io and registry-1.docker.io images to Harbor proxy cache
-      to bypass Docker Hub rate limits. This policy mutates container images at admission time.
+      Rewrites container and initContainer images that point at Docker Hub, ghcr.io or
+      registry.k8s.io (each only when a Harbor project is configured for it) to the
+      proxy-cache projects on {{ .Values.harborProxyCache.registry }} and adds the matching imagePullSecret,
+      so pulls bypass upstream rate limits. Mutates at admission time on CREATE.
     kyverno.io/kubernetes-version: "1.27"
-    policies.kyverno.io/minversion: 1.11.4
+    policies.kyverno.io/minversion: 1.19.0
 spec:
-  admission: true
-  background: true
-  emitWarning: false
+  # A failure here must never block a workload from being created.
   failurePolicy: Ignore
-  mutateExistingOnPolicyUpdate: {{ .Values.harborProxyCache.mutateExistingOnPolicyUpdate | default false }}
-  rules:
-    # Pod: only CREATE. K8s forbids changing imagePullSecrets on existing pods (UPDATE).
-    - name: mutate-docker-io-containers
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-              operations:
-                - CREATE
-      {{- if .Values.harborProxyCache.excludeNamespaces }}
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                {{- range .Values.harborProxyCache.excludeNamespaces }}
-                - {{ . | quote }}
-                {{- end }}
-      {{- end }}
-      mutate:
-        foreach:
-          # Handle index.docker.io/ images
-          - list: "request.object.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-              any:
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: resolvedImage
-                variable:
-                  value: "{{`{{ replace_all(replace_all(element.image, 'index.docker.io/', ''), 'registry-1.docker.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                containers:
-                  - (name): "{{`{{ element.name }}`}}"
-                    image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ resolvedImage }}`}}"
-                imagePullSecrets:
-                  - name: {{ $secretName }}
-          # Handle docker.io/ images (but not index.docker.io/)
-          - list: "request.object.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: resolvedImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'docker.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                containers:
-                  - (name): "{{`{{ element.name }}`}}"
-                    image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ resolvedImage }}`}}"
-                imagePullSecrets:
-                  - name: {{ $secretName }}
-          {{- if $ghcrProj }}
-          # ghcr.io
-          - list: "request.object.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ $registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'ghcr.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: ghcrImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'ghcr.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                containers:
-                  - (name): "{{`{{ element.name }}`}}"
-                    image: "{{ $registry }}/{{ $ghcrProj }}/{{`{{ ghcrImage }}`}}"
-                imagePullSecrets:
-                  - name: {{ $ghcrSecretName }}
+  evaluation:
+    mutateExisting:
+      # Off by default: imagePullSecrets cannot be changed on a running Pod.
+      enabled: {{ .Values.harborProxyCache.mutateExistingOnPolicyUpdate | default false }}
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        operations: ["CREATE"]
+      - apiGroups: ["apps"]
+        apiVersions: ["v1"]
+        resources: ["deployments", "statefulsets", "daemonsets"]
+        operations: ["CREATE"]
+      - apiGroups: ["batch"]
+        apiVersions: ["v1"]
+        resources: ["jobs", "cronjobs"]
+        operations: ["CREATE"]
+  matchConditions:
+    {{- if .Values.harborProxyCache.excludeNamespaces }}
+    - name: not-excluded-namespace
+      expression: "!(object.metadata.namespace in [{{ range $idx, $ns := .Values.harborProxyCache.excludeNamespaces }}{{ if $idx }}, {{ end }}{{ $ns | squote }}{{ end }}])"
+    {{- end }}
+    - name: needs-rewrite
+      expression: "variables.rewritten.exists(c, c.new != c.image)"
+  variables:
+    # 1. Find the pod spec: its location depends on the kind.
+    - name: podSpec
+      expression: >-
+        object.kind == "Pod" ? object.spec
+        : object.kind == "CronJob" ? object.spec.jobTemplate.spec.template.spec
+        : object.spec.template.spec
+    - name: base
+      expression: >-
+        object.kind == "Pod" ? "/spec"
+        : object.kind == "CronJob" ? "/spec/jobTemplate/spec/template/spec"
+        : "/spec/template/spec"
+    # 2. Every container as {path, image}, containers and initContainers alike.
+    - name: containers
+      expression: >-
+        variables.podSpec.containers.map(c,
+          {"path": string(variables.base) + "/containers/" + string(variables.podSpec.containers.indexOf(c)) + "/image", "image": string(c.image)})
+        + (has(variables.podSpec.initContainers) ? variables.podSpec.initContainers.map(c,
+          {"path": string(variables.base) + "/initContainers/" + string(variables.podSpec.initContainers.indexOf(c)) + "/image", "image": string(c.image)}) : [])
+    # 3. Make Docker Hub references explicit: "nginx" -> "docker.io/library/nginx",
+    #    "org/app" -> "docker.io/org/app", other Docker Hub hosts -> "docker.io/".
+    - name: canonical
+      expression: >-
+        variables.containers.map(c, {"path": string(c.path), "image": string(c.image), "canonical":
+          c.image.matches("^[^/]+$") ? "docker.io/library/" + c.image
+          : c.image.matches("^[^/.:]+/.+$") ? "docker.io/" + c.image
+          : c.image.startsWith("index.docker.io/") ? "docker.io/" + c.image.substring(16)
+          : c.image.startsWith("registry-1.docker.io/") ? "docker.io/" + c.image.substring(21)
+          : c.image.startsWith("docker.io/") && !c.image.substring(10).contains("/") ? "docker.io/library/" + c.image.substring(10)
+          : string(c.image)})
+    # 4. Swap the public host for the Harbor project. Anything else is left as is.
+    - name: rewritten
+      expression: >-
+        variables.canonical.map(c, {"path": string(c.path), "image": string(c.image), "new":
+          c.canonical.startsWith("docker.io/") ? {{ $dockerHub | quote }} + c.canonical.substring(10)
+          {{- if $ghcr }}
+          : c.canonical.startsWith("ghcr.io/") ? {{ $ghcr | quote }} + c.canonical.substring(8)
           {{- end }}
-          {{- if $k8sProj }}
-          # registry.k8s.io
-          - list: "request.object.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ $registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry.k8s.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: k8sImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'registry.k8s.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                containers:
-                  - (name): "{{`{{ element.name }}`}}"
-                    image: "{{ $registry }}/{{ $k8sProj }}/{{`{{ k8sImage }}`}}"
-                imagePullSecrets:
-                  - name: {{ $k8sSecretName }}
+          {{- if $k8s }}
+          : c.canonical.startsWith("registry.k8s.io/") ? {{ $k8s | quote }} + c.canonical.substring(16)
           {{- end }}
-          # Handle implicit org/user Docker Hub images (e.g., graylog/graylog:6.3.1, velero/velero:v1.17.1)
-          - list: "request.object.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ regex_match('^[^/.:]+/.+$', element.image) }}`}}"
-                  operator: Equals
-                  value: true
-            patchStrategicMerge:
-              spec:
-                containers:
-                  - (name): "{{`{{ element.name }}`}}"
-                    image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ element.image }}`}}"
-                imagePullSecrets:
-                  - name: {{ .Values.harborProxyCache.imagePullSecretName }}
-          # Handle implicit official Docker Hub images (e.g., nginx:1.27.1, nats:2.11.1-alpine)
-          - list: "request.object.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ regex_match('^[^/]+$', element.image) }}`}}"
-                  operator: Equals
-                  value: true
-            patchStrategicMerge:
-              spec:
-                containers:
-                  - (name): "{{`{{ element.name }}`}}"
-                    image: "{{ $registry }}/{{ $dockerHubProj }}/library/{{`{{ element.image }}`}}"
-                imagePullSecrets:
-                  - name: {{ .Values.harborProxyCache.imagePullSecretName }}
-          # Handle index.docker.io/ initContainers
-          - list: "request.object.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-              any:
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: resolvedImage
-                variable:
-                  value: "{{`{{ replace_all(replace_all(element.image, 'index.docker.io/', ''), 'registry-1.docker.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                initContainers:
-                  - (name): "{{`{{ element.name }}`}}"
-                    image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ resolvedImage }}`}}"
-                imagePullSecrets:
-                  - name: {{ $secretName }}
-          # Handle docker.io/ initContainers (but not index.docker.io/)
-          - list: "request.object.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: resolvedImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'docker.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                initContainers:
-                  - (name): "{{`{{ element.name }}`}}"
-                    image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ resolvedImage }}`}}"
-                imagePullSecrets:
-                  - name: {{ $secretName }}
-          {{- if $ghcrProj }}
-          # ghcr.io initContainers
-          - list: "request.object.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ $registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'ghcr.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: ghcrImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'ghcr.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                initContainers:
-                  - (name): "{{`{{ element.name }}`}}"
-                    image: "{{ $registry }}/{{ $ghcrProj }}/{{`{{ ghcrImage }}`}}"
-                imagePullSecrets:
-                  - name: {{ $ghcrSecretName }}
-          {{- end }}
-          {{- if $k8sProj }}
-          # registry.k8s.io initContainers
-          - list: "request.object.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ $registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry.k8s.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: k8sImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'registry.k8s.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                initContainers:
-                  - (name): "{{`{{ element.name }}`}}"
-                    image: "{{ $registry }}/{{ $k8sProj }}/{{`{{ k8sImage }}`}}"
-                imagePullSecrets:
-                  - name: {{ $k8sSecretName }}
-          {{- end }}
-          # Handle implicit org/user initContainers (e.g., graylog/graylog:6.3.1)
-          - list: "request.object.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ regex_match('^[^/.:]+/.+$', element.image) }}`}}"
-                  operator: Equals
-                  value: true
-            patchStrategicMerge:
-              spec:
-                initContainers:
-                  - (name): "{{`{{ element.name }}`}}"
-                    image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ element.image }}`}}"
-                imagePullSecrets:
-                  - name: {{ .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" }}
-          # Handle implicit official initContainers (e.g., nginx:1.27.1)
-          - list: "request.object.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ regex_match('^[^/]+$', element.image) }}`}}"
-                  operator: Equals
-                  value: true
-            patchStrategicMerge:
-              spec:
-                initContainers:
-                  - (name): "{{`{{ element.name }}`}}"
-                    image: "{{ $registry }}/{{ $dockerHubProj }}/library/{{`{{ element.image }}`}}"
-                imagePullSecrets:
-                  - name: {{ .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" }}
-    - name: mutate-docker-io-workload-containers
-      match:
-        any:
-          - resources:
-              kinds:
-                - Deployment
-                - StatefulSet
-                - DaemonSet
-                - Job
-              operations:
-                - CREATE
-      {{- if .Values.harborProxyCache.excludeNamespaces }}
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                {{- range .Values.harborProxyCache.excludeNamespaces }}
-                - {{ . | quote }}
-                {{- end }}
-      {{- end }}
-      mutate:
-        foreach:
-          # Handle index.docker.io/ workload containers
-          - list: "request.object.spec.template.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-              any:
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: resolvedImage
-                variable:
-                  value: "{{`{{ replace_all(replace_all(element.image, 'index.docker.io/', ''), 'registry-1.docker.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                template:
-                  spec:
-                    containers:
-                      - (name): "{{`{{ element.name }}`}}"
-                        image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ resolvedImage }}`}}"
-                    imagePullSecrets:
-                      - name: {{ $secretName }}
-          # Handle docker.io/ workload containers (but not index.docker.io/)
-          - list: "request.object.spec.template.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: resolvedImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'docker.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                template:
-                  spec:
-                    containers:
-                      - (name): "{{`{{ element.name }}`}}"
-                        image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ resolvedImage }}`}}"
-                    imagePullSecrets:
-                      - name: {{ $secretName }}
-          {{- if $ghcrProj }}
-          # ghcr.io workload containers
-          - list: "request.object.spec.template.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ $registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'ghcr.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: ghcrImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'ghcr.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                template:
-                  spec:
-                    containers:
-                      - (name): "{{`{{ element.name }}`}}"
-                        image: "{{ $registry }}/{{ $ghcrProj }}/{{`{{ ghcrImage }}`}}"
-                    imagePullSecrets:
-                      - name: {{ $ghcrSecretName }}
-          {{- end }}
-          {{- if $k8sProj }}
-          # registry.k8s.io workload containers
-          - list: "request.object.spec.template.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ $registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry.k8s.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: k8sImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'registry.k8s.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                template:
-                  spec:
-                    containers:
-                      - (name): "{{`{{ element.name }}`}}"
-                        image: "{{ $registry }}/{{ $k8sProj }}/{{`{{ k8sImage }}`}}"
-                    imagePullSecrets:
-                      - name: {{ $k8sSecretName }}
-          {{- end }}
-          # Handle implicit org/user workload containers (e.g., graylog/graylog:6.3.1)
-          - list: "request.object.spec.template.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ regex_match('^[^/.:]+/.+$', element.image) }}`}}"
-                  operator: Equals
-                  value: true
-            patchStrategicMerge:
-              spec:
-                template:
-                  spec:
-                    containers:
-                      - (name): "{{`{{ element.name }}`}}"
-                        image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ element.image }}`}}"
-                    imagePullSecrets:
-                      - name: {{ .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" }}
-          # Handle implicit official workload containers (e.g., nginx:1.27.1)
-          - list: "request.object.spec.template.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ regex_match('^[^/]+$', element.image) }}`}}"
-                  operator: Equals
-                  value: true
-            patchStrategicMerge:
-              spec:
-                template:
-                  spec:
-                    containers:
-                      - (name): "{{`{{ element.name }}`}}"
-                        image: "{{ $registry }}/{{ $dockerHubProj }}/library/{{`{{ element.image }}`}}"
-                    imagePullSecrets:
-                      - name: {{ .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" }}
-          # Handle index.docker.io/ workload initContainers
-          - list: "request.object.spec.template.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-              any:
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: resolvedImage
-                variable:
-                  value: "{{`{{ replace_all(replace_all(element.image, 'index.docker.io/', ''), 'registry-1.docker.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                template:
-                  spec:
-                    initContainers:
-                      - (name): "{{`{{ element.name }}`}}"
-                        image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ resolvedImage }}`}}"
-                    imagePullSecrets:
-                      - name: {{ $secretName }}
-          # Handle docker.io/ workload initContainers (but not index.docker.io/)
-          - list: "request.object.spec.template.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: resolvedImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'docker.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                template:
-                  spec:
-                    initContainers:
-                      - (name): "{{`{{ element.name }}`}}"
-                        image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ resolvedImage }}`}}"
-                    imagePullSecrets:
-                      - name: {{ $secretName }}
-          {{- if $ghcrProj }}
-          # ghcr.io workload initContainers
-          - list: "request.object.spec.template.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ $registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'ghcr.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: ghcrImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'ghcr.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                template:
-                  spec:
-                    initContainers:
-                      - (name): "{{`{{ element.name }}`}}"
-                        image: "{{ $registry }}/{{ $ghcrProj }}/{{`{{ ghcrImage }}`}}"
-                    imagePullSecrets:
-                      - name: {{ $ghcrSecretName }}
-          {{- end }}
-          {{- if $k8sProj }}
-          # registry.k8s.io workload initContainers
-          - list: "request.object.spec.template.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ $registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry.k8s.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: k8sImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'registry.k8s.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                template:
-                  spec:
-                    initContainers:
-                      - (name): "{{`{{ element.name }}`}}"
-                        image: "{{ $registry }}/{{ $k8sProj }}/{{`{{ k8sImage }}`}}"
-                    imagePullSecrets:
-                      - name: {{ $k8sSecretName }}
-          {{- end }}
-          # Handle implicit org/user workload initContainers (e.g., graylog/graylog:6.3.1)
-          - list: "request.object.spec.template.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ regex_match('^[^/.:]+/.+$', element.image) }}`}}"
-                  operator: Equals
-                  value: true
-            patchStrategicMerge:
-              spec:
-                template:
-                  spec:
-                    initContainers:
-                      - (name): "{{`{{ element.name }}`}}"
-                        image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ element.image }}`}}"
-                    imagePullSecrets:
-                      - name: {{ .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" }}
-          # Handle implicit official workload initContainers (e.g., nginx:1.27.1)
-          - list: "request.object.spec.template.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ regex_match('^[^/]+$', element.image) }}`}}"
-                  operator: Equals
-                  value: true
-            patchStrategicMerge:
-              spec:
-                template:
-                  spec:
-                    initContainers:
-                      - (name): "{{`{{ element.name }}`}}"
-                        image: "{{ $registry }}/{{ $dockerHubProj }}/library/{{`{{ element.image }}`}}"
-                    imagePullSecrets:
-                      - name: {{ .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" }}
-    - name: mutate-docker-io-cronjob-containers
-      match:
-        any:
-          - resources:
-              kinds:
-                - CronJob
-              operations:
-                - CREATE
-      {{- if .Values.harborProxyCache.excludeNamespaces }}
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                {{- range .Values.harborProxyCache.excludeNamespaces }}
-                - {{ . | quote }}
-                {{- end }}
-      {{- end }}
-      mutate:
-        foreach:
-          # Handle index.docker.io/ CronJob containers
-          - list: "request.object.spec.jobTemplate.spec.template.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-              any:
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: resolvedImage
-                variable:
-                  value: "{{`{{ replace_all(replace_all(element.image, 'index.docker.io/', ''), 'registry-1.docker.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                jobTemplate:
-                  spec:
-                    template:
-                      spec:
-                        containers:
-                          - (name): "{{`{{ element.name }}`}}"
-                            image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ resolvedImage }}`}}"
-                        imagePullSecrets:
-                          - name: {{ $secretName }}
-          # Handle docker.io/ CronJob containers (but not index.docker.io/)
-          - list: "request.object.spec.jobTemplate.spec.template.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: resolvedImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'docker.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                jobTemplate:
-                  spec:
-                    template:
-                      spec:
-                        containers:
-                          - (name): "{{`{{ element.name }}`}}"
-                            image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ resolvedImage }}`}}"
-                        imagePullSecrets:
-                          - name: {{ $secretName }}
-          {{- if $ghcrProj }}
-          # ghcr.io CronJob containers
-          - list: "request.object.spec.jobTemplate.spec.template.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ $registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'ghcr.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: ghcrImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'ghcr.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                jobTemplate:
-                  spec:
-                    template:
-                      spec:
-                        containers:
-                          - (name): "{{`{{ element.name }}`}}"
-                            image: "{{ $registry }}/{{ $ghcrProj }}/{{`{{ ghcrImage }}`}}"
-                        imagePullSecrets:
-                          - name: {{ $ghcrSecretName }}
-          {{- end }}
-          {{- if $k8sProj }}
-          # registry.k8s.io CronJob containers
-          - list: "request.object.spec.jobTemplate.spec.template.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ $registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry.k8s.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: k8sImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'registry.k8s.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                jobTemplate:
-                  spec:
-                    template:
-                      spec:
-                        containers:
-                          - (name): "{{`{{ element.name }}`}}"
-                            image: "{{ $registry }}/{{ $k8sProj }}/{{`{{ k8sImage }}`}}"
-                        imagePullSecrets:
-                          - name: {{ $k8sSecretName }}
-          {{- end }}
-          # Handle implicit org/user CronJob containers (e.g., graylog/graylog:6.3.1)
-          - list: "request.object.spec.jobTemplate.spec.template.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ regex_match('^[^/.:]+/.+$', element.image) }}`}}"
-                  operator: Equals
-                  value: true
-            patchStrategicMerge:
-              spec:
-                jobTemplate:
-                  spec:
-                    template:
-                      spec:
-                        containers:
-                          - (name): "{{`{{ element.name }}`}}"
-                            image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ element.image }}`}}"
-                        imagePullSecrets:
-                          - name: {{ .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" }}
-          # Handle implicit official CronJob containers (e.g., nginx:1.27.1)
-          - list: "request.object.spec.jobTemplate.spec.template.spec.containers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ regex_match('^[^/]+$', element.image) }}`}}"
-                  operator: Equals
-                  value: true
-            patchStrategicMerge:
-              spec:
-                jobTemplate:
-                  spec:
-                    template:
-                      spec:
-                        containers:
-                          - (name): "{{`{{ element.name }}`}}"
-                            image: "{{ $registry }}/{{ $dockerHubProj }}/library/{{`{{ element.image }}`}}"
-                        imagePullSecrets:
-                          - name: {{ .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" }}
-          # Handle index.docker.io/ CronJob initContainers
-          - list: "request.object.spec.jobTemplate.spec.template.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-              any:
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: resolvedImage
-                variable:
-                  value: "{{`{{ replace_all(replace_all(element.image, 'index.docker.io/', ''), 'registry-1.docker.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                jobTemplate:
-                  spec:
-                    template:
-                      spec:
-                        initContainers:
-                          - (name): "{{`{{ element.name }}`}}"
-                            image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ resolvedImage }}`}}"
-                        imagePullSecrets:
-                          - name: {{ $secretName }}
-          # Handle docker.io/ CronJob initContainers (but not index.docker.io/)
-          - list: "request.object.spec.jobTemplate.spec.template.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: resolvedImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'docker.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                jobTemplate:
-                  spec:
-                    template:
-                      spec:
-                        initContainers:
-                          - (name): "{{`{{ element.name }}`}}"
-                            image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ resolvedImage }}`}}"
-                        imagePullSecrets:
-                          - name: {{ $secretName }}
-          {{- if $ghcrProj }}
-          # ghcr.io CronJob initContainers
-          - list: "request.object.spec.jobTemplate.spec.template.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ $registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'ghcr.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: ghcrImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'ghcr.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                jobTemplate:
-                  spec:
-                    template:
-                      spec:
-                        initContainers:
-                          - (name): "{{`{{ element.name }}`}}"
-                            image: "{{ $registry }}/{{ $ghcrProj }}/{{`{{ ghcrImage }}`}}"
-                        imagePullSecrets:
-                          - name: {{ $ghcrSecretName }}
-          {{- end }}
-          {{- if $k8sProj }}
-          # registry.k8s.io CronJob initContainers
-          - list: "request.object.spec.jobTemplate.spec.template.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ $registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry.k8s.io/') }}`}}"
-                  operator: Equals
-                  value: true
-            context:
-              - name: k8sImage
-                variable:
-                  value: "{{`{{ replace_all(element.image, 'registry.k8s.io/', '') }}`}}"
-            patchStrategicMerge:
-              spec:
-                jobTemplate:
-                  spec:
-                    template:
-                      spec:
-                        initContainers:
-                          - (name): "{{`{{ element.name }}`}}"
-                            image: "{{ $registry }}/{{ $k8sProj }}/{{`{{ k8sImage }}`}}"
-                        imagePullSecrets:
-                          - name: {{ $k8sSecretName }}
-          {{- end }}
-          # Handle implicit org/user CronJob initContainers (e.g., graylog/graylog:6.3.1)
-          - list: "request.object.spec.jobTemplate.spec.template.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ regex_match('^[^/.:]+/.+$', element.image) }}`}}"
-                  operator: Equals
-                  value: true
-            patchStrategicMerge:
-              spec:
-                jobTemplate:
-                  spec:
-                    template:
-                      spec:
-                        initContainers:
-                          - (name): "{{`{{ element.name }}`}}"
-                            image: "{{ $registry }}/{{ $dockerHubProj }}/{{`{{ element.image }}`}}"
-                        imagePullSecrets:
-                          - name: {{ .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" }}
-          # Handle implicit official CronJob initContainers (e.g., nginx:1.27.1)
-          - list: "request.object.spec.jobTemplate.spec.template.spec.initContainers[]"
-            preconditions:
-              all:
-                - key: "{{`{{ contains(element.image, '`}}{{ .Values.harborProxyCache.registry }}{{`') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'index.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ contains(element.image, 'registry-1.docker.io/') }}`}}"
-                  operator: Equals
-                  value: false
-                - key: "{{`{{ regex_match('^[^/]+$', element.image) }}`}}"
-                  operator: Equals
-                  value: true
-            patchStrategicMerge:
-              spec:
-                jobTemplate:
-                  spec:
-                    template:
-                      spec:
-                        initContainers:
-                          - (name): "{{`{{ element.name }}`}}"
-                            image: "{{ $registry }}/{{ $dockerHubProj }}/library/{{`{{ element.image }}`}}"
-                        imagePullSecrets:
-                          - name: {{ .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" }}
+          : string(c.image)})
+    # 5. One pull secret per Harbor project that is actually used, minus those already on the pod.
+    - name: pullSecrets
+      expression: >-
+        (variables.rewritten.exists(c, c.new.startsWith({{ $dockerHub | quote }})) ? [{{ .Values.harborProxyCache.imagePullSecretName | default "harbor-proxy-cache" | quote }}] : [])
+        {{- if $ghcr }}
+        + (variables.rewritten.exists(c, c.new.startsWith({{ $ghcr | quote }})) ? [{{ .Values.harborProxyCache.ghcrImagePullSecretName | default "harbor-ghcr-proxy-cache" | quote }}] : [])
+        {{- end }}
+        {{- if $k8s }}
+        + (variables.rewritten.exists(c, c.new.startsWith({{ $k8s | quote }})) ? [{{ .Values.harborProxyCache.k8sImagePullSecretName | default "harbor-registry-k8s-proxy-cache" | quote }}] : [])
+        {{- end }}
+    - name: existingPullSecrets
+      expression: "has(variables.podSpec.imagePullSecrets) ? variables.podSpec.imagePullSecrets.map(s, s.name) : []"
+  mutations:
+    # JSONPatch rather than ApplyConfiguration: imagePullSecrets is an atomic
+    # list in the Pod schema and cannot be appended to declaratively.
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: >-
+          variables.rewritten.filter(c, c.new != c.image).map(c,
+            JSONPatch{op: "replace", path: c.path, value: c.new})
+          + (variables.existingPullSecrets.size() == 0
+              ? [JSONPatch{op: "add", path: variables.base + "/imagePullSecrets", value: variables.pullSecrets.map(s, {"name": s})}]
+              : variables.pullSecrets.filter(s, !(s in variables.existingPullSecrets)).map(s,
+                  JSONPatch{op: "add", path: variables.base + "/imagePullSecrets/-", value: {"name": s}}))
 {{- end }}
