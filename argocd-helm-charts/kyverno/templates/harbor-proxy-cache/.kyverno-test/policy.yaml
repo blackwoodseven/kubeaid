@@ -40,82 +40,62 @@ spec:
   matchConditions:
     - name: not-excluded-namespace
       expression: "!(object.metadata.namespace in ['harbor'])"
-    # Skip entirely when no image needs rewriting, so unrelated workloads see no patch.
     - name: needs-rewrite
-      expression: "variables.pullSecrets.size() > 0"
+      expression: "variables.rewritten.exists(c, c.new != c.image)"
   variables:
-    # The pod spec sits at a different path per kind. All later variables and
-    # patch paths are built from these two, so one policy covers every kind.
-    - name: base
-      expression: >-
-        object.kind == "Pod" ? "/spec"
-        : object.kind == "CronJob" ? "/spec/jobTemplate/spec/template/spec"
-        : "/spec/template/spec"
+    # 1. Find the pod spec: its location depends on the kind.
     - name: podSpec
       expression: >-
         object.kind == "Pod" ? object.spec
         : object.kind == "CronJob" ? object.spec.jobTemplate.spec.template.spec
         : object.spec.template.spec
+    - name: base
+      expression: >-
+        object.kind == "Pod" ? "/spec"
+        : object.kind == "CronJob" ? "/spec/jobTemplate/spec/template/spec"
+        : "/spec/template/spec"
+    # 2. Every container as {path, image}, containers and initContainers alike.
     - name: containers
-      expression: "variables.podSpec.containers"
-    - name: initContainers
-      expression: "has(variables.podSpec.initContainers) ? variables.podSpec.initContainers : []"
-    - name: images
-      expression: "variables.containers.map(c, c.image) + variables.initContainers.map(c, c.image)"
-    # Which upstream registries are in use decides which pull secrets to add.
-    - name: dockerHubImages
       expression: >-
-        variables.images.filter(i, !i.startsWith("harbor.example.com/") && (
-          i.startsWith("index.docker.io/") || i.startsWith("registry-1.docker.io/") || i.startsWith("docker.io/")
-          || i.matches("^[^/.:]+/.+$") || i.matches("^[^/]+$")))
-    - name: ghcrImages
+        variables.podSpec.containers.map(c,
+          {"path": string(variables.base) + "/containers/" + string(variables.podSpec.containers.indexOf(c)) + "/image", "image": string(c.image)})
+        + (has(variables.podSpec.initContainers) ? variables.podSpec.initContainers.map(c,
+          {"path": string(variables.base) + "/initContainers/" + string(variables.podSpec.initContainers.indexOf(c)) + "/image", "image": string(c.image)}) : [])
+    # 3. Make Docker Hub references explicit: "nginx" -> "docker.io/library/nginx",
+    #    "org/app" -> "docker.io/org/app", other Docker Hub hosts -> "docker.io/".
+    - name: canonical
       expression: >-
-        variables.images.filter(i, !i.startsWith("harbor.example.com/") && i.startsWith("ghcr.io/"))
-    - name: k8sImages
+        variables.containers.map(c, {"path": string(c.path), "image": string(c.image), "canonical":
+          c.image.matches("^[^/]+$") ? "docker.io/library/" + c.image
+          : c.image.matches("^[^/.:]+/.+$") ? "docker.io/" + c.image
+          : c.image.startsWith("index.docker.io/") ? "docker.io/" + c.image.substring(16)
+          : c.image.startsWith("registry-1.docker.io/") ? "docker.io/" + c.image.substring(21)
+          : c.image.startsWith("docker.io/") && !c.image.substring(10).contains("/") ? "docker.io/library/" + c.image.substring(10)
+          : string(c.image)})
+    # 4. Swap the public host for the Harbor project. Anything else is left as is.
+    - name: rewritten
       expression: >-
-        variables.images.filter(i, !i.startsWith("harbor.example.com/") && i.startsWith("registry.k8s.io/"))
+        variables.canonical.map(c, {"path": string(c.path), "image": string(c.image), "new":
+          c.canonical.startsWith("docker.io/") ? "harbor.example.com/docker-hub-proxy-cache/" + c.canonical.substring(10)
+          : c.canonical.startsWith("ghcr.io/") ? "harbor.example.com/ghcr-proxy-cache/" + c.canonical.substring(8)
+          : c.canonical.startsWith("registry.k8s.io/") ? "harbor.example.com/registry-k8s-proxy-cache/" + c.canonical.substring(16)
+          : string(c.image)})
+    # 5. One pull secret per Harbor project that is actually used, minus those already on the pod.
     - name: pullSecrets
       expression: >-
-        (variables.dockerHubImages.size() > 0 ? ["harbor-proxy-cache"] : [])
-        + (variables.ghcrImages.size() > 0 ? ["harbor-ghcr-proxy-cache"] : [])
-        + (variables.k8sImages.size() > 0 ? ["harbor-registry-k8s-proxy-cache"] : [])
+        (variables.rewritten.exists(c, c.new.startsWith("harbor.example.com/docker-hub-proxy-cache/")) ? ["harbor-proxy-cache"] : [])
+        + (variables.rewritten.exists(c, c.new.startsWith("harbor.example.com/ghcr-proxy-cache/")) ? ["harbor-ghcr-proxy-cache"] : [])
+        + (variables.rewritten.exists(c, c.new.startsWith("harbor.example.com/registry-k8s-proxy-cache/")) ? ["harbor-registry-k8s-proxy-cache"] : [])
     - name: existingPullSecrets
       expression: "has(variables.podSpec.imagePullSecrets) ? variables.podSpec.imagePullSecrets.map(s, s.name) : []"
   mutations:
-    # One JSON patch per container image, plus the pull secrets that are missing.
-    # JSONPatch is used instead of ApplyConfiguration because imagePullSecrets is
-    # an atomic list in the Pod schema and cannot be appended to declaratively.
+    # JSONPatch rather than ApplyConfiguration: imagePullSecrets is an atomic
+    # list in the Pod schema and cannot be appended to declaratively.
     - patchType: JSONPatch
       jsonPatch:
         expression: >-
-          variables.containers.map(c, JSONPatch{
-            op: "replace",
-            path: variables.base + "/containers/" + string(variables.containers.indexOf(c)) + "/image",
-            value: 
-              c.image.startsWith("harbor.example.com/") ? c.image
-              : c.image.startsWith("index.docker.io/") ? "harbor.example.com/docker-hub-proxy-cache/" + (c.image.substring(16).contains("/") ? c.image.substring(16) : "library/" + c.image.substring(16))
-              : c.image.startsWith("registry-1.docker.io/") ? "harbor.example.com/docker-hub-proxy-cache/" + (c.image.substring(21).contains("/") ? c.image.substring(21) : "library/" + c.image.substring(21))
-              : c.image.startsWith("docker.io/") ? "harbor.example.com/docker-hub-proxy-cache/" + (c.image.substring(10).contains("/") ? c.image.substring(10) : "library/" + c.image.substring(10))
-              : c.image.startsWith("ghcr.io/") ? "harbor.example.com/ghcr-proxy-cache/" + c.image.substring(8)
-              : c.image.startsWith("registry.k8s.io/") ? "harbor.example.com/registry-k8s-proxy-cache/" + c.image.substring(16)
-              : c.image.matches("^[^/.:]+/.+$") ? "harbor.example.com/docker-hub-proxy-cache/" + c.image
-              : c.image.matches("^[^/]+$") ? "harbor.example.com/docker-hub-proxy-cache/library/" + c.image
-              : c.image
-          })
-          + variables.initContainers.map(c, JSONPatch{
-            op: "replace",
-            path: variables.base + "/initContainers/" + string(variables.initContainers.indexOf(c)) + "/image",
-            value: 
-              c.image.startsWith("harbor.example.com/") ? c.image
-              : c.image.startsWith("index.docker.io/") ? "harbor.example.com/docker-hub-proxy-cache/" + (c.image.substring(16).contains("/") ? c.image.substring(16) : "library/" + c.image.substring(16))
-              : c.image.startsWith("registry-1.docker.io/") ? "harbor.example.com/docker-hub-proxy-cache/" + (c.image.substring(21).contains("/") ? c.image.substring(21) : "library/" + c.image.substring(21))
-              : c.image.startsWith("docker.io/") ? "harbor.example.com/docker-hub-proxy-cache/" + (c.image.substring(10).contains("/") ? c.image.substring(10) : "library/" + c.image.substring(10))
-              : c.image.startsWith("ghcr.io/") ? "harbor.example.com/ghcr-proxy-cache/" + c.image.substring(8)
-              : c.image.startsWith("registry.k8s.io/") ? "harbor.example.com/registry-k8s-proxy-cache/" + c.image.substring(16)
-              : c.image.matches("^[^/.:]+/.+$") ? "harbor.example.com/docker-hub-proxy-cache/" + c.image
-              : c.image.matches("^[^/]+$") ? "harbor.example.com/docker-hub-proxy-cache/library/" + c.image
-              : c.image
-          })
+          variables.rewritten.filter(c, c.new != c.image).map(c,
+            JSONPatch{op: "replace", path: c.path, value: c.new})
           + (variables.existingPullSecrets.size() == 0
               ? [JSONPatch{op: "add", path: variables.base + "/imagePullSecrets", value: variables.pullSecrets.map(s, {"name": s})}]
               : variables.pullSecrets.filter(s, !(s in variables.existingPullSecrets)).map(s,
