@@ -3,6 +3,9 @@ global:
     enabled: true
     instanceName: openvox
     instances: 1
+    # PuppetDB refuses to start without pg_trgm.
+    postInitApplicationSQL:
+      - CREATE EXTENSION IF NOT EXISTS pg_trgm
     size: 2Gi
     monitoring:
       enablePodMonitor: true
@@ -30,7 +33,7 @@ puppetserver:
       OPENVOXSERVER_ENC_PATH: /etc/puppetlabs/code/environments/master/linuxaid_enc.rb
     postgresql:
       auth:
-        existingSecret: puppetserver-pgsql-app
+        existingSecret: openvox-pgsql-app
         secretKeys:
           usernameKey: username
           userPasswordKey: password
@@ -134,8 +137,8 @@ puppetserver:
     fqdns:
       alternateServerNames:
     extraEnv:
-      OPENVOXDB_POSTGRES_HOSTNAME: puppetserver-pgsql-rw
-      OPENVOXDB_POSTGRES_DATABASE: puppetdb
+      OPENVOXDB_POSTGRES_HOSTNAME: openvox-pgsql-rw
+      OPENVOXDB_POSTGRES_DATABASE: app
       OPENVOXDB_JAVA_ARGS: "-Xms512m -Xmx2500m -XX:+HeapDumpOnOutOfMemoryError"
 
   puppetboard:

@@ -90,6 +90,11 @@ global:
     # -- Database owner created during initdb
     owner: app
 
+    # -- SQL run inside the application database right after initdb, for
+    # extensions an app needs (CREATE EXTENSION requires superuser, so the
+    # app cannot do it itself). Only runs on a fresh bootstrap.
+    postInitApplicationSQL: []
+
     # -- Name of an existing kubernetes.io/basic-auth Secret holding the owner's
     # credentials. Omit to let CNPG generate them into <instanceName>-pgsql-app.
     # Set it when the password must be known ahead of time, e.g. an app that

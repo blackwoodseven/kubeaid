@@ -79,6 +79,10 @@ spec:
       secret:
         name: {{ . }}
       {{- end }}
+      {{- with .Values.global.postgresql.postInitApplicationSQL }}
+      postInitApplicationSQL:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     {{- end }}
 
   {{- if $postgresql.recover.enabled }}
