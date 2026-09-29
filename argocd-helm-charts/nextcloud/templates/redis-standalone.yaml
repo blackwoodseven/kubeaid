@@ -29,8 +29,11 @@ spec:
       name: {{ .name }}
       key: {{ .key }}
     {{- end }}
+  # The CRD requires redisExporter.image even with the exporter disabled; without
+  # it the API server rejects the whole CR (spec.redisExporter.image: Required value).
   redisExporter:
     enabled: false
+    image: quay.io/opstree/redis-exporter:v1.44.0
   storage:
     volumeClaimTemplate:
       spec:
