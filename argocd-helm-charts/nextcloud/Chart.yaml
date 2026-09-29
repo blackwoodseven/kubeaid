@@ -1,0 +1,13 @@
+apiVersion: v2
+name: nextcloud
+description: Nextcloud - file sync and share, and the WOPI host for Collabora Online.
+type: application
+version: 1.0.0
+# see latest chart here: https://artifacthub.io/packages/helm/nextcloud/nextcloud
+dependencies:
+  - name: nextcloud
+    version: 9.3.0
+    repository: https://nextcloud.github.io/helm/
+  - name: kubeaid-addons
+    version: 1.1.0
+    repository: file://../kubeaid-addons
