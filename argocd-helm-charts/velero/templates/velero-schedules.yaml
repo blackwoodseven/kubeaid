@@ -1,3 +1,34 @@
+{{/*
+Shared body for every Schedule. Takes the root context plus this schedule's ttl and,
+optionally, a storageLocation - so adding a schedule below is a few lines rather than
+another copy of this block.
+*/}}
+{{- define "velero.scheduleTemplate" -}}
+template:
+  hooks: {}
+  resourcePolicy:
+    kind: configmap
+    name: cnpg-skip-volumes
+  csiSnapshotTimeout: {{ .root.Values.schedule.csiSnapshotTimeout | default "40m" }}
+  itemOperationTimeout: 300m
+  includedNamespaces:
+  {{- if .root.Values.schedule.includedNamespaces }}
+  {{- toYaml .root.Values.schedule.includedNamespaces | nindent 4 }}
+  {{- else }}
+    - "*"
+  {{- end }}
+  {{- if .root.Values.schedule.excludedResources }}
+  excludedResources:
+  {{- toYaml .root.Values.schedule.excludedResources | nindent 4 }}
+  {{- end }}
+  {{- if .storageLocation }}
+  storageLocation: {{ .storageLocation }}
+  {{- end }}
+  ttl: {{ .ttl }}
+  metadata:
+    labels:
+      argocd.argoproj.io/instance: velero
+{{- end -}}
 {{ if .Values.schedule.daily }}
 apiVersion: velero.io/v1
 kind: Schedule
@@ -7,27 +38,7 @@ metadata:
 spec:
   # Sunday backup are done via weekly scheduled
   schedule: '0 {{ .Values.schedule.dailyHour | default 3 }} * * 1-6'
-  template:
-    hooks: {}
-    resourcePolicy:
-      kind: configmap
-      name: cnpg-skip-volumes
-    csiSnapshotTimeout: {{ .Values.schedule.csiSnapshotTimeout | default "40m" }}
-    itemOperationTimeout: 300m
-    includedNamespaces:
-    {{- if .Values.schedule.includedNamespaces }}
-    {{- toYaml .Values.schedule.includedNamespaces | nindent 6 }}
-    {{- else }}
-      - "*"
-    {{- end }}
-    {{- if .Values.schedule.excludedResources }}
-    excludedResources:
-    {{- toYaml .Values.schedule.excludedResources | nindent 6 }}
-    {{- end }}
-    ttl: {{ .Values.schedule.dailyTTL | default "720h0m0s" }}
-    metadata:
-      labels:
-        argocd.argoproj.io/instance: velero
+{{ include "velero.scheduleTemplate" (dict "root" . "ttl" (.Values.schedule.dailyTTL | default "720h0m0s")) | indent 2 }}
 {{ end }}
 {{ if .Values.schedule.weekly }}
 ---
@@ -38,27 +49,7 @@ metadata:
   namespace: velero
 spec:
   schedule: '0 {{ .Values.schedule.dailyHour | default 3 }} * * 0'
-  template:
-    hooks: {}
-    resourcePolicy:
-      kind: configmap
-      name: cnpg-skip-volumes
-    csiSnapshotTimeout: {{ .Values.schedule.csiSnapshotTimeout | default "40m" }}
-    itemOperationTimeout: 300m
-    includedNamespaces:
-    {{- if .Values.schedule.includedNamespaces }}
-    {{- toYaml .Values.schedule.includedNamespaces | nindent 6 }}
-    {{- else }}
-      - "*"
-    {{- end }}
-    {{- if .Values.schedule.excludedResources }}
-    excludedResources:
-    {{- toYaml .Values.schedule.excludedResources | nindent 6 }}
-    {{- end }}
-    ttl: {{ .Values.schedule.weeklyTTL | default "2160h0m0s" }}
-    metadata:
-      labels:
-        argocd.argoproj.io/instance: velero
+{{ include "velero.scheduleTemplate" (dict "root" . "ttl" (.Values.schedule.weeklyTTL | default "2160h0m0s")) | indent 2 }}
 {{ end }}
 {{ if .Values.schedule.sixhourly }}
 ---
@@ -70,25 +61,44 @@ metadata:
 spec:
   # backup at 00 hrs are done via daily backup
   schedule: '0 6,12,18 * * *'
-  template:
-    hooks: {}
-    resourcePolicy:
-      kind: configmap
-      name: cnpg-skip-volumes
-    csiSnapshotTimeout: {{ .Values.schedule.csiSnapshotTimeout | default "40m" }}
-    itemOperationTimeout: 300m
-    includedNamespaces:
-    {{- if .Values.schedule.includedNamespaces }}
-    {{- toYaml .Values.schedule.includedNamespaces | nindent 6 }}
-    {{- else }}
-      - "*"
-    {{- end }}
-    {{- if .Values.schedule.excludedResources }}
-    excludedResources:
-    {{- toYaml .Values.schedule.excludedResources | nindent 6 }}
-    {{- end }}
-    ttl: 336h0m0s
-    metadata:
-      labels:
-        argocd.argoproj.io/instance: velero
+{{ include "velero.scheduleTemplate" (dict "root" . "ttl" "336h0m0s") | indent 2 }}
+{{ end }}
+{{/*
+Offsite copies.
+
+Velero writes a backup to exactly one BackupStorageLocation, so an independent copy on
+separate hardware needs its own Schedule. Replicating the primary bucket instead would
+faithfully copy a corruption that went unnoticed for weeks - which is the case an
+offsite copy exists to survive.
+
+The offsite BSL is expected to be append-only (no delete granted to the credential), so
+Velero cannot expire what it writes there and its DeleteBackupRequests against it will
+fail by design. Retention runs on the offsite host with admin credentials; the TTL below
+is not what reclaims space.
+*/}}
+{{ if .Values.schedule.offsite }}
+{{ $offsiteLocation := required "schedule.offsite.storageLocation is required when schedule.offsite is set" .Values.schedule.offsite.storageLocation }}
+{{ if .Values.schedule.offsite.daily }}
+---
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: daily-backup-offsite
+  namespace: velero
+spec:
+  # Offset from the primary schedules so both are not saturating the same uplink.
+  schedule: '0 {{ .Values.schedule.offsite.hour | default 6 }} * * 1-6'
+{{ include "velero.scheduleTemplate" (dict "root" . "ttl" (.Values.schedule.offsite.dailyTTL | default "720h0m0s") "storageLocation" $offsiteLocation) | indent 2 }}
+{{ end }}
+{{ if .Values.schedule.offsite.weekly }}
+---
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: weekly-backup-offsite
+  namespace: velero
+spec:
+  schedule: '0 {{ .Values.schedule.offsite.hour | default 6 }} * * 0'
+{{ include "velero.scheduleTemplate" (dict "root" . "ttl" (.Values.schedule.offsite.weeklyTTL | default "8760h0m0s") "storageLocation" $offsiteLocation) | indent 2 }}
+{{ end }}
 {{ end }}
