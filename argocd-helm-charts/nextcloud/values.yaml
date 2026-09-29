@@ -109,6 +109,24 @@ nextcloud:
     accessMode: ReadWriteOnce
     # storageClass: ""
 
+  # On first start the entrypoint copies the whole Nextcloud tree (tens of
+  # thousands of small files) into the data volume and then runs the installer,
+  # and Apache only starts listening after both. On network storage such as
+  # CephFS that takes minutes. Without a startup probe, liveness (10s delay, 3
+  # failures) kills the container mid-copy on every attempt. Worse, because
+  # version.php is copied last and the installer runs after it, a kill in that
+  # gap leaves a volume that looks installed but is not - the next start skips
+  # the installer and serves an uninstalled Nextcloud ("installed": false).
+  #
+  # 30s + 60 x 10s = about 10 minutes before liveness and readiness take over.
+  startupProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 60
+    successThreshold: 1
+
   # Turned on per cluster.
   ingress:
     enabled: false
