@@ -856,6 +856,9 @@ readinessProbe:
   timeoutSeconds: 5
   failureThreshold: 3
   successThreshold: 1
+# KubeAid local patch: extra /etc/hosts entries for the pod (not in upstream 9.3.0).
+hostAliases: []
+
 startupProbe:
   enabled: false
   initialDelaySeconds: 30
