@@ -90,4 +90,4 @@ The TLS secret should contain `tls.crt`, `tls.key`, and optionally `ca.crt` keys
 
 ## Client
 
-Linux hosts run [obmondo-security-exporter](https://github.com/Obmondo/security-exporter), a daemon that collects installed packages, sends them to the Vuls server for scanning, and exposes CVE metrics via Prometheus.
+Linux hosts run [obmondo-security-exporter](https://github.com/Obmondo/linuxaid-security-exporter), a daemon that collects installed packages, sends them to the Vuls server for scanning, and exposes CVE metrics via Prometheus.

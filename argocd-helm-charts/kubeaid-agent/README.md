@@ -177,7 +177,7 @@ deliberately not alerted on: a collection failure is a debugging signal, not som
 
 - Chart source: `templates/` and [values.yaml](./values.yaml) in this directory (documented inline).
 - Security exporter source: <https://gitea.obmondo.com/EnableIT/kubeaid-security-exporter>
-- Node package exporter source: <https://github.com/Obmondo/security-exporter>, with chart docs in
+- Node package exporter source: <https://github.com/Obmondo/linuxaid-security-exporter>, with chart docs in
   [charts/linuxaid-security-exporter](./charts/linuxaid-security-exporter)
 - Backup exporter: [guide](../../docs/guides/backup-exporter.md)
 - Obmondo: <https://obmondo.com>
