@@ -49,14 +49,14 @@ not every cluster runs those backups.
 
 It is deployed with the `kubeaid-agent` Argo CD application, but is **off by default** — it needs S3
 credentials for each backend it reports on, and there is no sane default for those. Set
-`backup-exporter.enabled: true` along with the credentials below. The Helm dependency condition
-and parent values key are both hyphenated (`backup-exporter`), matching `Chart.yaml`.
+`kubeaid-backup-exporter.enabled: true` along with the credentials below. The Helm dependency condition
+and parent values key are both the chart name (`kubeaid-backup-exporter`), matching `Chart.yaml`.
 
-Key values, all under the `backup-exporter` key in `values-kubeaid-agent.yaml` (sibling of
+Key values, all under the `kubeaid-backup-exporter` key in `values-kubeaid-agent.yaml` (sibling of
 `appConfig`, not nested under it):
 
 ```yaml
-backup-exporter:
+kubeaid-backup-exporter:
   enabled: true
 
   exporter:
