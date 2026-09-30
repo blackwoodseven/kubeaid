@@ -6,6 +6,7 @@ Wraps the upstream Kyverno chart and ships three KubeAid policies, all written a
 | Policy | Kind | Values key | Default |
 | --- | --- | --- | --- |
 | harbor-proxy-cache-mutate | MutatingPolicy | `harborProxyCache` | off |
+| replace-container-image-registries | MutatingPolicy | `pullThroughCache`, `upstreamRegistries` | off |
 | sync-secrets-\<item\> (one per item) | GeneratingPolicy | `syncSecrets` | off |
 | resourcequota-generator, limitrange-generator | GeneratingPolicy | `resourceQuotaLimitRangeGenerator` | **on** |
 
@@ -34,6 +35,33 @@ harborProxyCache:
 
 The pull secrets must exist in every namespace the policy touches; `syncSecrets` below is
 one way to get them there.
+
+## replace-container-image-registries
+
+Rewrites container and initContainer images from the listed upstream registries to a
+generic pull-through proxy cache (ECR, ACR, a Harbor project), keeping the full upstream
+path: `docker.io/velero/velero:v1.16.1` becomes
+`<proxyRegistry>/docker.io/velero/velero:v1.16.1`, `nginx:1.27` becomes
+`<proxyRegistry>/docker.io/library/nginx:1.27`. Applies on CREATE and UPDATE to Pods,
+Deployments, StatefulSets, DaemonSets, Jobs and CronJobs. Images already on the proxy, or
+from a registry not in the list, are left alone. Tags and digests are kept exactly as
+written; nothing is looked up in the registry. Use `harborProxyCache` instead when the
+target is Harbor with one project per upstream and pull secrets to inject.
+
+```yaml
+pullThroughCache:
+  enabled: true
+  proxyRegistry: 123456789012.dkr.ecr.eu-west-1.amazonaws.com/my-prefix   # required
+  mutateExistingOnPolicyUpdate: false
+  excludeNamespaces: []
+upstreamRegistries:            # top level, as before; also accepted under pullThroughCache
+  - docker.io
+  - ghcr.io
+```
+
+The proxy must be configured to serve those upstream paths under its prefix (an ECR
+pull-through cache rule, an ACR cache rule, a Harbor proxy project named after the
+upstream host).
 
 ## sync-secrets
 
@@ -94,9 +122,10 @@ resourceQuotaLimitRangeGenerator:
 Deleting these policies deletes the generated quotas and limit ranges (synchronize is on,
 and they are data-generated, not cloned). Copied Secrets are retained on policy deletion.
 
-## Testing the harbor policy locally
+## Testing the mutating policies locally
 
-`templates/harbor-proxy-cache/.kyverno-test/` is a Kyverno CLI (v1.19+) suite. The policy is
+`templates/harbor-proxy-cache/.kyverno-test/` and
+`templates/replace-container-image-registries/.kyverno-test/` are Kyverno CLI (v1.19+) suites. The policy is
 rendered from the chart with the suite's `values.yaml`, so what is tested is what Argo CD
 would apply.
 
@@ -104,6 +133,9 @@ would apply.
 # from argocd-helm-charts/kyverno
 d=templates/harbor-proxy-cache/.kyverno-test
 helm template kyverno . -f $d/values.yaml --show-only templates/harbor-proxy-cache/harbor-proxy-cache-mutate.yaml > $d/policy.yaml
+kyverno test $d
+d=templates/replace-container-image-registries/.kyverno-test
+helm template kyverno . -f $d/values.yaml --show-only templates/replace-container-image-registries/policy.yaml > $d/policy.yaml
 kyverno test $d
 ```
 
@@ -126,3 +158,12 @@ replaced by the new ones in one step, the way Argo CD syncs.
   admission controller can get and list Secrets, which this chart never granted. A cluster
   that has it running today got that permission from somewhere else.
 - The harbor policy patches at admission only, as before. The values keys are unchanged.
+- `replace-container-image-registries` was removed from the chart between 26.1.0 and
+  32.2.0 and is back as a MutatingPolicy under the same values keys. Two differences from
+  the legacy version: image tags are no longer resolved to digests at admission (that was a
+  registry lookup on every pod create), and pod controllers are matched explicitly instead
+  of through legacy autogen. Note that the keys must sit at the top level of the values
+  file, not under `kyverno:`.
+- Anything that limits which objects a policy touches (namespaces above all) is a
+  `matchConstraints` selector, never a `matchConditions` expression: the mutate-existing
+  back-fill selects its targets from `matchConstraints` alone and ignores conditions.

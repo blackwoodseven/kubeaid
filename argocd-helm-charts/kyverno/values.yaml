@@ -1,6 +1,21 @@
 harborProxyCache:
   enabled: false
 
+# Rewrite images from the listed upstream registries to a pull-through proxy cache,
+# keeping the full upstream path: docker.io/velero/velero:v1 becomes
+# <proxyRegistry>/docker.io/velero/velero:v1. Tags and digests stay as written.
+pullThroughCache:
+  enabled: false
+  # proxyRegistry: 123456789012.dkr.ecr.eu-west-1.amazonaws.com/my-prefix
+  mutateExistingOnPolicyUpdate: false
+  excludeNamespaces: []
+# Registry hosts, or host/path prefixes, to rewrite. Matched against the canonical
+# image name, so "docker.io" also catches "nginx" and "org/app".
+upstreamRegistries: []
+# - docker.io
+# - ghcr.io
+# - registry.k8s.io
+
 resourceQuotaLimitRangeGenerator:
   enabled: true
   generateExisting: true
