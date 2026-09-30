@@ -37,9 +37,15 @@ spec:
         apiVersions: ["v1"]
         resources: ["jobs", "cronjobs"]
         operations: ["CREATE"]
+    # As a selector, not a match condition: the mutate-existing back-fill honours
+    # matchConstraints only.
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - "harbor"
   matchConditions:
-    - name: not-excluded-namespace
-      expression: "!(object.metadata.namespace in ['harbor'])"
     - name: needs-rewrite
       expression: "variables.rewritten.exists(c, c.new != c.image)"
   variables:
