@@ -49,10 +49,9 @@ rules:
       - daemonsets
     verbs: ["get"]
 
-  # Deployments also need list: the backup exporter's Deployment/Service
-  # name is release-derived, not pinned, so the agent's "Backup monitor"
-  # job discovers it cluster-wide by the app.kubernetes.io/name=backup-exporter
-  # label rather than by a known name (internal/core/backup/handler.go).
+  # Deployments also need list: the agent's "Backup monitor" job discovers the
+  # backup exporter cluster-wide by its app.kubernetes.io/component=backup-exporter
+  # label rather than by a known name (internal/core/backup/exporter.go).
   # Without list this job fails Forbidden every cycle and no backup status
   # ever reaches Obmondo API.
   - apiGroups: ["apps"]

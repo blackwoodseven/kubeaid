@@ -52,14 +52,16 @@ a pod on every node and reports to a Vuls server. Neither security exporter need
 the node one reuses the cluster's `obmondo-clientcert` — so turning either on is nothing more than
 `enabled: true`.
 
-kubeaid-backup-exporter and kubeaid-security-exporter are discovered by the agent at runtime rather than
-wired by config, so their object names are **pinned** rather than release-derived. The agent finds the backup
-exporter by the label `app.kubernetes.io/name=backup-exporter` — which its `nameOverride` holds at that
-value, deliberately not following the chart's rename, since kubeaid-cli looks for the same label — and
-reaches kubeaid-security-exporter at the Service name in
-`appConfig.securityPosture.exporterURL`. Renaming either without the other end silently stops reporting.
-linuxaid-security-exporter is outside that arrangement: it reports to Vuls itself, and the agent never
-contacts it.
+Each exporter names its objects after its chart, not the release: `kubeaid-security-exporter`,
+`kubeaid-backup-exporter` and `linuxaid-security-exporter`. The agent finds the backup exporter at runtime by
+its fixed label `app.kubernetes.io/component=backup-exporter` (kubeaid-cli does the same from v0.31.10), and
+reaches kubeaid-security-exporter at the Service name in `appConfig.securityPosture.exporterURL`, so renaming
+that one without the URL silently stops reporting. linuxaid-security-exporter reports to Vuls itself, and the
+agent never contacts it.
+
+Upgrading from a chart before 0.6.0 renames the backup exporter's objects from `backup-exporter`. Sync with
+prune: the agent refuses to choose between two exporter Deployments, so backup reporting stalls until the old
+one is gone.
 
 ## Why it's in KubeAid
 

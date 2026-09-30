@@ -1,21 +1,6 @@
-{{/*
-  app.kubernetes.io/name MUST stay "backup-exporter". kubeaid-agent discovers
-  this exporter by listing Deployments AND Services with the selector
-  app.kubernetes.io/name=backup-exporter (internal/core/backup/exporter.go), and
-  kubeaid-cli does the same. Rename it and discover() returns errExporterAbsent,
-  which is indistinguishable from "not installed" -- backups simply stop being
-  reported, with nothing failing.
-
-  The chart is named kubeaid-backup-exporter, so the .Chart.Name default would
-  now give the wrong answer: values.yaml pins nameOverride to backup-exporter,
-  and it must stay pinned.
-*/}}
+{{/* Chart name, or nameOverride. */}}
 {{- define "backup-exporter.name" -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- if ne $name "backup-exporter" -}}
-{{- fail "kubeaid-backup-exporter: nameOverride must stay \"backup-exporter\" — kubeaid-agent and kubeaid-cli find this exporter by app.kubernetes.io/name, and a different value makes them report it as not installed. The pin goes once every cluster runs versions that select on app.kubernetes.io/component." -}}
-{{- end -}}
-{{- $name | trunc 63 | trimSuffix "-" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "backup-exporter.fullname" -}}
@@ -34,8 +19,8 @@ app.kubernetes.io/component: backup-exporter
 {{- end }}
 
 {{/*
-  Carries the label the agent selects on. Applied to both the Deployment and the
-  Service, because discover() lists both with the same selector.
+  Pod selector for the Deployment and the Service. kubeaid-agent and kubeaid-cli
+  find the exporter by the fixed app.kubernetes.io/component label instead.
 */}}
 {{- define "backup-exporter.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "backup-exporter.name" . }}
