@@ -8,7 +8,7 @@ operating system underneath them.
 ## Why it's in KubeAid
 
 Nothing else in the cluster answers "which CVEs are the nodes themselves exposed to". LinuxAid runs
-[the same exporter](https://github.com/Obmondo/security-exporter) as a systemd service on ordinary
+[the same exporter](https://github.com/Obmondo/linuxaid-security-exporter) as a systemd service on ordinary
 servers; this chart runs it on cluster nodes, reporting to the same Vuls server, so nodes and
 servers are scanned by one pipeline.
 
@@ -103,7 +103,7 @@ it whatever that value says.
 
 | Value | Default | Meaning |
 |---|---|---|
-| `image.repository`, `image.tag` | `ghcr.io/obmondo/security-exporter`, `v2.5.0` | Exporter image. |
+| `image.repository`, `image.tag` | `ghcr.io/obmondo/linuxaid-security-exporter`, `v2.5.0` | Exporter image. |
 | `vulsServer.url` | `https://vuls.obmondo.com` | Where package lists are sent. |
 | `vulsServer.timeout` | `5m` | A scan of a few hundred packages is not quick; this is the HTTP timeout. |
 | `obmondoClientCert.secretName` | `obmondo-clientcert` | Secret holding `tls.crt` and `tls.key`. |
@@ -131,5 +131,5 @@ mount. CVE matching uses installed versions and is unaffected.
 
 ## Docs links
 
-- [security-exporter](https://github.com/Obmondo/security-exporter)
+- [linuxaid-security-exporter](https://github.com/Obmondo/linuxaid-security-exporter)
 - Related: [`linuxaid-agents`](../linuxaid-agents) runs LinuxAid's OpenVox agent on the same nodes.
