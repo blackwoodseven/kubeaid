@@ -183,12 +183,22 @@ rook-ceph-cluster:
         metadataServer:
           activeCount: 1
           activeStandby: true
+          # The MDS is sized against mds_cache_memory_limit, which Ceph defaults
+          # to 4Gi. The cache limit is a soft target the daemon routinely
+          # overshoots, so the container needs headroom above it - Ceph's own
+          # guidance is to keep the cache well under the container limit. At the
+          # 700Mi this used to be, the MDS reached up:active and was then
+          # OOMKilled within seconds, taking CephFS provisioning down with it
+          # (ProvisioningFailed / DeadlineExceeded on every new PVC) and leaving
+          # the filesystem with no standby.
+          #
+          # Lower this only together with mds_cache_memory_limit.
           resources:
             limits:
-              memory: "700Mi"
+              memory: "4Gi"
             requests:
               cpu: "200m"
-              memory: "500Mi"
+              memory: "2Gi"
           priorityClassName: system-cluster-critical
       storageClass:
         enabled: true
