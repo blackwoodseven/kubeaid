@@ -2,6 +2,56 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 33.0.1
+
+### Features
+
+- 6f1db342f feat(velero): add opt-in offsite schedules on a separate BSL
+- b90070b55 feat(velero): let clusters add skip policies instead of replacing them
+- d8162a885 feat: add kube-prom stack v0.19.0
+- df9b6795a feat(kyverno): rewrite ResourceQuota/LimitRange generator as CEL GeneratingPolicies
+- 242faa900 feat(kyverno): rewrite sync-secrets as CEL GeneratingPolicies
+- 4a23bbf94 feat(kyverno): rewrite harbor-proxy-cache policy as a CEL MutatingPolicy
+- a111b449e feat(netbird): serve STUN/TURN on the host network
+- 1d8098dd7 feat(velero): make schedule csiSnapshotTimeout configurable
+
+### Bug Fixes
+
+- 9c9e6c4a4 fix(linuxaid-security-exporter): pull the image as linuxaid-security-exporter
+- d9740eccd fix(opsbridge): drop CPU limit
+- 1f22a2004 fix(fluent-bit): buffer on filesystem so a down output cannot OOM the pod
+- d8f1b4974 fix(rook-ceph): give the CephFS MDS enough memory to stay alive
+- 321431d16 fix: update the compatibility matrix with k8s 1.36, 1.37 and kube-prom v0.19.0 stack relationship
+- 15815c0b0 fix(cluster-api): make the ClusterAPI components prefer running on the worker nodes
+- f2bc2f0e4 fix(openvox): point PuppetDB at the cluster the chart creates
+- 7ca17af70 fix(charts): correct the stale kubeaid-addons version pins
+- 8778b26a3 fix(charts): declare the hand-vendored subcharts in three charts
+- 380e2a953 fix(netbird): correct the stale kubeaid-addons version pin
+- 02bae0db4 fix(helm): make the pixelfed and gitea charts pass helm lint
+
+### Configuration Changes
+
+- a552080a4 chore: update gfetch to the latest v1.4.1 tag
+- 80b10b726 chore(netbird): bump coturn to 10.3.0
+- d3b9d8259 chore(helm): prune bundled minio from openobserve
+- d12e3af9f chore(helm): remove the oncall, yetibot, minio and circleci-runner charts
+- 7a0944b27 chore(helm): prune bundled postgresql from six charts
+- 3a61a0c88 chore(ci): run the helm chart update at 03:00 UTC on Sundays
+- 27bee86ee chore(netbird): turn both coturn database subcharts off explicitly
+- 3b845adb2 chore(netbird): prune coturn's bundled database subcharts
+
+### Other Changes
+
+- f0d8bfde9 refactor(velero): move the schedule helper into _helpers.tpl
+- 5a6b0cf14 (chore): update readme by removing template detials
+- 26f0ab6df docs(kyverno): describe how each policy template is built
+- b20b471d0 refactor(kyverno): drop the quota/limitrange helper file
+- b20597309 refactor(kyverno): simplify the ResourceQuota/LimitRange generator
+- 9680e3c71 refactor(kyverno): restructure the CEL policies for readability
+- 767ab434f refactor(kyverno): reference .Values directly instead of template variables
+- d136dfa64 docs(kyverno): rewrite chart README for the CEL policies
+- c8fe0e589 test(kyverno): update harbor-proxy-cache CLI suite for the CEL policy
+
 ## KubeAid Release Version 33.0.0
 
 ### Major Version Upgrades
