@@ -1,12 +1,12 @@
 apiVersion: v2
 name: kubeaid-agent
-description: KubeAid Agent and its security-posture exporter — one Argo CD application, two Deployments.
+description: KubeAid Agent and its three exporters — cluster and image scanning, node package scanning, and backup health — in one Argo CD application.
 icon: https://avatars.githubusercontent.com/u/13882947?s=250&v=4
 
 type: application
 
-version: 0.5.9
-appVersion: "v1.1.2"
+version: 0.6.0
+appVersion: "v1.1.3"
 
 keywords:
   - obmondo
@@ -24,18 +24,18 @@ maintainers:
     email: basit@obmondo.com
     url: https://github.com/basit9958
 
-# Both live in charts/ and are therefore resolved locally: no repository, no
-# Chart.lock, no `helm dependency update`. The conditions let a cluster take the
-# agent alone, or the agent plus either exporter.
+# All three live in charts/ and are therefore resolved locally: no repository,
+# no Chart.lock, no `helm dependency update`. The conditions let a cluster take
+# the agent alone, or the agent plus any of the exporters.
 dependencies:
   - name: kubeaid-security-exporter
     version: 0.3.5
     condition: kubeaid-security-exporter.enabled
 
   - name: linuxaid-security-exporter
-    version: 0.1.0
+    version: 0.2.0
     condition: linuxaid-security-exporter.enabled
 
   - name: kubeaid-backup-exporter
-    version: 0.4.8
+    version: 0.5.0
     condition: kubeaid-backup-exporter.enabled
