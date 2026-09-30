@@ -1,0 +1,96 @@
+---
+# Source: kyverno/templates/replace-container-image-registries/policy.yaml
+apiVersion: policies.kyverno.io/v1
+kind: MutatingPolicy
+metadata:
+  name: replace-container-image-registries
+  annotations:
+    policies.kyverno.io/title: "Replace container image registries"
+    policies.kyverno.io/category: "Image Registry"
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/subject: "Pod,Deployment,StatefulSet,DaemonSet,Job,CronJob"
+    policies.kyverno.io/description: >-
+      Rewrites container and initContainer images that come from the configured upstream
+      registries (docker.io, ghcr.io) to the pull-through proxy cache
+      proxy.example.com, keeping the full upstream path, so
+      docker.io/velero/velero:v1 becomes proxy.example.com/docker.io/velero/velero:v1.
+      Tags and digests are kept as written; nothing is resolved against the registry.
+    kyverno.io/kubernetes-version: "1.27"
+    policies.kyverno.io/minversion: 1.19.0
+spec:
+  # A failure here must never block a workload from being created.
+  failurePolicy: Ignore
+  evaluation:
+    mutateExisting:
+      enabled: false
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        operations: ["CREATE", "UPDATE"]
+      - apiGroups: ["apps"]
+        apiVersions: ["v1"]
+        resources: ["deployments", "statefulsets", "daemonsets"]
+        operations: ["CREATE", "UPDATE"]
+      - apiGroups: ["batch"]
+        apiVersions: ["v1"]
+        resources: ["jobs", "cronjobs"]
+        operations: ["CREATE", "UPDATE"]
+    # As a selector, not a match condition: the mutate-existing back-fill honours
+    # matchConstraints only.
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - "kyverno"
+  matchConditions:
+    - name: needs-rewrite
+      expression: "variables.rewritten.exists(c, c.new != c.image)"
+  variables:
+    # 1. Find the pod spec: its location depends on the kind.
+    - name: podSpec
+      expression: >-
+        object.kind == "Pod" ? object.spec
+        : object.kind == "CronJob" ? object.spec.jobTemplate.spec.template.spec
+        : object.spec.template.spec
+    - name: base
+      expression: >-
+        object.kind == "Pod" ? "/spec"
+        : object.kind == "CronJob" ? "/spec/jobTemplate/spec/template/spec"
+        : "/spec/template/spec"
+    # 2. Every container as {path, image}, containers and initContainers alike.
+    - name: containers
+      expression: >-
+        variables.podSpec.containers.map(c,
+          {"path": string(variables.base) + "/containers/" + string(variables.podSpec.containers.indexOf(c)) + "/image", "image": string(c.image)})
+        + (has(variables.podSpec.initContainers) ? variables.podSpec.initContainers.map(c,
+          {"path": string(variables.base) + "/initContainers/" + string(variables.podSpec.initContainers.indexOf(c)) + "/image", "image": string(c.image)}) : [])
+    # 3. Make Docker Hub references explicit, so upstream prefixes can be matched:
+    #    "nginx" -> "docker.io/library/nginx", "org/app" -> "docker.io/org/app",
+    #    other Docker Hub hosts -> "docker.io/".
+    - name: canonical
+      expression: >-
+        variables.containers.map(c, {"path": string(c.path), "image": string(c.image), "canonical":
+          c.image.matches("^[^/]+$") ? "docker.io/library/" + c.image
+          : c.image.matches("^[^/.:]+/.+$") ? "docker.io/" + c.image
+          : c.image.startsWith("index.docker.io/") ? "docker.io/" + c.image.substring(16)
+          : c.image.startsWith("registry-1.docker.io/") ? "docker.io/" + c.image.substring(21)
+          : c.image.startsWith("docker.io/") && !c.image.substring(10).contains("/") ? "docker.io/library/" + c.image.substring(10)
+          : string(c.image)})
+    # 4. Prefix the proxy when the canonical image comes from a configured upstream.
+    #    Images already on the proxy, or from any other registry, are left as is.
+    - name: rewritten
+      expression: >-
+        variables.canonical.map(c, {"path": string(c.path), "image": string(c.image), "new":
+          c.image.startsWith("proxy.example.com/") ? string(c.image)
+          : c.canonical.startsWith("docker.io/") ? "proxy.example.com/" + c.canonical
+          : c.canonical.startsWith("ghcr.io/") ? "proxy.example.com/" + c.canonical
+          : string(c.image)})
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: >-
+          variables.rewritten.filter(c, c.new != c.image).map(c,
+            JSONPatch{op: "replace", path: c.path, value: c.new})
