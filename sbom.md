@@ -765,8 +765,8 @@
 
 - **Images:**
   - alpine:3.21
-  - ghcr.io/obmondo/vuls:45714b6
   - ghcr.io/oras-project/oras:v1.2.2
+  - vuls/vuls:v0.41.0
 
 ### whoami
 

@@ -56,7 +56,7 @@ Both init containers skip work if a valid database (>5 GB) already exists on the
 |-----------|-------------|---------|
 | `vulsServer.enabled` | Deploy the Vuls scan server | `true` |
 | `vulsServer.image.repository` | Vuls server image | `vuls/vuls` |
-| `vulsServer.image.tag` | Vuls server image tag | `v0.38.6` |
+| `vulsServer.image.tag` | Vuls server image tag | `v0.41.0` |
 | `vulsServer.port` | Listen port | `5515` |
 | `vulsServer.resources` | Resource requests/limits | 50m/100m CPU, 256Mi/512Mi |
 | `vulsServer.resultsDir` | Directory where Vuls writes scan results | `/vuls/results` |
