@@ -103,7 +103,7 @@ it whatever that value says.
 
 | Value | Default | Meaning |
 |---|---|---|
-| `image.repository`, `image.tag` | `ghcr.io/obmondo/linuxaid-security-exporter`, `v2.5.0` | Exporter image. |
+| `image.repository`, `image.tag` | `ghcr.io/obmondo/linuxaid-security-exporter`, `v2.5.1` | Exporter image. |
 | `vulsServer.url` | `https://vuls.obmondo.com` | Where package lists are sent. |
 | `vulsServer.timeout` | `5m` | A scan of a few hundred packages is not quick; this is the HTTP timeout. |
 | `obmondoClientCert.secretName` | `obmondo-clientcert` | Secret holding `tls.crt` and `tls.key`. |

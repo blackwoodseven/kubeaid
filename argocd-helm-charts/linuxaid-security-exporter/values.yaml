@@ -12,8 +12,7 @@ enabled: false
 
 image:
   repository: ghcr.io/obmondo/linuxaid-security-exporter
-  # the first release that publishes a container image
-  tag: v2.5.0
+  tag: v2.5.1
   pullPolicy: IfNotPresent
 
 # Vuls server the package lists are sent to, over mTLS with the certificate below.

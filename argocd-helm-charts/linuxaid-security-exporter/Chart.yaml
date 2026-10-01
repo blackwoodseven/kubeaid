@@ -7,8 +7,8 @@ description: >-
   client certificate.
 icon: https://avatars.githubusercontent.com/u/13882947?s=250&v=4
 type: application
-version: 0.2.0
-appVersion: v2.5.0
+version: 0.2.1
+appVersion: v2.5.1
 keywords:
   - obmondo
   - kubeaid
