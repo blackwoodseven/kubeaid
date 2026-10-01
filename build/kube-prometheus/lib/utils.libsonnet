@@ -13,6 +13,17 @@
     },
   },
 
+  blackboxClientCertModule(mountPath):: {
+    prober: 'http',
+    http: {
+      preferred_ip_protocol: 'ip4',
+      tls_config: {
+        cert_file: mountPath + '/tls.crt',
+        key_file: mountPath + '/tls.key',
+      },
+    },
+  },
+
   ingress(name, namespace, rules, tls, annotations, ingressClassName=null):: {
     apiVersion: 'networking.k8s.io/v1',
     kind: 'Ingress',
