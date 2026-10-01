@@ -68,6 +68,13 @@
     name: 'kube-prometheus-stack-grafana',
     key: 'grafana-keycloak-secret',
   },
+  // Loki data sources in Grafana, see docs/grafana.md
+  loki: {
+    enable: false,
+    tenants: [],
+    // Overrides for the data source body, e.g. { url: '...' }
+    settings: {},
+  },
   prometheus: {
     storage: {
       size: '30Gi',

@@ -40,6 +40,27 @@ local vars = default_vars + ext_vars + default_kubeaid_apps_vars;
 local etcdMetrics = vars.etcd_metrics;
 local etcdMetricsResources = (import 'lib/etcd-metrics.libsonnet')(etcdMetrics);
 
+// Merge with the defaults so clusters only set what they change
+local loki = default_vars.loki + vars.loki;
+// loki-<tenant> per tenant, or a single 'loki' when there are no tenants
+local lokiDatasources = if !loki.enable then [] else [
+  {
+    name: if tenant == null then 'loki' else 'loki-' + tenant,
+    orgId: 1,
+    type: 'loki',
+    url: 'http://loki-query-frontend.monitoring.svc.cluster.local:3100',
+    version: 1,
+    access: 'proxy',
+    editable: false,
+  } + (
+    if tenant == null then {} else {
+      jsonData: { httpHeaderName1: 'X-Scope-OrgID' },
+      secureJsonData: { httpHeaderValue1: tenant },
+    }
+  ) + loki.settings
+  for tenant in (if std.length(loki.tenants) == 0 then [null] else loki.tenants)
+];
+
 local _validationErrors = validate(vars);
 assert std.length(_validationErrors) == 0 :
        '\n\nVars validation failed:\n' + std.join('\n', ['  - ' + e for e in _validationErrors]) + '\n';
@@ -583,7 +604,8 @@ local kp =
               access: 'proxy',
               editable: false,
             },
-          ] + if std.objectHas(vars, 'grafana_external_datasources') then vars.grafana_external_datasources else []
+          ] + lokiDatasources
+          + if std.objectHas(vars, 'grafana_external_datasources') then vars.grafana_external_datasources else []
         ),
         analytics+: {
           check_for_updates: false,

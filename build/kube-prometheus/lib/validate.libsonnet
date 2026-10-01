@@ -78,6 +78,40 @@ function(vars)
           'etcd_metrics.endpoints must be an array',
         ),
 
+      if std.objectHas(vars, 'loki') then
+        check(
+          std.type(vars.loki) == 'object',
+          'loki must be an object (got: %s)' % std.type(vars.loki),
+        ),
+
+      if std.objectHas(vars, 'loki') && std.type(vars.loki) == 'object' && std.objectHas(vars.loki, 'enable') then
+        check(
+          std.type(vars.loki.enable) == 'boolean',
+          'loki.enable must be true or false',
+        ),
+
+      if std.objectHas(vars, 'loki') && std.type(vars.loki) == 'object' && std.objectHas(vars.loki, 'tenants') then
+        check(
+          std.type(vars.loki.tenants) == 'array',
+          'loki.tenants must be an array of tenant names',
+        ),
+
+      if std.objectHas(vars, 'loki') && std.type(vars.loki) == 'object' && std.objectHas(vars.loki, 'tenants') && std.type(vars.loki.tenants) == 'array' then
+        local names = std.filter(function(t) std.type(t) == 'string' && t != '', vars.loki.tenants);
+        if std.length(names) != std.length(vars.loki.tenants) then
+          'loki.tenants must only contain tenant names (non-empty strings)'
+        else
+          check(
+            std.length(std.set(names)) == std.length(names),
+            'loki.tenants has duplicate names',
+          ),
+
+      if std.objectHas(vars, 'loki') && std.type(vars.loki) == 'object' && std.objectHas(vars.loki, 'settings') then
+        check(
+          std.type(vars.loki.settings) == 'object',
+          'loki.settings must be an object',
+        ),
+
     ]
   );
 

@@ -22,6 +22,32 @@
 - Overwrite `custom-dashboard.json` in your kubeaid-config repo.
 - Run the build script, merge, and sync in ArgoCD (expect ConfigMap changes).
 
+## Loki data sources
+
+If [Loki](../../../argocd-helm-charts/loki/README.md) runs in the `monitoring` namespace of the same cluster:
+
+```jsonnet
+loki: {
+  enable: true,
+  tenants: ['prod', 'staging'],
+},
+```
+
+Each tenant gets a `loki-<tenant>` data source that queries the query-frontend directly with the tenant in
+the `X-Scope-OrgID` header, so no password is needed. Without `tenants` you get one `loki` data source with
+no header, for a Loki with `auth_enabled: false`.
+
+Use `settings` to change the data source, for example the URL in Monolithic mode, which has no query-frontend:
+
+```jsonnet
+loki: {
+  enable: true,
+  settings: { url: 'http://loki.monitoring.svc.cluster.local:3100' },
+},
+```
+
+Use `jsonData+:` in `settings` to add to `jsonData` without replacing it.
+
 ## Adding the Alertmanager Secret
 
 Use the [example config](../examples/alertmanager-config/alertmanager-main-slack.yaml) to create your `alertmanager-main` secret.
