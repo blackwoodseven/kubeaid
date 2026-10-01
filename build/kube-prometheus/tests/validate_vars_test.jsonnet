@@ -125,6 +125,50 @@ test.suite({
     expect: true,
   },
 
+  // ── loki type checks ────────────────────────────────────────────────────
+
+  testLoki_valid: {
+    local vars = cfgKubeadmFull { loki: { enable: true, tenants: ['prod'], settings: { url: 'http://loki:3100' } } },
+    actual: noErrors(vars),
+    expect: true,
+  },
+
+  testLoki_mustBeObject: {
+    local vars = cfgKubeadmFull { loki: true },
+    actual: hasError(vars, 'loki must be an object'),
+    expect: true,
+  },
+
+  testLoki_enableMustBeBoolean: {
+    local vars = cfgKubeadmFull { loki: { enable: 'yes' } },
+    actual: hasError(vars, 'loki.enable must be true or false'),
+    expect: true,
+  },
+
+  testLoki_tenantsMustBeArray: {
+    local vars = cfgKubeadmFull { loki: { enable: true, tenants: 'prod' } },
+    actual: hasError(vars, 'loki.tenants must be an array'),
+    expect: true,
+  },
+
+  testLoki_tenantsMustBeStrings: {
+    local vars = cfgKubeadmFull { loki: { enable: true, tenants: ['prod', 5] } },
+    actual: hasError(vars, 'loki.tenants must only contain tenant names'),
+    expect: true,
+  },
+
+  testLoki_tenantsMustBeUnique: {
+    local vars = cfgKubeadmFull { loki: { enable: true, tenants: ['prod', 'prod'] } },
+    actual: hasError(vars, 'loki.tenants has duplicate names'),
+    expect: true,
+  },
+
+  testLoki_settingsMustBeObject: {
+    local vars = cfgKubeadmFull { loki: { enable: true, settings: 'http://loki:3100' } },
+    actual: hasError(vars, 'loki.settings must be an object'),
+    expect: true,
+  },
+
   // ── multiple errors returned at once ────────────────────────────────────
 
   testMultipleErrors_countedCorrectly: {
