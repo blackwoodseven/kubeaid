@@ -80,7 +80,7 @@ assert_present "vulsServer: results PVC created" "results-pvc" \
 assert_present "vulsServer: db PVC created" "db-pvc" \
   --set vulsServer.enabled=true
 
-assert_present "vulsServer: image is ghcr.io/obmondo/vuls:45714b6" "ghcr.io/obmondo/vuls:45714b6" \
+assert_present "vulsServer: image is vuls/vuls:v0.41.0" "vuls/vuls:v0.41.0" \
   --set vulsServer.enabled=true
 
 assert_present "vulsServer: listens on port 5515" "containerPort: 5515" \

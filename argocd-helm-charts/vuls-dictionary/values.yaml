@@ -78,14 +78,11 @@ vuls2:
   dbPath: /vuls-db/vuls.db
   minDbSizeBytes: "5368709120"
 
-# the latest release ATM i.e 0.39.3 doesn't have the report from NVD and other sources
-# But, its fixed in the latest master - so, we have built the image and pushed
-# Will point to official repo once its released upstream
 vulsServer:
   enabled: true
   image:
-    repository: ghcr.io/obmondo/vuls
-    tag: "45714b6"
+    repository: vuls/vuls
+    tag: "v0.41.0"
     pullPolicy: IfNotPresent
   port: 5515
   resources:
