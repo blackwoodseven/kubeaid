@@ -564,6 +564,11 @@ local kp =
             scopes=std.get(vars.blackbox_exporter_oauth_modules[name], 'scopes', ['openid']),
           )
           for name in std.objectFields(vars.blackbox_exporter_oauth_modules)
+        } + {
+          [name]: utils.blackboxClientCertModule(
+            mountPath='/etc/blackbox_exporter/' + vars.blackbox_exporter_client_cert_modules[name].secretName,
+          )
+          for name in std.objectFields(vars.blackbox_exporter_client_cert_modules)
         },
       },
       // This is ONLY supported in release-0.11+ and main
@@ -862,20 +867,24 @@ local kp =
         },
       } else {}
   ) + (
-    local oauthSecretNames = std.set([
+    // the secrets the oauth and client certificate modules read, mounted once each
+    local moduleSecretNames = std.set([
       vars.blackbox_exporter_oauth_modules[m].secretName
       for m in std.objectFields(vars.blackbox_exporter_oauth_modules)
+    ] + [
+      vars.blackbox_exporter_client_cert_modules[m].secretName
+      for m in std.objectFields(vars.blackbox_exporter_client_cert_modules)
     ]);
-    if vars['blackbox-exporter'] && std.length(oauthSecretNames) > 0 then {
+    if vars['blackbox-exporter'] && std.length(moduleSecretNames) > 0 then {
       blackboxExporter+: {
         deployment+: {
           spec+: {
             template+: {
               spec+: {
-                volumes+: [{ name: s, secret: { secretName: s } } for s in oauthSecretNames],
+                volumes+: [{ name: s, secret: { secretName: s } } for s in moduleSecretNames],
                 containers: [
                   if c.name == 'blackbox-exporter' then c {
-                    volumeMounts+: [{ name: s, mountPath: '/etc/blackbox_exporter/' + s, readOnly: true } for s in oauthSecretNames],
+                    volumeMounts+: [{ name: s, mountPath: '/etc/blackbox_exporter/' + s, readOnly: true } for s in moduleSecretNames],
                   } else c
                   for c in super.containers
                 ],

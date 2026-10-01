@@ -57,6 +57,9 @@
   },
   blackbox_exporter_modules: {},
   blackbox_exporter_oauth_modules: {},
+  // module name -> { secretName }: an http module that presents the client
+  // certificate of that kubernetes.io/tls secret, for targets that require one
+  blackbox_exporter_client_cert_modules: {},
   prometheus_probe_module: 'http_2xx',
 
   grafana_keycloak_enable: false,
