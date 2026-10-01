@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: registry-specified, namespace: default}
+spec:
+  containers:
+    - {name: velero, image: proxy.example.com/docker.io/velero/velero:v1.16.1}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: registry-unspecified, namespace: default}
+spec:
+  containers:
+    - {name: velero, image: proxy.example.com/docker.io/velero/velero:v1.16.1}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: official-image, namespace: default}
+spec:
+  containers:
+    - {name: nginx, image: proxy.example.com/docker.io/library/nginx:1.27.1}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: tag-unspecified, namespace: default}
+spec:
+  containers:
+    - {name: velero, image: proxy.example.com/docker.io/velero/velero}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: digest-specified, namespace: default}
+spec:
+  containers:
+    - {name: velero, image: proxy.example.com/docker.io/velero/velero@sha256:3608bca1e44ea6c4d268eb6db02260269892c0b42b86bbf1e77a6fa16c3c9282}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: mixed, namespace: default}
+spec:
+  initContainers:
+    - {name: init, image: proxy.example.com/docker.io/library/busybox:1.36}
+  containers:
+    - {name: app, image: proxy.example.com/ghcr.io/stakater/reloader:v1.4.21}
+    - {name: other-registry, image: quay.io/prometheus/node-exporter:v1.8.2}
+    - {name: already-proxied, image: proxy.example.com/docker.io/library/nginx:1.27.1}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: deploy, namespace: default}
+spec:
+  selector: {matchLabels: {app: d}}
+  template:
+    metadata: {labels: {app: d}}
+    spec:
+      containers:
+        - {name: app, image: proxy.example.com/docker.io/velero/velero:v1.16.1}

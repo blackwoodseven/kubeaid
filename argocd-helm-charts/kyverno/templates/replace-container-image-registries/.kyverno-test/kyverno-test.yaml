@@ -1,0 +1,44 @@
+# Run from the chart dir after rendering policy.yaml (see chart README):
+#   helm template kyverno . -f templates/replace-container-image-registries/.kyverno-test/values.yaml \
+#     --show-only templates/replace-container-image-registries/policy.yaml \
+#     > templates/replace-container-image-registries/.kyverno-test/policy.yaml
+#   kyverno test templates/replace-container-image-registries/.kyverno-test
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: replace-container-image-registries
+policies:
+  - policy.yaml
+resources:
+  - resources.yaml
+results:
+  # explicit and implicit Docker Hub forms all end up as <proxy>/docker.io/<path>
+  - policy: replace-container-image-registries
+    kind: Pod
+    resources: [default/registry-specified, default/registry-unspecified, default/official-image]
+    patchedResources: patched.yaml
+    result: pass
+  # tags and digests are kept exactly as written
+  - policy: replace-container-image-registries
+    kind: Pod
+    resources: [default/tag-unspecified, default/digest-specified]
+    patchedResources: patched.yaml
+    result: pass
+  # initContainer rewritten, second upstream (ghcr.io) rewritten, an unlisted
+  # registry and an already-proxied image left alone, all in one Pod
+  - policy: replace-container-image-registries
+    kind: Pod
+    resources: [default/mixed]
+    patchedResources: patched.yaml
+    result: pass
+  # pod controllers: the pod spec is found under spec.template
+  - policy: replace-container-image-registries
+    kind: Deployment
+    resources: [default/deploy]
+    patchedResources: patched.yaml
+    result: pass
+  # nothing to rewrite, or excluded namespace: no patch at all
+  - policy: replace-container-image-registries
+    kind: Pod
+    resources: [default/untouched-registry, kyverno/excluded-ns]
+    result: skip

@@ -1,0 +1,7 @@
+pullThroughCache:
+  enabled: true
+  proxyRegistry: proxy.example.com
+  excludeNamespaces: [kyverno]
+upstreamRegistries:
+  - docker.io
+  - ghcr.io

@@ -1,19 +1,20 @@
 ---
-# Source: kyverno/templates/harbor-proxy-cache/harbor-proxy-cache-mutate.yaml
+# Source: kyverno/templates/replace-container-image-registries/policy.yaml
 apiVersion: policies.kyverno.io/v1
 kind: MutatingPolicy
 metadata:
-  name: harbor-proxy-cache-mutate
+  name: replace-container-image-registries
   annotations:
-    policies.kyverno.io/title: "Redirect public registry images to Harbor proxy cache"
+    policies.kyverno.io/title: "Replace container image registries"
     policies.kyverno.io/category: "Image Registry"
-    policies.kyverno.io/severity: medium
+    policies.kyverno.io/severity: high
     policies.kyverno.io/subject: "Pod,Deployment,StatefulSet,DaemonSet,Job,CronJob"
     policies.kyverno.io/description: >-
-      Rewrites container and initContainer images that point at Docker Hub, ghcr.io or
-      registry.k8s.io (each only when a Harbor project is configured for it) to the
-      proxy-cache projects on harbor.example.com and adds the matching imagePullSecret,
-      so pulls bypass upstream rate limits. Mutates at admission time on CREATE.
+      Rewrites container and initContainer images that come from the configured upstream
+      registries (docker.io, ghcr.io) to the pull-through proxy cache
+      proxy.example.com, keeping the full upstream path, so
+      docker.io/velero/velero:v1 becomes proxy.example.com/docker.io/velero/velero:v1.
+      Tags and digests are kept as written; nothing is resolved against the registry.
     kyverno.io/kubernetes-version: "1.27"
     policies.kyverno.io/minversion: 1.19.0
 spec:
@@ -21,22 +22,21 @@ spec:
   failurePolicy: Ignore
   evaluation:
     mutateExisting:
-      # Off by default: imagePullSecrets cannot be changed on a running Pod.
       enabled: false
   matchConstraints:
     resourceRules:
       - apiGroups: [""]
         apiVersions: ["v1"]
         resources: ["pods"]
-        operations: ["CREATE"]
+        operations: ["CREATE", "UPDATE"]
       - apiGroups: ["apps"]
         apiVersions: ["v1"]
         resources: ["deployments", "statefulsets", "daemonsets"]
-        operations: ["CREATE"]
+        operations: ["CREATE", "UPDATE"]
       - apiGroups: ["batch"]
         apiVersions: ["v1"]
         resources: ["jobs", "cronjobs"]
-        operations: ["CREATE"]
+        operations: ["CREATE", "UPDATE"]
     # As a selector, not a match condition: the mutate-existing back-fill honours
     # matchConstraints only.
     namespaceSelector:
@@ -44,7 +44,7 @@ spec:
         - key: kubernetes.io/metadata.name
           operator: NotIn
           values:
-            - "harbor"
+            - "kyverno"
   matchConditions:
     - name: needs-rewrite
       expression: "variables.rewritten.exists(c, c.new != c.image)"
@@ -67,8 +67,9 @@ spec:
           {"path": string(variables.base) + "/containers/" + string(variables.podSpec.containers.indexOf(c)) + "/image", "image": string(c.image)})
         + (has(variables.podSpec.initContainers) ? variables.podSpec.initContainers.map(c,
           {"path": string(variables.base) + "/initContainers/" + string(variables.podSpec.initContainers.indexOf(c)) + "/image", "image": string(c.image)}) : [])
-    # 3. Make Docker Hub references explicit: "nginx" -> "docker.io/library/nginx",
-    #    "org/app" -> "docker.io/org/app", other Docker Hub hosts -> "docker.io/".
+    # 3. Make Docker Hub references explicit, so upstream prefixes can be matched:
+    #    "nginx" -> "docker.io/library/nginx", "org/app" -> "docker.io/org/app",
+    #    other Docker Hub hosts -> "docker.io/".
     - name: canonical
       expression: >-
         variables.containers.map(c, {"path": string(c.path), "image": string(c.image), "canonical":
@@ -78,31 +79,18 @@ spec:
           : c.image.startsWith("registry-1.docker.io/") ? "docker.io/" + c.image.substring(21)
           : c.image.startsWith("docker.io/") && !c.image.substring(10).contains("/") ? "docker.io/library/" + c.image.substring(10)
           : string(c.image)})
-    # 4. Swap the public host for the Harbor project. Anything else is left as is.
+    # 4. Prefix the proxy when the canonical image comes from a configured upstream.
+    #    Images already on the proxy, or from any other registry, are left as is.
     - name: rewritten
       expression: >-
         variables.canonical.map(c, {"path": string(c.path), "image": string(c.image), "new":
-          c.canonical.startsWith("docker.io/") ? "harbor.example.com/docker-hub-proxy-cache/" + c.canonical.substring(10)
-          : c.canonical.startsWith("ghcr.io/") ? "harbor.example.com/ghcr-proxy-cache/" + c.canonical.substring(8)
-          : c.canonical.startsWith("registry.k8s.io/") ? "harbor.example.com/registry-k8s-proxy-cache/" + c.canonical.substring(16)
+          c.image.startsWith("proxy.example.com/") ? string(c.image)
+          : c.canonical.startsWith("docker.io/") ? "proxy.example.com/" + c.canonical
+          : c.canonical.startsWith("ghcr.io/") ? "proxy.example.com/" + c.canonical
           : string(c.image)})
-    # 5. One pull secret per Harbor project that is actually used, minus those already on the pod.
-    - name: pullSecrets
-      expression: >-
-        (variables.rewritten.exists(c, c.new.startsWith("harbor.example.com/docker-hub-proxy-cache/")) ? ["harbor-proxy-cache"] : [])
-        + (variables.rewritten.exists(c, c.new.startsWith("harbor.example.com/ghcr-proxy-cache/")) ? ["harbor-ghcr-proxy-cache"] : [])
-        + (variables.rewritten.exists(c, c.new.startsWith("harbor.example.com/registry-k8s-proxy-cache/")) ? ["harbor-registry-k8s-proxy-cache"] : [])
-    - name: existingPullSecrets
-      expression: "has(variables.podSpec.imagePullSecrets) ? variables.podSpec.imagePullSecrets.map(s, s.name) : []"
   mutations:
-    # JSONPatch rather than ApplyConfiguration: imagePullSecrets is an atomic
-    # list in the Pod schema and cannot be appended to declaratively.
     - patchType: JSONPatch
       jsonPatch:
         expression: >-
           variables.rewritten.filter(c, c.new != c.image).map(c,
             JSONPatch{op: "replace", path: c.path, value: c.new})
-          + (variables.existingPullSecrets.size() == 0
-              ? [JSONPatch{op: "add", path: variables.base + "/imagePullSecrets", value: variables.pullSecrets.map(s, {"name": s})}]
-              : variables.pullSecrets.filter(s, !(s in variables.existingPullSecrets)).map(s,
-                  JSONPatch{op: "add", path: variables.base + "/imagePullSecrets/-", value: {"name": s}}))
