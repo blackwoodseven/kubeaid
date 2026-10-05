@@ -8,6 +8,8 @@ version: 1.0.0
 # it alone instead of refetching. Leaving it undeclared makes `helm lint` fail
 # on missing dependency metadata. The name is the subchart's own (ciso-assistant),
 # which differs from its directory name.
+# Update: charts/ciso-assistant-next was renamed to charts/ciso-assistant, since
+# bin/manage-helm-chart.sh looks the subchart up by its dependency name.
 dependencies:
   - name: ciso-assistant
     version: 0.4.1
