@@ -8,3 +8,4 @@ dependencies:
   - name: opentelemetry-collector
     version: 0.173.1
     repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+    condition: opentelemetry-collector.enabled
