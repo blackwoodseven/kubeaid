@@ -25,10 +25,10 @@ argo-cd:
   repoServer:
     resources:
       limits:
-        memory: 256Mi
+        memory: 1Gi
       requests:
-        cpu: 10m
-        memory: 128Mi
+        cpu: 50m
+        memory: 256Mi
     replicas: 1
     autoscaling:
       enabled: false
@@ -39,10 +39,10 @@ argo-cd:
   server:
     resources:
       limits:
-        memory: 256Mi
+        memory: 1Gi
       requests:
-        cpu: 5m
-        memory: 128Mi
+        cpu: 20m
+        memory: 256Mi
     metrics:
       enabled: true
       serviceMonitor:
