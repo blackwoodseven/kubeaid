@@ -2,6 +2,41 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 33.0.2
+
+### New Charts Added
+
+- 77e6910d7 chore(new): Added new helm chart spegel 0.7.4
+
+### Features
+
+- d490df84f feat(openbao): add openbao chart with a readme on raft ha, static unseal, initialization, kubernetes auth and backups
+- ae5bdaa4e feat(kube-prometheus): let blackbox modules present a client certificate
+- 59ddd0284 feat(kube-prometheus): add loki grafana datasources behind a loki var
+- 1119f012a feat(vuls-dictionary): run vuls-exporter 1.3.4
+- 5e6dbb745 feat(linuxaid-security-exporter): run v2.5.1
+- bc3f2d89c feat(kyverno): bring back replace-container-image-registries as a CEL MutatingPolicy
+
+### Bug Fixes
+
+- 2a02487fa fix(opentelemetry-operator/collector): adding condition for the opentelemetry-collector Helm chart
+- cef3a1544 fix(ciso-assistant): rename vendored subchart folder to match its name
+- 26f13123c fix(helm): resolve latest OCI chart versions with helm show chart
+- 50599d4a3 fix(vuls-dictionary): run the official Vuls v0.41.0 image
+- 533e3a744 fix(kyverno): apply harbor excludeNamespaces as a namespaceSelector
+- 961f4c1d6 fix(kubeaid-backup-exporter): follow the rename in the guide and CI
+- 6621bb83f fix(kubeaid-agent): name every exporter after its chart, on agent v1.1.3
+
+### Configuration Changes
+
+- a4de0635f chore(argo-cd): raise repo-server and server resources
+
+### Other Changes
+
+- f94eef1c2 docs(spegel): add README and empty values.yaml
+- c39e6894e test(kyverno): use an example hostname for the private registry fixture
+- b39e9b55d docs(kyverno): document pullThroughCache and the matchConstraints rule
+
 ## KubeAid Release Version 33.0.1
 
 ### Features
