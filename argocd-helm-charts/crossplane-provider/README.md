@@ -122,7 +122,7 @@ scaleway:
             - days: 30
           abortIncompleteMultipartUploadDays: 1
     - name: harbor-oci-artifacts
-      externalName: harbor-oci-artifacts.my-cluster   # adopt a bucket that already exists
+      externalName: fr-par/harbor-oci-artifacts.my-cluster   # adopt an existing bucket: <region>/<bucket name>
     - name: legacy
       bucketName: some-old-name           # opt out of the suffix rule
 ```
@@ -131,7 +131,7 @@ Check the result with `kubectl get buckets.object.scaleway.m.upbound.io -n cross
 `Synced=True` means the bucket exists.
 
 - A bucket that already exists in Scaleway fails with `BucketAlreadyOwnedByYou` until the entry carries
-  `externalName`, after which Crossplane adopts it.
+  `externalName` in the form `<region>/<bucket name>`, after which Crossplane adopts it.
 - Removing an entry deletes the `Bucket` object but never the bucket in Scaleway, because the default
   management policies have no `Delete`. To really delete, set `managementPolicies: ["*"]` on that entry
   first, or delete it in the Scaleway console.

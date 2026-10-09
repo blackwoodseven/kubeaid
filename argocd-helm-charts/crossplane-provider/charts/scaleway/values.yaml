@@ -32,7 +32,7 @@ managementPolicies:
 buckets: []
 # - name: backups                      # Bucket resource name (namespace = release namespace)
 #   bucketName: ""                     # Scaleway bucket name; defaults to the suffix rule above
-#   externalName: ""                   # crossplane.io/external-name, to adopt an existing bucket
+#   externalName: ""                   # crossplane.io/external-name ("<region>/<bucket name>") to adopt an existing bucket
 #   versioning: false
 #   objectLock:
 #     enabled: false                   # also renders a LockConfiguration for the bucket
