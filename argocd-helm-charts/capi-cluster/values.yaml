@@ -2,16 +2,15 @@ global:
   kubernetes:
     version: v1.33.0
   clusterAPI:
-    version: v1.11.3
+    version: v1.11.11
   enableClusterAutoscaler: true
   capa:
     # v2.11+ is required for EKS clusters : NodeadmConfig (the AL2023 worker
-    # bootstrap) isn't shipped in earlier releases. v2.11.1 also matches the
-    # clusterawsadm library embedded in kubeaid-cli.
-    version: v2.11.1
+    # bootstrap) isn't shipped in earlier releases.
+    version: v2.11.3
     enableMachinePools: false
   caph:
-    version: v1.1.8
+    version: v1.1.9
     # Rendered into the InfrastructureProvider's spec.deployment. Prefers
     # worker nodes; CAPH's upstream control-plane toleration still allows
     # falling back to control-plane nodes when no worker is schedulable.
@@ -25,11 +24,11 @@ global:
                   - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
   capz:
-    # v1.26.0 (latest, Jun 2026) for AKS clusters : the classic managed API
+    # v1.26.1 (latest, Sep 2026) for AKS clusters : the classic managed API
     # (AzureManagedControlPlane), networkPlugin "none" (BYO CNI) and
     # asoManagedClusterPatches (the kube-proxy disable) are all verified
     # present at this release.
-    version: v1.26.0
+    version: v1.26.1
   kubeaid:
     repo: https://github.com/Obmondo/KubeAid.git
     # KubeAid git ref the postKubeadmCommands `git clone` checks out
