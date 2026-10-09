@@ -1,16 +1,14 @@
 # Crossplane
 
-Wrapper around the upstream [Crossplane](https://www.crossplane.io) Helm chart (v2.3.4). Crossplane extends
+Wrapper around the upstream [Crossplane](https://www.crossplane.io) Helm chart (v2.4.1). Crossplane extends
 the Kubernetes API with CRDs that represent external cloud infrastructure, and reconciles them the same way
 Kubernetes reconciles Pods and Deployments.
 
-This chart installs the Crossplane core (controller manager + RBAC manager) only. Cloud-specific providers,
-functions, and compositions ship as separate KubeAid charts:
-
-- [`crossplane-providers-and-functions`](../crossplane-providers-and-functions) - installs `Provider` and
-  `Function` packages
-- [`crossplane-compositions`](../crossplane-compositions) - installs the `CompositeResourceDefinition`s and
-  `Composition`s that define KubeAid's own infrastructure APIs
+This chart installs the Crossplane core (controller manager + RBAC manager) only. Providers, provider
+configs, functions, compositions and the managed resources KubeAid models ship in
+[`crossplane-provider`](../crossplane-provider), one sub-chart per provider enabled from values. The older
+split into [`crossplane-providers-and-functions`](../crossplane-providers-and-functions) and
+[`crossplane-compositions`](../crossplane-compositions) is deprecated.
 
 ## Why it's in KubeAid
 
@@ -34,5 +32,4 @@ Both overrides remove the upstream CPU limit; only memory remains capped.
 - [Crossplane docs](https://docs.crossplane.io)
 - Upstream chart README: [`charts/crossplane/README.md`](./charts/crossplane/README.md)
 - [Azure hosting (CAPZ + Crossplane)](../../docs/hosting/cloud-providers.md)
-- Related: [`crossplane-providers-and-functions`](../crossplane-providers-and-functions),
-  [`crossplane-compositions`](../crossplane-compositions)
+- Related: [`crossplane-provider`](../crossplane-provider)

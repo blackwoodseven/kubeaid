@@ -1,5 +1,10 @@
 # Crossplane Providers and Functions
 
+> **Deprecated.** Superseded by [`crossplane-provider`](../crossplane-provider), which installs providers,
+> provider configs and managed resources for every cloud from one chart and one ArgoCD Application. This
+> chart is kept for one release so existing clusters can migrate (see the migration section in that README)
+> and is removed afterwards. No new features land here.
+
 Obmondo-authored chart (no vendored `charts/` subchart from upstream - only local `templates/`) that
 installs Crossplane `Provider` and `Function` packages on top of the [`crossplane`](../crossplane) core.
 

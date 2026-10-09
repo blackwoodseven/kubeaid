@@ -1,5 +1,10 @@
 # Crossplane Compositions
 
+> **Deprecated.** Superseded by [`crossplane-provider`](../crossplane-provider), which installs providers,
+> provider configs and managed resources for every cloud from one chart and one ArgoCD Application. This
+> chart is kept for one release so existing clusters can migrate (see the migration section in that README)
+> and is removed afterwards. No new features land here.
+
 Obmondo-authored chart (no vendored upstream `charts/` - the compositions are KubeAid's own) that installs
 Crossplane `CompositeResourceDefinition`s (XRDs) and `Composition`s defining KubeAid's Azure infrastructure
 APIs, plus the `ProviderConfig` those compositions authenticate through.
