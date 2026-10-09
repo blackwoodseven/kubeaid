@@ -2,7 +2,7 @@ name: kubeaid
 
 "on":
   schedule:
-    - cron: "15 2 * * 7"   # At 02:15 on Sunday.
+    - cron: "15 2 * * 0"   # At 02:15 on Sunday.
   workflow_dispatch:   # Allow manual triggering
 
 jobs:
