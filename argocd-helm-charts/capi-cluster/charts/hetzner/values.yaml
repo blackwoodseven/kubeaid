@@ -182,6 +182,16 @@ controlPlane:
     # description: Floating IPs to bind (/32) on every control-plane node's primary network interface via netplan, so a host-network service stays reachable at a stable public IP across CP failures (e.g. NetBird Coturn fronted by hcloud-fip-controller, which moves the API-level assignment but not the OS interface). Empty (default) = no binding.
     # @schema
     floatingIPs: []
+    # @schema
+    # type: object
+    # description: Public IPv4 for control-plane nodes on a private network (network.type=private or hybrid), e.g. so a Floating IP from floatingIPs can be assigned to them (Hetzner only assigns Floating IPs to servers that have a Primary IP). The default route stays on the NAT gateway; replies from the public IP and the Floating IPs leave through the public interface.
+    # @schema
+    publicNetwork:
+      # @schema
+      # type: boolean
+      # description: Give control-plane nodes a public IPv4 while keeping the private network.
+      # @schema
+      enabled: false
     loadBalancer:
       # @schema
       # type: boolean
