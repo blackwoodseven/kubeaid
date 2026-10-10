@@ -6,9 +6,8 @@ Kubernetes reconciles Pods and Deployments.
 
 This chart installs the Crossplane core (controller manager + RBAC manager) only. Providers, provider
 configs, functions, compositions and the managed resources KubeAid models ship in
-[`crossplane-provider`](../crossplane-provider), one sub-chart per provider enabled from values. The older
-split into [`crossplane-providers-and-functions`](../crossplane-providers-and-functions) and
-[`crossplane-compositions`](../crossplane-compositions) is deprecated.
+[`crossplane-provider`](../crossplane-provider), one sub-chart per provider enabled from values. It replaces
+the `crossplane-providers-and-functions` and `crossplane-compositions` charts, which have been removed.
 
 ## Why it's in KubeAid
 

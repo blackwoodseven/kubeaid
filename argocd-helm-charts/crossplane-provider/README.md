@@ -17,9 +17,8 @@ keycloak:
   enabled: true
 ```
 
-It supersedes [`crossplane-providers-and-functions`](../crossplane-providers-and-functions) and
-[`crossplane-compositions`](../crossplane-compositions), which stay in the repo for one release and are
-removed afterwards. See [Migration](#migration-from-the-two-old-charts).
+It replaces the `crossplane-providers-and-functions` and `crossplane-compositions` charts, which have been
+removed from KubeAid. See [Migration](#migration-from-the-two-old-charts).
 
 ## Why it's in KubeAid
 
@@ -189,6 +188,11 @@ syncPolicy:
 
 Object names and specs are unchanged, so ArgoCD adopts the existing `Provider`s, `Function`s,
 `ProviderConfig`s, XRDs, Compositions and managed resources; the only diff is the new annotations.
+
+The old chart directories are gone from this KubeAid release on. An Application that still points at
+`argocd-helm-charts/crossplane-providers-and-functions` or `argocd-helm-charts/crossplane-compositions` can
+no longer be rendered once the cluster moves to it (ArgoCD reports a comparison error); the objects it
+created stay in the cluster. Migrate in the same change that bumps the KubeAid version.
 
 1. Add the `crossplane-provider` Application and its values file. Values move as follows:
    `azure.enable` → `azure.enabled`, `azure.compositions.*.enable` → `.enabled`, `scaleway.enable` →

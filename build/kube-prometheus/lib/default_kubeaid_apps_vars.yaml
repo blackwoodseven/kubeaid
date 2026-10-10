@@ -73,7 +73,7 @@ kubeaid_apps:
   - trivy-operator
   - opensearch-operator
   - sealed-secrets
-  - crossplane-compositions
+  - crossplane-provider
   - keda
   - opencost
   - rook-ceph
@@ -106,6 +106,5 @@ kubeaid_apps:
   - openvox
   - aws-ebs-csi-driver
   - cerebro
-  - crossplane-providers-and-functions
   - gitea
   - cluster-autoscaler
