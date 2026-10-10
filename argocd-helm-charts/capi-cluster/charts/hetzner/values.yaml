@@ -184,7 +184,7 @@ controlPlane:
     floatingIPs: []
     # @schema
     # type: object
-    # description: Public IPv4 and IPv6 for control-plane nodes on a private network (network.type=private or hybrid), e.g. so a Floating IP from floatingIPs can be assigned to them (Hetzner only assigns Floating IPs to servers that have a Primary IP). The default route stays on the NAT gateway; replies from the public IP and the Floating IPs leave through the public interface.
+    # description: Public IPv4 and IPv6 for control-plane nodes on a private network (network.type=private or hybrid), e.g. so a Floating IP from floatingIPs can be assigned to them (Hetzner only assigns Floating IPs to servers that have a Primary IP). These nodes keep their default route on the public interface and skip the NAT gateway; the private network stays for etcd, the apiserver InternalIP and private load-balancer targets.
     # @schema
     publicNetwork:
       # @schema

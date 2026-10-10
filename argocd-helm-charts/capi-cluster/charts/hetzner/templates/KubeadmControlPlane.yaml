@@ -135,12 +135,17 @@ spec:
           - TLS_RSA_WITH_AES_256_GCM_SHA384
           - TLS_RSA_WITH_AES_128_GCM_SHA256
 
-    {{- if and (ne .Values.mode "bare-metal") (or (eq .Values.mode "hybrid") (eq .Values.network.type "private")) }}
+    {{- if and (not $cpPublic) (ne .Values.mode "bare-metal") (or (eq .Values.mode "hybrid") (eq .Values.network.type "private")) }}
     {{/* NAT gateway script is only needed when HCloud nodes run on a
-         private network (and the HCloud side of hybrid). Pure bare-metal
-         is excluded: those hosts have their own public connectivity and
-         no NAT gateway — network.type defaults to "private", so without
-         the mode guard they'd ship and run this script for nothing.
+         private network (and the HCloud side of hybrid) with no public IP
+         of their own. Pure bare-metal is excluded: those hosts have their
+         own public connectivity and no NAT gateway — network.type defaults
+         to "private", so without the mode guard they'd ship and run this
+         script for nothing. $cpPublic is excluded for the same reason:
+         controlPlane.hcloud.publicNetwork gives the node a public IPv4, so
+         Hetzner's public gateway already provides egress and (via DHCP) a
+         resolver. The private network stays — only the default-route hop
+         goes away.
          Gateway IP + DNS resolver come from values so non-default private
          networks work; the interface name is discovered at runtime so the
          script isn't pinned to HCloud's enp7s0. */}}
@@ -365,12 +370,14 @@ spec:
       - set -x
 
       {{/* The NAT-gateway hop only exists for HCloud machines on a
-           private network (and the HCloud side of hybrid). network.type
-           defaults to "private", so without the mode guard a pure
-           bare-metal node — which has its own public connectivity and
-           no 10.0.0.1 gateway — spent 5 minutes retrying an impossible
-           default route on every boot. */}}
-      {{- if and (ne .Values.mode "bare-metal") (or (eq .Values.mode "hybrid") (eq .Values.network.type "private")) }}
+           private network (and the HCloud side of hybrid) that have no
+           public IP. network.type defaults to "private", so without the
+           mode guard a pure bare-metal node — which has its own public
+           connectivity and no 10.0.0.1 gateway — spent 5 minutes retrying
+           an impossible default route on every boot. $cpPublic nodes skip
+           it too: taking the default route off the public NIC is what made
+           source-based policy routing necessary in the first place. */}}
+      {{- if and (not $cpPublic) (ne .Values.mode "bare-metal") (or (eq .Values.mode "hybrid") (eq .Values.network.type "private")) }}
       - chmod +x /connect-nat-gateway.sh && /connect-nat-gateway.sh
       {{- end }}
 
@@ -560,24 +567,18 @@ spec:
            bare-metal floating IP above) it needs no first-master-only /
            loopback handling. */}}
       - |
-        {{- if $cpPublic }}
-        # Public interface: Hetzner delivers Floating IPs to it, while the
-        # default route stays on the private network (NAT gateway).
-        NETWORK_INTERFACE="$(ip -4 route show default via 172.31.1.1 | awk '{print $5; exit}')"
-        # Fail loudly rather than write a netplan file with an empty interface
-        # key: these commands run after cloud-init has configured networking, so
-        # an empty result is a misconfiguration, not a race.
-        if [ -z "$NETWORK_INTERFACE" ]; then
-          echo "no public interface found (no default route via 172.31.1.1) but controlPlane.hcloud.publicNetwork.enabled is set, so this node should have a public IPv4" >&2
-          exit 1
-        fi
-        {{- else }}
+        # The interface the default route sits on — the node's public NIC,
+        # since every control-plane node that can carry a Floating IP has a
+        # public IPv4 and skips the NAT-gateway hop. Hetzner delivers Floating
+        # IPs to that same interface. Fail loudly rather than write a netplan
+        # file with an empty interface key: these commands run after cloud-init
+        # has configured networking, so an empty result is a misconfiguration,
+        # not a race.
         NETWORK_INTERFACE="$(ip route get 8.8.8.8 | awk '{print $5; exit}')"
         if [ -z "$NETWORK_INTERFACE" ]; then
           echo "no interface with a route to the internet, cannot bind controlPlane.hcloud.floatingIPs" >&2
           exit 1
         fi
-        {{- end }}
         cat <<EOF > /etc/netplan/60-hcloud-floating-ip.yaml
         network:
           version: 2
@@ -590,50 +591,6 @@ spec:
         {{- end }}
         EOF
         chmod 0600 /etc/netplan/60-hcloud-floating-ip.yaml
-        netplan apply
-      {{- end }}
-
-      {{- if $cpPublic }}
-      {{/* controlPlane.hcloud.publicNetwork: the default route stays on the
-           private network (NAT gateway), so etcd and the apiserver keep
-           advertising the private IP. Replies from the node's own public IP and
-           from the Floating IPs must leave through the public interface instead,
-           or the NAT gateway rewrites their source address and clients drop
-           them. Source-based policy routing via the Hetzner public gateway
-           (172.31.1.1) does that. */}}
-      - |
-        PUB_IFACE="$(ip -4 route show default via 172.31.1.1 | awk '{print $5; exit}')"
-        if [ -z "$PUB_IFACE" ]; then
-          echo "no public interface found (no default route via 172.31.1.1) but controlPlane.hcloud.publicNetwork.enabled is set, so this node should have a public IPv4" >&2
-          exit 1
-        fi
-        # scope global dynamic picks the DHCP primary IP and skips the Floating
-        # IPs, which 60-hcloud-floating-ip.yaml has already bound as static /32s.
-        PUB_IP="$(ip -4 -o addr show dev "$PUB_IFACE" scope global dynamic | awk '{print $4}' | cut -d/ -f1 | head -1)"
-        if [ -z "$PUB_IP" ]; then
-          echo "no global dynamic IPv4 on $PUB_IFACE, cannot add source-based routing for the public interface" >&2
-          exit 1
-        fi
-        cat <<EOF > /etc/netplan/65-public-source-routing.yaml
-        network:
-          version: 2
-          renderer: networkd
-          ethernets:
-            ${PUB_IFACE}:
-              routes:
-                - to: default
-                  via: 172.31.1.1
-                  on-link: true
-                  table: 100
-              routing-policy:
-                - from: ${PUB_IP}
-                  table: 100
-        {{- range .Values.controlPlane.hcloud.floatingIPs }}
-                - from: {{ . }}
-                  table: 100
-        {{- end }}
-        EOF
-        chmod 0600 /etc/netplan/65-public-source-routing.yaml
         netplan apply
       {{- end }}
 
