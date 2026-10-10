@@ -564,8 +564,19 @@ spec:
         # Public interface: Hetzner delivers Floating IPs to it, while the
         # default route stays on the private network (NAT gateway).
         NETWORK_INTERFACE="$(ip -4 route show default via 172.31.1.1 | awk '{print $5; exit}')"
+        # Fail loudly rather than write a netplan file with an empty interface
+        # key: these commands run after cloud-init has configured networking, so
+        # an empty result is a misconfiguration, not a race.
+        if [ -z "$NETWORK_INTERFACE" ]; then
+          echo "no public interface found (no default route via 172.31.1.1) but controlPlane.hcloud.publicNetwork.enabled is set, so this node should have a public IPv4" >&2
+          exit 1
+        fi
         {{- else }}
         NETWORK_INTERFACE="$(ip route get 8.8.8.8 | awk '{print $5; exit}')"
+        if [ -z "$NETWORK_INTERFACE" ]; then
+          echo "no interface with a route to the internet, cannot bind controlPlane.hcloud.floatingIPs" >&2
+          exit 1
+        fi
         {{- end }}
         cat <<EOF > /etc/netplan/60-hcloud-floating-ip.yaml
         network:
@@ -592,7 +603,17 @@ spec:
            (172.31.1.1) does that. */}}
       - |
         PUB_IFACE="$(ip -4 route show default via 172.31.1.1 | awk '{print $5; exit}')"
+        if [ -z "$PUB_IFACE" ]; then
+          echo "no public interface found (no default route via 172.31.1.1) but controlPlane.hcloud.publicNetwork.enabled is set, so this node should have a public IPv4" >&2
+          exit 1
+        fi
+        # scope global dynamic picks the DHCP primary IP and skips the Floating
+        # IPs, which 60-hcloud-floating-ip.yaml has already bound as static /32s.
         PUB_IP="$(ip -4 -o addr show dev "$PUB_IFACE" scope global dynamic | awk '{print $4}' | cut -d/ -f1 | head -1)"
+        if [ -z "$PUB_IP" ]; then
+          echo "no global dynamic IPv4 on $PUB_IFACE, cannot add source-based routing for the public interface" >&2
+          exit 1
+        fi
         cat <<EOF > /etc/netplan/65-public-source-routing.yaml
         network:
           version: 2
