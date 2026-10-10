@@ -26,7 +26,8 @@ local blackboxProbe = function(probe) {
     targets: {
       staticConfig: {
         [if std.objectHas(probe, 'labels') then 'labels']: probe.labels,
-        static: ['https://' + probe.host],
+        // An explicit url (e.g. the in-cluster service) wins over the ingress host.
+        static: [std.get(probe, 'url', 'https://' + std.get(probe, 'host', ''))],
       },
     },
   },
@@ -894,7 +895,25 @@ local kp =
         },
       },
     } else {}
-  );
+  ) +
+  // *_probe_target ({ url, port }) points a probe at the in-cluster service
+  // instead of the ingress. Blackbox-exporter then reaches the pod directly,
+  // not through Traefik, so it needs a NetworkPolicy rule for that pod port.
+  local blackboxIngressRule(component) =
+    local t = vars[component + '_probe_target'];
+    assert std.objectHas(t, 'url') && std.objectHas(t, 'port') :
+           component + '_probe_target needs both url and port (the pod port the probe hits)';
+    {
+      networkPolicy+: { spec+: { ingress+: [{
+        from: [{ podSelector: { matchLabels: { 'app.kubernetes.io/name': 'blackbox-exporter' } } }],
+        ports: [{ port: t.port, protocol: 'TCP' }],
+      }] } },
+    };
+  {
+    [if std.objectHas(vars, 'grafana_probe_target') then 'grafana']+: blackboxIngressRule('grafana'),
+    [if std.objectHas(vars, 'prometheus_probe_target') then 'prometheus']+: blackboxIngressRule('prometheus'),
+    [if std.objectHas(vars, 'alertmanager_probe_target') then 'alertmanager']+: blackboxIngressRule('alertmanager'),
+  };
 
 {
   'setup/0namespace-namespace': kp.kubePrometheus.namespace +
@@ -1045,11 +1064,14 @@ else kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
 // Rendering prometheusRules object. This is an object compatible with prometheus-operator CRD definition for prometheusRule
 { [o._config.name + '-prometheus-rules']: o.prometheusRules for o in std.filter((function(o) o.prometheusRules != null), mixins) } +
 (if std.objectHas(vars, 'prometheus_ingress_host') && vars.prometheus_blackbox_probe_enabled then {
-   'blackbox-probe-prometheus': blackboxProbe({ name: 'prometheus', host: vars.prometheus_ingress_host, module: vars.prometheus_probe_module }),
+   'blackbox-probe-prometheus': blackboxProbe({ name: 'prometheus', host: vars.prometheus_ingress_host, module: vars.prometheus_probe_module }
+                                              + (if std.objectHas(vars, 'prometheus_probe_target') then { url: vars.prometheus_probe_target.url } else {})),
  } else {}) +
 (if std.objectHas(vars, 'grafana_ingress_host') && vars.grafana_blackbox_probe_enabled then {
-   'blackbox-probe-grafana': blackboxProbe({ name: 'grafana', host: vars.grafana_ingress_host }),
+   'blackbox-probe-grafana': blackboxProbe({ name: 'grafana', host: vars.grafana_ingress_host }
+                                           + (if std.objectHas(vars, 'grafana_probe_target') then { url: vars.grafana_probe_target.url } else {})),
  } else {}) +
 (if std.objectHas(vars, 'alertmanager_ingress_host') && vars.alertmanager_blackbox_probe_enabled then {
-   'blackbox-probe-alertmanager': blackboxProbe({ name: 'alertmanager', host: vars.alertmanager_ingress_host }),
+   'blackbox-probe-alertmanager': blackboxProbe({ name: 'alertmanager', host: vars.alertmanager_ingress_host }
+                                                + (if std.objectHas(vars, 'alertmanager_probe_target') then { url: vars.alertmanager_probe_target.url } else {})),
  } else {})
