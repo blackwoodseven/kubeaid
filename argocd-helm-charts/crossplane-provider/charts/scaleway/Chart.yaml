@@ -1,0 +1,4 @@
+apiVersion: v2
+name: scaleway
+description: Crossplane scaleway provider, provider config and managed resources
+version: 1.0.0
