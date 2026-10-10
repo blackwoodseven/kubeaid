@@ -195,6 +195,21 @@
               "title": "machineType",
               "type": "string"
             },
+            "publicNetwork": {
+              "additionalProperties": false,
+              "description": "Public IPv4 for control-plane nodes on a private network (network.type=private or hybrid), e.g. so a Floating IP from floatingIPs can be assigned to them (Hetzner only assigns Floating IPs to servers that have a Primary IP). The default route stays on the NAT gateway; replies from the public IP and the Floating IPs leave through the public interface.",
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "description": "Give control-plane nodes a public IPv4 while keeping the private network.",
+                  "title": "enabled",
+                  "type": "boolean"
+                }
+              },
+              "required": [],
+              "title": "publicNetwork",
+              "type": "object"
+            },
             "replicas": {
               "default": 3,
               "description": "Desired number of control-plane replicas.",
