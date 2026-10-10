@@ -1,4 +1,5 @@
 {{- $cpPublic := and (ne .Values.mode "bare-metal") (or (eq .Values.mode "hybrid") (eq .Values.network.type "private")) (dig "publicNetwork" "enabled" false (.Values.controlPlane.hcloud | default dict)) }}
+{{- $cpOnly := and (not .Values.nodeGroups.hcloud) (not .Values.nodeGroups.bareMetal) }}
 apiVersion: controlplane.cluster.x-k8s.io/v1beta2
 kind: KubeadmControlPlane
 metadata:
@@ -366,6 +367,19 @@ spec:
       skipPhases:
         - addon/kube-proxy
       nodeRegistration:
+        {{- if $cpOnly }}
+        {{/* With no node-groups there is nowhere but the control plane for
+             workloads to run, so kubeadm's default
+             node-role.kubernetes.io/control-plane:NoSchedule taint would
+             leave every pod Pending. An explicitly EMPTY list means "no
+             taints"; omitting the field means "apply the default", so this
+             cannot be left to default. Registration-time only, so it governs
+             how nodes are born — existing nodes keep whatever they have, and
+             a cluster that later gains node-groups keeps its already-
+             untainted control plane. Clusters with node-groups are
+             untouched. */}}
+        taints: []
+        {{- end }}
         kubeletExtraArgs:
           - name: cloud-provider
             value: external
@@ -378,6 +392,9 @@ spec:
           advertiseAddress: __KUBEAID_NODE_IP__
       {{- end }}
       nodeRegistration:
+        {{- if $cpOnly }}
+        taints: []
+        {{- end }}
         kubeletExtraArgs:
           - name: cloud-provider
             value: external
