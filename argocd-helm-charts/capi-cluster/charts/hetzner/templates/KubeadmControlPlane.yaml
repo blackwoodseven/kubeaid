@@ -117,12 +117,18 @@ spec:
         rotateCertificates: true
         serverTLSBootstrap: true
         staticPodPath: /etc/kubernetes/manifests
-        {{- if and (eq .Values.mode "bare-metal") .Values.bareMetal.vSwitch }}
+        {{- if or (and (eq .Values.mode "bare-metal") .Values.bareMetal.vSwitch) $cpPublic }}
         {{/* CPs share this KubeadmConfigSpec across every Machine the KCP
              creates, so the per-host privateIP can't be baked in at chart-
              render time. The placeholder below is sed-replaced at boot by
-             the preKubeadm vSwitch block with the IP from the DMI chassis-
-             serial lookup. */}}
+             a preKubeadm block: on bare-metal from the DMI chassis-serial
+             lookup, on public control-plane nodes from the private NIC.
+
+             Without it kubelet falls back to auto-detection, which returns
+             the first global address on the default-route interface — the
+             public NIC for $cpPublic nodes — so the node would register an
+             InternalIP off the private network that etcd and the
+             control-plane load balancer both expect. */}}
         nodeIP: __KUBEAID_NODE_IP__
         {{- end }}
         tlsCipherSuites:
@@ -343,6 +349,20 @@ spec:
     {{- ((.Values.controlPlane).apiServer).files | toYaml | nindent 4 }}
     {{- end }}
     initConfiguration:
+      {{- if $cpPublic }}
+      {{/* etcd derives its peer and client URLs from advertiseAddress, and
+           kubeadm defaults it by returning the FIRST global address on the
+           default-route interface (apimachinery ChooseHostInterface), not by
+           asking the kernel for a source address. On a public control-plane
+           node that interface is the public NIC, which also carries any
+           controlPlane.hcloud.floatingIPs — so etcd would advertise a public
+           address, and with a Floating IP every CP would advertise the SAME
+           one, since they all bind it. Pin it to the private NIC instead:
+           etcd peers over the HCloud private network, which is also where
+           the control-plane load balancer sends apiserver traffic. */}}
+      localAPIEndpoint:
+        advertiseAddress: __KUBEAID_NODE_IP__
+      {{- end }}
       skipPhases:
         - addon/kube-proxy
       nodeRegistration:
@@ -352,6 +372,11 @@ spec:
           - name: config
             value: /etc/kubernetes/kubelet/config.yaml
     joinConfiguration:
+      {{- if $cpPublic }}
+      controlPlane:
+        localAPIEndpoint:
+          advertiseAddress: __KUBEAID_NODE_IP__
+      {{- end }}
       nodeRegistration:
         kubeletExtraArgs:
           - name: cloud-provider
@@ -368,6 +393,55 @@ spec:
     {{- end }}
     preKubeadmCommands:
       - set -x
+
+      {{- if $cpPublic }}
+      {{/* Substitute the __KUBEAID_NODE_IP__ placeholders (kubelet's nodeIP
+           and kubeadm's localAPIEndpoint.advertiseAddress) with this host's
+           HCloud private-network IP. The CP KubeadmConfigSpec is shared
+           across every Machine the KCP creates, so the per-host address can
+           only be filled in at boot.
+
+           Found as the global IPv4 on the one interface that is neither
+           loopback nor the default route's — on these nodes that is the
+           HCloud private NIC. Picked by interface rather than by scanning
+           addresses, because the address list is exactly what kubeadm's own
+           auto-detection gets wrong: a Floating IP bound to the public NIC
+           can sort ahead of the node's real address. No NAT gateway is
+           involved — a public control plane has its own egress, so its
+           private NIC carries no default route to borrow a gateway from.
+
+           cloud-init writes write_files before runcmd, so kubeadm's config
+           already exists here and is still editable. Only one of the two
+           kubeadm configs is present on any given node (init on the first,
+           join on the rest). */}}
+      - |
+        PUBLIC_IFACE="$(ip -4 route show default | grep -o 'dev [^ ]*' | cut -d' ' -f2 | head -1)"
+        if [ -z "$PUBLIC_IFACE" ]; then
+          echo "no default route, cannot tell the public interface from the private one" >&2
+          exit 1
+        fi
+        PRIVATE_IP=""
+        for iface_path in /sys/class/net/*; do
+          iface="${iface_path##*/}"
+          if [ "$iface" = "lo" ] || [ "$iface" = "$PUBLIC_IFACE" ]; then
+            continue
+          fi
+          PRIVATE_IP="$(ip -4 -o addr show dev "$iface" scope global | grep -o 'inet [0-9.]*' | cut -d' ' -f2 | head -1)"
+          if [ -n "$PRIVATE_IP" ]; then
+            break
+          fi
+        done
+        if [ -z "$PRIVATE_IP" ]; then
+          echo "no private-network IPv4 found outside ${PUBLIC_IFACE}, but this control-plane node is on the HCloud private network" >&2
+          exit 1
+        fi
+        sed -i "s|__KUBEAID_NODE_IP__|${PRIVATE_IP}|g" /etc/kubernetes/kubelet/config.yaml
+        for kubeadm_config in /run/kubeadm/kubeadm.yaml /run/kubeadm/kubeadm-join-config.yaml; do
+          if [ -f "$kubeadm_config" ]; then
+            sed -i "s|__KUBEAID_NODE_IP__|${PRIVATE_IP}|g" "$kubeadm_config"
+          fi
+        done
+      {{- end }}
 
       {{/* The NAT-gateway hop only exists for HCloud machines on a
            private network (and the HCloud side of hybrid) that have no

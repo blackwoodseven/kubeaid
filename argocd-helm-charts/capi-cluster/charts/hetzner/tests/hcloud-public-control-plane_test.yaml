@@ -1,0 +1,95 @@
+suite: hcloud mode with a public control plane on the private network
+templates:
+  - "*.yaml"
+release:
+  name: demo
+chart:
+  version: 1.0.0
+  appVersion: 1.0.0
+values:
+  - ../values.example.hcloud.yaml
+set:
+  mode: hcloud
+  network.type: private
+  global.clusterName: demo
+  global.kubernetes.version: v1.33.0
+  global.pods.cidrBlock: 10.244.0.0/16
+  global.additionalUsers: []
+  controlPlane.hcloud.publicNetwork.enabled: true
+tests:
+  - it: keeps the HCloud private network
+    template: HetznerCluster.yaml
+    asserts:
+      - isKind:
+          of: HetznerCluster
+      - exists:
+          path: spec.hcloudNetwork
+
+  - it: gives the control plane a public IPv4 and IPv6
+    template: HCloudMachineTemplate.yaml
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.template.spec.publicNetwork.enableIPv4
+          value: true
+      - equal:
+          path: spec.template.spec.publicNetwork.enableIPv6
+          value: true
+
+  - it: leaves node groups private
+    template: HCloudMachineTemplate.yaml
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: spec.template.spec.publicNetwork.enableIPv4
+          value: false
+      - equal:
+          path: spec.template.spec.publicNetwork.enableIPv6
+          value: false
+
+  - it: pins the kubeadm advertise address on the first control-plane node
+    template: KubeadmControlPlane.yaml
+    asserts:
+      - equal:
+          path: spec.kubeadmConfigSpec.initConfiguration.localAPIEndpoint.advertiseAddress
+          value: __KUBEAID_NODE_IP__
+
+  - it: pins the kubeadm advertise address on joining control-plane nodes
+    template: KubeadmControlPlane.yaml
+    asserts:
+      - equal:
+          path: spec.kubeadmConfigSpec.joinConfiguration.controlPlane.localAPIEndpoint.advertiseAddress
+          value: __KUBEAID_NODE_IP__
+
+  - it: pins kubelet's node IP and resolves both placeholders from the private NIC at boot
+    template: KubeadmControlPlane.yaml
+    asserts:
+      - matchRegex:
+          path: spec.kubeadmConfigSpec.files[0].content
+          pattern: "nodeIP: __KUBEAID_NODE_IP__"
+      - matchRegex:
+          path: spec.kubeadmConfigSpec.preKubeadmCommands[1]
+          pattern: "ip -4 route show default"
+      - matchRegex:
+          path: spec.kubeadmConfigSpec.preKubeadmCommands[1]
+          pattern: "/sys/class/net/"
+      - matchRegex:
+          path: spec.kubeadmConfigSpec.preKubeadmCommands[1]
+          pattern: "sed -i .*/etc/kubernetes/kubelet/config\\.yaml"
+      - matchRegex:
+          path: spec.kubeadmConfigSpec.preKubeadmCommands[1]
+          pattern: "for kubeadm_config in"
+
+  - it: does not ship the NAT gateway bootstrap on a public control plane
+    template: KubeadmControlPlane.yaml
+    asserts:
+      - notContains:
+          path: spec.kubeadmConfigSpec.preKubeadmCommands
+          content: chmod +x /connect-nat-gateway.sh && /connect-nat-gateway.sh
+
+  - it: still ships the NAT gateway bootstrap on private HCloud workers
+    template: KubeadmConfigTemplate.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.preKubeadmCommands
+          content: chmod +x /connect-nat-gateway.sh && /connect-nat-gateway.sh
