@@ -93,3 +93,24 @@ tests:
       - contains:
           path: spec.template.spec.preKubeadmCommands
           content: chmod +x /connect-nat-gateway.sh && /connect-nat-gateway.sh
+
+  - it: keeps the control-plane taint when node-groups exist
+    template: KubeadmControlPlane.yaml
+    asserts:
+      - notExists:
+          path: spec.kubeadmConfigSpec.initConfiguration.nodeRegistration.taints
+      - notExists:
+          path: spec.kubeadmConfigSpec.joinConfiguration.nodeRegistration.taints
+
+  - it: registers the control plane untainted when there are no node-groups
+    template: KubeadmControlPlane.yaml
+    set:
+      nodeGroups.hcloud: []
+      nodeGroups.bareMetal: []
+    asserts:
+      - equal:
+          path: spec.kubeadmConfigSpec.initConfiguration.nodeRegistration.taints
+          value: []
+      - equal:
+          path: spec.kubeadmConfigSpec.joinConfiguration.nodeRegistration.taints
+          value: []
