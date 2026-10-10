@@ -17,13 +17,17 @@ spec:
         {{/* Nodes have no public IPv4/IPv6 when using a private network (hcloud
              with network.type=private) or when running in hybrid mode.
              controlPlane.hcloud.publicNetwork.enabled still gives control-plane
-             nodes a public IPv4, keeping the private network, e.g. so a Floating
-             IP (controlPlane.hcloud.floatingIPs) can be assigned to them: Hetzner
-             only assigns Floating IPs to servers that have a Primary IP. */}}
+             nodes a public IPv4 and IPv6, keeping the private network, e.g. so a
+             Floating IP (controlPlane.hcloud.floatingIPs) can be assigned to
+             them: Hetzner only assigns Floating IPs to servers that have a
+             Primary IP of the same family. IPv6 needs no counterpart to the IPv4
+             source-based policy routing in KubeadmControlPlane.yaml, because the
+             private network is IPv4-only, so the public interface already
+             carries the node's only IPv6 default route. */}}
         {{- $isPrivate := or (eq .Values.mode "hybrid") (eq .Values.network.type "private") }}
         {{- $cpPublic := dig "publicNetwork" "enabled" false (.Values.controlPlane.hcloud | default dict) }}
         enableIPv4: {{ or (not $isPrivate) $cpPublic }}
-        enableIPv6: {{ not $isPrivate }}
+        enableIPv6: {{ or (not $isPrivate) $cpPublic }}
 {{- end }}
 
 {{/* Handling node-groups in HCloud. */}}
