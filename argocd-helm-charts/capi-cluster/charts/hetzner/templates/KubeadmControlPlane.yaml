@@ -629,43 +629,61 @@ spec:
       {{- end }}
 
       {{- if and (ne .Values.mode "bare-metal") .Values.controlPlane.hcloud.floatingIPs }}
-      {{/* Bind the HCloud Floating IP(s) on every control-plane node's primary
-           interface. hcloud-fip-controller moves the *API-level* assignment
-           between nodes on failover, but the kernel only answers for an IP that
-           is actually configured on an interface (Hetzner: "you must configure
-           the Floating IP inside the OS of the server"). Every CP binds it;
-           hcloud routes it (L3) only to the assigned node, so there is no
-           conflict between CPs. Used for NetBird Coturn (host-network STUN/TURN)
-           to survive CP failures at a stable public IP. This is NOT the
-           apiserver endpoint (that is the pre-provisioned LB), so (unlike the
-           bare-metal floating IP above) it needs no first-master-only /
-           loopback handling. */}}
+      {{/* Bind the HCloud Floating IP(s) on every control-plane node, on a
+           dummy interface rather than the public NIC. hcloud-fip-controller
+           moves the *API-level* assignment between nodes on failover, but the
+           kernel only answers for an IP that is actually configured locally
+           (Hetzner: "you must configure the Floating IP inside the OS of the
+           server"). Every CP binds it; hcloud routes it (L3) only to the
+           assigned node, so there is no conflict between CPs. Used for NetBird
+           Coturn (host-network STUN/TURN) to survive CP failures at a stable
+           public IP.
+
+           It must NOT sit on the public NIC. Several things derive "the node's
+           address" by taking the FIRST global address on an interface instead
+           of asking the kernel for the route's source: kubeadm (apimachinery
+           ChooseHostInterface), netfilter's MASQUERADE target
+           (inet_select_addr) and Cilium's BPF masquerade. A Floating IP added
+           to the public NIC sorts ahead of the node's own address and wins all
+           three, so pod egress leaves masqueraded to an address Hetzner routes
+           to whichever node currently holds the assignment — every reply lands
+           on the wrong node, where there is no conntrack entry for it. That
+           also deadlocks hcloud-fip-controller, which needs api.hetzner.cloud
+           to move the very assignment it is broken by.
+
+           A dummy device avoids all of it: the address is still local so the
+           kernel answers for it, Coturn advertises it through external-ip
+           regardless of which interface holds it, and Cilium device lists of
+           the --devices=eth+,enp+,eno+ form exclude it by name. systemd-networkd
+           units rather than netplan because netplan only gained dummy-devices
+           in 1.0 while hcloud.imageName is operator-settable. */}}
       - |
-        # The interface the default route sits on — the node's public NIC,
-        # since every control-plane node that can carry a Floating IP has a
-        # public IPv4 and skips the NAT-gateway hop. Hetzner delivers Floating
-        # IPs to that same interface. Fail loudly rather than write a netplan
-        # file with an empty interface key: these commands run after cloud-init
-        # has configured networking, so an empty result is a misconfiguration,
-        # not a race.
-        NETWORK_INTERFACE="$(ip route get 8.8.8.8 | awk '{print $5; exit}')"
-        if [ -z "$NETWORK_INTERFACE" ]; then
-          echo "no interface with a route to the internet, cannot bind controlPlane.hcloud.floatingIPs" >&2
-          exit 1
-        fi
-        cat <<EOF > /etc/netplan/60-hcloud-floating-ip.yaml
-        network:
-          version: 2
-          renderer: networkd
-          ethernets:
-            ${NETWORK_INTERFACE}:
-              addresses:
+        cat <<'EOF' > /etc/systemd/network/10-kubeaid-floating-ip.netdev
+        [NetDev]
+        Name=kubeaid-fip0
+        Kind=dummy
+        EOF
+        cat <<'EOF' > /etc/systemd/network/10-kubeaid-floating-ip.network
+        [Match]
+        Name=kubeaid-fip0
+        [Network]
         {{- range .Values.controlPlane.hcloud.floatingIPs }}
-                - {{ . }}/32
+        Address={{ . }}/32
         {{- end }}
         EOF
-        chmod 0600 /etc/netplan/60-hcloud-floating-ip.yaml
-        netplan apply
+        chmod 0644 /etc/systemd/network/10-kubeaid-floating-ip.netdev /etc/systemd/network/10-kubeaid-floating-ip.network
+
+        # Create and address it now too. The units above are what survives a
+        # reboot; doing it directly here avoids restarting systemd-networkd
+        # mid-cloud-init, and works on images whose networkctl cannot create a
+        # .netdev on reload.
+        if ! ip link show kubeaid-fip0 >/dev/null 2>&1; then
+          ip link add kubeaid-fip0 type dummy
+        fi
+        ip link set kubeaid-fip0 up
+        {{- range .Values.controlPlane.hcloud.floatingIPs }}
+        ip addr replace {{ . }}/32 dev kubeaid-fip0
+        {{- end }}
       {{- end }}
 
       - sed -i '/swap/d' /etc/fstab
