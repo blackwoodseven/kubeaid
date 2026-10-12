@@ -545,7 +545,10 @@ local kp =
 
       prometheus+: {
         // [ i for i in scrape_namespaces if std.get(defaults.mixins, i) == true ],
-        namespaces+: scrape_namespaces,
+        // std.set sorts and dedupes across the merge. kube-prometheus's own namespaces
+        // already contain monitoring and scrape_namespaces adds it again, so appending
+        // with +: rendered a second identical prometheus-k8s Role and RoleBinding there.
+        namespaces: std.set(super.namespaces + scrape_namespaces),
         replicas: if std.objectHas(vars.prometheus, 'replicas') then vars.prometheus.replicas else 1,
       },
 
