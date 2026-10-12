@@ -2,6 +2,48 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 33.0.3
+
+### Features
+
+- 9537c7af2 feat(capi-cluster/hetzner): include IPv6 in the control-plane public network
+- 91b505c84 feat(kube-prometheus): add optional *_probe_target for in-cluster blackbox probes
+- d8129fd0d feat(crossplane-provider): one chart for every Crossplane provider, enabled from values
+- 6e1a56b3e feat(prometheus-linuxaid): add monitor::system::disk::mount alert
+- 84ab72928 feat(nextcloud): hostAliases on the pod (local patch to the vendored chart)
+- 86c5b836c feat(keycloakx): realmImports, realm files for the import at startup
+- 215c5db0d feat(nextcloud): add the Nextcloud chart, WOPI host for Collabora
+- 1d96468a7 feat(collabora-online): add the Collabora Online chart
+
+### Bug Fixes
+
+- c50a3d9d4 fix(kube-prometheus): set replica counts where the PDB guard can see them
+- 232cb212c fix(buzz): regenerate Chart.lock for kubeaid-addons 1.1.0
+- b85de8945 fix(capi-cluster/hetzner): register a control-plane-only cluster untainted
+- 0840fa744 fix(capi-cluster/hetzner): bind the Floating IP on a dummy device
+- 85677884b fix(capi-cluster/hetzner): pin the control-plane node IP to the private NIC
+- d00a34a7f fix(capi-cluster/hetzner): skip the NAT gateway on public control-plane nodes
+- 334d4d98b fix(capi-cluster/hetzner): guard the public-interface detection
+- 2c9e6512a fix(ci): make Gitea workflow files valid again
+- d5baabbd4 fix(vuls-dictionary): increased initContainer decompress-vuls2-db memory limit to 1.5Gi
+- a8c98a5f8 fix(twenty): regenerate Chart.lock for kubeaid-addons 1.1.0
+- e69851b68 fix(nextcloud): give the first start a startup probe window
+- 066bc46f6 fix(nextcloud): set redisExporter.image on the Redis CR
+
+### Configuration Changes
+
+- b7681c685 chore(crossplane): remove the two charts superseded by crossplane-provider
+- 1aa8a1929 chore(capi-cluster): bump node containerd/runc to latest patch releases
+- c23f098b3 chore(capi): bump CAPZ to v1.26.1
+- 52e0beae9 chore(capi): bump CAPA to v2.11.3
+- 0285bd03d chore(capi): bump CAPI core/bootstrap/control-plane to v1.11.11
+- bf09367bc chore(capi): bump CAPH to v1.1.9
+
+### Other Changes
+
+- bb3e27548 add support to enable ipv4 in private networks
+- 383540f1f docs(crossplane-provider): externalName for Scaleway buckets is <region>/<bucket name>
+
 ## KubeAid Release Version 33.0.2
 
 ### New Charts Added
