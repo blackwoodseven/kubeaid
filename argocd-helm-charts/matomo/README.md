@@ -68,6 +68,7 @@ name, user and password in the web installer. Backups of that database are up to
 | `persistence.storageClassName`, `persistence.accessMode`, `persistence.size` | `""`, `ReadWriteMany`, `1Gi` | The `matomo` PVC. |
 | `plugins` | `[]` | List of `{name, version}` from plugins.matomo.org. A new version replaces the old one. |
 | `archive.schedule` | `*/5 * * * *` | Schedule of the `core:archive` CronJob. |
+| `geoip.enabled` | `false` | Download the DB-IP city database for the location reports. |
 | `oidc.*` | disabled | Keycloak login, see below. |
 | `mariadb.enabled` | `true` | Create the database with mariadb-operator. Set `false` to use your own. |
 | `mariadb.image` | `mariadb:latest` | Pin a version such as `mariadb:12.3` so the server is not upgraded unexpectedly. |
@@ -93,6 +94,12 @@ the host can run it, so do it right after the first sync.
 
 Until the installer is done, the archive job fails because there is no config to read. If the installer page
 shows without styling, hard-refresh the browser.
+
+## GeoIP
+
+Set `geoip.enabled: true` to get country and city in the location reports. The setup container downloads
+the free DB-IP city database (about 130 MB) into `misc/` and switches the location provider to it. The file
+is downloaded again on pod start once it is older than 30 days. A failed download does not stop the pod.
 
 ## Keycloak login (OIDC)
 

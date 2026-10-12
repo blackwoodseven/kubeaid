@@ -20,6 +20,18 @@ data:
       chown -R www-data:www-data extra-plugins/{{ $name }}
     fi
     {{- end }}
+    {{- if .Values.geoip.enabled }}
+
+    if [ -z "$(find misc/DBIP-City.mmdb -mtime -30 2>/dev/null)" ]; then
+      echo "Downloading the GeoIP database"
+      if curl -fsSL "https://download.db-ip.com/free/dbip-city-lite-$(date +%Y-%m).mmdb.gz" | gunzip > /tmp/geoip.mmdb; then
+        mv /tmp/geoip.mmdb misc/DBIP-City.mmdb
+        chown www-data:www-data misc/DBIP-City.mmdb
+      else
+        echo "GeoIP download failed"
+      fi
+    fi
+    {{- end }}
 
     if [ ! -f config/config.ini.php ]; then
       echo "No config.ini.php yet: finish the web installer, then restart the pod to apply the settings"
@@ -42,6 +54,11 @@ data:
       'General.enable_auto_update=0' \
       'General.enable_update_communication=0' \
       'General.enable_browser_archiving_triggering=0'
+    {{- if .Values.geoip.enabled }}
+    if [ -f misc/DBIP-City.mmdb ]; then
+      console climulti:request --superuser 'module=API&method=UserCountry.setLocationProvider&providerId=geoip2php&format=json' || true
+    fi
+    {{- end }}
     {{- $o := .Values.oidc }}
     {{- if $o.enabled }}
     {{- $kc := printf "%s/realms/%s/protocol/openid-connect" (required "set oidc.keycloakUrl" $o.keycloakUrl) (required "set oidc.realm" $o.realm) }}
