@@ -296,7 +296,6 @@ local kp =
               certname: certname,
             }
           ) else {},
-          replicas: if std.objectHas(vars.prometheus, 'replicas') then vars.prometheus.replicas else 1,
           resources: vars.prometheus_resources,
           retention: vars.prometheus.retention,
           storage: {
@@ -536,9 +535,18 @@ local kp =
         namespace: 'monitoring',
       },
 
+      // Replica counts belong here and not on the component's CR spec:
+      // kube-prometheus gates PodDisruptionBudget creation on the component
+      // replica count, so a CR-only override still renders a PDB that a
+      // single replica can never satisfy, making the node undrainable.
+      alertmanager+: {
+        replicas: vars.alertmanager_replicas,
+      },
+
       prometheus+: {
         // [ i for i in scrape_namespaces if std.get(defaults.mixins, i) == true ],
         namespaces+: scrape_namespaces,
+        replicas: if std.objectHas(vars.prometheus, 'replicas') then vars.prometheus.replicas else 1,
       },
 
       prometheusOperator+: {
@@ -684,7 +692,6 @@ local kp =
     alertmanager+: {
       alertmanager+: {
         spec+: {
-          replicas: 1,
           resources: vars.alertmanager_resources,
           secrets: (
             if std.objectHas(vars, 'connect_obmondo') && vars.connect_obmondo then [

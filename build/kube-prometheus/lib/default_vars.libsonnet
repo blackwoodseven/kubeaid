@@ -21,6 +21,7 @@
     limits: { memory: '50Mi' },
     requests: { cpu: '1m', memory: '50Mi' },
   },
+  alertmanager_replicas: 1,
   prometheus_resources: {
     limits: { memory: '3Gi' },
     requests: { cpu: '200m', memory: '2500Mi' },
@@ -30,7 +31,7 @@
     requests: { cpu: '200m', memory: '1500Mi' },
   },
   prometheus_adapter_additional_rules: [],
-  prometheus_adapter_replicas: 2,
+  prometheus_adapter_replicas: 1,
   grafana_resources: {
     limits: { memory: '250Mi' },
     requests: { cpu: '6m', memory: '200Mi' },
