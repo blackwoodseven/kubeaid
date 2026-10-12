@@ -28,9 +28,9 @@ it restarts when these values change.
 
 The `matomo-archive` CronJob runs `core:archive` every 5 minutes, which also runs the scheduled tasks. It
 mounts the same PVC, so the PVC has to be `ReadWriteMany` (for example `ceph-filesystem`) unless the cluster
-has a single node. Set "Archive reports when viewed from the browser" to No under Administration > System >
-General settings. That setting is stored in the database and overrides the config file, so the chart can't
-set it.
+has a single node. The chart turns off archiving from the browser in the config file. If "Archive reports
+when viewed from the browser" was ever changed under Administration > System > General settings, that value
+wins, so set it to No there.
 
 Matomo sends email for password resets, scheduled reports and a few scheduled tasks. The image has no local
 mail server, so set up SMTP under Administration > System > General settings if you need any of that.

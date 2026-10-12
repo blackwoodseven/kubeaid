@@ -29,6 +29,8 @@ data:
     console core:update --yes
     # again, for columns of plugins the first run activated
     console core:update --yes
+    # the .htaccess files that block tmp/, core/ and vendor/ are not in the image
+    console core:create-security-files
     {{- range .Values.plugins }}
     console plugin:activate {{ .name }}
     {{- end }}
@@ -38,7 +40,8 @@ data:
       'General.assume_secure_protocol={{ ternary 1 0 .Values.ingress.tls }}' \
       'General.proxy_client_headers=["HTTP_X_FORWARDED_FOR"]' \
       'General.enable_auto_update=0' \
-      'General.enable_update_communication=0'
+      'General.enable_update_communication=0' \
+      'General.enable_browser_archiving_triggering=0'
     {{- $o := .Values.oidc }}
     {{- if $o.enabled }}
     {{- $kc := printf "%s/realms/%s/protocol/openid-connect" (required "set oidc.keycloakUrl" $o.keycloakUrl) (required "set oidc.realm" $o.realm) }}
