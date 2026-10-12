@@ -1028,7 +1028,10 @@ local kp =
           else
             group
       ),
-      kp.kubernetesControlPlane.prometheusRule.spec.groups
+      std.filter(
+        function(group) !(vars.platform == 'aks' && group.name == 'kube-apiserver-slos'),
+        kp.kubernetesControlPlane.prometheusRule.spec.groups
+      )
     ),
   },
 } } +
