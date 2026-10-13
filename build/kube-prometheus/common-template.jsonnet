@@ -1029,7 +1029,7 @@ local kp =
             group
       ),
       std.filter(
-        function(group) !(vars.platform == 'aks' && group.name == 'kube-apiserver-slos'),
+        function(group) !(std.member(['aks', 'eks'], vars.platform) && group.name == 'kube-apiserver-slos'),
         kp.kubernetesControlPlane.prometheusRule.spec.groups
       )
     ),
