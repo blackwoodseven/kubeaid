@@ -8,6 +8,18 @@ I maintain cnpg-drill and publish its chart and image in my personal GHCR accoun
 The wrapper is disabled by default. Enabling it creates namespace-scoped RBAC and a suspended CronJob;
 installation with these defaults does not start a restore. Run one Job and review its report before enabling a schedule.
 
+## Start in a test cluster
+
+Try the first restore in a separate test cluster with its own source CNPG Cluster,
+a completed Barman Cloud plugin backup, and a read-only recovery ObjectStore.
+Follow the steps below with that cluster's kubeconfig and context, and check the
+SQL results and cleanup before using the chart with production data.
+
+The chart reads the source Cluster and Backup resources in the cluster where it
+runs. Installing it in a different cluster does not let it look up a production
+Cluster remotely. For recovery across clusters, configure CNPG recovery in the
+destination cluster using your archive credentials and native recovery procedure.
+
 ## Before running
 
 - Install CloudNativePG and its Barman Cloud plugin using the [cloudnative-pg chart](../cloudnative-pg/readme.md).
