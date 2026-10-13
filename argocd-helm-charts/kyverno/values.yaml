@@ -29,11 +29,12 @@ resourceQuotaLimitRangeGenerator:
       pods: "100"
       jobs: "100"
 
+      # Requests stay unset: summed over all namespaces they fire the quota overcommit alerts.
       cpu:
-        request: "100"
+        request: null
 
       memory:
-        request: 200Gi
+        request: null
         limit: 400Gi
 
       storage:
