@@ -5,8 +5,14 @@
 # -- Number of replicas (pods) to launch.
 replicaCount: 1
 
+# -- Number of old ReplicaSets to retain to allow rollback.
+revisionHistoryLimit: 10
+
 # -- Define the [strategy](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy) to replace old Pods by new ones during updates.
 deploymentStrategy: {}
+
+# -- Container [lifecycle hooks](https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/).
+lifecycle: {}
 
 image:
   # -- Name of the image repository to pull the container image from.
@@ -15,8 +21,12 @@ image:
   # -- [Image pull policy](https://kubernetes.io/docs/concepts/containers/images/#updating-images) for updating already existing images on a node.
   pullPolicy: IfNotPresent
 
-  # -- Image tag override for the default value (chart appVersion).
+  # -- Image tag override for the default value (chart appVersion). When set, it replaces the whole tag and `image.variant` is ignored.
   tag: ""
+
+  # -- Override the default image variant. Example: "distroless-slim". Ignored when `image.tag` is set.
+  # See the [official documentation](https://docs.sftpgo.com/latest/docker/#image-variants).
+  variant: ""
 
 # -- Reference to one or more secrets to be used when [pulling images](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#create-a-pod-that-uses-your-secret) (from private registries).
 imagePullSecrets: []
@@ -96,6 +106,9 @@ serviceAccount:
   # -- Enable service account creation.
   create: true
 
+  # -- Automount API credentials for the Service Account.
+  automountServiceAccountToken: true
+
   # -- Annotations to be added to the service account.
   annotations: {}
 
@@ -115,6 +128,15 @@ podAnnotations: {}
 # -- Labels to be added to pods.
 podLabels: {}
 
+# -- Pod priority class name.
+podPriorityClassName:
+
+# -- Duration in seconds the pod needs to terminate gracefully.
+# See the [API reference](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#lifecycle) for details.
+# Should be set in conjunction with SFTPGO_GRACE_TIME environment variable.
+# Expected value: number of seconds (int64).
+podTerminationGracePeriodSeconds: null
+
 # -- Pod [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
 # See the [API reference](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#security-context) for details.
 podSecurityContext:
@@ -131,6 +153,26 @@ securityContext: {}
 
 # -- Add [init containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to the pod.
 initContainers: []
+
+# -- Additional [containers](https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers) to run in the same pod (e.g., sidecars).
+# See the [API reference](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#containers) for details.
+extraContainers: []
+   # - name: http-sidecar
+   #   image: my-http-sidecar:1.0.0
+   #   imagePullPolicy: IfNotPresent
+   #   ports:
+   #     - name: http
+   #       containerPort: 9090
+   #       protocol: TCP
+   #   # -- Compute Resources required by this container.
+   #   # See [Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) for details.
+   #   resources:
+   #     requests:
+   #       cpu: 50m       # 50 milliCPU (5% of a single CPU core)
+   #       memory: 64Mi   # 64 Megabytes of RAM
+   #     limits:
+   #       cpu: 100m      # Hard cap at 10% of a CPU core
+   #       memory: 128Mi  # Hard cap at 128 Megabytes of RAM
 
 service:
   # -- Annotations to be added to the service.
@@ -207,6 +249,11 @@ services: {}
   #   externalTrafficPolicy:
   #   sessionAffinity:
 
+# -- Additional ports to expose in the deployment and service.
+additionalPorts: {}
+  # custom-sftp:
+  #   port: 2222           # Service port
+  #   containerPort: 22    # Pod port
 
 ui:
   ingress:
@@ -320,6 +367,15 @@ autoscaling:
   #       type: Value
   #       value: 10k
 
+# -- [Pod Disruption Budget](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/) configuration.
+# See the [API reference](https://kubernetes.io/docs/reference/kubernetes-api/policy-resources/pod-disruption-budget-v1/) for details.
+# Note: minAvailable and maxUnavailable cannot be used simultaneously.
+pdb:
+  # -- Enable Pod Disruption Budget creation.
+  enabled: false
+  # minAvailable: 1
+  # maxUnavailable: 1
+
 # -- [Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) configuration.
 nodeSelector: {}
 
@@ -335,23 +391,32 @@ affinity: {}
 # Warning: The use of host network is [discouraged](https://kubernetes.io/docs/concepts/configuration/overview/#services). Make sure to use it only when absolutely necessary.
 hostNetwork: false
 
-topologySpreadConstraints:
-  # -- Enable pod [Topology Spread Constraints](https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/).
+# -- [Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) configuration.
+networkPolicy:
+  # -- Enable creation of NetworkPolicy resources.
   enabled: false
+  # -- Specifies the policy types. Defaults to Ingress and Egress if not specified.
+  policyTypes: []
+  # -- Ingress rules.
+  ingress: []
+  # -- Egress rules.
+  egress: []
 
-  # -- Degree to which pods may be unevenly distributed.
-  maxSkew: 1
-
-  # -- The key of node labels.
-  # See https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints/
-  topologyKey: topology.kubernetes.io/zone
-
-  # -- How to deal with a Pod if it doesn't satisfy the spread constraint.
-  whenUnsatisfiable: DoNotSchedule
+# -- [Topology Spread Constraints](https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/) configuration.
+# Accepts a list of constraints. The legacy object format is also supported for backward compatibility.
+topologySpreadConstraints: []
+  # - maxSkew: 1
+  #   topologyKey: topology.kubernetes.io/zone
+  #   whenUnsatisfiable: DoNotSchedule
+  #   matchLabelKeys:
+  #     - pod-template-hash
 
 persistence:
   # -- Enable persistent storage for the /var/lib/sftpgo directory, saving state of the default sqlite db.
   enabled: false
+
+  # -- Annotations to be added to the PVC.
+  annotations: {}
 
   # -- Create the pvc desired specificiation.
   pvc:
@@ -361,3 +426,152 @@ persistence:
       requests:
         storage: 5Gi
     storageClassName: ""
+
+# -- Prometheus PodMonitor configuration.
+# See the [Prometheus Operator documentation](https://prometheus-operator.dev/docs/operator/api/#monitoring.coreos.com/v1.PodMonitor) for details.
+podMonitor:
+  # -- Enable PodMonitor resource for Prometheus Operator to scrape pod metrics.
+  enabled: false
+
+  # -- Additional labels for the PodMonitor resource.
+  # Useful if your Prometheus Operator requires specific labels to discover the monitor.
+  labels: {}
+    # release: kube-prometheus-stack
+
+  # -- Additional annotations for the PodMonitor resource.
+  annotations: {}
+
+  # -- Scrape interval (e.g., 10s, 1m).
+  interval: 1m
+
+  # -- Scrape timeout (e.g., 10s).
+  scrapeTimeout: 10s
+
+# -- [Gateway API](https://gateway-api.sigs.k8s.io/) routes configuration.
+# HTTPRoute is part of the Gateway API standard channel (GA in v1).
+# TCPRoute requires the experimental channel CRDs to be installed in the cluster.
+# See the README for compatibility details and path-prefix semantics.
+gatewayApi:
+  httpRoutes:
+    ui:
+      # -- Enable [HTTPRoute](https://gateway-api.sigs.k8s.io/api-types/httproute/) for the web UI.
+      enabled: false
+
+      # -- Annotations to be added to the UI HTTPRoute.
+      annotations: {}
+
+      # -- Labels to be added to the UI HTTPRoute.
+      labels: {}
+
+      # -- Hostnames for the UI HTTPRoute. Leave empty to match any hostname accepted by the parent Gateway.
+      hostnames: []
+        # - sftpgo.example.com
+
+      # -- ParentRefs for the UI HTTPRoute. At least one entry is required for the route to be attached to a Gateway.
+      parentRefs: []
+        # - name: my-gateway
+        #   namespace: gateway-namespace
+        #   sectionName: http
+
+      # -- Path prefix for the UI route. Should match the `httpd.web_root` configured in SFTPGo (default `/`).
+      pathPrefix: /
+
+      # -- [Filters](https://gateway-api.sigs.k8s.io/api-types/httproute/#filters-optional) applied to the route (e.g. URLRewrite, RequestHeaderModifier). Passed through verbatim.
+      filters: []
+        # - type: URLRewrite
+        #   urlRewrite:
+        #     path:
+        #       type: ReplacePrefixMatch
+        #       replacePrefixMatch: /
+
+      # -- Backend override. Defaults to the main chart Service on the HTTP port. Accepted keys: `kind`, `name`, `port`, `weight`.
+      backend: {}
+        # name: my-external-service
+        # port: 8080
+        # weight: 1
+
+    api:
+      # -- Enable [HTTPRoute](https://gateway-api.sigs.k8s.io/api-types/httproute/) for the REST API.
+      enabled: false
+
+      # -- Annotations to be added to the API HTTPRoute.
+      annotations: {}
+
+      # -- Labels to be added to the API HTTPRoute.
+      labels: {}
+
+      # -- Hostnames for the API HTTPRoute. Leave empty to match any hostname accepted by the parent Gateway.
+      hostnames: []
+
+      # -- ParentRefs for the API HTTPRoute. At least one entry is required for the route to be attached to a Gateway.
+      parentRefs: []
+
+      # -- Path prefix for the API route. The REST API is always served at `/api` by SFTPGo (not affected by `httpd.web_root`). Use a custom prefix together with a `URLRewrite` filter if you need a different external path.
+      pathPrefix: /api
+
+      # -- [Filters](https://gateway-api.sigs.k8s.io/api-types/httproute/#filters-optional) applied to the route (e.g. URLRewrite, RequestHeaderModifier). Passed through verbatim.
+      filters: []
+
+      # -- Backend override. Defaults to the main chart Service on the HTTP port. Accepted keys: `kind`, `name`, `port`, `weight`.
+      backend: {}
+
+    webdav:
+      # -- Enable [HTTPRoute](https://gateway-api.sigs.k8s.io/api-types/httproute/) for WebDAV.
+      enabled: false
+
+      # -- Annotations to be added to the WebDAV HTTPRoute.
+      annotations: {}
+
+      # -- Labels to be added to the WebDAV HTTPRoute.
+      labels: {}
+
+      # -- Hostnames for the WebDAV HTTPRoute. Leave empty to match any hostname accepted by the parent Gateway.
+      hostnames: []
+
+      # -- ParentRefs for the WebDAV HTTPRoute. At least one entry is required for the route to be attached to a Gateway.
+      parentRefs: []
+
+      # -- Path prefix for the WebDAV route. Should match the WebDAV binding prefix configured in SFTPGo (default `/`).
+      pathPrefix: /
+
+      # -- [Filters](https://gateway-api.sigs.k8s.io/api-types/httproute/#filters-optional) applied to the route (e.g. URLRewrite, RequestHeaderModifier). Passed through verbatim.
+      filters: []
+
+      # -- Backend override. Defaults to the main chart Service on the WebDAV port. Accepted keys: `kind`, `name`, `port`, `weight`.
+      backend: {}
+
+  tcpRoutes:
+    sftp:
+      # -- Enable [TCPRoute](https://gateway-api.sigs.k8s.io/api-types/tcproute/) for SFTP. Requires the Gateway API experimental channel CRDs.
+      enabled: false
+
+      # -- Annotations to be added to the SFTP TCPRoute.
+      annotations: {}
+
+      # -- Labels to be added to the SFTP TCPRoute.
+      labels: {}
+
+      # -- ParentRefs for the SFTP TCPRoute. At least one entry is required for the route to be attached to a Gateway.
+      parentRefs: []
+        # - name: my-gateway
+        #   namespace: gateway-namespace
+        #   sectionName: sftp
+
+      # -- Backend override. Defaults to the main chart Service on the SFTP port. Accepted keys: `kind`, `name`, `port`, `weight`.
+      backend: {}
+
+    ftp:
+      # -- Enable [TCPRoute](https://gateway-api.sigs.k8s.io/api-types/tcproute/) for FTP. Requires the Gateway API experimental channel CRDs. Only routes the FTP control port; passive data ports are not handled.
+      enabled: false
+
+      # -- Annotations to be added to the FTP TCPRoute.
+      annotations: {}
+
+      # -- Labels to be added to the FTP TCPRoute.
+      labels: {}
+
+      # -- ParentRefs for the FTP TCPRoute. At least one entry is required for the route to be attached to a Gateway.
+      parentRefs: []
+
+      # -- Backend override. Defaults to the main chart Service on the FTP control port. Accepted keys: `kind`, `name`, `port`, `weight`.
+      backend: {}

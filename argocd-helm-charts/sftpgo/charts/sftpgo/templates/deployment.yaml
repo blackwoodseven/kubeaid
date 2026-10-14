@@ -1,7 +1,9 @@
+{{- $selectorLabels := fromYaml (include "sftpgo.selectorLabels" .) -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "sftpgo.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "sftpgo.labels" . | nindent 4 }}
     {{- if .Values.deploymentLabels }}
@@ -15,6 +17,7 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   {{- with .Values.deploymentStrategy }}
   strategy:
     {{- toYaml . | nindent 4 }}
@@ -43,16 +46,25 @@ spec:
       hostNetwork: {{ .Values.hostNetwork }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if not (quote .Values.podTerminationGracePeriodSeconds | empty) }}
+      terminationGracePeriodSeconds: {{ .Values.podTerminationGracePeriodSeconds }}
+      {{- end }}
       {{- with .Values.initContainers }}
       initContainers:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- $variantSuffix := "" -}}
+      {{- with .Values.image.variant }}{{ $variantSuffix = printf "-%s" . }}{{ end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s" .Chart.AppVersion) }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s%s" .Chart.AppVersion $variantSuffix) }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           args:
             - sftpgo
             - serve
@@ -122,6 +134,11 @@ spec:
             - name: telemetry
               containerPort: 10000
               protocol: TCP
+            {{- range $name, $port := .Values.additionalPorts }}
+            - name: {{ $name }}
+              containerPort: {{ $port.containerPort }}
+              protocol: TCP
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -144,6 +161,9 @@ spec:
           {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
+        {{- with .Values.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       volumes:
         - name: config
           configMap:
@@ -164,16 +184,29 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.podPriorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.topologySpreadConstraints.enabled }}
+
+      {{- $topologyConstraints := list -}}
+
+      {{- if kindIs "slice" .Values.topologySpreadConstraints }}
+        {{- range $constraint := .Values.topologySpreadConstraints }}
+          {{- if not $constraint.labelSelector }}
+            {{- $_ := set $constraint "labelSelector" (dict "matchLabels" $selectorLabels) }}
+          {{- end }}
+          {{- $topologyConstraints = append $topologyConstraints $constraint -}}
+        {{- end }}
+      {{- else if and (kindIs "map" .Values.topologySpreadConstraints) .Values.topologySpreadConstraints.enabled }}
+        {{- $legacyConstraint := dict "maxSkew" (default 1 .Values.topologySpreadConstraints.maxSkew) "topologyKey" (default "topology.kubernetes.io/zone" .Values.topologySpreadConstraints.topologyKey) "whenUnsatisfiable" (default "DoNotSchedule" .Values.topologySpreadConstraints.whenUnsatisfiable) "labelSelector" (dict "matchLabels" $selectorLabels) -}}
+        {{- $topologyConstraints = append $topologyConstraints $legacyConstraint -}}
+      {{- end }}
+
+      {{- if not (empty $topologyConstraints) }}
       topologySpreadConstraints:
-        - labelSelector:
-            matchLabels:
-              {{- include "sftpgo.selectorLabels" . | nindent 14 }}
-          maxSkew: {{ .Values.topologySpreadConstraints.maxSkew }}
-          topologyKey: {{ .Values.topologySpreadConstraints.topologyKey }}
-          whenUnsatisfiable: {{ .Values.topologySpreadConstraints.whenUnsatisfiable }}
+        {{- toYaml $topologyConstraints | nindent 8 }}
       {{- end }}

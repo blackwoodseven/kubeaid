@@ -1,13 +1,14 @@
 annotations:
   artifacthub.io/changes: |
-    - kind: changed
-      description: |
-        chore: bump OpenBao to 2.6.3
-  artifacthub.io/containsSecurityUpdates: "true"
+    - kind: fixed
+      fix(chart): ensure name uniqueness for clusterrolebinding resources
+    - kind: fixed
+      fix(deps): update vault-k8s injector to 1.7.6
+  artifacthub.io/containsSecurityUpdates: "false"
   charts.openshift.io/name: OpenBao
   charts.openshift.io/provider: OpenBao
 apiVersion: v2
-appVersion: v2.6.3
+appVersion: v2.7.1
 description: Official OpenBao Chart
 home: https://github.com/openbao/openbao-helm
 icon: https://raw.githubusercontent.com/openbao/artwork/refs/heads/main/color/openbao-color.svg
@@ -28,4 +29,4 @@ maintainers:
 name: openbao
 sources:
 - https://github.com/openbao/openbao-helm
-version: 0.29.6
+version: 0.30.3

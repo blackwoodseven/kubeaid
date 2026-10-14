@@ -3,7 +3,7 @@ name: whoami
 version: 1.0.0
 dependencies:
   - name: whoami
-    version: 6.0.0
+    version: 6.1.0
     repository: https://cowboysysop.github.io/charts/
   - name: kubeaid-addons
     version: 1.1.0

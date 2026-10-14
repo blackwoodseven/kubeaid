@@ -122,7 +122,10 @@ spec:
               value: {{ .Values.permissions.metricServer.restrict.secret | quote }}
             {{- end }}
             {{- if .Values.env }}
-            {{- toYaml .Values.env | nindent 12 -}}
+            {{- toYaml .Values.env | nindent 12 }}
+            {{- end }}
+            {{- if .Values.metricsServer.env }}
+            {{- tpl (toYaml .Values.metricsServer.env) $ | nindent 12 }}
             {{- end }}
           command:
            - /keda-adapter
@@ -132,7 +135,7 @@ spec:
           - --logtostderr=true
           - --stderrthreshold={{ .Values.logging.metricServer.stderrthreshold }}
           - --disable-compression={{ .Values.metricsServer.disableCompression}}
-          - --metrics-service-address={{ .Values.operator.name }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:9666
+          - --metrics-service-address={{ .Values.operator.name }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.operator.metricsServiceTargetPort }}
           - --client-ca-file={{ .Values.certificates.mountPath }}/ca.crt
           - --tls-cert-file={{ .Values.certificates.mountPath }}/tls.crt
           - --tls-private-key-file={{ .Values.certificates.mountPath }}/tls.key
@@ -200,6 +203,9 @@ spec:
       {{- end }}
       dnsPolicy: {{ .Values.metricsServer.dnsPolicy }}
       hostNetwork: {{ .Values.metricsServer.useHostNetwork }}
+      {{- if not (kindIs "invalid" .Values.metricsServer.hostUsers) }}
+      hostUsers: {{ .Values.metricsServer.hostUsers }}
+      {{- end }}
       nodeSelector:
         kubernetes.io/os: linux
       {{- with .Values.metricsServer.nodeSelector | default .Values.nodeSelector }}

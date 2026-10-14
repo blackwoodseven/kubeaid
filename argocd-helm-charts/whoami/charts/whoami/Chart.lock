@@ -3,4 +3,4 @@ dependencies:
   repository: oci://ghcr.io/cowboysysop/charts
   version: 2.31.3
 digest: sha256:97c0702416bf7bd224e8a2fa1e13f01521c6fef4909fc387c28778dd5ceb5442
-generated: "2025-08-06T17:03:40.337644391Z"
+generated: "2026-10-07T20:47:36.835444941Z"

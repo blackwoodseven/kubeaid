@@ -1,6 +1,6 @@
 dependencies:
 - name: metal3
   repository: https://suse-edge.github.io/charts
-  version: 0.15.2
-digest: sha256:37b9fcbde310bb3875e3c115d25f6eec4ae0ae3eb3ffa0dc09cf0cb0a9bf4a5c
-generated: "2026-08-31T13:19:03.97817864Z"
+  version: 0.16.0
+digest: sha256:dcaadfdb3f034dcc7636dfad7433fc843e7786d42d50179187a31b8b3f1dda0c
+generated: "2026-10-14T06:10:20.442404255Z"

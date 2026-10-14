@@ -1,0 +1,9 @@
+dependencies:
+- name: argo-cd
+  repository: https://argoproj.github.io/argo-helm
+  version: 10.10.3
+- name: kubeaid-addons
+  repository: file://../kubeaid-addons
+  version: 1.1.0
+digest: sha256:cb933777cf3da4ccf6798317b400e3f1a23b03c50870bd3f3d30893f9c1462b3
+generated: "2026-10-14T06:06:43.021007223Z"

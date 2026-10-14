@@ -56,6 +56,16 @@ toolbox:
   # -- Set the priority class for the toolbox if desired
   priorityClassName:
 
+  # -- Add additional volumes to the toolbox pod.
+  # Note that this is subject to the SCC defined in ./templates/securityContextConstraints.yaml on OpenShift.
+  additionalVolumes: []
+  # -- Add additional volume mounts to the toolbox pod
+  additionalVolumeMounts: []
+  # -- Add additional environment variables to the toolbox pod
+  additionalEnv: []
+  # -- Add additional environment variable sources to the toolbox pod
+  additionalEnvFrom: []
+
 monitoring:
   # -- Enable Prometheus integration, will also create necessary RBAC rules to allow Operator to create ServiceMonitors.
   # Monitoring requires Prometheus to be pre-installed
@@ -81,6 +91,14 @@ monitoring:
   # externalMgrPrometheusPort: <port>
   # Scrape interval for prometheus
   # interval: 10s
+  # Enable native HTTPS on the Ceph mgr prometheus endpoint (Ceph v20.2+).
+  # Rook mounts the TLS Secret and configures the prometheus module; it does not create certificates.
+  # metricsTLS:
+  #   secretName: rook-ceph-prometheus-server-tls
+  #   ca:
+  #     configMap:
+  #       name: rook-ceph-mgr-metrics-service-ca
+  #       key: service-ca.crt
   # allow adding custom labels and annotations to the prometheus rule
   prometheusRule:
     # -- Labels applied to PrometheusRule
@@ -186,6 +204,9 @@ cephClusterSpec:
     # Serve the dashboard using SSL (if using ingress to expose the dashboard and `ssl: true` you need to set
     # the corresponding "backend protocol" annotation(s) for your ingress controller of choice)
     ssl: true
+    # The Kubernetes secret name in the current namespace to use as the dashboard SSL certificate, if the secret
+    # type is kubernetes.io/tls and the private key is RSA. If not set, a self-signed certificate is created.
+    # sslCertificateRef: rook-ceph-dashboard-tls
 
   # Network configuration, see: https://github.com/rook/rook/blob/master/Documentation/CRDs/Cluster/ceph-cluster-crd.md#network-configuration-settings
   network:
@@ -205,7 +226,7 @@ cephClusterSpec:
       # Whether to require communication over msgr2. If true, the msgr v1 port (6789) will be disabled
       # and clients will be required to connect to the Ceph cluster with the v2 port (3300).
       # Requires a kernel that supports msgr v2 (kernel 5.11 or CentOS 8.4 or newer).
-      requireMsgr2: false
+      requireMsgr2: true
   #   # enable host networking
   #   provider: host
   #   # EXPERIMENTAL: enable the Multus network provider
@@ -550,6 +571,12 @@ cephBlockPools:
         csi.storage.k8s.io/controller-publish-secret-namespace: "{{ .Release.Namespace }}"
         csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
         csi.storage.k8s.io/node-stage-secret-namespace: "{{ .Release.Namespace }}"
+        # Needed for VolumeAttributesClass (dynamic QoS modification on existing volumes).
+        csi.storage.k8s.io/controller-modify-secret-name: rook-csi-rbd-provisioner
+        csi.storage.k8s.io/controller-modify-secret-namespace: "{{ .Release.Namespace }}"
+        # Needed for krbd QoS enforcement.
+        csi.storage.k8s.io/node-publish-secret-name: rook-csi-rbd-node
+        csi.storage.k8s.io/node-publish-secret-namespace: "{{ .Release.Namespace }}"
         # Specify the filesystem type of the volume. If not specified, csi-provisioner
         # will set default as `ext4`. Note that `xfs` is not recommended due to potential deadlock
         # in hyperconverged settings where the volume is mounted on the same node as the osds.
@@ -748,6 +775,14 @@ cephObjectStores:
 #      #   - "http://rgw-a.fqdn"
 #      # if the pools need to be removed from backend enable following setting
 #      # preservePoolsOnDelete: false
+## cephObjectStoreUsers create S3 users in a CephObjectStore. They are disabled by default;
+## remove the comments and set desired values to enable them. See
+## https://rook.io/docs/rook/latest/CRDs/Object-Storage/ceph-object-store-user-crd/
+#cephObjectStoreUsers:
+#  - name: my-user
+#    spec:
+#      store: ceph-objectstore
+#      displayName: my display name
 ## cephECBlockPools are disabled by default, please remove the comments and set desired values to enable it
 ## For erasure coded a replicated metadata pool is required.
 ## https://rook.io/docs/rook/latest/CRDs/Shared-Filesystem/ceph-filesystem-crd/#erasure-coded

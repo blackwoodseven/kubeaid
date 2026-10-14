@@ -1,6 +1,6 @@
 dependencies:
 - name: kubearmor-operator
   repository: https://kubearmor.github.io/charts
-  version: v1.7.4
-digest: sha256:72e7119e0c2fc53648258ffd31547548ba8a966b950761a65c764883322855c7
-generated: "2026-07-12T00:00:00Z"
+  version: v1.7.5
+digest: sha256:73883fe66233683ecb76b7f6873f4fa188638a7b5bca48d7741418dff93225d9
+generated: "2026-10-14T06:09:28.301621394Z"
