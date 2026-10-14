@@ -1,5 +1,11 @@
 opentelemetry-operator:
   manager:
+    # Keep the operator from writing a NetworkPolicy for itself. That policy allows
+    # egress to the API servers only as ipBlock CIDRs, which Cilium does not match
+    # against cluster node IPs, so the operator loses API access and crash-loops.
+    # It was on by default in 0.159.0; upstream turned it off again in 0.160.0.
+    featureGatesMap:
+      operator.networkpolicy: false
     collectorImage:
       repository: otel/opentelemetry-collector-k8s
 opentelemetry-collector:
