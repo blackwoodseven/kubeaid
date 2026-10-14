@@ -20,6 +20,7 @@ servers.
 
 | Value | Description | Default |
 |---|---|---|
+| `prometheus-smartctl-exporter.image.tag` | Exporter image tag. Set because the chart default (v0.14.0) has no arm64 build; v0.15.0 runs on amd64 and arm64 nodes | `v0.15.0` |
 | `prometheus-smartctl-exporter.serviceMonitor.enabled` | Create a ServiceMonitor for kube-prometheus | `true` |
 | `prometheus-smartctl-exporter.serviceMonitor.relabelings` | Relabel `__meta_kubernetes_pod_node_name` to `instance`, so metrics are keyed by node rather than pod | set (see `values.yaml`) |
 

@@ -1,4 +1,10 @@
 prometheus-smartctl-exporter:
+  # The chart (0.17.1) defaults to image v0.14.0, which is built for amd64
+  # only, so the DaemonSet pod cannot start on arm64 nodes (ErrImagePull).
+  # v0.15.0 is built for amd64 and arm64. Drop this once the chart's
+  # appVersion is v0.15.0 or newer.
+  image:
+    tag: v0.15.0
   serviceMonitor:
     enabled: true
     relabelings:
