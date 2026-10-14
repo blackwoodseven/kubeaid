@@ -64,14 +64,14 @@ images:
   ironic:
     repository: registry.opensuse.org/isv/suse/edge/containers/images/ironic
     pullPolicy: IfNotPresent
-    tag: 35.0.0.1
+    tag: 38.0.0.0
   ironicIPADownloader:
     repository: registry.opensuse.org/isv/suse/edge/containers/images/ironic-ipa-downloader
     pullPolicy: IfNotPresent
     tag: 3.1.2
   ipa:
     repository: registry.opensuse.org/isv/suse/edge/containers/images/ironic-python-agent
-    tag: 3.0.9
+    tag: 3.0.10
 
 nameOverride: ""
 fullnameOverride: ""

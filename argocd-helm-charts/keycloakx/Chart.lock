@@ -1,9 +1,9 @@
 dependencies:
 - name: keycloakx
   repository: https://codecentric.github.io/helm-charts
-  version: 7.3.0
+  version: 7.3.2
 - name: kubeaid-addons
   repository: file://../kubeaid-addons
-  version: 0.1.0
-digest: sha256:bb9c8232c70b138fdecf99c18b9acd575514db468a0349f91e1daa96801cdcc8
-generated: "2026-08-31T13:17:56.139105574Z"
+  version: 1.1.0
+digest: sha256:ede67e5e9ce4e6d8b30cf115e52f3a85dda08a90b86b296ffad4d8fbecf865cd
+generated: "2026-10-14T06:09:12.276900639Z"

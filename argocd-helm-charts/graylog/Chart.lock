@@ -1,9 +1,9 @@
 dependencies:
 - name: graylog
   repository: https://charts.kong-z.com
-  version: 3.0.33
+  version: 3.0.37
 - name: kubeaid-addons
   repository: file://../kubeaid-addons
   version: 1.1.0
-digest: sha256:dc5d8dde8d7c61adb1558876375326d2e5f152b2110ed843efe7a35073613719
-generated: "2026-09-21T12:30:45.003426882Z"
+digest: sha256:d009c9cab22402fd72804c3ad1ed9c029065adb3ea5757dc1c281ed5c405a80f
+generated: "2026-10-14T06:08:28.423808575Z"

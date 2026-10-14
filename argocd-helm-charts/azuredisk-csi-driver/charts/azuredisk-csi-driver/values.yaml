@@ -2,7 +2,7 @@ image:
   baseRepo: mcr.microsoft.com
   azuredisk:
     repository: /oss/v2/kubernetes-csi/azuredisk-csi
-    tag: v1.35.0
+    tag: v1.36.0
     pullPolicy: IfNotPresent
   csiProvisioner:
     repository: /oss/v2/kubernetes-csi/csi-provisioner
@@ -148,7 +148,6 @@ node:
   reservedDataDiskSlotNum: 0
   supportZone: true
   allowEmptyCloudConfig: true
-  enableKataMount: false
   getNodeIDFromIMDS: false
   removeNotReadyTaint: true
   maxUnavailable: 1
@@ -206,6 +205,10 @@ feature:
 
 driver:
   name: disk.csi.azure.com
+  # Azure Disk CSI driver feature gates. Alpha features are disabled by default.
+  featureGates:
+    NodeDrivenAttachDetach: false
+    KataMount: false
   # maximum number of attachable volumes per node,
   # maximum number is defined according to node instance type by default(-1)
   volumeAttachLimit: -1

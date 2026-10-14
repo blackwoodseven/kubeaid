@@ -7,7 +7,7 @@ description: "A Helm chart for Kubernetes"
 
 # ntfy
 
-![Version: 0.5.19](https://img.shields.io/badge/Version-0.5.19-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.26.0](https://img.shields.io/badge/AppVersion-2.26.0-informational?style=flat-square)
+![Version: 0.5.23](https://img.shields.io/badge/Version-0.5.23-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 2.29.0](https://img.shields.io/badge/AppVersion-2.29.0-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -65,7 +65,7 @@ helm uninstall ntfy-release
 | ingress.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.hosts[0].paths[0].pathType | string | `"ImplementationSpecific"` |  |
 | ingress.tls | list | `[]` |  |
-| kubectl.image | object | `{"pullPolicy":"IfNotPresent","registry":"docker.io","repository":"alpine/kubectl","tag":"1.36.2"}` | image needed for setup (store generated VAPID / WebPush keys) |
+| kubectl.image | object | `{"pullPolicy":"IfNotPresent","registry":"docker.io","repository":"alpine/kubectl","tag":"1.36.4"}` | image needed for setup (store generated VAPID / WebPush keys) |
 | nameOverride | string | `""` |  |
 | networkPolicy.egress.enabled | bool | `true` | activate egress no networkpolicy |
 | networkPolicy.egress.extra | list | `[]` | egress rules |
