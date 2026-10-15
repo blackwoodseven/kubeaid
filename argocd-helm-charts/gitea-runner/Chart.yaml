@@ -1,3 +1,7 @@
 apiVersion: v2
 name: gitea-runner
 version: 1.0.0
+dependencies:
+  - name: act-runner
+    version: 1.0.0
+    repository: https://vquie.github.io/helm-charts
