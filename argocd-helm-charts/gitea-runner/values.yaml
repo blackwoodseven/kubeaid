@@ -1,7 +1,13 @@
 act-runner:
   replicaCount: 1
+  # The runner PVC is ReadWriteOnce: a rolling update deadlocks on Multi-Attach
+  # when the new pod lands on another node, so stop the old pod first.
+  strategy:
+    type: Recreate
   podSecurityContext:
     fsGroup: 1000
+    # Skip the recursive chown of the whole PVC on every start (minutes on a big volume).
+    fsGroupChangePolicy: OnRootMismatch
   securityContext:
     privileged: true
     runAsUser: 1000

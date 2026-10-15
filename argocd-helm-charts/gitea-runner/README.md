@@ -49,6 +49,30 @@ act-runner:
     registrySecretMountPath: /runner/.docker
 ```
 
+## Nodes without legacy iptables (nf_tables only)
+
+The `dind` image points `iptables` at `iptables-legacy`. On nodes whose kernel has no legacy `ip_tables`
+modules (e.g. Ubuntu 26.04, kernel 7.x) dockerd fails to start with
+``can't initialize iptables table `nat': Table does not exist``, and the runner never registers.
+
+Switch the pod to `iptables-nft` before the runner starts. Only `args` is overridden, so the image's
+`tini` entrypoint stays PID 1:
+
+```yaml
+act-runner:
+  args:
+    - /bin/bash
+    - -c
+    - |
+      sudo update-alternatives --set iptables /usr/sbin/iptables-nft
+      sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-nft
+      exec /bin/bash /opt/run.sh
+```
+
+`command`, `args` and `strategy` are local additions to the vendored `act-runner` chart (upstream
+`vquie/act-runner` 1.0.0 is unmaintained); re-vendoring it drops them. The defaults here use a `Recreate`
+strategy, since the runner PVC is ReadWriteOnce, and `fsGroupChangePolicy: OnRootMismatch`.
+
 ## Create kube config secret
 
 ```bash
