@@ -17,7 +17,7 @@ upstreamRegistries: []
 # - registry.k8s.io
 
 resourceQuotaLimitRangeGenerator:
-  enabled: true
+  enabled: false
   generateExisting: true
   defaultResourceQuotaRuleEnabled: true
   # cilium is excluded from both, never from one only. The LimitRange's 256Mi

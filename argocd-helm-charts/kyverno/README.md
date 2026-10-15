@@ -8,7 +8,7 @@ Wraps the upstream Kyverno chart and ships three KubeAid policies, all written a
 | harbor-proxy-cache-mutate | MutatingPolicy | `harborProxyCache` | off |
 | replace-container-image-registries | MutatingPolicy | `pullThroughCache`, `upstreamRegistries` | off |
 | sync-secrets-\<item\> (one per item) | GeneratingPolicy | `syncSecrets` | off |
-| resourcequota-generator, limitrange-generator | GeneratingPolicy | `resourceQuotaLimitRangeGenerator` | **on** |
+| resourcequota-generator, limitrange-generator | GeneratingPolicy | `resourceQuotaLimitRangeGenerator` | off |
 
 ## Failure behaviour
 
@@ -119,7 +119,9 @@ Behaviour verified on Kyverno 1.19.1:
 Generates a `default` ResourceQuota and a `default` LimitRange in every namespace, with
 per-namespace overrides and exclusions. Override values win, defaults fill the rest. With
 `defaultResourceQuotaRuleEnabled: false` only the override namespaces get a quota. This is
-**enabled by default**; set `enabled: false` if a cluster should not get quotas.
+**off by default**; set `enabled: true` in a cluster's values to get quotas and limit ranges.
+Turning it off on a cluster that had it deletes the generated quotas and limit ranges (see
+below).
 
 ```yaml
 resourceQuotaLimitRangeGenerator:
