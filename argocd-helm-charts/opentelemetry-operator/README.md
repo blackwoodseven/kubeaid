@@ -22,9 +22,26 @@ reconcile any of them.
 
 | Value | Description | Default |
 |---|---|---|
+| `opentelemetry-operator.manager.featureGatesMap.operator.networkpolicy` | Keep the operator from creating a NetworkPolicy for itself; on Cilium it blocks the operator's own API access | `false` |
 | `opentelemetry-operator.manager.collectorImage.repository` | Default collector image the operator injects for `OpenTelemetryCollector` CRs | `otel/opentelemetry-collector-k8s` |
 | `opentelemetry-collector.image.repository` | Image for this chart's own collector release | `otel/opentelemetry-collector-k8s` |
 | `opentelemetry-collector.mode` | Deployment mode for this chart's own collector | `daemonset` |
+
+## Upgrading from KubeAid 33.0.3
+
+KubeAid 33.0.3 ships operator 0.159.0, which creates a NetworkPolicy named
+`opentelemetry-operator` in the operator's namespace. On Cilium that policy blocks the
+operator's access to the API server, and the operator crash-loops (`dial tcp
+10.96.0.1:443: i/o timeout`, then "OpenTelemetryCollector CRDs are not present").
+Turning the feature off does not remove the policy, so after syncing this chart, delete
+it once:
+
+```bash
+kubectl -n <operator-namespace> delete networkpolicy opentelemetry-operator
+```
+
+If the rollout still has an operator pod from the old ReplicaSet (feature on), delete
+that ReplicaSet first, or that pod can create the policy again.
 
 ## Docs links
 
