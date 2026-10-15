@@ -32,6 +32,39 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.deployment.waitForPrometheus }}
+      {{- if .enabled }}
+      initContainers:
+        - name: wait-for-prometheus
+          image: {{ .image }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - curl
+            - --silent
+            - --show-error
+            - --fail
+            - --output
+            - /dev/null
+            - --max-time
+            - "5"
+            - --retry-all-errors
+            - --retry
+            - {{ div .timeoutSeconds 5 | quote }}
+            - --retry-delay
+            - "5"
+            - --retry-max-time
+            - {{ .timeoutSeconds | quote }}
+            - http://{{ $.Values.appConfig.prometheus.url }}/-/ready
+          {{- with $.Values.deployment.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- end }}
+      {{- end }}
       containers:
         - name: {{ include "kubeaid-agent.name" . }}
           image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default .Chart.AppVersion }}"

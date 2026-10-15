@@ -110,6 +110,10 @@ the parent's values file carries only the agent's own settings.
 | `appConfig.securityPosture.enabled` | `true` | Poll the exporter and forward its snapshots to the Obmondo API. The agent collects nothing itself. |
 | `appConfig.securityPosture.exporterURL` | `http://kubeaid-security-exporter` | In-cluster URL of the exporter. Matches the Service this chart creates — change both or neither. |
 | `appConfig.securityPosture.pollInterval` | `1h` | Poll cadence. The submit is skipped when `collectedAt` has not advanced, so end-to-end freshness is bounded by `kubeaid-security-exporter.exporter.interval`, not by this. |
+| `appConfig.prometheus.url` | `prometheus-k8s.monitoring:9090` | Prometheus the agent queries and the initContainer waits for. |
+| `appConfig.nodeCount.fetchInterval` | `12h` | How often the node count is sent. Each send carries the 24h average up to 00:01 UTC that day. |
+| `deployment.waitForPrometheus.enabled` | `true` | Hold the agent pod until Prometheus answers `/-/ready`. Turn off on a cluster without Prometheus. |
+| `deployment.waitForPrometheus.timeoutSeconds` | `300` | How long one probe run retries before it fails and the kubelet restarts it. |
 | `obmondoAPITLSSecretName` | `obmondo-clientcert` | Secret with the mTLS keypair. |
 | `extraSecretReaderNamespaces` | `[]` | Extra namespaces where a secrets-read Role/RoleBinding is created for the agent. |
 | `kubeaid-security-exporter.enabled` | `false` | Deploy the security exporter alongside the agent. Off by default: it holds cluster-wide read across eight API groups, so granting it is a per-cluster decision. Needs no credentials. |
@@ -174,6 +178,10 @@ deliberately not alerted on: a collection failure is a debugging signal, not som
   cluster.
 - Both run unprivileged: non-root, all capabilities dropped, `RuntimeDefault` seccomp; the exporter also runs
   with a read-only root filesystem.
+- The agent waits for Prometheus: the `wait-for-prometheus` initContainer polls `/-/ready` at
+  `appConfig.prometheus.url` for `deployment.waitForPrometheus.timeoutSeconds`, then fails and is restarted by
+  the kubelet, so the agent does not start while Prometheus is down. Set
+  `deployment.waitForPrometheus.enabled: false` on a cluster without Prometheus.
 
 ## Docs links
 
