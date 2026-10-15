@@ -10,6 +10,23 @@ Wraps the upstream Kyverno chart and ships three KubeAid policies, all written a
 | sync-secrets-\<item\> (one per item) | GeneratingPolicy | `syncSecrets` | off |
 | resourcequota-generator, limitrange-generator | GeneratingPolicy | `resourceQuotaLimitRangeGenerator` | **on** |
 
+## Failure behaviour
+
+None of these policies is a security gate, so the chart sets Kyverno to fail open and keeps
+it out of the namespaces a cluster needs to recover:
+
+| Values key | Default here | Upstream default | Why |
+| --- | --- | --- | --- |
+| `kyverno.features.forceFailurePolicyIgnore.enabled` | `true` | `false` | An unreachable Kyverno must not block writes. A fail-closed webhook on Secrets once stopped Cluster API from creating bootstrap Secrets, so no replacement control plane got a server. |
+| `kyverno.config.webhooks.namespaceSelector` | excludes `kube-system`, `cilium`, `capi-cluster` | excludes `kube-system` | Node bootstrap and pod networking never wait for Kyverno. |
+| `kyverno.admissionController.replicas` | `3` | `1` | One pod is a single point of failure; above 1 the upstream chart adds a PodDisruptionBudget. |
+
+While Kyverno is down, objects are admitted unmutated: a pod may pull from Docker Hub
+directly instead of through Harbor, and a new namespace gets its quota and pull secret when
+Kyverno is back (`generateExisting`). A cluster that sets its own
+`kyverno.config.webhooks.namespaceSelector` replaces this list, so keep these namespaces in
+it.
+
 ## harbor-proxy-cache-mutate
 
 Rewrites container and initContainer images that point at Docker Hub (explicit
@@ -109,9 +126,9 @@ resourceQuotaLimitRangeGenerator:
   enabled: true
   generateExisting: true
   defaultResourceQuotaRuleEnabled: true
-  excludeNamespaces:
-    resourceQuota: []
-    limitRange: []
+  excludeNamespaces:                    # default: cilium in both
+    resourceQuota: [cilium]
+    limitRange: [cilium]
   defaults: {...}                       # see values.yaml
   overrides:
     rook-ceph:
@@ -121,6 +138,11 @@ resourceQuotaLimitRangeGenerator:
 
 Deleting these policies deletes the generated quotas and limit ranges (synchronize is on,
 and they are data-generated, not cloned). Copied Secrets are retained on policy deletion.
+
+Exclude a namespace from both generators or from neither. Without the LimitRange, the
+ResourceQuota (it sets cpu and memory) rejects every pod with a container that has no
+requests or limits. `cilium` is excluded from both by default; the excluded namespaces
+lose their generated objects at the next sync.
 
 ## Testing the mutating policies locally
 
@@ -154,6 +176,16 @@ replaced by the new ones in one step, the way Argo CD syncs.
 - `sync-secrets`: the copies made by the legacy clone rule are deleted with it and
   recreated by the new policy within seconds. Pods starting in that window cannot pull
   through Harbor. Same advice. From then on the copies survive policy replacement.
+- A legacy ClusterPolicy that Argo CD does not track (applied by hand, or left behind by a
+  rename) stays in place. A generate rule with `synchronize` and the default
+  `failurePolicy: Fail` registers a fail-closed webhook on its trigger and target kinds,
+  for `sync-secrets` that is every Namespace and Secret in the cluster. List them and
+  delete the ones git no longer has:
+
+  ```bash
+  kubectl get clusterpolicies.kyverno.io -o custom-columns='NAME:.metadata.name,FAILURE:.spec.failurePolicy,TRACKED:.metadata.annotations.argocd\.argoproj\.io/tracking-id'
+  ```
+
 - Kyverno 1.19 refuses to create the legacy `sync-secrets` ClusterPolicy at all unless the
   admission controller can get and list Secrets, which this chart never granted. A cluster
   that has it running today got that permission from somewhere else.

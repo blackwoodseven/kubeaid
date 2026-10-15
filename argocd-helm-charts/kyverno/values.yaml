@@ -20,9 +20,17 @@ resourceQuotaLimitRangeGenerator:
   enabled: true
   generateExisting: true
   defaultResourceQuotaRuleEnabled: true
+  # cilium is excluded from both, never from one only. The LimitRange's 256Mi
+  # container default OOM-kills the cilium agents on busy nodes once their own
+  # resources are dropped (a Hetzner control-plane join re-applies the cilium
+  # chart without them), and without the LimitRange the ResourceQuota rejects
+  # every cilium pod, because the init containers set no requests or limits.
+  # A cluster that sets these lists replaces the default, so keep cilium in them.
   excludeNamespaces:
-    resourceQuota: []
-    limitRange: []
+    resourceQuota:
+      - cilium
+    limitRange:
+      - cilium
 
   defaults:
     resourceQuota:
@@ -67,3 +75,36 @@ resourceQuotaLimitRangeGenerator:
     rook-ceph:
       limitRange:
         container: {}
+
+kyverno:
+  # The KubeAid policies only mutate and generate (registry rewrites, pull-secret
+  # copies, quotas); none of them is a security gate. With a fail-closed webhook,
+  # an unreachable Kyverno blocks every write it matches: a legacy generate/clone
+  # ClusterPolicy put all Secrets and Namespaces behind one, and while cilium was
+  # down on the workers the API server refused Cluster API's bootstrap Secrets,
+  # so replacement control planes never got a server. Fail open instead; policies
+  # skipped during an outage are caught up by generateExisting and the next
+  # admission.
+  features:
+    forceFailurePolicyIgnore:
+      enabled: true
+
+  # Keep Kyverno out of the namespaces a cluster needs to heal itself. Replaces
+  # the upstream list, so kube-system is repeated; the kyverno namespace is
+  # excluded separately (config.excludeKyvernoNamespace).
+  config:
+    webhooks:
+      namespaceSelector:
+        matchExpressions:
+          - key: kubernetes.io/metadata.name
+            operator: NotIn
+            values:
+              - kube-system
+              - cilium
+              - capi-cluster
+
+  # One replica is a single point of failure for every mutation and generation.
+  # The upstream chart adds a PodDisruptionBudget (minAvailable 1) when replicas
+  # is above 1, and spreads the pods over nodes with a preferred anti-affinity.
+  admissionController:
+    replicas: 3
