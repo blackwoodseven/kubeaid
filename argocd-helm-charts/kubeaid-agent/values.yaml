@@ -20,6 +20,16 @@ appConfig:
       certFile: /etc/kubeaid-agent/obmondo-api/tls.crt
       caCertFile: /etc/kubeaid-agent/obmondo-api/ca.crt
 
+  # -- Prometheus address (host:port) the agent queries. The wait-for-prometheus
+  # initContainer probes the same address.
+  prometheus:
+    url: prometheus-k8s.monitoring:9090
+
+  nodeCount:
+    # -- How often the node count is sent to Obmondo API. Each send carries the
+    # 24h average up to 00:01 UTC that day.
+    fetchInterval: 12h
+
   puppetConfigDetails:
     url:
     facts:
@@ -133,6 +143,20 @@ deployment:
     # disagree -- as they did until v1.1.2, when appVersion still read 0.0.3.
     tag: ""
     pullPolicy: Always
+
+  # -- Holds the agent until Prometheus answers /-/ready at appConfig.prometheus.url.
+  # After timeoutSeconds the probe fails and the kubelet restarts it. Turn off on a
+  # cluster without Prometheus.
+  waitForPrometheus:
+    enabled: true
+    image: docker.io/curlimages/curl:8.14.1
+    timeoutSeconds: 300
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        memory: 32Mi
 
   env: []
 
