@@ -4,11 +4,18 @@
 
 replicaCount: 1
 
+# Deployment strategy (unset keeps the Kubernetes default, RollingUpdate).
+strategy: {}
+
 image:
   repository: gitea/act_runner
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "0.3.0"
+
+# Override the container entrypoint/args (unset keeps the image's own).
+command: []
+args: []
 
 imagePullSecrets: []
 nameOverride: ""
