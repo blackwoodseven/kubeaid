@@ -43,7 +43,7 @@ actions:
       extraArgs: []
 
 # Namespace + ServiceAccount with a namespaced admin Role, for CI jobs that deploy into the cluster.
-# Same keys and object names as the gitea-runner chart, so a migration keeps the SA token.
+# Same keys and object names as the old gitea-runner chart, so migrating keeps the SA token.
 runner:
   nameSpace:
     create: false

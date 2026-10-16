@@ -3,10 +3,10 @@
 Runs a Gitea Actions runner using Gitea's official [`actions`](https://gitea.com/gitea/helm-actions) chart:
 a StatefulSet with the `gitea/runner` container and a `docker:dind` sidecar that runs the job containers.
 
-Replaces the `gitea-runner` chart, which vendors an unmaintained community chart and the `vegardit`
-dind image. That image hardwires `iptables-legacy`, so dockerd does not start on nodes without legacy
-`ip_tables` modules (e.g. Ubuntu 26.04, kernel 7.x). The official `docker:dind` image picks the
-backend itself.
+Replaces the removed `gitea-runner` chart (KubeAid 33.0.x and earlier), which vendored an unmaintained
+community chart and the `vegardit` dind image. That image hardwires `iptables-legacy`, so dockerd does
+not start on nodes without legacy `ip_tables` modules (e.g. Ubuntu 26.04, kernel 7.x). The official
+`docker:dind` image picks the backend itself.
 
 The upstream chart is vendored unmodified under `charts/actions`; all settings are values.
 
@@ -72,7 +72,7 @@ Without it, jobs fail with `pull access denied ... no basic auth credentials`.
 
 `runner.nameSpace` and `runner.serviceAccount` create a namespace and a ServiceAccount with an admin Role
 in it, plus a long-lived token secret (`<serviceAccount.name>-secret`) for CI jobs that deploy there.
-The keys and object names match the `gitea-runner` chart, so moving between the two keeps the token.
+The keys and object names match the old `gitea-runner` chart, so migrating keeps the token.
 
 ```yaml
 runner:
@@ -85,6 +85,8 @@ runner:
 ```
 
 ## Migrating from gitea-runner
+
+For clusters still on a KubeAid release that ships `gitea-runner`:
 
 * `act_runner.instance` -> `actions.giteaRootURL`
 * `act_runner.existingToken` -> `actions.existingSecret` (key `act-runner-token` is the default here)
