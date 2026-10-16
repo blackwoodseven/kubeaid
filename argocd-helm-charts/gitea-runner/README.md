@@ -1,5 +1,8 @@
 # Gitea Runner
 
+> Superseded by [`gitea-actions`](../gitea-actions/README.md), which uses Gitea's official chart. New clusters
+> should use that; this chart stays until existing clusters have migrated.
+
 Runs [Gitea's `act_runner`](https://gitea.com/gitea/act_runner) (the Gitea Actions CI runner, `dind` image so
 jobs can build/run containers) as a pod, registered against a Gitea instance with a runner token. Gitea
 Actions jobs then execute inside this runner instead of on external CI infra.

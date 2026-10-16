@@ -1,0 +1,10 @@
+apiVersion: v2
+name: gitea-actions
+description: Gitea Actions runner (official gitea/helm-actions chart) with a docker:dind sidecar, plus optional CI deploy RBAC.
+type: application
+version: 1.0.0
+# see latest chart here: https://gitea.com/gitea/helm-actions
+dependencies:
+  - name: actions
+    version: 0.1.2
+    repository: https://dl.gitea.com/charts

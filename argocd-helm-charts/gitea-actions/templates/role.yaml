@@ -1,0 +1,83 @@
+{{- if .Values.runner.serviceAccount.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.runner.serviceAccount.name }}-ci-admin
+  namespace: {{ .Values.runner.nameSpace.name }}
+rules:
+- apiGroups:
+    - ""
+    - extensions
+    - apps
+  resources:
+    - '*'
+  verbs:
+    - '*'
+- apiGroups:
+    - batch
+  resources:
+    - jobs
+    - cronjobs
+  verbs:
+    - '*'
+- apiGroups:
+    - databases.spotahome.com
+  resources:
+    - redisfailovers
+    - redisfailovers/finalizers
+  verbs:
+    - '*'
+- apiGroups:
+    - networking.k8s.io
+  resources:
+    - ingresses
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - delete
+    - update
+    - patch
+- apiGroups:
+    - postgresql.cnpg.io
+  resources:
+    - clusters
+  verbs:
+    - '*'
+- apiGroups:
+    - traefik.io
+  resources:
+    - middlewares
+  verbs:
+    - get
+    - patch
+    - list
+    - watch
+    - create
+    - delete
+- apiGroups:
+    - monitoring.coreos.com
+  resources:
+    - servicemonitors
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - delete
+    - update
+    - patch
+- apiGroups:
+    - redis.redis.opstreelabs.in
+  resources:
+    - redisclusters
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - patch
+    - update
+    - delete
+{{- end -}}
