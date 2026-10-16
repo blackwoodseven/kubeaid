@@ -1,0 +1,53 @@
+# Upstream chart is vendored as the `actions` dependency, so values nest under `actions`.
+actions:
+  enabled: true
+
+  # Gitea instance the runner registers against. Set per cluster; until then the
+  # reach-gitea init container keeps retrying this placeholder.
+  giteaRootURL: https://gitea.example.com
+
+  # Secret holding the runner registration token (Gitea: Site Administration -> Actions -> Runners).
+  existingSecret: gitea-runner-token
+  existingSecretKey: act-runner-token
+
+  statefulset:
+    replicas: 1
+    persistence:
+      size: 10Gi
+
+    runner:
+      # Runner name in the Gitea UI; defaults to the pod name.
+      extraEnvs: []
+      # gitea/runner config, see
+      # https://gitea.com/gitea/runner/src/branch/main/internal/pkg/config/config.example.yaml
+      # runner.labels maps a `runs-on:` label to the job image.
+      config: |
+        log:
+          level: info
+        runner:
+          capacity: 2
+          labels:
+            - "ubuntu-latest:docker://ghcr.io/catthehacker/ubuntu:act-24.04"
+            - "ubuntu-24.04:docker://ghcr.io/catthehacker/ubuntu:act-24.04"
+            - "ubuntu-22.04:docker://ghcr.io/catthehacker/ubuntu:act-22.04"
+        cache:
+          enabled: false
+        container:
+          require_docker: true
+          docker_timeout: 300s
+
+    # The official docker:dind image picks the iptables backend (nft or legacy) itself,
+    # so nodes without legacy ip_tables modules need no workaround.
+    dind:
+      extraEnvs: []
+      extraArgs: []
+
+# Namespace + ServiceAccount with a namespaced admin Role, for CI jobs that deploy into the cluster.
+# Same keys and object names as the old gitea-runner chart, so migrating keeps the SA token.
+runner:
+  nameSpace:
+    create: false
+    name: ""
+  serviceAccount:
+    create: false
+    name: ""

@@ -26,7 +26,7 @@ kubeaid_apps:
   - netbird-operator
   - external-dns
   - netbird
-  - gitea-runner
+  - gitea-actions
   - odoo
   - ciso-assistant
   - strimzi-kafka-operator
