@@ -13,6 +13,9 @@ metadata:
     chart: {{ include "gitlab-runner.chart" . }}
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+    {{- if .Values.sessionServer.labels }}
+    {{- toYaml .Values.sessionServer.labels | nindent 4 }}
+    {{- end }}
 spec:
   selector:
     app: {{ include "gitlab-runner.fullname" . }}

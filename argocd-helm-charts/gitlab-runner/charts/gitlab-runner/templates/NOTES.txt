@@ -77,3 +77,11 @@ Runner namespace {{ $runnerNamespace }} was found in runners.config template.
 ##     command: ["/entrypoint", "unregister", "--all-runners"]                             ##
 #############################################################################################
 {{- end }}
+
+{{- if .Values.image.image }}
+
+#############################################################################################
+## WARNING: You have set the deprecated field `image.image`.                               ##
+## Please use `image.repository` instead.                                                  ##
+#############################################################################################
+{{- end }}
