@@ -8,6 +8,7 @@ name: Helm Unittest
       - reopened
     paths:
       - 'argocd-helm-charts/capi-cluster/**'
+      - 'argocd-helm-charts/cilium/**'
       - 'argocd-helm-charts/crossplane-provider/**'
       - '.github/workflows/helm-unittest.yml'
 
@@ -47,3 +48,12 @@ jobs:
             -v "$PWD/argocd-helm-charts/crossplane-provider:/apps" \
             helmunittest/helm-unittest:latest \
             charts/azure charts/scaleway charts/keycloak
+
+      - name: Run helm-unittest on the cilium chart
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -e HOME=/tmp \
+            -v "$PWD/argocd-helm-charts:/apps" \
+            helmunittest/helm-unittest:latest \
+            cilium

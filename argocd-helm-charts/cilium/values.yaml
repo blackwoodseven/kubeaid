@@ -10,6 +10,11 @@ hostNetworkPolicy:
   # apiserverSourceCIDRs lists the CIDRs/IPs allowed to reach 6443/TCP.
   # Empty by default; when empty, no 6443 rule is emitted (policy blocks it).
   apiserverSourceCIDRs: []
+  # dhcpServerCIDRs lists the DHCP servers whose replies (68/UDP) are allowed.
+  # Set it whenever a node gets its address by DHCP, e.g. the Hetzner Cloud
+  # network gateway (first IP of the network range, 10.0.0.1 for 10.0.0.0/16).
+  # Empty by default; when empty, no DHCP rule is emitted (policy blocks it).
+  dhcpServerCIDRs: []
 
 # loadBalancerIPPool is a list of CIDRs rendered into a CiliumLoadBalancerIPPool
 # so Cilium LB-IPAM hands them to type=LoadBalancer services. Use on bare-metal
