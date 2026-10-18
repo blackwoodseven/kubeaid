@@ -79,7 +79,7 @@ Define the image, using .Chart.AppVersion and GitLab Runner image as a default v
 {{- $appVersionImageTag := printf "alpine-%s" $appVersion -}}
 {{- $imageRegistry := ternary "" (print .Values.image.registry "/") (eq .Values.image.registry "") -}}
 {{- $imageTag := default $appVersionImageTag .Values.image.tag -}}
-{{- $imageTpl := printf "%s%s:%s" $imageRegistry .Values.image.image $imageTag -}}
+{{- $imageTpl := printf "%s%s:%s" $imageRegistry (default .Values.image.repository .Values.image.image) $imageTag -}}
 {{- tpl $imageTpl $ }}
 {{- end -}}
 

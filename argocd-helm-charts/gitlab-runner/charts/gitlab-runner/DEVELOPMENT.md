@@ -1,4 +1,4 @@
-# Developement
+# Development
 
 ## Running tests
 
