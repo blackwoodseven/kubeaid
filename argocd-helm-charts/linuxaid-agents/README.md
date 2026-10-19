@@ -231,8 +231,8 @@ nodeSelector: "!node-role.kubernetes.io/control-plane"
 | `agentJob.ttlSecondsAfterFinished` | `600` | Seconds a finished Job and its logs are kept; the node is skipped while it exists. |
 | `agentJob.activeDeadlineSeconds` | `1200` | A run is stopped after this many seconds. |
 | `agentJob.backoffLimit` | `0` | Retries within a cycle; a failed run is tried again at the next `interval`. |
-| `operator.image.repository`, `operator.image.tag` | `ghcr.io/obmondo/linuxaid-agent`, `v1.11.3` | Operator image. |
-| `agentImage.repository`, `agentImage.tag` | `ghcr.io/obmondo/linuxaid-cli`, `v1.11.3` | Image the Jobs run. Keep both tags on the same linuxaid-cli release. |
+| `operator.image.repository`, `operator.image.tag` | `ghcr.io/obmondo/linuxaid-agent`, `v1.11.5` | Operator image. |
+| `agentImage.repository`, `agentImage.tag` | `ghcr.io/obmondo/linuxaid-cli`, `v1.11.5` | Image the Jobs run. Keep both tags on the same linuxaid-cli release. |
 | `operator.image.pullPolicy`, `agentImage.pullPolicy` | `IfNotPresent` | Image pull policies. |
 | `operator.resources` | 10m CPU and 32Mi memory requested, 64Mi memory limit | Operator resources. |
 
