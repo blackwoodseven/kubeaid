@@ -17,6 +17,26 @@ rook-ceph:
       tag: v3.17.1
 
 rook-ceph-cluster:
+  # We have enountered the following bugs when running CEPH v20, because of which we're pinning to
+  # CEPH v19 :
+  #
+  #   (1) https://github.com/rook/rook/pull/18489. This is what I understood :
+  #
+  #     Pods tried to write some data to CEPH RBD (RADOS Block Device). But, since the PG
+  #     (Placement Group) is inactive, the data is written to page cache only.
+  #
+  #     When trying to come back up after the incident, the OSD's Init Job does a scan of block
+  #     devices attached to the node. And, this includes the CEPH RBD as well. When scanning the
+  #     CEPH RBD partition, that page cache needs to be flushed first (lvs intricacies). However,
+  #     the flush can't happen : since the PG, OSD aren't up. We run intoa deadlock occurs
+  #
+  #   (2) https://github.com/ceph/ceph/pull/69971. This is what I understood :
+  #
+  #     When the CEPH device detection job scans and processes all the partitions : it fails if
+  #     the partition size is < 4KiB.
+  cephImage:
+    tag: v19.2.7
+
   # Velero selects a snapshot class by this label plus a driver match. Without a
   # class for a driver in use, every backup touching such a PVC errors with
   # "failed to get VolumeSnapshotClass for provisioner ...", leaving the backup
