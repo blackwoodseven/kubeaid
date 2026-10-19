@@ -107,6 +107,30 @@ tests:
               summary: "Velero backup for schedule was unsuccessful."
               description: "The newest successful Velero backup (offsite copy) completed 1d 2h 0m 0s ago. The backup that should have replaced it did not complete."
 
+  # A fresh 6hrly must not hide a failed daily. Daily at 1h, weekly at 2h, 6hrly at 29h,
+  # evaluated at 30h: the 6hrly series is excluded from the daily/weekly max, so that
+  # branch sees a 28h old backup and fires. The 6hrly branch is quiet, its copy is 1h old.
+  - interval: 1m
+    input_series:
+      - series: 'velero_backup_last_successful_timestamp{schedule="daily-backup"}'
+        values: '3600+0x2000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="weekly-backup"}'
+        values: '7200+0x2000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="6hrly-backup"}'
+        values: '104400+0x2000'
+      - series: 'velero_backup_attempt_total{schedule="6hrly-backup"}'
+        values: '1+0x2000'
+
+    alert_rule_test:
+      - eval_time: 30h
+        alertname: VeleroUnsuccessfulBackup
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "Velero backup for schedule was unsuccessful."
+              description: "The newest successful Velero backup completed 1d 4h 0m 0s ago. The backup that should have replaced it did not complete."
+
   # 6hrly keeps its own 6h window and its schedule label. Last success at 05:00, the 6h
   # window ends 11:00, so the alert is pending from 11:01 and firing from 12:01.
   - interval: 1m
