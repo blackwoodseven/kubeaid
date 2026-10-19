@@ -35,6 +35,15 @@ velero:
     enabled: true
     serviceMonitor:
       enabled: true
+      # Schedules named *-offsite (see templates/velero-schedules.yaml) write to a second
+      # storage location. Velero's metrics only carry the schedule name, so mark those
+      # samples with location=offsite at scrape time; rules and dashboards can then tell
+      # the two copies apart without repeating the name convention.
+      metricRelabelings:
+        - sourceLabels: [schedule]
+          regex: ".*-offsite"
+          targetLabel: location
+          replacement: offsite
   resources:
     limits:
       memory: 4Gi
