@@ -21,9 +21,7 @@
                 )
                 or
                 (
-                  time() - max without (schedule) (
-                    label_replace(velero_backup_last_successful_timestamp{schedule=~".*(daily|weekly).*"}, "location", "offsite", "schedule", ".*-offsite")
-                  ) > (60 * 60 * 24)
+                  time() - max without (schedule) (velero_backup_last_successful_timestamp{schedule=~".*(daily|weekly).*"}) > (60 * 60 * 24)
                 )
               )
             ||| % $._config,

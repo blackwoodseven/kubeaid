@@ -81,17 +81,19 @@ tests:
         alertname: VeleroUnsuccessfulBackup
         exp_alerts: []
 
-  # Offsite copy is a separate location: the default copy is 2h old, the offsite copy 26h
-  # old, so one alert for location=offsite and none for the default location.
+  # Offsite copy is a separate location. The velero chart's ServiceMonitor adds
+  # location=offsite to samples of *-offsite schedules at scrape time, so the series carry
+  # it here. The default copy is 2h old, the offsite copy 26h old: one alert for
+  # location=offsite and none for the default location.
   - interval: 1m
     input_series:
       - series: 'velero_backup_last_successful_timestamp{schedule="daily-backup"}'
         values: '90000+0x2000'
       - series: 'velero_backup_last_successful_timestamp{schedule="weekly-backup"}'
         values: '0+0x2000'
-      - series: 'velero_backup_last_successful_timestamp{schedule="daily-backup-offsite"}'
+      - series: 'velero_backup_last_successful_timestamp{schedule="daily-backup-offsite", location="offsite"}'
         values: '3600+0x2000'
-      - series: 'velero_backup_last_successful_timestamp{schedule="weekly-backup-offsite"}'
+      - series: 'velero_backup_last_successful_timestamp{schedule="weekly-backup-offsite", location="offsite"}'
         values: '0+0x2000'
 
     alert_rule_test:
