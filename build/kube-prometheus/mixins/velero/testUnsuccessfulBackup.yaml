@@ -3,17 +3,58 @@ rule_files:
 
 evaluation_interval: 1m
 
+# Times are seconds since the start of the test. The daily and weekly schedules are one
+# backup on two crons, so the rule looks at the newest success across both.
 tests:
+  # Weekly covers a missing daily. Saturday daily at 03:30 (12600), Sunday weekly at 03:25
+  # (98700), no daily on Sunday by design, Monday daily fails.
+  # Monday 01:00 (49h): the daily is 45.5h old but the weekly is 21.6h old, no alert. This
+  # was the false alarm the daily-only check raised every Monday.
+  # Monday 05:00 (53h): the weekly is 25.6h old, past 24h since 51:25 and past `for` since
+  # 52:25, so the alert fires about one hour after the failed Monday run.
   - interval: 1m
     input_series:
-      - series: 'velero_backup_attempt_total{schedule="daily"}'
-        values: '1+0x20000'
-      - series: 'velero_backup_last_successful_timestamp{schedule="daily", case="normal_fail"}'
-        values: '0+0x20000'
-      - series: 'velero_backup_last_successful_timestamp{schedule="daily", case="monday_ok"}'
-        values: '302400+0x20000'
-      - series: 'velero_backup_last_successful_timestamp{schedule="daily", case="monday_fail"}'
-        values: '0+0x20000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="daily-backup"}'
+        values: '12600+0x20000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="weekly-backup"}'
+        values: '98700+0x20000'
+
+    alert_rule_test:
+      - eval_time: 49h
+        alertname: VeleroUnsuccessfulBackup
+        exp_alerts: []
+
+      - eval_time: 53h
+        alertname: VeleroUnsuccessfulBackup
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "Velero backup for schedule was unsuccessful."
+              description: "The newest successful Velero backup completed 1d 1h 35m 0s ago. The backup that should have replaced it did not complete."
+
+  # Daily covers a missing weekly. The weekly last succeeded 7 days ago and the daily 9h
+  # ago, so no alert: either schedule is a full backup.
+  - interval: 1m
+    input_series:
+      - series: 'velero_backup_last_successful_timestamp{schedule="daily-backup"}'
+        values: '608400+0x20000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="weekly-backup"}'
+        values: '3600+0x20000'
+
+    alert_rule_test:
+      - eval_time: 177h
+        alertname: VeleroUnsuccessfulBackup
+        exp_alerts: []
+
+  # Both stale. Daily at 1h, weekly at 2h, evaluated at 30h: the newest success is 28h old,
+  # past 24h since 26h and past `for` since 27h, so one alert without a schedule label.
+  - interval: 1m
+    input_series:
+      - series: 'velero_backup_last_successful_timestamp{schedule="daily-backup"}'
+        values: '3600+0x2000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="weekly-backup"}'
+        values: '7200+0x2000'
 
     alert_rule_test:
       - eval_time: 30h
@@ -21,37 +62,51 @@ tests:
         exp_alerts:
           - exp_labels:
               severity: warning
-              schedule: daily
-              case: normal_fail
             exp_annotations:
               summary: "Velero backup for schedule was unsuccessful."
-              description: "Velero backup was not successful for daily."
-          - exp_labels:
-              severity: warning
-              schedule: daily
-              case: monday_fail
-            exp_annotations:
-              summary: "Velero backup for schedule was unsuccessful."
-              description: "Velero backup was not successful for daily."
+              description: "The newest successful Velero backup completed 1d 4h 0m 0s ago. The backup that should have replaced it did not complete."
 
-      - eval_time: 108h
+  # The daily schedule never succeeded (timestamp 0) but the weekly did 3.5h ago: the
+  # weekly is a full backup, so no alert. The never-succeeded case belongs to
+  # VeleroNoFirstSuccessfulBackup.
+  - interval: 1m
+    input_series:
+      - series: 'velero_backup_last_successful_timestamp{schedule="daily-backup"}'
+        values: '0+0x2000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="weekly-backup"}'
+        values: '12600+0x2000'
+
+    alert_rule_test:
+      - eval_time: 20h
+        alertname: VeleroUnsuccessfulBackup
+        exp_alerts: []
+
+  # Offsite copy is a separate location: the default copy is 2h old, the offsite copy 26h
+  # old, so one alert for location=offsite and none for the default location.
+  - interval: 1m
+    input_series:
+      - series: 'velero_backup_last_successful_timestamp{schedule="daily-backup"}'
+        values: '90000+0x2000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="weekly-backup"}'
+        values: '0+0x2000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="daily-backup-offsite"}'
+        values: '3600+0x2000'
+      - series: 'velero_backup_last_successful_timestamp{schedule="weekly-backup-offsite"}'
+        values: '0+0x2000'
+
+    alert_rule_test:
+      - eval_time: 27h
         alertname: VeleroUnsuccessfulBackup
         exp_alerts:
           - exp_labels:
               severity: warning
-              schedule: daily
-              case: monday_fail
+              location: offsite
             exp_annotations:
               summary: "Velero backup for schedule was unsuccessful."
-              description: "Velero backup was not successful for daily."
-          - exp_labels:
-              severity: warning
-              schedule: daily
-              case: normal_fail
-            exp_annotations:
-              summary: "Velero backup for schedule was unsuccessful."
-              description: "Velero backup was not successful for daily."
+              description: "The newest successful Velero backup (offsite copy) completed 1d 2h 0m 0s ago. The backup that should have replaced it did not complete."
 
+  # 6hrly keeps its own 6h window and its schedule label. Last success at 05:00, the 6h
+  # window ends 11:00, so the alert is pending from 11:01 and firing from 12:01.
   - interval: 1m
     input_series:
       - series: 'velero_backup_attempt_total{schedule="6hrly"}'
@@ -60,7 +115,7 @@ tests:
         values: '18000+0x20000'
 
     alert_rule_test:
-      - eval_time: 12h
+      - eval_time: 13h
         alertname: VeleroUnsuccessfulBackup
         exp_alerts:
           - exp_labels:
@@ -68,4 +123,4 @@ tests:
               schedule: 6hrly
             exp_annotations:
               summary: "Velero backup for schedule was unsuccessful."
-              description: "Velero backup was not successful for 6hrly."
+              description: "The newest successful Velero backup for schedule 6hrly completed 8h 0m 0s ago. The backup that should have replaced it did not complete."
