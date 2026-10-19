@@ -20,20 +20,17 @@
                   and on() hour() >= 6
                 )
                 or
-                ((time() - velero_backup_last_successful_timestamp{schedule=~".*daily.*"}) + on (schedule) group_left () velero_backup_attempt_total > (60 * 60 * 24) and on () day_of_week() != 0)
-                or
-                ((time() - velero_backup_last_successful_timestamp{schedule=~".*daily.*"}) + on (schedule) group_left () velero_backup_attempt_total > (60 * 60 * 48) and on () day_of_week() == 0)
-                or
-                ((time() - velero_backup_last_successful_timestamp{schedule=~".*weekly.*"}) + on(schedule) group_left velero_backup_attempt_total > (60 * 60 * 24 * 7))
+                (
+                  time() - max without (schedule) (velero_backup_last_successful_timestamp{schedule=~".*(daily|weekly).*"}) > (60 * 60 * 24)
+                )
               )
             ||| % $._config,
             'for': '60m',
             labels: {
               severity: 'warning',
-              schedule: '{{ $labels.schedule }}',
             },
             annotations: {
-              description: 'Velero backup was not successful for {{ $labels.schedule }}.',
+              description: 'The newest successful Velero backup{{ with $labels.location }} ({{ . }} copy){{ end }}{{ with $labels.schedule }} for schedule {{ . }}{{ end }} completed {{ $value | humanizeDuration }} ago. The backup that should have replaced it did not complete.',
               summary: 'Velero backup for schedule was unsuccessful.',
             },
           },
