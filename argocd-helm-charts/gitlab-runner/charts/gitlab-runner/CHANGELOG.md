@@ -1,3 +1,19 @@
+## v0.94.0 (2026-10-15)
+
+### New features
+
+- Update GitLab Runner version to v19.5.0
+- feat: add sessionServer.labels for custom session server Service labels [!557](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/557) (Jonas Reineke @jon-rei)
+
+### Maintenance
+
+- feat: Deprecate `image.image` and replace it with `image.repository` [!556](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/556) (Ghariani Tewfik @gtewfik)
+- docs: Fix typo Developement to Development in DEVELOPMENT.md [!559](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/559) (André Düwel @duewel1982)
+
+### Other changes
+
+- feat: add livenessProbe.enabled to turn off the check-live probe [!558](https://gitlab.com/gitlab-org/charts/gitlab-runner/-/merge_requests/558)
+
 ## v0.93.0 (2026-09-17)
 
 ### New features
