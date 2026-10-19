@@ -27,9 +27,9 @@ Two KubeAid-specific top-level keys render extra manifests from this wrapper's `
 
 - `hostNetworkPolicy` — a `CiliumClusterwideNetworkPolicy` (`kubeaid-host-firewall`) that locks down the host
   endpoint on every node: cluster-internal traffic by identity, SSH only from `allowSshFrom`, apiserver/etcd ports
-  only from `apiserverSourceCIDRs`, plus `publicPorts` (default 80/443) and ICMP echo from the world. Disabled by
-  default; enable it on bare-metal clusters where the public NIC has no cloud security group in front of it. See
-  the [host-firewall guide](../../docs/guides/cilium-host-firewall.md).
+  only from `apiserverSourceCIDRs`, DHCP replies (68/UDP) only from `dhcpServerCIDRs`, plus `publicPorts` (default
+  80/443) and ICMP echo from the world. Disabled by default; enable it on bare-metal clusters where the public NIC
+  has no cloud security group in front of it. See the [host-firewall guide](../../docs/guides/cilium-host-firewall.md).
 - `loadBalancerIPPool` — a list of CIDRs rendered into a `CiliumLoadBalancerIPPool` so Cilium LB-IPAM assigns them
   to `type: LoadBalancer` Services on bare-metal clusters without a cloud load balancer. Empty list = no pool.
 
@@ -40,6 +40,7 @@ hostNetworkPolicy:
   enabled: true
   allowSshFrom: ["203.0.113.0/24"]
   apiserverSourceCIDRs: ["198.51.100.10", "198.51.100.11"]
+  dhcpServerCIDRs: ["10.0.0.1"]   # Hetzner Cloud network gateway, for nodes addressed by DHCP
 
 loadBalancerIPPool:
   - 192.0.2.240/29
@@ -50,6 +51,9 @@ loadBalancerIPPool:
 - Enabling the host firewall on a running cluster is safe-ordered: the identity rule allowing cluster-internal
   traffic comes first to avoid locking out etcd/kubelet. Still, validate `allowSshFrom` before syncing — an empty
   list means SSH stays open to the world.
+- Set `dhcpServerCIDRs` on every cluster whose nodes get their address by DHCP (e.g. Hetzner Cloud control planes
+  on a private network). Without it, the first `systemd-networkd` restart (needrestart after unattended-upgrades)
+  leaves the node unable to renew its lease, and it loses its address when the lease runs out (24h on Hetzner).
 - Argo CD is configured (in the [`argo-cd`](../argo-cd) chart) to exclude `CiliumIdentity`/`CiliumEndpoint`/
   `CiliumEndpointSlice` from tracking, to cut watched-event noise.
 
