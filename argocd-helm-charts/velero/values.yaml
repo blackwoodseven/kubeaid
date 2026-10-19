@@ -1,7 +1,7 @@
 networkpolicies: false
 schedule:
   daily: true
-  weekly: false
+  weekly: true
   sixhourly: false
   dailyTTL: 720h
   weeklyTTL: 2160h
