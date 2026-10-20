@@ -47,9 +47,11 @@ ${0} [-d|--debug] [--commit] [--kubeaid-repo <path>] [--versions] <CLUSTER>
 
 Compile kube-prometheus manifests from jsonnet template.
 
-The manifests are built from a temporary git worktree at the kubeaid tag
-pinned as spec.source.targetRevision on the cluster's kube-prometheus
-ArgoCD Application (HEAD means master). This checkout is left untouched.
+The manifests are built from a temporary git worktree at the kubeaid
+version named by the kubeaid.io/version label on the cluster's
+kube-prometheus ArgoCD Application. Without that label (or Application)
+the current commit of this checkout is used, with a warning. This
+checkout is left untouched either way.
 
 Arguments:
   -d|--debug
@@ -57,7 +59,7 @@ Arguments:
   --commit
     Commit the generated manifests in the kubeaid-config repo.
   --kubeaid-repo <path>
-    Build from this local kubeaid checkout as-is, skipping the tag check.
+    Build from this local kubeaid checkout as-is, skipping the label lookup.
     For testing.
   --versions
     Show the kube-prometheus / Kubernetes compatibility table and exit.
@@ -79,6 +81,43 @@ function show_compatibility_table() {
   } | column -t -s '|'
   echo ""
   echo "Note: In CI we test only the last two releases on a regular basis."
+}
+
+# Resolve the kubeaid commit a cluster's manifests are built from.
+#
+# The kubeaid.io/version label on the cluster's kube-prometheus ArgoCD
+# Application (written by kubeaid-cli from forkURLs.kubeaid.version) names the
+# tag or branch to build from. spec.source.targetRevision is deliberately not
+# consulted: it points ArgoCD at the kubeaid-config repo, which is never
+# tagged, so it is always HEAD. Without an Application or label the current
+# commit of the checkout is used, with a warning on stderr.
+#
+# $1: kubeaid checkout, $2: path to the Application file.
+# Prints "<sha> <label>" (or "<sha> HEAD" for the fallback) on stdout.
+function kubeaid_build_commit() {
+  local repo_root="${1}" app_file="${2}" label='' sha=''
+
+  if [[ -f "${app_file}" ]]; then
+    label=$(gojsontoyaml -yamltojson <"${app_file}" 2>/dev/null |
+      jq -r '.metadata.labels["kubeaid.io/version"] // "" | tostring' 2>/dev/null || true)
+  fi
+
+  if [[ -z "${label}" ]]; then
+    sha=$(git -C "${repo_root}" rev-parse --verify 'HEAD^{commit}')
+    if [[ -f "${app_file}" ]]; then
+      echo "WARNING: no kubeaid.io/version label on ${app_file}; building from the current commit of ${repo_root} (${sha:0:8})" >&2
+    else
+      echo "WARNING: no kube-prometheus Application at ${app_file}; building from the current commit of ${repo_root} (${sha:0:8})" >&2
+    fi
+    echo "${sha} HEAD"
+    return 0
+  fi
+
+  if ! sha=$(git -C "${repo_root}" rev-parse --verify "${label}^{commit}" 2>/dev/null); then
+    echo "ERROR: kubeaid ref '${label}' (kubeaid.io/version label in ${app_file}) not found in ${repo_root}; run 'git -C ${repo_root} fetch --tags origin'" >&2
+    return 2
+  fi
+  echo "${sha} ${label}"
 }
 
 while (($# > 0)); do
@@ -152,9 +191,10 @@ if ((_version < 18000)); then
 fi
 
 # Pick the kubeaid checkout to build from. With --kubeaid-repo that checkout
-# is used as-is; otherwise a temporary worktree at the tag the cluster pins as
-# spec.source.targetRevision on its kube-prometheus ArgoCD Application, so
-# this checkout and any local changes in it are left alone.
+# is used as-is; otherwise a temporary worktree at the commit named by the
+# kubeaid.io/version label on the cluster's kube-prometheus ArgoCD Application
+# (see kubeaid_build_commit), so this checkout and any local changes in it are
+# left alone.
 if [[ -n "${kubeaid_repo}" ]]; then
   basedir="$(realpath "${kubeaid_repo%/}")/build/kube-prometheus"
   if ! [[ -f "${basedir}/common-template.jsonnet" ]]; then
@@ -165,22 +205,11 @@ if [[ -n "${kubeaid_repo}" ]]; then
 else
   kubeaid_repo_root=$(cd "${basedir}/../.." && pwd)
   argocd_app_file="${cluster_dir%/}/argocd-apps/templates/kube-prometheus.yaml"
-  pinned_version=$(gojsontoyaml -yamltojson <"${argocd_app_file}" 2>/dev/null |
-    jq -r '.spec.source.targetRevision // ""' 2>/dev/null || echo '')
-  if [[ -z "${pinned_version}" ]]; then
-    echo "ERROR: kubeaid tag missing in ${argocd_app_file} (spec.source.targetRevision)"
+  if ! build_commit=$(kubeaid_build_commit "${kubeaid_repo_root}" "${argocd_app_file}"); then
     exit 2
   fi
-
-  # HEAD on the Application means the tip of master.
-  pinned_ref="${pinned_version}"
-  if [[ "${pinned_version}" == HEAD ]]; then
-    pinned_ref=master
-  fi
-  if ! pinned_sha=$(git -C "${kubeaid_repo_root}" rev-parse --verify "${pinned_ref}^{commit}" 2>/dev/null); then
-    echo "ERROR: kubeaid ref '${pinned_ref}' not found in ${kubeaid_repo_root}; run 'git -C ${kubeaid_repo_root} fetch --tags origin'"
-    exit 2
-  fi
+  pinned_sha="${build_commit%% *}"
+  pinned_version="${build_commit#* }"
 
   build_worktree=$(mktemp -d -t kubeaid-build.XXXXXX)
   git -C "${kubeaid_repo_root}" worktree add -q --detach "${build_worktree}" "${pinned_sha}"
