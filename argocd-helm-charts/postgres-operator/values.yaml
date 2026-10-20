@@ -21,3 +21,8 @@ postgres-operator:
         - ALL
     seccompProfile:
       type: RuntimeDefault
+  configPostgresPodResources:
+    # The default is 1, we use "0" to disable the default
+    # https://github.com/zalando/postgres-operator/blob/master/docs/reference/operator_parameters.md#kubernetes-resource-requests
+    default_cpu_limit: "0"
+    min_cpu_limit: "0"
