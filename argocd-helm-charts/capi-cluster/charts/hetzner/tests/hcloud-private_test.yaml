@@ -69,3 +69,17 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+
+  - it: does not pin kubelet's node IP on a private control plane
+    template: KubeadmControlPlane.yaml
+    asserts:
+      - notContains:
+          path: spec.kubeadmConfigSpec.initConfiguration.nodeRegistration.kubeletExtraArgs
+          content:
+            name: node-ip
+            value: __KUBEAID_NODE_IP__
+      - notContains:
+          path: spec.kubeadmConfigSpec.joinConfiguration.nodeRegistration.kubeletExtraArgs
+          content:
+            name: node-ip
+            value: __KUBEAID_NODE_IP__
