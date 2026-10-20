@@ -1,5 +1,6 @@
 {{- $cpPublic := and (ne .Values.mode "bare-metal") (or (eq .Values.mode "hybrid") (eq .Values.network.type "private")) (dig "publicNetwork" "enabled" false (.Values.controlPlane.hcloud | default dict)) }}
 {{- $cpOnly := and (not .Values.nodeGroups.hcloud) (not .Values.nodeGroups.bareMetal) }}
+{{- $pinNodeIP := or (and (eq .Values.mode "bare-metal") .Values.bareMetal.vSwitch) $cpPublic }}
 apiVersion: controlplane.cluster.x-k8s.io/v1beta2
 kind: KubeadmControlPlane
 metadata:
@@ -118,20 +119,6 @@ spec:
         rotateCertificates: true
         serverTLSBootstrap: true
         staticPodPath: /etc/kubernetes/manifests
-        {{- if or (and (eq .Values.mode "bare-metal") .Values.bareMetal.vSwitch) $cpPublic }}
-        {{/* CPs share this KubeadmConfigSpec across every Machine the KCP
-             creates, so the per-host privateIP can't be baked in at chart-
-             render time. The placeholder below is sed-replaced at boot by
-             a preKubeadm block: on bare-metal from the DMI chassis-serial
-             lookup, on public control-plane nodes from the private NIC.
-
-             Without it kubelet falls back to auto-detection, which returns
-             the first global address on the default-route interface — the
-             public NIC for $cpPublic nodes — so the node would register an
-             InternalIP off the private network that etcd and the
-             control-plane load balancer both expect. */}}
-        nodeIP: __KUBEAID_NODE_IP__
-        {{- end }}
         tlsCipherSuites:
           - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
           - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
@@ -385,6 +372,13 @@ spec:
             value: external
           - name: config
             value: /etc/kubernetes/kubelet/config.yaml
+          {{- if $pinNodeIP }}
+          {{/* kubelet reads its node IP only from this flag; KubeletConfiguration
+               has no such field. The CP spec is shared across Machines, so a
+               preKubeadm step fills in this host's private IP at boot. */}}
+          - name: node-ip
+            value: __KUBEAID_NODE_IP__
+          {{- end }}
     joinConfiguration:
       {{- if $cpPublic }}
       controlPlane:
@@ -400,6 +394,10 @@ spec:
             value: external
           - name: config
             value: /etc/kubernetes/kubelet/config.yaml
+          {{- if $pinNodeIP }}
+          - name: node-ip
+            value: __KUBEAID_NODE_IP__
+          {{- end }}
     {{- if (gt (len $.Values.global.additionalUsers) 0) }}
     users:
       {{- range $index, $additionalUser := $.Values.global.additionalUsers }}
@@ -412,7 +410,7 @@ spec:
       - set -x
 
       {{- if $cpPublic }}
-      {{/* Substitute the __KUBEAID_NODE_IP__ placeholders (kubelet's nodeIP
+      {{/* Substitute the __KUBEAID_NODE_IP__ placeholders (kubelet's --node-ip
            and kubeadm's localAPIEndpoint.advertiseAddress) with this host's
            HCloud private-network IP. The CP KubeadmConfigSpec is shared
            across every Machine the KCP creates, so the per-host address can
@@ -452,7 +450,6 @@ spec:
           echo "no private-network IPv4 found outside ${PUBLIC_IFACE}, but this control-plane node is on the HCloud private network" >&2
           exit 1
         fi
-        sed -i "s|__KUBEAID_NODE_IP__|${PRIVATE_IP}|g" /etc/kubernetes/kubelet/config.yaml
         for kubeadm_config in /run/kubeadm/kubeadm.yaml /run/kubeadm/kubeadm-join-config.yaml; do
           if [ -f "$kubeadm_config" ]; then
             sed -i "s|__KUBEAID_NODE_IP__|${PRIVATE_IP}|g" "$kubeadm_config"
@@ -629,15 +626,14 @@ spec:
         chmod 0600 /etc/netplan/60-vlan.yaml
         netplan apply
 
-        # Substitute the nodeIP placeholder in the shared KubeletConfiguration
-        # file (written by the files: block above) with this host's vSwitch
-        # privateIP. Workers set the equivalent --node-ip via kubeletExtraArgs
-        # at chart-render time because they have a per-host KubeadmConfig;
-        # the CP KubeadmConfigSpec is shared, so the field stays as the
-        # placeholder until boot. kubelet reads the file when kubeadm
-        # init/join starts it for the first time, so its first registration
-        # already carries the vSwitch IP as InternalIP.
-        sed -i "s|__KUBEAID_NODE_IP__|${MY_PRIVATE_IP}|" /etc/kubernetes/kubelet/config.yaml
+        # Fill in kubelet's --node-ip in the kubeadm config. The backup at
+        # /kubeadm-join-config.yaml is copied back over the original before
+        # 'kubeadm join', so it needs the same substitution.
+        for kubeadm_config in /run/kubeadm/kubeadm.yaml /run/kubeadm/kubeadm-join-config.yaml /kubeadm-join-config.yaml; do
+          if [ -f "$kubeadm_config" ]; then
+            sed -i "s|__KUBEAID_NODE_IP__|${MY_PRIVATE_IP}|g" "$kubeadm_config"
+          fi
+        done
 
         # cloud-init folds every runcmd entry into ONE script, so the `set -eu`
         # at the top of this block would otherwise leak into the post-kubeadm

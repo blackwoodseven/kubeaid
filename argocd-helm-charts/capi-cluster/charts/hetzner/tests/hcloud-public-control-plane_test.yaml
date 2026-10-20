@@ -61,21 +61,28 @@ tests:
           path: spec.kubeadmConfigSpec.joinConfiguration.controlPlane.localAPIEndpoint.advertiseAddress
           value: __KUBEAID_NODE_IP__
 
-  - it: pins kubelet's node IP and resolves both placeholders from the private NIC at boot
+  - it: passes kubelet's node IP as a flag and resolves both placeholders from the private NIC at boot
     template: KubeadmControlPlane.yaml
     asserts:
-      - matchRegex:
+      - contains:
+          path: spec.kubeadmConfigSpec.initConfiguration.nodeRegistration.kubeletExtraArgs
+          content:
+            name: node-ip
+            value: __KUBEAID_NODE_IP__
+      - contains:
+          path: spec.kubeadmConfigSpec.joinConfiguration.nodeRegistration.kubeletExtraArgs
+          content:
+            name: node-ip
+            value: __KUBEAID_NODE_IP__
+      - notMatchRegex:
           path: spec.kubeadmConfigSpec.files[0].content
-          pattern: "nodeIP: __KUBEAID_NODE_IP__"
+          pattern: "nodeIP:"
       - matchRegex:
           path: spec.kubeadmConfigSpec.preKubeadmCommands[1]
           pattern: "ip -4 route show default"
       - matchRegex:
           path: spec.kubeadmConfigSpec.preKubeadmCommands[1]
           pattern: "/sys/class/net/"
-      - matchRegex:
-          path: spec.kubeadmConfigSpec.preKubeadmCommands[1]
-          pattern: "sed -i .*/etc/kubernetes/kubelet/config\\.yaml"
       - matchRegex:
           path: spec.kubeadmConfigSpec.preKubeadmCommands[1]
           pattern: "for kubeadm_config in"

@@ -98,3 +98,23 @@ tests:
       - equal:
           path: spec.installImage.partitions[0].mount
           value: /boot
+
+  - it: passes kubelet's node IP as a flag and fills it in from the vSwitch privateIP at boot
+    template: KubeadmControlPlane.yaml
+    asserts:
+      - contains:
+          path: spec.kubeadmConfigSpec.initConfiguration.nodeRegistration.kubeletExtraArgs
+          content:
+            name: node-ip
+            value: __KUBEAID_NODE_IP__
+      - contains:
+          path: spec.kubeadmConfigSpec.joinConfiguration.nodeRegistration.kubeletExtraArgs
+          content:
+            name: node-ip
+            value: __KUBEAID_NODE_IP__
+      - notMatchRegex:
+          path: spec.kubeadmConfigSpec.files[0].content
+          pattern: "nodeIP:"
+      - matchRegex:
+          path: spec.kubeadmConfigSpec.preKubeadmCommands[14]
+          pattern: "for kubeadm_config in /run/kubeadm/kubeadm.yaml /run/kubeadm/kubeadm-join-config.yaml /kubeadm-join-config.yaml"
