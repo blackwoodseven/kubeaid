@@ -60,6 +60,16 @@ Example output:
 Successfully built for <cluster-name> (kube-prometheus v0.16.0) in 3s → ../<your-kubeaid-config>/k8s/<cluster-name>/kube-prometheus
 ```
 
+## Which KubeAid version is built
+
+`build.sh` reads the `kubeaid.io/version` label on the cluster's kube-prometheus ArgoCD Application (`argocd-apps/templates/kube-prometheus.yaml`, written by kubeaid-cli from `forkURLs.kubeaid.version`) and builds from a temporary worktree at that tag, so the manifests match the KubeAid release the cluster's apps are pinned to:
+
+```log
+Building from kubeaid 33.0.3 (1e5304ec) in a temporary worktree
+```
+
+Without the label (or without the Application file) it warns and builds from the current commit of your KubeAid checkout instead. `spec.source.targetRevision` is not consulted: it points ArgoCD at the kubeaid-config repo, which is never tagged, so it always stays `HEAD`. Pass `--kubeaid-repo <path>` to build from a checkout as-is, including uncommitted changes.
+
 ## Committing manifests with --commit
 
 To automatically commit the generated manifests into your kubeaid-config repo:
@@ -85,6 +95,8 @@ Push branch 'kube-prometheus-<cluster-name>-v0.16.0-20260328143022' or rebase in
 | Flag | Description |
 |------|-------------|
 | `--commit` | Commit generated manifests in a new branch in the kubeaid-config repo |
+| `--kubeaid-repo <path>` | Build from this KubeAid checkout as-is instead of the `kubeaid.io/version` label |
+| `--versions` | Print the kube-prometheus / Kubernetes compatibility table and exit |
 | `-d` / `--debug` | Leave temporary output folder on exit |
 
 ---
