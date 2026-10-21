@@ -24,6 +24,16 @@ addMixins: {
 
 See `lib/default_vars.libsonnet` for the full list of defaults.
 
+## Skipping namespaces in the Kubernetes alerts
+
+`alert_namespace_selector` adds a PromQL matcher to the kubernetes-mixin's app, resource and storage alerts (pod, deployment, job, quota and volume alerts). Use it to keep namespaces that should never page out of those alerts:
+
+```jsonnet
+alert_namespace_selector: 'namespace!~"dev-.*"',
+```
+
+The default `null` alerts on every namespace.
+
 ## Updating an upstream mixin
 
 Use `update-mixin.sh` to pull the latest version of an upstream mixin:

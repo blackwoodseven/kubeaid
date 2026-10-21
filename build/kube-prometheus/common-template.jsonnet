@@ -535,6 +535,14 @@ local kp =
         namespace: 'monitoring',
       },
 
+      kubernetesControlPlane+: {
+        mixin+: {
+          _config+: {
+            [if vars.alert_namespace_selector != null then 'namespaceSelector']: vars.alert_namespace_selector,
+          },
+        },
+      },
+
       // Replica counts belong here and not on the component's CR spec:
       // kube-prometheus gates PodDisruptionBudget creation on the component
       // replica count, so a CR-only override still renders a PDB that a
