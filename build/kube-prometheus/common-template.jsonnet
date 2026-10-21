@@ -217,7 +217,7 @@ local dropExcludedAlerts(groups) =
     ]
   );
 
-local kp =
+local kpBase =
   (import 'kube-prometheus/main.libsonnet') +
   // Uncomment the following imports to enable its patches
   (import 'kube-prometheus/addons/anti-affinity.libsonnet') +
@@ -898,15 +898,6 @@ local kp =
       },
     } else {}
   ) +
-  // excluded_alerts applies to every component's alert rules.
-  {
-    [component]+: (
-      if std.objectHasAll(super[component], 'prometheusRule') then
-        { prometheusRule+: { spec+: { groups: dropExcludedAlerts(super.groups) } } }
-      else {}
-    )
-    for component in ['alertmanager', 'blackboxExporter', 'grafana', 'kubePrometheus', 'kubeStateMetrics', 'kubernetesControlPlane', 'nodeExporter', 'prometheus', 'prometheusAdapter', 'prometheusOperator']
-  } +
   // *_probe_target ({ url, port }) points a probe at the in-cluster service
   // instead of the ingress. Blackbox-exporter then reaches the pod directly,
   // not through Traefik, so it needs a NetworkPolicy rule for that pod port.
@@ -925,6 +916,13 @@ local kp =
     [if std.objectHas(vars, 'prometheus_probe_target') then 'prometheus']+: blackboxIngressRule('prometheus'),
     [if std.objectHas(vars, 'alertmanager_probe_target') then 'alertmanager']+: blackboxIngressRule('alertmanager'),
   };
+
+// excluded_alerts applies to the alert rules of every component that has any.
+local kp = kpBase {
+  [component]+: { prometheusRule+: { spec+: { groups: dropExcludedAlerts(super.groups) } } }
+  for component in std.objectFields(kpBase)
+  if std.isObject(kpBase[component]) && std.objectHasAll(kpBase[component], 'prometheusRule')
+};
 
 {
   'setup/0namespace-namespace': kp.kubePrometheus.namespace +
