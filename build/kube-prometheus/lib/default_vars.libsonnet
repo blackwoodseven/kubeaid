@@ -1,10 +1,7 @@
 {
   prometheus_scrape_namespaces+: [],
 
-  // Custom kubeaid or non kubeaid apps that need AutoSync
-  kubeaid_users_apps+: [],
   kube_prometheus_version+: 'v0.19.0',
-  kubeaid_apps+: [],
   prometheus_operator_resources: {
     limits: { memory: '80Mi' },
     requests: { cpu: '20m', memory: '80Mi' },

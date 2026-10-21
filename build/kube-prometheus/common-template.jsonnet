@@ -34,9 +34,8 @@ local blackboxProbe = function(probe) {
 };
 
 local default_vars = import 'lib/default_vars.libsonnet';
-local default_kubeaid_apps_vars = std.parseYaml(importstr 'lib/default_kubeaid_apps_vars.yaml');
 
-local vars = default_vars + ext_vars + default_kubeaid_apps_vars;
+local vars = default_vars + ext_vars;
 
 local etcdMetrics = vars.etcd_metrics;
 local etcdMetricsResources = (import 'lib/etcd-metrics.libsonnet')(etcdMetrics);
@@ -233,37 +232,6 @@ local kp =
       import 'kube-prometheus/addons/custom-metrics.libsonnet'
     ) else {}
   ) +
-  {
-    argocdApplications+: {
-      prometheusRuleExample+: {
-        apiVersion: 'monitoring.coreos.com/v1',
-        kind: 'PrometheusRule',
-        metadata: {
-          name: 'kubeaid-managed-apps',
-          namespace: $.values.common.namespace,
-        },
-        spec: {
-          groups: [
-            {
-              name: 'kubeaidManagedApps',
-              rules: [
-                {
-                  record: 'kubeaidManagedApps',
-                  expr: 0,
-                  labels: {
-                    name: argocdApps,
-                    // TODO: maybe add support for other projects
-                    project: 'kubeaid',
-                  },
-                }
-                for argocdApps in vars.kubeaid_apps + vars.kubeaid_users_apps
-              ],
-            },
-          ],
-        },
-      },
-    },
-  } +
   {
     grafana+: {
       networkPolicy+: {
@@ -1092,7 +1060,6 @@ local kp =
   }
 else kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
 { ['prometheus-' + name]: kp.prometheus[name] for name in std.objectFields(kp.prometheus) } +
-{ ['argocd-application-prometheus-rules' + name]: kp.argocdApplications[name] for name in std.objectFields(kp.argocdApplications) } +
 (
   // Need to figure out elseif
   // if vars != 'gke' || vars != 'azure' didnt worked
