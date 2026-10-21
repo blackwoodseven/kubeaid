@@ -1,0 +1,18 @@
+groups:
+- name: keycloak
+  rules:
+  - alert: KeycloakFailedLoginsHigh
+    annotations:
+      description: '{{ $value | humanizePercentage }} of logins failed for client {{ $labels.client_id }} in realm {{ $labels.realm }} ({{ $labels.namespace }}). Break it down by cause with sum by (error) (increase(keycloak_user_events_total{event="login", error!="", realm="{{ $labels.realm }}"}[10m])).'
+      summary: Many failed keycloak logins in last 10m.
+    expr: |
+      sum by (namespace, realm, client_id) (increase(keycloak_user_events_total{event="login", error!=""}[10m]))
+        /
+      sum by (namespace, realm, client_id) (increase(keycloak_user_events_total{event="login"}[10m]))
+        > 0.3
+      and
+      sum by (namespace, realm, client_id) (increase(keycloak_user_events_total{event="login", error!=""}[10m]))
+        >= 20
+    for: 10m
+    labels:
+      severity: warning

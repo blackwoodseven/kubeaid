@@ -145,6 +145,7 @@
     opencost: false,
     'kubelet-cert-expiry': false,
     'orphan-pvc': true,
+    keycloak: false,
   },
   mixin_configs: {
     // Example:
