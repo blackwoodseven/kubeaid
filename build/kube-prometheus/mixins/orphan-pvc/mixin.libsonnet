@@ -5,8 +5,9 @@
     selector: '',
   },
 
-  // Uses argocd_app_info's dest_namespace directly; kubeaidManagedApps only has the app name,
-  // which isn't always the namespace (e.g. netbird-operator -> netbird, or several apps -> kube-system).
+  // KubeAid apps are the ArgoCD applications in project kubeaid. Their namespace comes from
+  // dest_namespace, since the app name isn't always the namespace (e.g. netbird-operator ->
+  // netbird, or several apps -> kube-system).
   local kubeaidAppsFilter =
     'label_replace(argocd_app_info{project="kubeaid"}, "namespace", "$1", "dest_namespace", "(.*)")',
   local kubeaidAppsFilterEscaped =

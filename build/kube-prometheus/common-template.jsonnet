@@ -34,9 +34,8 @@ local blackboxProbe = function(probe) {
 };
 
 local default_vars = import 'lib/default_vars.libsonnet';
-local default_kubeaid_apps_vars = std.parseYaml(importstr 'lib/default_kubeaid_apps_vars.yaml');
 
-local vars = default_vars + ext_vars + default_kubeaid_apps_vars;
+local vars = default_vars + ext_vars;
 
 local etcdMetrics = vars.etcd_metrics;
 local etcdMetricsResources = (import 'lib/etcd-metrics.libsonnet')(etcdMetrics);
@@ -202,7 +201,23 @@ local scrape_namespaces = std.uniq(std.sort(std.flattenArrays(
 
 local relabelings = import 'kube-prometheus/addons/dropping-deprecated-metrics-relabelings.libsonnet';
 
-local kp =
+// Drops the alerts named in excluded_alerts from a list of rule groups, and any
+// group left without rules.
+local dropExcludedAlerts(groups) =
+  if std.length(vars.excluded_alerts) == 0 then groups else std.filter(
+    function(group) std.length(group.rules) > 0,
+    [
+      group {
+        rules: std.filter(
+          function(rule) !std.objectHas(rule, 'alert') || !std.member(vars.excluded_alerts, rule.alert),
+          group.rules
+        ),
+      }
+      for group in groups
+    ]
+  );
+
+local kpBase =
   (import 'kube-prometheus/main.libsonnet') +
   // Uncomment the following imports to enable its patches
   (import 'kube-prometheus/addons/anti-affinity.libsonnet') +
@@ -217,37 +232,6 @@ local kp =
       import 'kube-prometheus/addons/custom-metrics.libsonnet'
     ) else {}
   ) +
-  {
-    argocdApplications+: {
-      prometheusRuleExample+: {
-        apiVersion: 'monitoring.coreos.com/v1',
-        kind: 'PrometheusRule',
-        metadata: {
-          name: 'kubeaid-managed-apps',
-          namespace: $.values.common.namespace,
-        },
-        spec: {
-          groups: [
-            {
-              name: 'kubeaidManagedApps',
-              rules: [
-                {
-                  record: 'kubeaidManagedApps',
-                  expr: 0,
-                  labels: {
-                    name: argocdApps,
-                    // TODO: maybe add support for other projects
-                    project: 'kubeaid',
-                  },
-                }
-                for argocdApps in vars.kubeaid_apps + vars.kubeaid_users_apps
-              ],
-            },
-          ],
-        },
-      },
-    },
-  } +
   {
     grafana+: {
       networkPolicy+: {
@@ -533,6 +517,14 @@ local kp =
       common+: {
         platform: vars.platform,
         namespace: 'monitoring',
+      },
+
+      kubernetesControlPlane+: {
+        mixin+: {
+          _config+: {
+            [if vars.alert_namespace_selector != null then 'namespaceSelector']: vars.alert_namespace_selector,
+          },
+        },
       },
 
       // Replica counts belong here and not on the component's CR spec:
@@ -925,6 +917,13 @@ local kp =
     [if std.objectHas(vars, 'alertmanager_probe_target') then 'alertmanager']+: blackboxIngressRule('alertmanager'),
   };
 
+// excluded_alerts applies to the alert rules of every component that has any.
+local kp = kpBase {
+  [component]+: { prometheusRule+: { spec+: { groups: dropExcludedAlerts(super.groups) } } }
+  for component in std.objectFields(kpBase)
+  if std.isObject(kpBase[component]) && std.objectHasAll(kpBase[component], 'prometheusRule')
+};
+
 {
   'setup/0namespace-namespace': kp.kubePrometheus.namespace +
                                 ({
@@ -1059,7 +1058,6 @@ local kp =
   }
 else kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
 { ['prometheus-' + name]: kp.prometheus[name] for name in std.objectFields(kp.prometheus) } +
-{ ['argocd-application-prometheus-rules' + name]: kp.argocdApplications[name] for name in std.objectFields(kp.argocdApplications) } +
 (
   // Need to figure out elseif
   // if vars != 'gke' || vars != 'azure' didnt worked
@@ -1075,7 +1073,7 @@ else kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
     || std.objectHas(vars, 'alertmanager_ingress_host')
  then { [name + '-ingress']: kp.ingress[name] for name in std.objectFields(kp.ingress) } else {}) +
 // Rendering prometheusRules object. This is an object compatible with prometheus-operator CRD definition for prometheusRule
-{ [o._config.name + '-prometheus-rules']: o.prometheusRules for o in std.filter((function(o) o.prometheusRules != null), mixins) } +
+{ [o._config.name + '-prometheus-rules']: o.prometheusRules { spec+: { groups: dropExcludedAlerts(super.groups) } } for o in std.filter((function(o) o.prometheusRules != null), mixins) } +
 (if std.objectHas(vars, 'prometheus_ingress_host') && vars.prometheus_blackbox_probe_enabled then {
    'blackbox-probe-prometheus': blackboxProbe({ name: 'prometheus', host: vars.prometheus_ingress_host, module: vars.prometheus_probe_module }
                                               + (if std.objectHas(vars, 'prometheus_probe_target') then { url: vars.prometheus_probe_target.url } else {})),

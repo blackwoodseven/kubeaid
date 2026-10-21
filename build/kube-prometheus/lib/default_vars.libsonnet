@@ -1,10 +1,7 @@
 {
   prometheus_scrape_namespaces+: [],
 
-  // Custom kubeaid or non kubeaid apps that need AutoSync
-  kubeaid_users_apps+: [],
   kube_prometheus_version+: 'v0.19.0',
-  kubeaid_apps+: [],
   prometheus_operator_resources: {
     limits: { memory: '80Mi' },
     requests: { cpu: '20m', memory: '80Mi' },
@@ -22,6 +19,11 @@
     requests: { cpu: '1m', memory: '50Mi' },
   },
   alertmanager_replicas: 1,
+  // PromQL matcher added to the kubernetes-mixin's app, resource and storage
+  // alerts, e.g. 'namespace!~"dev-.*"'. null alerts on every namespace.
+  alert_namespace_selector: null,
+  // Alert names dropped from every rule the build renders on this cluster.
+  excluded_alerts: [],
   prometheus_resources: {
     limits: { memory: '3Gi' },
     requests: { cpu: '200m', memory: '2500Mi' },

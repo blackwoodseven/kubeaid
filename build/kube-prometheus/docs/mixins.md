@@ -24,6 +24,20 @@ addMixins: {
 
 See `lib/default_vars.libsonnet` for the full list of defaults.
 
+## Skipping alerts per cluster
+
+Two settings in the cluster vars file:
+
+- `alert_namespace_selector` adds a PromQL matcher to the kubernetes-mixin's app, resource and storage alerts (pod, deployment, job, quota and volume alerts). The default `null` alerts on every namespace.
+- `excluded_alerts` drops the named alerts from every rule the build renders, kube-prometheus and mixins alike. The default `[]` keeps them all.
+
+```jsonnet
+alert_namespace_selector: 'namespace!~"dev-.*"',
+excluded_alerts: ['KubeJobNotCompleted'],
+```
+
+To skip an alert only in some namespaces or for some labels, use an Alertmanager route instead.
+
 ## Updating an upstream mixin
 
 Use `update-mixin.sh` to pull the latest version of an upstream mixin:
