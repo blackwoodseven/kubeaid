@@ -25,6 +25,8 @@
   // PromQL matcher added to the kubernetes-mixin's app, resource and storage
   // alerts, e.g. 'namespace!~"dev-.*"'. null alerts on every namespace.
   alert_namespace_selector: null,
+  // Alert names dropped from every rule the build renders on this cluster.
+  excluded_alerts: [],
   prometheus_resources: {
     limits: { memory: '3Gi' },
     requests: { cpu: '200m', memory: '2500Mi' },

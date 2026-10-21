@@ -202,6 +202,22 @@ local scrape_namespaces = std.uniq(std.sort(std.flattenArrays(
 
 local relabelings = import 'kube-prometheus/addons/dropping-deprecated-metrics-relabelings.libsonnet';
 
+// Drops the alerts named in excluded_alerts from a list of rule groups, and any
+// group left without rules.
+local dropExcludedAlerts(groups) =
+  if std.length(vars.excluded_alerts) == 0 then groups else std.filter(
+    function(group) std.length(group.rules) > 0,
+    [
+      group {
+        rules: std.filter(
+          function(rule) !std.objectHas(rule, 'alert') || !std.member(vars.excluded_alerts, rule.alert),
+          group.rules
+        ),
+      }
+      for group in groups
+    ]
+  );
+
 local kp =
   (import 'kube-prometheus/main.libsonnet') +
   // Uncomment the following imports to enable its patches
@@ -914,6 +930,15 @@ local kp =
       },
     } else {}
   ) +
+  // excluded_alerts applies to every component's alert rules.
+  {
+    [component]+: (
+      if std.objectHasAll(super[component], 'prometheusRule') then
+        { prometheusRule+: { spec+: { groups: dropExcludedAlerts(super.groups) } } }
+      else {}
+    )
+    for component in ['alertmanager', 'blackboxExporter', 'grafana', 'kubePrometheus', 'kubeStateMetrics', 'kubernetesControlPlane', 'nodeExporter', 'prometheus', 'prometheusAdapter', 'prometheusOperator']
+  } +
   // *_probe_target ({ url, port }) points a probe at the in-cluster service
   // instead of the ingress. Blackbox-exporter then reaches the pod directly,
   // not through Traefik, so it needs a NetworkPolicy rule for that pod port.
@@ -1083,7 +1108,7 @@ else kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
     || std.objectHas(vars, 'alertmanager_ingress_host')
  then { [name + '-ingress']: kp.ingress[name] for name in std.objectFields(kp.ingress) } else {}) +
 // Rendering prometheusRules object. This is an object compatible with prometheus-operator CRD definition for prometheusRule
-{ [o._config.name + '-prometheus-rules']: o.prometheusRules for o in std.filter((function(o) o.prometheusRules != null), mixins) } +
+{ [o._config.name + '-prometheus-rules']: o.prometheusRules { spec+: { groups: dropExcludedAlerts(super.groups) } } for o in std.filter((function(o) o.prometheusRules != null), mixins) } +
 (if std.objectHas(vars, 'prometheus_ingress_host') && vars.prometheus_blackbox_probe_enabled then {
    'blackbox-probe-prometheus': blackboxProbe({ name: 'prometheus', host: vars.prometheus_ingress_host, module: vars.prometheus_probe_module }
                                               + (if std.objectHas(vars, 'prometheus_probe_target') then { url: vars.prometheus_probe_target.url } else {})),
