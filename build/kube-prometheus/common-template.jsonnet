@@ -265,6 +265,8 @@ local kpBase =
   } +
   {
     prometheus+: {
+      // The namespaces this component gives Prometheus RBAC in (roleSpecificNamespaces).
+      local rbacNamespaces = self._config.namespaces,
       prometheus+: {
         spec+: {
           externalUrl: if std.objectHas(vars, 'prometheus_ingress_host') then (
@@ -307,6 +309,22 @@ local kpBase =
                 values: scrape_namespaces,
               }],
           },
+        } + {
+          // Prometheus has RBAC only in rbacNamespaces; monitors anywhere else
+          // could never be discovered, so it does not select them.
+          [field]: {
+            matchExpressions: [{
+              key: 'kubernetes.io/metadata.name',
+              operator: 'In',
+              values: rbacNamespaces,
+            }],
+          }
+          for field in [
+            'serviceMonitorNamespaceSelector',
+            'podMonitorNamespaceSelector',
+            'probeNamespaceSelector',
+            'scrapeConfigNamespaceSelector',
+          ]
         } + (
           // Opt-in remote-write receiver + wider TSDB out-of-order window
           // for backdated samples (migrations, backfills). Off by default.
