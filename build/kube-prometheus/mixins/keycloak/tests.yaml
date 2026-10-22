@@ -1,0 +1,87 @@
+rule_files:
+  - prometheus.yaml
+
+tests:
+  # (1) Client "portal" has 5 failed vs 2 successful logins per minute -> fires.
+  #     Client "admin" in the same realm is healthy -> does not fire.
+  - interval: 1m
+    input_series:
+      - series: 'keycloak_user_events_total{namespace="keycloak", realm="master", client_id="portal", event="login", error=""}'
+        values: '0+2x40'
+      - series: 'keycloak_user_events_total{namespace="keycloak", realm="master", client_id="portal", event="login", error="invalid_user_credentials"}'
+        values: '0+5x40'
+      - series: 'keycloak_user_events_total{namespace="keycloak", realm="master", client_id="admin", event="login", error=""}'
+        values: '0+20x40'
+      - series: 'keycloak_user_events_total{namespace="keycloak", realm="master", client_id="admin", event="login", error="invalid_user_credentials"}'
+        values: '0+1x40'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: KeycloakFailedLoginsHigh
+        exp_alerts: []   # pending, `for` not reached yet
+      - eval_time: 30m
+        alertname: KeycloakFailedLoginsHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              namespace: keycloak
+              realm: master
+              client_id: portal
+            exp_annotations:
+              summary: Many failed keycloak logins in last 10m.
+              description: '71.43% of logins failed for client portal in realm master (keycloak). Break it down by cause with sum by (error) (increase(keycloak_user_events_total{event="login", error!="", realm="master"}[10m])).'
+
+  # (2) Every login fails, but only 1 per minute (10 per window) -> below the volume guard.
+  - interval: 1m
+    input_series:
+      - series: 'keycloak_user_events_total{namespace="keycloak", realm="master", client_id="cli", event="login", error=""}'
+        values: '0+0x40'
+      - series: 'keycloak_user_events_total{namespace="keycloak", realm="master", client_id="cli", event="login", error="invalid_user_credentials"}'
+        values: '0+1x40'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: KeycloakFailedLoginsHigh
+        exp_alerts: []
+
+  # (3) Busy client with a normal failure rate (2 of 22 per minute, ~9%) -> no alert.
+  - interval: 1m
+    input_series:
+      - series: 'keycloak_user_events_total{namespace="keycloak", realm="master", client_id="portal", event="login", error=""}'
+        values: '0+20x40'
+      - series: 'keycloak_user_events_total{namespace="keycloak", realm="master", client_id="portal", event="login", error="invalid_user_credentials"}'
+        values: '0+2x40'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: KeycloakFailedLoginsHigh
+        exp_alerts: []
+
+  # (4) Failures split across error types still add up per client -> fires.
+  - interval: 1m
+    input_series:
+      - series: 'keycloak_user_events_total{namespace="keycloak", realm="master", client_id="portal", event="login", error=""}'
+        values: '0+2x40'
+      - series: 'keycloak_user_events_total{namespace="keycloak", realm="master", client_id="portal", event="login", error="invalid_user_credentials"}'
+        values: '0+2x40'
+      - series: 'keycloak_user_events_total{namespace="keycloak", realm="master", client_id="portal", event="login", error="user_not_found"}'
+        values: '0+2x40'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: KeycloakFailedLoginsHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              namespace: keycloak
+              realm: master
+              client_id: portal
+            exp_annotations:
+              summary: Many failed keycloak logins in last 10m.
+              description: '66.67% of logins failed for client portal in realm master (keycloak). Break it down by cause with sum by (error) (increase(keycloak_user_events_total{event="login", error!="", realm="master"}[10m])).'
+
+  # (5) Cluster without Keycloak (no login metrics at all) -> no alert.
+  - interval: 1m
+    input_series:
+      - series: 'up{job="kube-state-metrics"}'
+        values: '1+0x40'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: KeycloakFailedLoginsHigh
+        exp_alerts: []

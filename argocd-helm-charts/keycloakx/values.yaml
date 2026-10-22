@@ -8,6 +8,11 @@ keycloakx:
     - "--hostname-strict=false"
     - "--spi-events-listener-jboss-logging-success-level=info"
     - "--spi-events-listener-jboss-logging-error-level=warn"
+    # Login event counters (keycloak_user_events_total per realm/client) for
+    # the kube-prometheus keycloak mixin, plus HTTP histograms for its dashboards.
+    - "--event-metrics-user-enabled=true"
+    - "--event-metrics-user-tags=realm,clientId"
+    - "--http-metrics-histograms-enabled=true"
   proxy:
     mode: xforwarded
   database:
