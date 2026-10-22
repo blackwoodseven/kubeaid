@@ -1,0 +1,13 @@
+{{- if and .Values.mattermost.enabled (not .Values.mattermost.fileStore.external.enabled) .Values.mattermost.fileStore.volume.storageClass }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.mattermost.name | default "mattermost" }}-files
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.mattermost.fileStore.volume.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.mattermost.fileStore.volume.size | default "10Gi" }}
+{{- end }}

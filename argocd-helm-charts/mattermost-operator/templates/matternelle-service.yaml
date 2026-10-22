@@ -1,4 +1,4 @@
-{{- if .Values.matternelle }}
+{{- if and .Values.mattermost.enabled .Values.matternelle }}
 {{- $name := .Values.mattermost.name | default "mattermost" }}
 ---
 # The operator builds svc/{{ $name }} with only 8065/8067 and never exposes
