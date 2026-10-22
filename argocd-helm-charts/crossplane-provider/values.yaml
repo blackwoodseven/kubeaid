@@ -69,3 +69,24 @@ keycloak:
   # deploys live in the keycloakx chart, next to the Secrets they reference. This sub-chart only
   # installs the provider package.
   extraResources: []
+
+crossview:
+  enabled: true
+
+  image:
+    pullPolicy: IfNotPresent
+
+  resources:
+    limits:
+      cpu: null
+
+  config:
+    server:
+      auth:
+        # Since, we're not using sessions, we don't need any Postgres database.
+        mode: none
+    database:
+      enabled: false
+
+  database:
+    enabled: false
