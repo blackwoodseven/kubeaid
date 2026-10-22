@@ -1,6 +1,6 @@
 # Crossplane Provider
 
-Obmondo-authored chart (no vendored upstream `charts/`) that installs every Crossplane provider KubeAid
+Obmondo-authored chart (the only vendored upstream chart is the optional [Crossview](#crossview) UI) that installs every Crossplane provider KubeAid
 supports, together with the provider configuration and the managed resources KubeAid models for it. Each
 provider is a sub-chart switched on from values, the way `capi-cluster` enables its infrastructure
 providers:
@@ -152,6 +152,77 @@ v2 managed resources are namespaced and resolve the Secrets they reference (clie
 passwords) in their own namespace, which is where the apps consuming those Secrets live. The rule
 generalises: a provider that targets an external cloud renders its resources here; a provider that
 configures an application KubeAid deploys renders them from that application's chart.
+
+### Crossview
+
+[Crossview](https://github.com/crossplane-contrib/crossview) is a web UI for browsing Crossplane resources. It
+ships as the upstream `crossview` sub-chart and is off by default.
+
+| Value | Description | Default |
+|---|---|---|
+| `crossview.enabled` | Deploy Crossview | `true` |
+| `crossview.config.server.auth.mode` | `none` (no login), `header` (identity from a trusted proxy header) or `session` (login, needs Postgres) | `none` |
+| `crossview.config.database.enabled`, `crossview.database.enabled` | Use a database / deploy the upstream `postgres:latest` | `false` |
+| `global.postgresql.enabled` | Create a CloudNativePG cluster `crossview-pgsql` via `kubeaid-addons` (session mode only) | `false` |
+| `crossview.ingress` | Ingress, `traefik-cert-manager` class | disabled |
+
+By default Crossview has no login and no database. Everyone who can reach it gets its read access to the
+whole cluster, Secrets included, so expose it only on a private ingress, or use `header` mode behind an
+auth proxy.
+
+#### Session mode
+
+For a login (local admin or SSO), switch to `session` mode. Sessions are kept in Postgres, from the
+`kubeaid-addons` CNPG cluster or an existing CNPG cluster in the same namespace:
+
+```yaml
+# CloudNativePG cluster crossview-pgsql (service crossview-pgsql-rw, credentials in
+# Secret crossview-pgsql-app). Requires the cloudnative-pg operator.
+global:
+  postgresql:
+    enabled: true
+    instanceName: crossview
+    database: crossview
+    owner: crossview
+    instances: 1
+    size: 2Gi
+
+crossview:
+  config:
+    server:
+      auth:
+        mode: session
+      cors:
+        # Public URL of Crossview, no trailing slash. Also the post-SSO redirect target.
+        origin: https://crossview.example.com
+    database:
+      enabled: true
+      host: crossview-pgsql-rw
+      database: crossview
+      username: crossview
+      ssl:
+        mode: require
+  # Crossview falls back to admin/password and a hard-coded session secret when
+  # these are unset, so read them from a Secret you provide (e.g. a SealedSecret).
+  secrets:
+    adminUsername: admin
+    adminPassword:
+      secretKeyRef:
+        name: crossview-auth
+        key: admin-password
+    sessionSecret:
+      secretKeyRef:
+        name: crossview-auth
+        key: session-secret
+    dbPassword:
+      secretKeyRef:
+        name: crossview-pgsql-app
+        key: password
+```
+
+For an existing CNPG cluster, point `host` at its `-rw` service and `secrets.dbPassword` at its `-app`
+Secret; `database` and `username` must match its initdb owner. OIDC login (Keycloak etc.) is configured
+under `crossview.config.sso.oidc`, with the client secret in `crossview.secrets.OIDCClientSecret`.
 
 ## How ordering works
 
