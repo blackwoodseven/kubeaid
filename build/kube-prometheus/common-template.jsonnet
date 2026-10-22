@@ -1077,14 +1077,14 @@ else kp.nodeExporter[name] for name in std.objectFields(kp.nodeExporter) } +
 // Rendering prometheusRules object. This is an object compatible with prometheus-operator CRD definition for prometheusRule
 { [o._config.name + '-prometheus-rules']: o.prometheusRules for o in std.filter((function(o) o.prometheusRules != null), mixins) } +
 (if std.objectHas(vars, 'prometheus_ingress_host') && vars.prometheus_blackbox_probe_enabled then {
-   'blackbox-probe-prometheus': blackboxProbe({ name: 'prometheus', host: vars.prometheus_ingress_host, module: vars.prometheus_probe_module }
+   'blackbox-probe-prometheus': blackboxProbe({ name: 'prometheus', host: vars.prometheus_ingress_host, module: vars.prometheus_probe_module, interval: '30m' }
                                               + (if std.objectHas(vars, 'prometheus_probe_target') then { url: vars.prometheus_probe_target.url } else {})),
  } else {}) +
 (if std.objectHas(vars, 'grafana_ingress_host') && vars.grafana_blackbox_probe_enabled then {
-   'blackbox-probe-grafana': blackboxProbe({ name: 'grafana', host: vars.grafana_ingress_host }
+   'blackbox-probe-grafana': blackboxProbe({ name: 'grafana', host: vars.grafana_ingress_host, interval: '30m' }
                                            + (if std.objectHas(vars, 'grafana_probe_target') then { url: vars.grafana_probe_target.url } else {})),
  } else {}) +
 (if std.objectHas(vars, 'alertmanager_ingress_host') && vars.alertmanager_blackbox_probe_enabled then {
-   'blackbox-probe-alertmanager': blackboxProbe({ name: 'alertmanager', host: vars.alertmanager_ingress_host }
+   'blackbox-probe-alertmanager': blackboxProbe({ name: 'alertmanager', host: vars.alertmanager_ingress_host, interval: '30m' }
                                                 + (if std.objectHas(vars, 'alertmanager_probe_target') then { url: vars.alertmanager_probe_target.url } else {})),
  } else {})
