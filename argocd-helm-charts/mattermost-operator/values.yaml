@@ -12,6 +12,8 @@ mattermost:
     # storageClass (and size, default 10Gi) puts the files on a ReadWriteOnce PVC the chart
     # creates on that class. Run one replica with it.
     volume: {}
+  # goes into the CR's spec.podTemplate
+  podTemplate: {}
 
 global:
   netpol:
