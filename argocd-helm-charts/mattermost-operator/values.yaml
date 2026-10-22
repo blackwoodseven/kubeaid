@@ -1,12 +1,17 @@
 # Present so `helm lint` can render mattermost-installation.yaml, whose fields all
 # carry their own defaults. Real values come from the per-cluster values file.
 mattermost:
+  # false installs only the operator, without a Mattermost instance.
+  enabled: true
   ingress: {}
   database:
     external: {}
   fileStore:
     external: {}
     local: {}
+    # storageClass (and size, default 10Gi) puts the files on a ReadWriteOnce PVC the chart
+    # creates on that class. Run one replica with it.
+    volume: {}
 
 global:
   netpol:

@@ -2,6 +2,17 @@
 
 [Mattermost](https://mattermost.com) is an open core, self-hosted collaboration platform that offers chat, workflow automation, voice calling, screen sharing, and AI integration.
 
+# Configuration
+
+- `mattermost.enabled: false` installs only the operator, without a Mattermost instance, for a
+  cluster where one operator serves instances that other releases create.
+- `mattermost.fileStore` selects where uploaded files live:
+  - `external.enabled: true` with `url`, `bucket` and `secret`: an S3-compatible bucket.
+  - `volume.storageClass`, optionally with `volume.size` (default `10Gi`): a ReadWriteOnce PVC
+    named `<name>-files` on that class, created by this chart. Set `mattermost.replicas: 1` with it.
+  - neither: the operator's own PVC sized by `local.storageSize` (default `10Gi`), which the
+    operator requests as ReadWriteMany on the cluster's default storage class.
+
 # Restore Mattermost / Migration to Another Server
 
 This guide outlines the steps to restore a Mattermost instance or migrate it to a new server.

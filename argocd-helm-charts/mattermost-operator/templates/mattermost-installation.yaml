@@ -1,3 +1,4 @@
+{{- if .Values.mattermost.enabled }}
 apiVersion: installation.mattermost.com/v1beta1
 kind: Mattermost
 metadata:
@@ -7,6 +8,9 @@ spec:
   imagePullPolicy: {{ .Values.mattermost.imagePullPolicy | default "IfNotPresent" }}
   version: {{ .Values.mattermost.version | default "10.9.4" }}
   size: {{ .Values.mattermost.size | default "5000users" }}
+  {{- with .Values.mattermost.replicas }}
+  replicas: {{ . }}
+  {{- end }}
   podExtensions:
     {{- if .Values.mattermost.extraPorts }}
     containerPorts:
@@ -54,8 +58,12 @@ spec:
       url: {{ .Values.mattermost.fileStore.external.url | default "s3.obmondo.com" }}
       bucket: {{ .Values.mattermost.fileStore.external.bucket | default "kbm-postgres-backups" }}
       secret: {{ .Values.mattermost.fileStore.external.secret | default "mattermost-pgsql-filestore-creds" }}
+  {{- else if .Values.mattermost.fileStore.volume.storageClass }}
+    externalVolume:
+      volumeClaimName: {{ .Values.mattermost.name | default "mattermost" }}-files
   {{- else }}
     local:
       enabled: {{ .Values.mattermost.fileStore.local.enabled | default true }}
       storageSize: {{ .Values.mattermost.fileStore.local.storageSize | default "10Gi" }}
   {{- end }}
+{{- end }}
