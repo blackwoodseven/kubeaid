@@ -2,6 +2,17 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 34.0.2
+
+### Features
+
+- 20cecaea3 feat(mattermost-operator): operator-only installs and a volume file store
+- ac771b66f feat(kube-prometheus): add keycloak mixin with failed login alert
+
+### Bug Fixes
+
+- 864d80b8d fix(capi-cluster/hetzner): skipping Helm installations on node restarts, in postKubeadm section
+
 ## KubeAid Release Version 34.0.1
 
 ### Features
