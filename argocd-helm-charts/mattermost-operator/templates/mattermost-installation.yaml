@@ -11,15 +11,19 @@ spec:
   {{- with .Values.mattermost.replicas }}
   replicas: {{ . }}
   {{- end }}
+  {{- with .Values.mattermost.podTemplate }}
+  podTemplate:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.mattermost.extraPorts }}
   podExtensions:
-    {{- if .Values.mattermost.extraPorts }}
     containerPorts:
-      {{- range .Values.mattermost.extraPorts }}
+      {{- range . }}
       - name: {{ .name }}
         containerPort: {{ .containerPort }}
         protocol: {{ .protocol | default "TCP" }}
       {{- end }}
-    {{- end }}
+  {{- end }}
   scheduling:
     resources:
 {{ toYaml .Values.mattermost.resources | indent 6 }}

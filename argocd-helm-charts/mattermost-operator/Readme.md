@@ -12,6 +12,18 @@
     named `<name>-files` on that class, created by this chart. Set `mattermost.replicas: 1` with it.
   - neither: the operator's own PVC sized by `local.storageSize` (default `10Gi`), which the
     operator requests as ReadWriteMany on the cluster's default storage class.
+- `mattermost.podTemplate` goes into the CR's `spec.podTemplate`. With a `volume` or `local`
+  file store set `fsGroup: 2000`, otherwise uploads fail with `permission denied`
+  ([mattermost-operator#399](https://github.com/mattermost/mattermost-operator/issues/399)):
+
+  ```yaml
+  mattermost:
+    podTemplate:
+      securityContext:
+        fsGroup: 2000
+        runAsUser: 2000
+        runAsGroup: 2000
+  ```
 
 # Restore Mattermost / Migration to Another Server
 
