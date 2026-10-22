@@ -149,6 +149,11 @@ prometheus_scrape_namespaces: [
 ],
 ```
 
+The list gives Prometheus read access in those namespaces, and Prometheus picks up ServiceMonitors, PodMonitors,
+Probes and ScrapeConfigs only from them and from the namespaces KubeAid always adds (`default`, `kube-system`,
+`monitoring`, `argocd`, `cert-manager`, `traefik`, plus feature namespaces such as `sealed-secrets`). A monitor in any
+other namespace is ignored, because Prometheus could not discover its targets there anyway.
+
 After committing the change and running the build (see [Building Prometheus Manifests](#building-prometheus-manifests)
 above) and syncing via ArgoCD, verify the namespace is actually being scraped:
 
