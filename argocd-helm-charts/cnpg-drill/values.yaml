@@ -1,6 +1,0 @@
-cnpg-drill:
-  # Enable only after configuring a source, read-only recovery store and SQL checks.
-  enabled: false
-  suspended: true
-  retainOnFailure: false
-  checks: []
