@@ -19,7 +19,61 @@ service:
   port: 587
   labels: {}
   annotations: {}
+  # externalTrafficPolicy: Cluster
   # nodePort:
+
+# StatefulSets now require a headless service
+# https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#limitations
+headlessService:
+  enabled: true
+  labels: {}
+  annotations: {}
+
+metrics:
+  enabled: false
+  service:
+    labels: {}
+    annotations: {}
+  serviceMonitor:
+    enabled: false
+    labels: {}
+    annotations: {}
+  port: 9154
+  path: /metrics
+  image:
+    repository: "boky/postfix-exporter"
+    tag: "latest"
+
+  # Warning: Metrics needs a file to work. If you're using this DO NOT override POSTFIX_maillog_file.
+  # If you do, metrics *will not work*. If you need to log to file:
+  # - use this file
+  # - add another file to /etc/rsyslog.d/*.conf
+  maillog: /var/log/mail.log
+  logrotate:
+    enabled: true
+    logrotate.conf: |
+      /var/log/mail.log {
+          copytruncate
+          rotate 1
+          monthly
+          minsize 1M
+          compress
+          missingok
+          notifempty
+          dateext
+          olddir /var/log/
+          maxage 90
+      }
+
+  resources: {}
+  # If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
 
 # Tell helm to restart (recreate) pods on every deploy. Setting this to true will inject
 # `date/deploy-date: <timestamp>` annotation into pod specification for StateFulset. This
@@ -31,7 +85,8 @@ service:
 # a pod and let `StatefulSet` recreate it.
 recreateOnRedeploy: true
 
-resources: {}
+resources:
+  {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -67,6 +122,11 @@ deployment:
 
 pod:
   securityContext: {}
+  # Default setup
+  #  capabilities:
+  #    drop:
+  #    - ALL
+  #  readOnlyRootFilesystem: true
   # capabilities:
   #   drop:
   #   - ALL
@@ -79,10 +139,16 @@ pod:
 container:
   postfix:
     securityContext: {}
+    #  capabilities:
+    #    drop:
+    #    - ALL
+    #  readOnlyRootFilesystem: true
 
-# Auto-generate certificates for the server and mount them into Postfix volume
 certs:
+  # Auto-generate certificates for the server and mount them into Postfix volume
   create: false
+  # Provide existing secret name
+  existingSecret: ""
 
 # Define data which should be stored in a Secret
 # (and shared with the pod as environment variables)
@@ -99,7 +165,8 @@ existingSecret: ""
 mountSecret:
   enabled: false
   path: /var/lib/secret
-  data: {}
+  data:
+    {}
     # e.g.
     # dkim-private: |
     #   -----BEGIN RSA PRIVATE KEY-----
@@ -107,7 +174,8 @@ mountSecret:
     #   -----END RSA PRIVATE KEY-----
 
 config:
-  general: {}
+  general:
+    {}
     # e.g.
     # TZ:
     # FORCE_COLOR:
@@ -123,13 +191,31 @@ config:
     # SMTP_HEADER_CHECKS:
     # DKIM_SELECTOR:
     # DKIM_AUTOGENERATE:
-  postfix: {}
+  postfix:
+    {}
     # e.g.
     # myhostname: "postfix"
     # smtp_tls_security_level: "encrypt"
-  opendkim: {}
+  opendkim:
+    {}
     # e.g.
     # RequireSafeKeys: "yes"
+
+dns:
+  policy: ""
+  # policy: "None"
+  nameservers: []
+    # - 8.8.8.8
+    # - 8.8.4.4
+  searches: []
+  # searches:
+  # - "default.svc.cluster.local"
+  # - "svc.cluster.local"
+  # - "cluster.local"
+  options: []
+  # options:
+  #  - name: ndots
+  #    value: "5"
 
 persistence:
   enabled: true
@@ -143,13 +229,12 @@ readinessProbe:
   initialDelaySeconds: 10
   periodSeconds: 60
   failureThreshold: 6
+  timeoutSeconds: 8
   exec:
     command:
       - sh
       - -c
-      - >-
-        [ ! -f /tmp/container_is_terminating ] &&
-        printf "EHLO healthcheck\n" | nc 127.0.0.1 587 | grep -qE "^220.*ESMTP Postfix"
+      - /scripts/healthcheck.sh
 livenessProbe:
   initialDelaySeconds: 5
   periodSeconds: 5
@@ -161,7 +246,6 @@ livenessProbe:
       - >-
         ps axf | fgrep -v grep | egrep -q '\{supervisord\}|/usr/bin/supervisord' &&
         ps axf | fgrep -v grep | egrep -q '(/usr/lib/postfix/sbin/|/usr/libexec/postfix/)master'
-
 startupProbe:
   initialDelaySeconds: 5
   periodSeconds: 5
@@ -171,9 +255,14 @@ startupProbe:
       - sh
       - -c
       - >-
-        ps axf | fgrep -v grep | egrep -q '\{supervisord\}|/usr/bin/supervisord' 
-        # ps axf | fgrep -v grep | fgrep -q "postfix-script" &&
-        # ps axf | fgrep -v grep | fgrep -q 'opendkim.sh'
+        ps axf | fgrep -v grep | egrep -q '\{supervisord\}|/usr/bin/supervisord' &&
+        ps axf | fgrep -v grep | fgrep -q "postfix-script" &&
+        ps axf | fgrep -v grep | fgrep -q 'opendkim'
 
 lifecycle:
   postStart: {}
+
+preStopSleepSeconds: 0
+
+# Allow up to 2 minutes for Postfix to flush / empty the queue  before shutting down the container
+terminationGracePeriodSeconds: 120
