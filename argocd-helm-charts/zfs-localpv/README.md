@@ -43,6 +43,22 @@ Upstream values live under the `zfs-localpv:` key; the chart adds one KubeAid-sp
   `storageClass.poolName` (**required** when enabled) and `storageClass.reclaimPolicy` (default `Delete`). See
   [examples/values-storageclass.yaml](examples/values-storageclass.yaml) for a worked example; confirm with
   `kubectl get sc` once deployed.
+- `zfs-localpv.crds.csi.volumeSnapshots.enabled` / `zfsController.snapshotController.enabled`: `false` — the
+  VolumeSnapshot CRDs and the `snapshot-controller` come from the [`snapshot-controller`](../snapshot-controller)
+  chart, which every cluster taking volume snapshots needs.
+
+## Upgrading
+
+Earlier versions installed the VolumeSnapshot CRDs and ran a `snapshot-controller` container in the controller
+pod. On a cluster that ran those, roll out in this order:
+
+1. Deploy the [`snapshot-controller`](../snapshot-controller) chart and sync it, so its Argo CD app takes over
+   the `snapshot.storage.k8s.io` CRDs.
+2. Sync zfs-localpv without pruning, and check the CRDs no longer show under the zfs-localpv app.
+
+Syncing zfs-localpv with pruning while it still owns the CRDs can delete them, and every `VolumeSnapshot`,
+`VolumeSnapshotContent` and `VolumeSnapshotClass` with them. To keep the bundled pieces instead, set both values
+back to `true` and don't run the snapshot-controller chart.
 
 ## Docs links
 
