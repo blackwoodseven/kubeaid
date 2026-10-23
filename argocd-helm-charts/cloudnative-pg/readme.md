@@ -313,6 +313,13 @@ DB_PORT=5432 \
 ---
 
 
+#### Verify a plugin backup restore
+
+> **Note:** For an optional restore check using the Barman Cloud plugin, see
+> [cnpg-drill](https://github.com/danielgaskins/cnpg-drill). Start in a separate test
+> cluster with its own source database and backup, and check the restored data and
+> cleanup before using it with production data.
+
 #### Monitoring and Alerting
 
 CloudNativePG provides metrics that can be used to monitor backup health. This chart includes PrometheusRule resources for alerting on backup failures.
