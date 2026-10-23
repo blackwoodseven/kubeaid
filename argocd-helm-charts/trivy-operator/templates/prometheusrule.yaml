@@ -14,7 +14,7 @@ metadata:
   {{- end }}
 spec:
   groups:
-    # Two questions only: is the scanner working, is the backlog growing.
+    # Two questions only: is the scanner working, is the backlog out of hand.
     # Correlating CVEs against newer tags is deliberately NOT done here —
     # rebuilding image references with label_replace failed silently twice.
     - name: trivy-operator.health
@@ -37,15 +37,22 @@ spec:
         #
         # "fixable" comes from trivy.ignoreUnfixed, not from this expression —
         # the metric has no fixed_version label. Wording follows the value.
+        #
+        # Counted once per image: Trivy writes a report per workload container,
+        # so a plain sum counts an image once for every workload running it.
+        # Critical only: High runs at about ten times the volume and would set
+        # the threshold on its own.
         {{- $fixableOnly := index .Values "trivy-operator" "trivy" "ignoreUnfixed" }}
+        {{- $excluded := .Values.kubeaid.prometheusRule.backlogExcludeNamespaces }}
         - alert: ClusterVulnerabilityBacklog
           expr: |
-            sum(trivy_image_vulnerabilities{severity=~"Critical|High"})
-              > {{ .Values.kubeaid.prometheusRule.backlogThreshold }}
+            sum(max by (image_registry, image_repository, image_tag) (
+              trivy_image_vulnerabilities{severity="Critical"{{ with $excluded }}, namespace!~"{{ . }}"{{ end }}}
+            )) > {{ .Values.kubeaid.prometheusRule.backlogThreshold }}
           for: {{ .Values.kubeaid.prometheusRule.backlogFor }}
           labels:
             severity: warning
           annotations:
-            summary: "Cluster has {{ "{{ $value }}" }} {{ if $fixableOnly }}fixable {{ end }}Critical/High CVEs"
-            description: "Critical/High findings exceed the threshold of {{ .Values.kubeaid.prometheusRule.backlogThreshold }}. {{ if $fixableOnly }}Every finding counted has a published fix, so the backlog is actionable.{{ else }}This count includes CVEs with no published fix, because trivy.ignoreUnfixed is false — some of it may not be actionable.{{ end }} Per-image detail: kubectl get vulnerabilityreports -A."
+            summary: "Cluster has {{ "{{ $value }}" }} {{ if $fixableOnly }}fixable {{ end }}Critical CVEs across its images"
+            description: "Critical findings, counted once per image{{ with $excluded }} outside namespaces matching {{ . }}{{ end }}, exceed the threshold of {{ .Values.kubeaid.prometheusRule.backlogThreshold }}. {{ if $fixableOnly }}Every finding counted has a published fix, so the backlog is actionable.{{ else }}This count includes CVEs with no published fix, because trivy.ignoreUnfixed is false — some of it may not be actionable.{{ end }} Per-image detail: kubectl get vulnerabilityreports -A."
 {{- end }}

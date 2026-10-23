@@ -56,11 +56,17 @@ kubeaid:
     # fires. Rides out a restart or a missed scrape.
     blindFor: "1h"
 
-    # -- Critical/High count above which ClusterVulnerabilityBacklog fires.
-    # Deliberately high — an alert that fires on day one everywhere gets ignored.
-    # Whether these are all fixable follows trivy.ignoreUnfixed above.
+    # -- Critical count, once per image, above which ClusterVulnerabilityBacklog
+    # fires. Deliberately high — an alert that fires on day one everywhere gets
+    # ignored. Whether these are all fixable follows trivy.ignoreUnfixed above.
     backlogThreshold: 100
-    backlogFor: "24h"
+    # -- How long the backlog must stay above the threshold. Keep it longer than
+    # scannerReportTTL: after a rollout the superseded ReplicaSet keeps its
+    # report, and its older image's CVEs, until the TTL removes it.
+    backlogFor: "48h"
+    # -- Regex of namespaces left out of the backlog, e.g. "dev-.*" for
+    # developer environments. Empty counts every scanned namespace.
+    backlogExcludeNamespaces: ""
 
     additionalLabels: {}
     additionalAnnotations: {}

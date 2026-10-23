@@ -83,15 +83,16 @@ and size etcd for it first.
 |-----------|-------------|---------|
 | `kubeaid.prometheusRule.enabled` | Generate the PrometheusRule | `true` |
 | `kubeaid.prometheusRule.blindFor` | How long the scanner must report nothing before alerting | `1h` |
-| `kubeaid.prometheusRule.backlogThreshold` | Fixable Critical/High count above which the backlog alert fires | `100` |
-| `kubeaid.prometheusRule.backlogFor` | How long the backlog must exceed the threshold | `24h` |
+| `kubeaid.prometheusRule.backlogThreshold` | Fixable Critical count, once per image, above which the backlog alert fires | `100` |
+| `kubeaid.prometheusRule.backlogFor` | How long the backlog must exceed the threshold; keep it longer than `scannerReportTTL` | `48h` |
+| `kubeaid.prometheusRule.backlogExcludeNamespaces` | Regex of namespaces left out of the backlog, e.g. `dev-.*` | `""` |
 | `kubeaid.prometheusRule.additionalLabels` | Extra labels on the PrometheusRule (for Prometheus selector matching) | `{}` |
 | `kubeaid.prometheusRule.additionalAnnotations` | Extra annotations on the PrometheusRule | `{}` |
 
 ## Alerts
 
 Two, and no recording rules. Prometheus answers **is the scanner working** and **is the backlog
-growing**. Per-CVE detail is not alerting data.
+out of hand**. Per-CVE detail is not alerting data.
 
 ### `TrivyOperatorMetricsMissing` — critical
 
@@ -106,12 +107,23 @@ past `scannerReportTTL` without refresh.
 
 ### `ClusterVulnerabilityBacklog` — warning
 
-Fixable Critical/High findings above `backlogThreshold`, held for `backlogFor`.
+Fixable Critical findings above `backlogThreshold`, counted once per image, held for `backlogFor`.
 
-`warning`, not `critical`. With `ignoreUnfixed` and a CRITICAL,HIGH filter this count is never zero
-on a real cluster, so marking it critical would get the receiver muted within a week — and a muted
-receiver takes the alert above down with it. What the severity routes to is a decision for your
-alerting pipeline, not for this chart.
+- **Once per image:** Trivy writes a `VulnerabilityReport` per workload container. A plain sum counts
+  an image once for every workload that runs it, so one image shared by a dozen pods counts a dozen
+  times.
+- **Critical only:** High findings run at about ten times the Critical volume, so they would set any
+  threshold on their own.
+- **`backlogExcludeNamespaces`:** namespaces matching this regex are left out, for example developer
+  environments.
+- **`backlogFor` (48h):** it outlasts `scannerReportTTL` (24h). After a rollout the superseded
+  ReplicaSet keeps its report, and its older image's CVEs, until the TTL removes it. That inflates
+  the count for up to a day.
+
+`warning`, not `critical`. With `ignoreUnfixed` this count is rarely zero on a real cluster, so
+marking it critical would get the receiver muted within a week — and a muted receiver takes the
+alert above down with it. What the severity routes to is a decision for your alerting pipeline, not
+for this chart.
 
 Every finding counted has a published fix, so the backlog is actionable.
 
