@@ -7,6 +7,10 @@
 {{- $serviceAccountName := include (print $chart ".serviceAccountName") . -}}
 {{- $kind := "StatefulSet" -}}
 {{- $root := . -}}
+{{- $env := .Values.extraEnv | default (list) }}
+{{- if not .Values.persistence.enabled }}
+{{- $env = concat $env ( list ( dict "name" "K8S_STATEFULSET_PERSISTENCE_ENABLED" "value" "false" ) ) }}
+{{- end }}
 apiVersion: apps/v1
 kind: {{ $kind | quote }}
 metadata:
@@ -57,12 +61,12 @@ spec:
       {{- end }}
 
       # Allow up to 2 minutes for Postfix to flush / empty the queue  before shutting down the container
-      terminationGracePeriodSeconds: 120
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          securityContext: {{- toYaml .Values.container.postfix.securityContext | indent 12 }}
+          securityContext: {{- toYaml .Values.container.postfix.securityContext | nindent 12 }}
           ports:
             - name: smtp
               containerPort: 587
@@ -77,10 +81,11 @@ spec:
                 command:
                   - bash
                   - -c
-                  - touch /tmp/container_is_terminating && while ! [[ "`mailq`" == *empty* ]]; do echo "Flushing queue..." && postfix flush; sleep 1; done
+                  - sleep {{ .Values.preStopSleepSeconds }} && touch /tmp/container_is_terminating && while ! [[ "`mailq`" == *empty* ]]; do echo "Flushing queue..." && postfix flush; sleep 1; done; killall5 -15 supervisord
             {{- if .Values.lifecycle.postStart }}
             postStart: {{- toYaml .Values.lifecycle.postStart | nindent 14 }}
             {{- end }}
+          {{ with $env }}env: {{- toYaml . | nindent 12 }}{{ end }}
           envFrom:
             - configMapRef:
                 name: {{ $fullName | quote }}
@@ -92,20 +97,36 @@ spec:
             - secretRef:
                 name: {{ .Values.existingSecret | quote }}
             {{- end }}
-          {{ with .Values.extraEnv }}env: {{- toYaml . | nindent 12 }}{{ end }}
           volumeMounts:
             - mountPath: /var/spool/postfix
-              name: {{ $fullName }}
-            - mountPath: /var/spool/postfix/private
-              name: private
-            - mountPath: /var/spool/postfix/public
-              name: public
-            {{- if .Values.certs.create }}
+              name: {{ $fullName | quote }}
+              subPath: spool
+            {{- if .Values.metrics.enabled }}
+            - name: metrics-config
+              mountPath: /etc/rsyslog.d-metrics/maillog.conf
+              subPath: maillog.conf
+            - name: {{ $fullName | quote }}
+              mountPath: {{ regexFind "^/?.*/" .Values.metrics.maillog | quote }}
+              readOnly: false
+              subPath: logs
+            {{- if .Values.metrics.logrotate.enabled }}
+            - name: metrics-config
+              mountPath: /etc/logrotate.d/logrotate.conf
+              subPath: logrotate.conf
+            - name: metrics-config-scripts
+              mountPath: /etc/cron.hourly/logrotate.sh # Ubuntu
+              subPath: logrotate.sh
+            - name: metrics-config-scripts
+              mountPath: /etc/periodic/hourly/logrotate.sh # Alpine
+              subPath: logrotate.sh
+            {{- end }}
+            {{- end }}
+            {{- if or .Values.certs.create .Values.certs.existingSecret }}
             - name: certs
               mountPath: /var/run/certs
               readOnly: true
             - name: certs-init
-              mountPath: /docker-init.db/_enable_tls.sh
+              mountPath: /docker-init.d/_enable_tls.sh
               readOnly: true
               subPath: _enable_tls.sh
             {{- end }}
@@ -116,24 +137,72 @@ spec:
             {{- end }}
             {{- if .Values.extraVolumeMounts }}{{- toYaml .Values.extraVolumeMounts | nindent 12 }}{{ end }}
           resources: {{ toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.metrics.enabled }}
+        - name: exporter
+          imagePullPolicy: Always
+          image: "{{ .Values.metrics.image.repository }}:{{ .Values.metrics.image.tag | default "latest" }}"
+          ports:
+            - containerPort: {{ .Values.metrics.port }}
+              name: metrics
+              protocol: TCP
+          command:
+            - /bin/postfix_exporter
+          args:
+            - "--web.listen-address"
+            - {{ print "0.0.0.0:" .Values.metrics.port | quote }}
+            - "--web.telemetry-path"
+            - {{ .Values.metrics.path | quote }}
+            - "--postfix.logfile_path"
+            - {{ .Values.metrics.maillog | quote }}
+            - "--postfix.showq_path"
+            - {{ print "/var/spool/postfix/public/showq" | quote }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: {{ $fullName | quote }}
+              mountPath: /var/spool/postfix
+              subPath: spool
+            - name: {{ $fullName | quote }}
+              mountPath: {{ regexFind "^/?.*/" .Values.metrics.maillog | quote }}
+              subPath: logs
+          startupProbe:
+            httpGet:
+              path: {{ .Values.metrics.path | quote }} 
+              port: {{ .Values.metrics.port }}
+            initialDelaySeconds: 5
+            failureThreshold: 15
+            periodSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.metrics.path | quote }} 
+              port: {{ .Values.metrics.port }}
+            initialDelaySeconds: 5
+            failureThreshold: 30
+            periodSeconds: 10
+          resources: {{ toYaml .Values.metrics.resources | nindent 12 }}
+        {{- end }}
         {{- if .Values.extraContainers }}
         {{- tpl .Values.extraContainers $root | nindent 8 }}
         {{- end }}
+      {{- if .Values.dns.policy }}
+      dnsPolicy: {{ .Values.dns.policy | quote }}
+      {{- end }}
+      {{- if or .Values.dns.nameservers .Values.dns.searches .Values.dns.options }}
+      dnsConfig: {{- toYaml (omit .Values.dns "policy") | nindent 8 }}
+      {{- end }}
       volumes:
-        # Socket directories
-        - name: public
+        - name: tmp
           emptyDir: {}
-        - name: private
-          emptyDir: {}
-        {{- if .Values.certs.create }}
+        {{- if or .Values.certs.create .Values.certs.existingSecret }}
         - name: certs-init
           configMap:
             name: {{ $fullName }}
             defaultMode: 0755
         - name: certs
           secret:
-            secretName: {{ $fullName }}-certs
+            secretName: {{ include "tls.secretName" . }}
         {{- end }}
+        # Socket directories
         {{- if and .Values.persistence.enabled .Values.persistence.existingClaim }}
         - name: {{ $fullName }}
           persistentVolumeClaim:
@@ -149,10 +218,21 @@ spec:
           secret:
             secretName: {{ $fullName }}-mount
         {{- end }}
+        {{- if .Values.metrics.enabled }}
+        - name: metrics-config
+          configMap:
+            name: {{ print $fullName "-metrics" | quote }}
+        - name: metrics-config-scripts
+          configMap:
+            name: {{ print $fullName "-scripts" | quote }}
+            defaultMode: 0777
+        {{- end }}
         {{- if .Values.extraVolumes }}{{- toYaml .Values.extraVolumes | nindent 8 }}{{ end }}
   {{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
   volumeClaimTemplates:
-    - metadata:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
         name: {{ $fullName }}
         namespace: {{ .Release.Namespace }}
       spec:

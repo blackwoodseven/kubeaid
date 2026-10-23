@@ -1,0 +1,7 @@
+mail:
+  # When true, the chart stamps `date/deploy-date: <now>` into the pod template
+  # to force a restart on every `helm upgrade`. Argo CD renders the chart all
+  # the time, so the app would never be in sync and every sync would restart
+  # mail. Config changes still restart the pod through the chart's checksum
+  # annotation.
+  recreateOnRedeploy: false
