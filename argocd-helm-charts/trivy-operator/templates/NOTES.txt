@@ -13,14 +13,14 @@ Prometheus metrics (assuming ServiceMonitor is picked up):
 Default alert rules shipped with this chart:
   - TrivyOperatorMetricsMissing — no vulnerability metrics at all, so the
     cluster is UNSCANNED rather than clean. Pages.
-  - ClusterVulnerabilityBacklog — fixable Critical findings, counted once
-    per image, above kubeaid.prometheusRule.backlogThreshold for
-    backlogFor. Ticket, never a page.
+  - ClusterVulnerabilityBacklog — one alert per cluster while any image has
+    kubeaid.prometheusRule.imageCriticalThreshold or more fixable Critical
+    findings for backlogFor; it lists the images. Ticket, never a page.
 
 Per-CVE detail (CVSS, installed/fixed version, links) is collected from the
 VulnerabilityReport CRs by kubeaid-agent and shown in the Obmondo UI. The
 metrics above are for alerting only — they do not carry that detail.
 
 Disable alert rules: set kubeaid.prometheusRule.enabled=false
-Tune the backlog:    set kubeaid.prometheusRule.backlogThreshold / backlogExcludeNamespaces
+Tune the backlog:    set kubeaid.prometheusRule.imageCriticalThreshold / backlogExcludeNamespaces
 Tune scope:          set trivy-operator.excludeNamespaces / targetNamespaces

@@ -83,8 +83,8 @@ and size etcd for it first.
 |-----------|-------------|---------|
 | `kubeaid.prometheusRule.enabled` | Generate the PrometheusRule | `true` |
 | `kubeaid.prometheusRule.blindFor` | How long the scanner must report nothing before alerting | `1h` |
-| `kubeaid.prometheusRule.backlogThreshold` | Fixable Critical count, once per image, above which the backlog alert fires | `100` |
-| `kubeaid.prometheusRule.backlogFor` | How long the backlog must exceed the threshold; keep it longer than `scannerReportTTL` | `48h` |
+| `kubeaid.prometheusRule.imageCriticalThreshold` | Fixable Critical findings in one image at or above which it counts as behind | `10` |
+| `kubeaid.prometheusRule.backlogFor` | How long an image must stay behind before alerting; keep it longer than `scannerReportTTL` | `48h` |
 | `kubeaid.prometheusRule.backlogExcludeNamespaces` | Regex of namespaces left out of the backlog, e.g. `dev-.*` | `""` |
 | `kubeaid.prometheusRule.additionalLabels` | Extra labels on the PrometheusRule (for Prometheus selector matching) | `{}` |
 | `kubeaid.prometheusRule.additionalAnnotations` | Extra annotations on the PrometheusRule | `{}` |
@@ -107,25 +107,27 @@ past `scannerReportTTL` without refresh.
 
 ### `ClusterVulnerabilityBacklog` — warning
 
-Fixable Critical findings above `backlogThreshold`, counted once per image, held for `backlogFor`.
+Fires while any image has at least `imageCriticalThreshold` fixable Critical findings, held for
+`backlogFor`. It is one alert per cluster: its value is the number of such images, and its
+description names the worst ten, so on-call knows what to update.
 
-- **Once per image:** Trivy writes a `VulnerabilityReport` per workload container. A plain sum counts
-  an image once for every workload that runs it, so one image shared by a dozen pods counts a dozen
-  times.
-- **Critical only:** High findings run at about ten times the Critical volume, so they would set any
-  threshold on their own.
+- **Per image:** Trivy writes a `VulnerabilityReport` per workload container. Counting per image
+  means one image shared by a dozen pods counts once.
+- **Critical only:** High findings run at about ten times the Critical volume.
 - **`backlogExcludeNamespaces`:** namespaces matching this regex are left out, for example developer
   environments.
 - **`backlogFor` (48h):** it outlasts `scannerReportTTL` (24h). After a rollout the superseded
   ReplicaSet keeps its report, and its older image's CVEs, until the TTL removes it. That inflates
   the count for up to a day.
 
-`warning`, not `critical`. With `ignoreUnfixed` this count is rarely zero on a real cluster, so
-marking it critical would get the receiver muted within a week — and a muted receiver takes the
-alert above down with it. What the severity routes to is a decision for your alerting pipeline, not
-for this chart.
+`warning`, not `critical`: an image behind on security updates is a ticket, not a page. Marking it
+critical would get the receiver muted within a week — and a muted receiver takes the alert above
+down with it. What the severity routes to is a decision for your alerting pipeline, not for this
+chart.
 
-Every finding counted has a published fix, so the backlog is actionable.
+Every finding counted has a published fix. On-call updates each listed image to a newer chart or
+image tag; `kubectl get vulnerabilityreports -A -o wide --sort-by=.report.summary.criticalCount`
+lists every image, worst last.
 
 ## Per-CVE detail
 
