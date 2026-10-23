@@ -1,4 +1,10 @@
 zfs-localpv:
+  # The snapshot-controller chart provides the VolumeSnapshot CRDs and the controller. Bundling them
+  # here too puts two Argo CD apps on the same CRDs and runs two controllers.
+  crds:
+    csi:
+      volumeSnapshots:
+        enabled: false
   zfsNode:
     nodeSelector:
       disk: nvme
@@ -44,6 +50,8 @@ zfs-localpv:
     priorityClass:
       create: true
       name: zfs-csi-controller-critical
+    snapshotController:
+      enabled: false
 
 # poolname must be provided and should be same as the zfs pool created on node for storageclass to be correctly configured.
 storageClass:
