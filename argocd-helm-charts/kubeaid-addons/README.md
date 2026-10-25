@@ -5,6 +5,19 @@ database instances, message brokers, and any other shared infrastructure primiti
 simple: anything that is "common infrastructure" (CNPG, RabbitMQ, MariaDB, MongoDB, etc.) lives
 here rather than being scattered across individual application charts.
 
+## How it fits together
+
+![kubeaid-addons overview: one default-deny per namespace, one targeted network policy per app](./docs/images/kubeaid-addons-overview.png)
+
+`kubeaid-addons` renders two kinds of network policy, and they are deliberately kept apart:
+
+- **Network policies** - one targeted `CiliumNetworkPolicy` per app (red lines). Each app only gets the rules it needs.
+- **Default-deny** - rendered **exactly once per namespace, never per app** (blue lines), by the standalone
+  `kubeaid-addons` Argo CD app (see [Setup](#1-standalone-argocd-app-default-deny)).
+
+Keeping default-deny in one place avoids the pile-up of overlapping per-team policies in a shared namespace, where
+nobody can tell which rule dropped a packet.
+
 ## What does this chart do?
 
 | Feature | Kind | Guard |
@@ -272,6 +285,28 @@ global:
       labels:
         "k8s:app.kubernetes.io/name": blackbox-exporter
 ```
+
+## Network policy design notes
+
+Two Cilium behaviours explain why some templates look the way they do. Both come from real incidents.
+
+### `toFQDNs` needs a DNS proxy rule on the pod itself
+
+![How Cilium resolves toFQDNs](./docs/images/cilium-tofqdns-dns-proxy-flow.png)
+
+A `toFQDNs` rule only works if Cilium's DNS proxy has seen the pod's DNS lookup. The proxy records the
+FQDN-to-IP mapping, and the eBPF datapath then allows the connection when the IP matches. DNS proxy activation is
+**per endpoint**: the DNS rule in a default-deny policy does not activate it for other pods. So a policy that uses
+`toFQDNs` must also allow DNS egress to `kube-dns` with a `rules.dns` section in the same pod's policy.
+
+### `toPorts` must use the Pod's port, not the Service port
+
+![Service DNAT flow: the destination is rewritten before the policy check](./docs/images/cilium-toservices-dnat-flow.png)
+
+Cilium rewrites (DNATs) the Service ClusterIP and port to the backend Pod's IP and port **before** the policy check
+runs. The policy therefore never sees the Service address, and `toPorts` has to match the Pod's real `targetPort`,
+not the port the Service exposes. Where possible, prefer `toEndpoints` with stable labels over `toServices`, since
+Helm-templated Service names change on release rename or reinstall.
 
 ## Adding a new operator resource type
 
