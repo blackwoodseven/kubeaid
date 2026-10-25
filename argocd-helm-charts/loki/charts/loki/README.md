@@ -95,6 +95,26 @@ This chart emits `apiVersion: v1` and `kind: PersistentVolumeClaim` on each VCT.
 
 ## Upgrading
 
+### From 19.2.x to 19.3.0 ([#809](https://github.com/grafana-community/helm-charts/pull/809))
+
+Pod templates no longer carry `helm.sh/chart` or `app.kubernetes.io/version`. `helm.sh/chart` changed on every chart version bump, and because it sat inside the pod template it rolled every workload on upgrade even when neither the configuration nor the image had changed. They remain on the objects themselves, so `kubectl get deploy -L helm.sh/chart` is unaffected.
+
+If you group metrics by pod label (`kube_pod_labels` joined on `label_app_kubernetes_io_version`, for example), those series will stop being populated for Loki pods. Use the object-level label, or add the value you need through `commonLabels` or a component `podLabels` block.
+
+`commonLabels` still applies to the pod templates of the Loki components. The gateway, canary and memcached pod templates do not carry it, as before.
+
+### From 18.x to 19.0.0 ([#883](https://github.com/grafana-community/helm-charts/pull/883))
+
+The `.Values.loki.service.headlessService`, `.Values.defaults.service.headlessService` and `.Values.component.service.headlessService` blocks have been introduced to separate the management of labels and annotations for the headless and primary service.
+
+**Breaking** annotations that had previously been inherited by the headless services from `loki.serviceAnnotations`, `defaults.service.annotations`, `.Values.component.service.annotations` are no longer applied to the headless service, and will only apply to the primary service.
+
+If you wish to continue applying the same annotations to both the headless and primary service, these values need to be copied directly into  `.Values.loki.service.headlessService`, `.Values.defaults.service.headlessService` or `.Values.component.service.headlessService` respectively.
+
+**Breaking** labels that had previously been inherited by the headless services from `loki.serviceLabels`, `defaults.service.labels`, `.Values.component.service.labels` are no longer applied to the headless service, and will only apply to the primary service.
+
+If you wish to continue applying the same labels to both the headless and primary service, these values need to be copied directly into  `.Values.defaults.service.headlessService` or `.Values.component.service.headlessService` respectively.
+
 ### From 17.x to 18.0.0 ([#193](https://github.com/grafana-community/helm-charts/pull/193))
 
 The `.Values.monitoring` block has been refactored and the root `.Values.clusterLabelOverride` field removed and merged into `.Values.monitoring`. Users should not assume backwards compatibility with any prior monitoring configuration — review this section in full before upgrading.

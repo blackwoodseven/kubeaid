@@ -134,6 +134,12 @@ skip_crd = {{ .Values.garage.kubernetesSkipCrd }}
 s3_region = "{{ .Values.garage.s3.api.region }}"
 api_bind_addr = "[::]:3900"
 root_domain = "{{ .Values.garage.s3.api.rootDomain }}"
+{{- if .Values.garage.s3.api.publicEndpoint }}
+public_endpoint = "{{ .Values.garage.s3.api.publicEndpoint }}"
+{{- end }}
+{{- if ne (toString .Values.garage.s3.api.publicEndpointPathStyle) "" }}
+public_endpoint_path_style = {{ .Values.garage.s3.api.publicEndpointPathStyle }}
+{{- end }}
 
 [s3_web]
 bind_addr = "[::]:3902"
@@ -192,6 +198,26 @@ webuiAuthUserPass: {{ .Values.webui.auth.userPassHash | b64enc | quote }}
 {{- fail "webui.auth.userPassHash is required when auth is enabled. Generate it with: htpasswd -nbBC 10 'username' 'password'" }}
 {{- end }}
 {{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Checksum annotations for the pod templates.
+
+checksum/secret is only emitted when the secret content is derived entirely from
+values. When rpcSecret/adminToken are omitted, "garage.secret.content" falls back
+to "jupyterhub.randHex", which returns a different value on every render, so
+hashing it would produce a new annotation every time the chart is templated. Helm
+does not notice, because each upgrade renders once, but a GitOps controller
+re-renders on every reconcile, sees a changed pod template and rolls the pods -
+taking the S3 endpoint down - on a loop. Omitting the annotation keeps the pod
+template stable; nothing is lost, because in that case there is no
+operator-supplied secret value whose change we could detect.
+*/}}
+{{- define "garage.checksumAnnotations" -}}
+checksum/config: {{ include "garage.config.content" . | sha256sum }}
+{{- if ne (include "garage.secret.hasRandomSecrets" .) "true" }}
+checksum/secret: {{ include "garage.secret.content" . | sha256sum }}
 {{- end }}
 {{- end }}
 
