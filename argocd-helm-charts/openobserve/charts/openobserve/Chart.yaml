@@ -38,4 +38,4 @@ sources:
 - https://github.com/openobserve/openobserve
 - https://github.com/openobserve/openobserve-helm-chart
 type: application
-version: 1.0.2
+version: 1.0.3
