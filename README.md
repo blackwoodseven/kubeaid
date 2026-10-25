@@ -178,6 +178,8 @@ You can find the documentation, guides and tutorials in the [`/docs`](./docs/) d
 Contributions are welcome — bug reports, chart updates, new providers, and documentation alike. See
 [CONTRIBUTING.md](./CONTRIBUTING.md) for the workflow; note that commits need a DCO sign-off (`git commit -s`).
 
+Questions or ideas? Come chat with the maintainers and other contributors in the KubeAid channel on the [#kubeaid channel](https://cloud-native.slack.com/archives/C0BLNEHJY8K).
+
 ## Community and Governance
 
 - [Code of Conduct](CODE_OF_CONDUCT.md) — we follow the CNCF Community Code of Conduct.
