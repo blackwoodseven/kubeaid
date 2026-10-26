@@ -10,7 +10,7 @@ global:
     version: v2.11.3
     enableMachinePools: false
   caph:
-    version: v1.1.9
+    version: v1.1.10
     # Rendered into the InfrastructureProvider's spec.deployment. Prefers
     # worker nodes; CAPH's upstream control-plane toleration still allows
     # falling back to control-plane nodes when no worker is schedulable.
