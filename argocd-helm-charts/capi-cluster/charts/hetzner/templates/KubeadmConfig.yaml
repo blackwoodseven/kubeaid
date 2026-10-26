@@ -181,6 +181,7 @@ spec:
     - |
       {{- include "hetzner.efiBootOrderScript" . | nindent 6 }}
 
+    - until ip route get 8.8.8.8 >/dev/null 2>&1; do sleep 5; done
     - export NETWORK_INTERFACE=$(ip route get 8.8.8.8 | awk '{print $5; exit}')
 
     {{- if or (eq $.Values.mode "hybrid") (and (eq $.Values.mode "bare-metal") $.Values.bareMetal.vSwitch) }}
