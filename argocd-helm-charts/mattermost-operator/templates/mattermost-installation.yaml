@@ -7,7 +7,9 @@ spec:
   image: {{ .Values.mattermost.image | default "mattermost/mattermost-enterprise-edition" }}
   imagePullPolicy: {{ .Values.mattermost.imagePullPolicy | default "IfNotPresent" }}
   version: {{ .Values.mattermost.version | default "10.9.4" }}
-  size: {{ .Values.mattermost.size | default "5000users" }}
+  {{- with .Values.mattermost.size }}
+  size: {{ . }}
+  {{- end }}
   {{- with .Values.mattermost.replicas }}
   replicas: {{ . }}
   {{- end }}
@@ -24,16 +26,18 @@ spec:
         protocol: {{ .protocol | default "TCP" }}
       {{- end }}
   {{- end }}
+  {{- with .Values.mattermost.resources }}
   scheduling:
     resources:
-{{ toYaml .Values.mattermost.resources | indent 6 }}
-  useServiceLoadBalancer: {{ .Values.mattermost.useServiceLoadBalancer | default false }}
+      {{- toYaml . | nindent 6 }}
+  {{- end }}
+  {{- if .Values.mattermost.useServiceLoadBalancer }}
+  useServiceLoadBalancer: true
+  {{- end }}
+  {{- with .Values.mattermost.serviceAnnotations }}
   serviceAnnotations:
-    {{- if .Values.mattermost.serviceAnnotations }}
-{{ toYaml .Values.mattermost.serviceAnnotations | indent 4 }}
-    {{- else }}
-    {}
-    {{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   ingress:
     enabled: {{ .Values.mattermost.ingress.enabled | default true }}
     {{- if .Values.mattermost.ingress.host }}
