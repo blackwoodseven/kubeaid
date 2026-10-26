@@ -4,6 +4,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Obmondo/KubeAid/master/docs/images/kubeaid-logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Obmondo/KubeAid/master/docs/images/kubeaid-logo.svg">
   <img alt="KubeAid" src="https://raw.githubusercontent.com/Obmondo/KubeAid/master/docs/images/kubeaid-logo.svg" width="380">
 </picture>
 
