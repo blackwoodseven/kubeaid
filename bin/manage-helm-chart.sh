@@ -396,6 +396,26 @@ function prune_vendored_paths() {
   done < <(sed 's/#.*//' "$prune_file" | awk 'NF {print $1}')
 }
 
+# Function to move linuxaid-agents to the latest LinuxAid release, which the
+# chart pins in values.yaml rather than as a chart dependency
+function update_linuxaid_agents() {
+  local values="$1/values.yaml"
+  local current latest
+
+  current=$(yq eval '.controlRepo.ref' "$values")
+  latest=$(gh api repos/Obmondo/linuxaid/releases/latest --jq .tag_name 2>/dev/null || true)
+
+  if [ -z "$latest" ]; then
+    echo "Could not look up the latest LinuxAid release, keeping linuxaid-agents on $current"
+  elif [ "$latest" != "$current" ]; then
+    echo "Updating linuxaid-agents from LinuxAid $current to $latest"
+    sed -i "s/^  ref: ${current}\$/  ref: ${latest}/" "$values"
+    UPDATE_LINE="Updated linuxaid-agents LinuxAid from version $current to $latest"
+    PATCH_UPDATES+=("$UPDATE_LINE")
+    HAS_PATCH=true
+  fi
+}
+
 function update_helm_chart {
 
   HELM_CHART_PATH="$1"
@@ -406,6 +426,10 @@ function update_helm_chart {
   if ! test -f "$HELM_CHART_YAML"; then
     echo "No $HELM_CHART_YAML present, please fix it"
     return
+  fi
+
+  if [ "$(basename "$HELM_CHART_PATH")" = "linuxaid-agents" ]; then
+    update_linuxaid_agents "$HELM_CHART_PATH"
   fi
 
   HELM_CHART_DEP_PRESENT=$(yq eval '.dependencies | length' "$HELM_CHART_YAML")

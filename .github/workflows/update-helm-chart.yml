@@ -46,6 +46,8 @@ jobs:
         id: update
         env:
           FIXED_BRANCH: automation/helm-repo-update
+          # The script asks the GitHub API for the latest LinuxAid release
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Logs go to RUNNER_TEMP: an untracked file in the checkout would make the script commit.
           set -o pipefail
