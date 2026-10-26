@@ -16,8 +16,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ include "garage.config.content" . | sha256sum }}
-        checksum/secret: {{ include "garage.secret.content" . | sha256sum }}
+        {{- include "garage.checksumAnnotations" . | nindent 8 }}
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -57,6 +56,10 @@ spec:
                 secretKeyRef:
                   name: {{ include "garage.secretName" . }}
                   key: adminToken
+            {{- if .Values.garage.logFormat }}
+            - name: GARAGE_LOG_FORMAT
+              value: {{ .Values.garage.logFormat | quote }}
+            {{- end }}
             {{- with .Values.environment }}
               {{- toYaml . | nindent 12 }}
             {{- end }}

@@ -16,7 +16,7 @@ kubectl:
     registry: docker.io
     repository: alpine/kubectl
     pullPolicy: IfNotPresent
-    tag: 1.36.4
+    tag: 1.37.1
 
 imagePullSecrets: []
 nameOverride: ""
