@@ -59,6 +59,22 @@ networkResources: []
 #   service: special-svc
 #   groups: ["k8s-special"]
 
+# One entry per mesh destination this cluster's pods call (NetworkEgress,
+# netbird-operator >= 0.8.0; needs networkRouter.enabled). The operator creates
+# Service <name> in the entry's namespace, backed by this cluster's routing
+# peers, which forward over the mesh to the target. Fields: name, namespace
+# (default: release namespace), fqdn (exact name) or ip (one address), ports
+# (name + port). In the NetBird dashboard, allow the router's peer group
+# (networkrouter-…) to reach the target and, for an fqdn, share its DNS zone
+# with that group.
+networkEgresses: []
+# - name: remote-whoami
+#   namespace: default
+#   fqdn: whoami.whoami.prod.mesh.acme.com
+#   ports:
+#     - name: http
+#       port: 80
+
 # NetBird API-server proxy (ClusterProxy + impersonation RBAC; requires
 # netbird-operator >= 0.7.0). Runs a mesh peer that proxies kubectl to the
 # IN-CLUSTER apiserver (kubernetes.default.svc) and stamps the caller's
