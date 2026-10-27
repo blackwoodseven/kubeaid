@@ -1,0 +1,28 @@
+{{- /* One NetworkEgress per mesh destination. The operator creates a
+     Service with the entry's name in its namespace and backs it with
+     this cluster's routing peers, which forward to the target. */}}
+{{- range .Values.networkEgresses }}
+---
+apiVersion: netbird.io/v1alpha1
+kind: NetworkEgress
+metadata:
+  name: {{ .name }}
+  namespace: {{ .namespace | default $.Release.Namespace }}
+spec:
+  networkRouterRef:
+    name: {{ include "kubeaid.netbirdClusterName" $ }}
+    namespace: {{ $.Release.Namespace }}
+  target:
+    {{- if .ip }}
+    ip:
+      address: {{ .ip }}
+    {{- else }}
+    fqdn:
+      hostname: {{ required "networkEgresses[] needs fqdn or ip" .fqdn }}
+    {{- end }}
+  ports:
+    {{- range .ports }}
+    - name: {{ .name }}
+      port: {{ .port }}
+    {{- end }}
+{{- end }}
