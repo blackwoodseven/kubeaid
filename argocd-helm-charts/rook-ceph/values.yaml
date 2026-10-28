@@ -78,9 +78,11 @@ rook-ceph-cluster:
         requests:
           cpu: "1000m"
           memory: "512Mi"
+      # No cpu limit on purpose: the mon idles around 50m but bursts on map
+      # updates, and a 200m limit kept it throttled 20-30% of the time.
+      # Upstream rook sets no mon cpu limit either.
       mon:
         limits:
-          cpu: "200m"
           memory: "512Mi"
         requests:
           cpu: "200m"
