@@ -2,6 +2,33 @@
 
 All releases and the changes included in them (pulled from git commits added since last release) will be detailed in this file.
 
+## KubeAid Release Version 35.0.1
+
+### Minor Version Upgrades
+
+- 9f660fe41 chore(minor update): Updated netbird-operator from version 0.8.0 to 0.9.0
+
+### Features
+
+- 647892236 feat(netbird-operator): render NetworkEgress resources
+- 99ede3627 feat(helm): move linuxaid-agents to the latest LinuxAid release
+
+### Bug Fixes
+
+- 62c8c2ecc fix(trivy-operator): adding control-plane taint toleration to the node collector component
+- 7f63adc94 fix(hetzner): wait for the default route before picking the vSwitch NIC
+- cc84faa06 fix(mattermost-operator): render size, resources and service fields only when set
+
+### Configuration Changes
+
+- bd3ffd649 chore(kubescape): disabling node profile service by default
+- fac1d4823 chore(capi): bump CAPH to v1.1.10
+- d54b18b14 chore(linuxaid-agents): bump the control repo to LinuxAid v1.8.12
+
+### Other Changes
+
+- 73ab0a433 ci: drop the Gitea helm chart update workflow
+
 ## KubeAid Release Version 35.0.0
 
 ### Major Version Upgrades
