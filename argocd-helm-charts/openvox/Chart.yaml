@@ -14,6 +14,7 @@ dependencies:
 # https://github.com/OpenVoxProject/openvox-helm-chart/issues/12
 # https://github.com/puppetlabs/puppetserver-helm-chart/pull/221
 # https://github.com/puppetlabs/puppetserver-helm-chart/pull/239
+# https://github.com/OpenVoxProject/openvox-helm-chart/pull/56
 #  - name: puppetserver
 #    version: 10.0.0
 #    repository: https://openvoxproject.github.io/openvox-helm-chart/
