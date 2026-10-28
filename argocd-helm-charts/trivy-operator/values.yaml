@@ -38,6 +38,14 @@ trivy-operator:
     # Use the operator-managed Trivy server pod (instead of one Trivy job per scan).
     storageClassEnabled: false
 
+  # An open-source collector that gathers Node information (file system and process data) from
+  # Kubernetes nodes and outputs it in a JSON format.
+  nodeCollector:
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+
   # Resource limits for the operator + scanner pods.
   resources:
     requests:
