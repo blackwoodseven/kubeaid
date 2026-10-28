@@ -130,6 +130,9 @@ kubescape-operator:
     manageWorkloads: enable
     syncSBOM: enable
 
+    # Required if you have Kubescape server hosted somewhere outside the cluster.
+    nodeProfileService: disable
+
   # Use the default set of rules provided by KubeScape, for runtime threat detection.
   alertCRD:
     installDefault: true
