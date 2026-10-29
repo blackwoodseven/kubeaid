@@ -16,7 +16,8 @@
           // KubeAid-managed apps are the applications in the ArgoCD project kubeaid.
           {
             alert: 'ArgoCdAppOutOfSync',
-            expr: 'count by (project, sync_status) (sum by (name, job, dest_server, project, sync_status) (argocd_app_info{project="kubeaid",sync_status!="Synced"}) >= 1)',
+            // Skip root: it also holds apps outside KubeAid, so it is always OutOfSync.
+            expr: 'count by (project, sync_status) (sum by (name, job, dest_server, project, sync_status) (argocd_app_info{project="kubeaid",name!="root",sync_status!="Synced"}) >= 1)',
             labels: {
               severity: 'warning',
             },
@@ -25,7 +26,7 @@
               summary: 'ArgoCD Application is Out Of Sync.',
               description: |||
                 The following applications under project '{{ .Labels.project }}' are out of sync (status: {{ .Labels.sync_status }}):
-                {{- range query (printf "sum by (name, project) (argocd_app_info{project='%s', sync_status='%s'})" .Labels.project .Labels.sync_status) }}
+                {{- range query (printf "sum by (name, project) (argocd_app_info{project='%s', name!='root', sync_status='%s'})" .Labels.project .Labels.sync_status) }}
                 - {{ .Labels.name }}
                 {{- end }}
               |||,
