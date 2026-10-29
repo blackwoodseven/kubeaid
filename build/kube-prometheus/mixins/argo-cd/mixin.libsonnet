@@ -34,7 +34,8 @@
           },
           {
             alert: 'ArgoCdAppUnhealthy',
-            expr: 'count by (health_status,project) (sum by (name, job, dest_server, project, health_status) (argocd_app_info{project="kubeaid",health_status!~"Healthy|Progressing"}) >= 1)',
+            // Skip secrets: one SealedSecret that fails to sync marks the whole app Degraded.
+            expr: 'count by (health_status,project) (sum by (name, job, dest_server, project, health_status) (argocd_app_info{project="kubeaid",name!="secrets",health_status!~"Healthy|Progressing"}) >= 1)',
             labels: {
               severity: 'warning',
             },
@@ -43,7 +44,7 @@
               summary: 'ArgoCD Application is not healthy.',
               description: |||
                 The following applications under project '{{ .Labels.project }}' are not healthy (status: {{ .Labels.health_status }}):
-                {{- range query (printf "sum by (name, project) (argocd_app_info{project='%s', health_status='%s'})" .Labels.project .Labels.health_status) }}
+                {{- range query (printf "sum by (name, project) (argocd_app_info{project='%s', name!='secrets', health_status='%s'})" .Labels.project .Labels.health_status) }}
                 - {{ .Labels.name }}
                 {{- end }}
               |||,
