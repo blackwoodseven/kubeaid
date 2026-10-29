@@ -44,13 +44,37 @@ spec:
 
       apt-get update && apt-get install -y cloud-init apparmor apparmor-utils
 
-      {{/* Hetzner's OS images ship a prebuilt host-only dracut initramfs from
-           their image-build machine, whose devexists hooks are pinned to THAT
-           machine's ESP UUID. On UEFI hosts the initramfs then waits ~3min for
-           a partition that doesn't exist and drops to the dracut emergency
-           shell — the server looks dead from outside. apt's update-initramfs
-           run does not replace those hooks; only a forced dracut rebuild
-           against this host does. */}}
+      {{/*
+        Dracut is a set of tools that provide enhanced functionality for automating the Linux boot
+        process. The tool named dracut is used to create a Linux boot image (initramfs) by copying
+        tools and files from an installed system and combining it with the Dracut framework.
+
+        You can read more about initramfs here : https://en.wikipedia.org/wiki/Initial_ramdisk.
+
+        The initramfs has essentially one purpose: locating and mounting the real root file system
+        so that the boot process can transition to it. This functionality is dependent on device
+        availability. Therefore, instead of having hard-coded scripts to determine device
+        availability and suitability, Dracut's initramfs depends on the Linux device manager (udev)
+        to create symbolic links to device nodes. When the root file system's device node appears,
+        Dracut mounts it as the new root file system.
+
+        The issue :
+
+          The OS is built on some machine owned by Hetzner. And the initramfs packaged with the OS
+          refers to UUIDs of partitions in that machine.
+
+          Now, in our machine, when we're in rescue mode, we create the necessary partitions,
+          followerd by installing the OS. And then we try to boot into that OS. As mentioned above,
+          the initramfs is loaded at first, which then is supposed to load the permanent root file
+          system.
+
+          But, the initramfs remains stuck, since it can't find any partition with the given UUIDs.
+
+        The fix :
+
+          after installing the OS, we use dracut to regenerate the initramfs, so it refers to UUIDs
+          of partitions in our machine.
+      */}}
       dracut --force --regenerate-all
 
       cloud-init clean --logs
