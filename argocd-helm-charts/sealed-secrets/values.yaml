@@ -15,6 +15,9 @@ sealed-secrets:
     seccompProfile:
       type: RuntimeDefault
   fullnameOverride: sealed-secrets-controller
+  metrics:
+    serviceMonitor:
+      enabled: true
 networkpolicies: false
 backup:
   enabled: false
