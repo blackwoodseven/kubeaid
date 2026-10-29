@@ -137,8 +137,14 @@ kubescape-operator:
   alertCRD:
     installDefault: true
 
+  # Hourly service authentication scan: the operator probes every Service port and writes
+  # ServiceScanResult CRs, which only the configuration scan and the cloud synchronizer read.
+  # Its postgres probe (lib/pq) allocates a buffer sized from the peer's first bytes, so ceph mon,
+  # nats and rabbitmq ports make it allocate 1-2 GiB each and the operator gets OOMKilled every
+  # cycle. Upstream ships it disabled. Enable per cluster only together with configurationScan.
+  # REFER : https://github.com/kubescape/operator/issues/382.
   serviceScanConfig:
-    enabled: true
+    enabled: false
 
   nodeAgent:
     config:
