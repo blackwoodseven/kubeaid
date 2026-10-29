@@ -10,7 +10,7 @@ metadata:
     {{- include "kubescape-operator.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "app" .Values.kubescape.name "tier" .Values.global.namespaceTier) | nindent 4 }}
 rules:
 - apiGroups: [""]
-  resources: ["pods", "pods/proxy", "namespaces", "nodes", "configmaps", "services", "serviceaccounts", "endpoints", "persistentvolumeclaims", "persistentvolumes", "limitranges", "replicationcontrollers", "podtemplates", "resourcequotas", "events"]
+  resources: ["pods", "namespaces", "nodes", "configmaps", "services", "serviceaccounts", "endpoints", "persistentvolumeclaims", "persistentvolumes", "limitranges", "replicationcontrollers", "podtemplates", "resourcequotas", "events"]
   verbs: ["get", "watch", "list"]
 {{- if .Values.global.enableClusterWideSecretAccess }}
 - apiGroups: [""]
@@ -77,18 +77,17 @@ rules:
 - apiGroups: ["gateway.networking.k8s.io"]
   resources: ["httproutes","gateways","gatewayclasses","tcproutes","tlsroutes","udproutes"]
   verbs: ["get", "watch", "list"]
-- apiGroups: [""]
-  resources: ["namespaces"]
-  verbs: ["update"]
 - apiGroups: ["spdx.softwarecomposition.kubescape.io"]
   resources: ["workloadconfigurationscans", "workloadconfigurationscansummaries"]
-  verbs: ["create", "get", "update", "patch"]
+  # list and delete: after a cluster-wide scan, the scanner deletes the records
+  # of objects that scan no longer reports (kubescape/storage#432).
+  verbs: ["create", "get", "update", "patch", "list", "delete"]
 - apiGroups: ["kubescape.io"]
   resources: ["servicesscanresults"]
   verbs: ["get", "watch", "list"]
 {{- if eq .Values.capabilities.agentRuntimePosture "enable" }}
-# Agent Sandbox and Agent Substrate resources are scanned for posture controls.
-# Keep these permissions opt-in until the agent runtime posture framework ships.
+# Sandbox, SandboxTemplate, and WorkerPool are scanned for Agent Runtime posture controls.
+# Keep these permissions opt-in for clusters that use Agent Runtime resources.
 - apiGroups: ["agents.x-k8s.io"]
   resources: ["sandboxes"]
   verbs: ["get", "list", "watch"]
@@ -96,7 +95,7 @@ rules:
   resources: ["sandboxtemplates"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["ate.dev"]
-  resources: ["actortemplates", "workerpools"]
+  resources: ["workerpools"]
   verbs: ["get", "list", "watch"]
 {{- end }}
 {{- if eq .Values.capabilities.riskAcceptance "enable" }}

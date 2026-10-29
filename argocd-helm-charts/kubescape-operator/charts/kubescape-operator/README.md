@@ -1,6 +1,6 @@
 # Kubescape Operator
 
-![Version: 1.40.4](https://img.shields.io/badge/Version-1.40.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.40.4](https://img.shields.io/badge/AppVersion-v1.40.4-informational?style=flat-square)
+![Version: 1.41.0](https://img.shields.io/badge/Version-1.41.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.40.5](https://img.shields.io/badge/AppVersion-1.40.5-informational?style=flat-square)
 
 [Kubescape operator documentation](https://kubescape.io/docs/install-operator/)
 
@@ -29,6 +29,24 @@ kubescape     kubevuln-6779c9d74b-wfgqf                           1/1     Runnin
 kubescape     operator-5d745b5b84-ts7zq                           1/1     Running   0               60m
 kubescape     storage-59567854fd-hg8n8                            1/1     Running   0               60m
 ```
+
+## Offline daily reports
+
+Setting `capabilities.kubescapeOffline: enable` forces
+`KS_SKIP_UPDATE_CHECK="true"` on the Operator container, overriding entries with
+that name in `operator.env`. This suppresses the Operator's daily report to
+`version-check.ks-services.co`. Operator v0.2.181 includes
+[kubescape/operator#421](https://github.com/kubescape/operator/pull/421);
+the chart defaults to the newer compatible v0.2.188 release. If overriding the
+image, use v0.2.181 or a later release containing that fix. Older images do not
+honor this setting for daily reports.
+
+Online installations retain their existing reporting behavior. To opt out
+explicitly online, set `KS_SKIP_UPDATE_CHECK=true` through `operator.env`.
+`kubescape.skipUpdateCheck` remains scoped to the Kubescape scanner.
+
+See the [published-image validation](../../docs/features/operator-daily-reports-validation.md)
+for a reproducible check of offline suppression and online reporting.
 
 ## Upgrade
 
@@ -127,8 +145,9 @@ However, we recommend that you give Kubescape no less than 500m CPU no matter th
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| excludeControls | list | `[]` | Control IDs or legacy CIS section numbers omitted from every operator-triggered posture scan. Request exclusions are added to this list. |
 | defaultFrameworks | list | `[]` | Install-time posture frameworks when a scan omits `targetNames`. Empty = operator legacy fallbacks. Clear with `--set defaultFrameworks=null`. |
-| capabilities.agentRuntimePosture | string | `"disable"` | Grant the Kubescape scanner read-only access to Agent Sandbox and Agent Substrate CRDs currently covered by the scan contract. |
+| capabilities.agentRuntimePosture | string | `"disable"` | Grant the Kubescape scanner read-only access to the supported Agent Runtime resources: Sandbox, SandboxTemplate, and WorkerPool. |
 | global.networkPolicy.enabled | bool | `false` | Create NetworkPolicies for all components |
 | global.networkPolicy.createEgressRules | bool | `false` | Create common Egress rules for NetworkPolicies |
 | global.kubescapePsp.enabled | bool | `false` | Enable all privileges in Pod Security Policies for Kubescape namespace |
@@ -149,19 +168,16 @@ However, we recommend that you give Kubescape no less than 500m CPU no matter th
 | kubescape.podLabels| object | `{}` | Optional labels to add to the pods |
 | kubescape.podAnnotations| object | `{}` | optional map of annotations to be applied to the Pods |
 | kubescape.downloadArtifacts | bool | `true` | download policies every scan, we recommend it should remain true, you should change to 'false' when running in an air-gapped environment or when scanning with high frequency (when running with Prometheus). When 'false', the policy library baked into the image is used, so the controls are those of the image tag and do not change until the image does |
-| kubescape.enableHostScan | bool | `true` | enable [host scanner feature](https://kubescape.io/docs/components/host-sensor/) |
 | kubescape.image.repository | string | `"quay.io/kubescape/kubescape"` | [source code](https://github.com/kubescape/kubescape/tree/master/httphandler) (public repo) |
 | kubescape.nodeSelector | object | `{}` | [Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) |
 | kubescape.serviceMonitor.enabled | bool | `false` | enable/disable service monitor for prometheus (operator) integration |
 | kubescape.skipUpdateCheck | bool | `false` | skip check for a newer version |
-| kubescape.labels | `[]` | adds labels to the kubescape microservice |
 | kubescape.volumes | object | `[]` | Additional volumes for Kubescape |
 | kubescape.volumeMounts | object | `[]` | Additional volumeMounts for Kubescape |
-| kubescapeScheduler.enabled | bool | `true` | enable/disable a kubescape scheduled scan using a CronJob |
-| kubescapeScheuler.podLabels| object | `{}` | Optional labels to add to the pods |
-| kubescapeScheuler.podAnnotations| object | `{}` | optional map of annotations to be applied to the Pods |
-| kubescapeScheduler.image.repository | string | `"quay.io/kubescape/http_request"` | [source code](https://github.com/kubescape/http-request) (public repo) |
-| kubescapeScheduler.scanSchedule | string | `"0 0 * * *"` | scan schedule frequency |
+| kubescapeScheduler.podLabels| object | `{}` | Optional labels to add to the pods |
+| kubescapeScheduler.podAnnotations| object | `{}` | optional map of annotations to be applied to the Pods |
+| kubescapeScheduler.image.repository | string | `"quay.io/kubescape/kubectl"` | image that creates the `OperatorCommand` for the scheduled scan; it needs `kubectl`, `bash` and `jq` |
+| kubescapeScheduler.scanSchedule | string | `"0 0 * * *"` | scan schedule frequency. The scheduled scan CronJob is created when `capabilities.configurationScan` is `enable` |
 | kubescapeScheduler.volumes | object | `[]` | Additional volumes for scan scheduler |
 | kubescapeScheduler.volumeMounts | object | `[]` | Additional volumeMounts for scan scheduler |
 | kubevuln.affinity | object | `{}` | Assign custom [affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) rules to the deployment |
@@ -171,15 +187,16 @@ However, we recommend that you give Kubescape no less than 500m CPU no matter th
 | kubevuln.nodeSelector | object | `{}` | [Node selector](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) |
 | kubevuln.volumes | object | `[]` | Additional volumes for the image vulnerability scanning |
 | kubevuln.volumeMounts | object | `[]` | Additional volumeMounts for the image vulnerability scanning |
+| kubevuln.tmpDirPersistence.ephemeral | bool | `false` | With `tmpDirPersistence.enabled`, create the `/tmp` claim per pod as a [generic ephemeral volume](https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/#generic-ephemeral-volumes) instead of a standalone PVC: deleted with the pod, not counted against the ephemeral-storage limits |
+| kubevuln.grypeDbEphemeral.enabled | bool | `false` | Put the Grype DB on a generic ephemeral volume (`storageClassName`, `accessModes`, `size` (default `10Gi`), `annotations`) instead of an emptyDir; takes precedence over `config.grypeDbPersistence` |
 | kubevuln.config.grypeDbListingURL | string | `""` | Parameter to override the default Grype vulnerability database URL (listings.json format) |
 | kubevuln.config.proxyRegistryMap | object | `{}` | Map of source registry address to mirror registry address. When set, kubevuln rewrites image pull references accordingly (useful for air-gapped or offline registry mirrors) |
 | kubevuln.config.cveMatchingMode | string | `""` | CVE matching mode: "off" (Grype defaults), "on" (CPE matching everywhere), or "adaptive" (CPE matching everywhere except trusted-vendor images, which rely on the vendor's authoritative feed). Empty derives the mode from useDefaultMatchers for backward compatibility (true -> "off", false -> "adaptive"). |
 | kubevuln.config.trustedVendors | list | `[]` | Distro identifiers treated as trusted vendors in adaptive mode. Empty uses kubevuln's built-in default set (echo, chainguard, wolfi, minimos). |
-| kubevulnScheduler.enabled | bool | `true` | enable/disable an image vulnerability scheduled scan using a CronJob |
 | kubevulnScheduler.podLabels| object | `{}` | Optional labels to add to the pods |
 | kubevulnScheduler.podAnnotations| object | `{}` | optional map of annotations to be applied to the Pods |
-| kubevulnScheduler.image.repository | string | `"quay.io/kubescape/http_request"` | [source code](https://github.com/kubescape/http-request) (public repo) |
-| kubevulnScheduler.scanSchedule | string | `"0 0 * * *"` | scan schedule frequency |
+| kubevulnScheduler.image.repository | string | `"quay.io/kubescape/kubectl"` | image that creates the `OperatorCommand` for the scheduled scan; it needs `kubectl`, `bash` and `jq` |
+| kubevulnScheduler.scanSchedule | string | `"0 0 * * *"` | scan schedule frequency. The scheduled scan CronJob is created when `capabilities.vulnerabilityScan` is `enable` |
 | kubevulnScheduler.volumes | object | `[]` | Additional volumes for scan scheduler |
 | kubevulnScheduler.volumeMounts | object | `[]` | Additional volumeMounts for scan scheduler |
 | operator.affinity | object | `{}` | Assign custom [affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/) rules to the deployment |
@@ -191,6 +208,7 @@ However, we recommend that you give Kubescape no less than 500m CPU no matter th
 | operator.volumeMounts | object | `[]` | Additional volumeMounts for the web socket |
 | storage.hostNetwork | bool | `false` | Bind the storage APIServer to the host network. Required when using a custom CNI where the control plane cannot reach pod IPs |
 | nodeAgent.autoscaler.bottlerocketAutoDetect | bool | `true` | When the autoscaler is enabled, auto-detect AWS Bottlerocket nodes and set `seLinuxType: super_t` on the node-agent DaemonSet rendered for that node group, so you don't need to `--set nodeAgent.seLinuxType=super_t` manually |
+| nodeAgent.config.hostSensor.enabled | bool | `true` | Defines `KS_ENABLE_HOST_SCANNER` in kubescape to enable [host scanner feature](https://kubescape.io/docs/components/host-sensor/)
 | nodeAgent.config.tracers.capSys | string | `enable` | Allow capSys tracing when required by enabled node-agent features. Set to disable to force-disable the capSys tracer |
 | nodeAgent.config.tracers.dns | string | `enable` | Allow dns tracing when required by enabled node-agent features. Set to disable to force-disable the dns tracer |
 | nodeAgent.config.tracers.exec | string | `enable` | Allow exec tracing when required by enabled node-agent features. Set to disable to force-disable the exec tracer |
@@ -221,6 +239,8 @@ However, we recommend that you give Kubescape no less than 500m CPU no matter th
 | cloudProviderMetadata.aksClientID | string or through `cloudProviderMetadata.secretRef.clientIdKey` if `cloudProviderMetadata.secretRef.name` is set | `nil` | AKS client ID |
 | cloudProviderMetadata.aksClientSecret | string or through `cloudProviderMetadata.secretRef.clientSecretKey` if `cloudProviderMetadata.secretRef.name` is set | `nil` | AKS client secret |
 | cloudProviderMetadata.aksTenantID | string or through `cloudProviderMetadata.secretRef.tenantIdKey` if `cloudProviderMetadata.secretRef.name` is set | `nil` | AKS tenant ID |
+| cloudProviderMetadata.aksWorkloadIdentityClientID | string | `nil` | Azure Workload Identity client ID federated with the kubevuln ServiceAccount, used to pull images from private Azure Container Registries without static credentials. Annotates the kubevuln ServiceAccount with `azure.workload.identity/client-id` and labels the kubevuln pod with `azure.workload.identity/use: "true"`. Requires the Azure Workload Identity webhook and `kubevuln.image.tag` v0.3.545 or later (the first kubevuln release with kubevuln#1163). Ignored when `cloudProviderMetadata.awsIamRoleArn` or `cloudProviderMetadata.gkeServiceAccount` is set, since those take precedence on the kubevuln ServiceAccount. Configured inline; not affected by `cloudProviderMetadata.secretRef` |
+| cloudProviderMetadata.aksWorkloadIdentityTenantID | string | `nil` | Azure Workload Identity tenant ID (optional). Annotates the kubevuln ServiceAccount with `azure.workload.identity/tenant-id`. Configured inline; not affected by `cloudProviderMetadata.secretRef` |
 | volumes | object | `[]` | Additional volumes for all containers |
 | volumeMounts | object | `[]` | Additional volumeMounts for all containers |
 | imageScanning.privateRegistries.credentials | object | `[]` | Credentials for scanning images pulled from private container registries. This configuration is not needed when using `imagePullSecrets`|
@@ -642,3 +662,58 @@ The scan results are then sent by each relevant component to the CloudEndpoint.
   ```bash
   --set global.overrideRuntimePath="/host/var/lib/rancher/k3s/data/current/bin/runc"
   ```
+
+### Excluding controls from automatic scans
+
+```yaml
+excludeControls:
+  - C-0069
+  - C-0070
+```
+
+This installation setting applies to explicit, scheduled, and continuous
+operator-triggered scans. Individual `scanV1` requests can add exclusions; an
+empty request list does not clear the installation list. Controls are omitted
+before evaluation and compliance scoring, using the CLI's `--exclude-controls`
+behavior. Exclusions narrow the assessment scope; they do not make checks pass.
+The default empty list changes nothing. Non-list, non-string, and blank values
+are rejected. The chart defaults select operator `v0.2.186` and Kubescape scanner
+`v4.0.17`, which include support for this setting. Keep a compatible pair if
+overriding the image versions.
+
+### Azure Workload Identity for ambient ACR authentication
+
+To configure Kubevuln to scan private Azure Container Registries (ACR) using Azure Workload Identity without static credentials (`imagePullSecrets`):
+
+1. **Enable Azure Workload Identity on AKS**: Ensure the Azure Workload Identity mutating webhook and OIDC issuer are enabled on your AKS cluster.
+2. **Federate the ServiceAccount**: Establish federated identity credentials linking your Azure Managed Identity (or App Registration) with the `kubevuln` ServiceAccount in the release namespace (e.g. `system:serviceaccount:kubescape:kubevuln`). Ensure the identity has the `AcrPull` role on the target ACR.
+3. **Compatible Kubevuln image prerequisite**: Ambient ACR authentication requires the ACR provider introduced in [kubescape/kubevuln#1163](https://github.com/kubescape/kubevuln/pull/1163). The chart defaults to `kubevuln.image.tag: v0.3.571`, which includes ambient ACR authentication.
+
+#### Example `values.yaml`
+
+```yaml
+clusterName: my-aks-cluster
+
+cloudProviderMetadata:
+  aksWorkloadIdentityClientID: "11111111-2222-3333-4444-555555555555"
+  aksWorkloadIdentityTenantID: "66666666-7777-8888-9999-000000000000" # optional
+
+kubevuln:
+  image:
+    tag: v0.3.566 # any release from v0.3.545 on has the ACR provider
+```
+
+Or via Helm CLI:
+
+```bash
+helm upgrade --install kubescape kubescape/kubescape-operator \
+  -n kubescape --create-namespace \
+  --set clusterName=my-aks-cluster \
+  --set cloudProviderMetadata.aksWorkloadIdentityClientID="11111111-2222-3333-4444-555555555555" \
+  --set cloudProviderMetadata.aksWorkloadIdentityTenantID="66666666-7777-8888-9999-000000000000" \
+  --set kubevuln.image.tag=v0.3.566
+```
+
+> **Note:**
+> - `aksWorkloadIdentityClientID` and `aksWorkloadIdentityTenantID` are configured inline and are not read from `cloudProviderMetadata.secretRef`.
+> - If updating an existing installation to enable Workload Identity, restart the Kubevuln pod (`kubectl rollout restart deployment/kubevuln -n kubescape`) to allow the Azure Workload Identity webhook to inject the federated token and environment variables.
