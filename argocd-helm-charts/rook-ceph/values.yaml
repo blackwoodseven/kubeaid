@@ -308,6 +308,11 @@ ceph-csi-drivers:
     # from rook-ceph-cluster point at <operatorNamespace>.<driver>.csi.ceph.com.
     rbd:
       name: rook-ceph.rbd.csi.ceph.com
+      # The subchart defaults RBD to "none", which leaves the csi-snapshotter
+      # sidecar out of the RBD controller. VolumeSnapshots of RBD PVCs then never
+      # get a snapshot handle, and Velero's CSI backups wait on them until they
+      # time out. cephfs already defaults to volumeSnapshot.
+      snapshotPolicy: volumeSnapshot
     cephfs:
       name: rook-ceph.cephfs.csi.ceph.com
     nfs:
