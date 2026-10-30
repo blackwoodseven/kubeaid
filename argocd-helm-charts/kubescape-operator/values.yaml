@@ -139,3 +139,14 @@ kubescape-operator:
 
   serviceScanConfig:
     enabled: true
+
+  nodeAgent:
+    config:
+      extra:
+        # Host OS CVE scanning. node-agent runs Syft over the node's root filesystem (/host)
+        # and stores the result as a host SBOMSyft, re-scanned every 24h
+        # (hostSBOMRescanInterval); kubevuln then matches it against its vulnerability DB.
+        # Needs nodeSbomGeneration enabled, node-agent >= v0.3.241 and kubevuln >= v0.3.545.
+        # The upstream chart does not expose this flag by name, hence the extra passthrough.
+        # REFER : https://github.com/kubescape/node-agent/blob/main/docs/features/host-monitoring-completion.md
+        hostMonitoringEnabled: true

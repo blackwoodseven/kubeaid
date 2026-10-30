@@ -23,15 +23,11 @@ spec:
   template:
     metadata:
       {{- $podAnnotations := include "kubescape-operator.annotations" (dict "Values" .Values) }}
-      {{- $hasCertgenChecksum := and .Values.storage.mtls.enabled (eq (include "kubescape.certificates.strategy" .) "initContainer") }}
       annotations:
         {{- with $podAnnotations }}{{- . | nindent 8 }}{{- end }}
         {{- with .Values.storage.podAnnotations }}{{- toYaml . | nindent 8 }}{{- end }}
         checksum/storage-config: {{ $checksums.storageConfig }}
         checksum/cloud-config: {{ $checksums.cloudConfig }}
-        {{- if $hasCertgenChecksum }}
-        checksum/storage-certgen-scripts: {{ $checksums.storageCertgenScripts }}
-        {{- end }}
       labels:
         {{- include "kubescape-operator.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "app" .Values.storage.name "tier" .Values.global.namespaceTier) | nindent 8 }}
         {{- with .Values.storage.podLabels }}{{- toYaml . | nindent 8 }}{{- end }}
@@ -59,22 +55,23 @@ spec:
         runAsGroup: 65532
         fsGroup: 65532
       {{- if and .Values.storage.mtls.enabled (eq (include "kubescape.certificates.strategy" .) "initContainer") }}
-      {{- $certgenImage := printf "%s:%s" .Values.certificates.certgen.image.repository (.Values.certificates.certgen.image.tag | toString) }}
+      {{- $certgenImage := printf "%s:%s" .Values.kubescapeOpsTool.image.repository (.Values.kubescapeOpsTool.image.tag | toString) }}
       {{- $certgenSecret := include "storage.certgen.secretName" . }}
       {{- $certgenHosts := printf "%s,%s" .Values.storage.name (include "storage.certgen.svcDomainName" .) }}
       initContainers:
         - name: certgen-create
           image: {{ $certgenImage }}
-          imagePullPolicy: {{ .Values.certificates.certgen.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.kubescapeOpsTool.image.pullPolicy }}
           securityContext:
             runAsUser: 65532
             runAsGroup: 65532
             runAsNonRoot: true
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
-          command: ["/scripts/certgen-create.sh"]
+          command: ["/usr/bin/kubescape-ops-tool", "certgen-create"]
           args:
             - --namespace
             - {{ .Values.ksNamespace }}
@@ -91,23 +88,23 @@ spec:
             - --key-name
             - tls.key
           volumeMounts:
-            - name: storage-certgen-scripts
-              mountPath: /scripts
-              readOnly: true
             - name: ca-certificates
               mountPath: /etc/storage-ca-certificates
+            - name: tmp-dir
+              mountPath: /tmp
         - name: certgen-patch
           image: {{ $certgenImage }}
-          imagePullPolicy: {{ .Values.certificates.certgen.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.kubescapeOpsTool.image.pullPolicy }}
           securityContext:
             runAsUser: 65532
             runAsGroup: 65532
             runAsNonRoot: true
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
-          command: ["/scripts/certgen-patch.sh"]
+          command: ["/usr/bin/kubescape-ops-tool", "certgen-patch"]
           args:
             - --namespace
             - {{ .Values.ksNamespace }}
@@ -123,10 +120,6 @@ spec:
             - {{ .Values.storage.mtls.certgen.retries | quote }}
             - --retry-interval
             - {{ .Values.storage.mtls.certgen.retryIntervalSeconds | quote }}
-          volumeMounts:
-            - name: storage-certgen-scripts
-              mountPath: /scripts
-              readOnly: true
       {{- end }}
       containers:
       - name: apiserver
@@ -134,6 +127,7 @@ spec:
         imagePullPolicy: {{ .Values.storage.image.pullPolicy }}
         securityContext:
           allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
           runAsNonRoot: true
           capabilities:
             drop:
@@ -149,11 +143,10 @@ spec:
             port: {{ .Values.storage.serverPort }}
             scheme: HTTPS
         env:
+          {{- if .Values.storage.resources.limits.memory }}
           - name: GOMEMLIMIT
-            valueFrom:
-              resourceFieldRef:
-                resource: limits.memory
-                divisor: '1'
+            value: {{ include "kubescape-operator.gomemlimit" (dict "memory" .Values.storage.resources.limits.memory "percentage" .Values.storage.gomemlimitPercentage) | quote }}
+          {{- end }}
           - name: KS_LOGGER_LEVEL
             value: "{{ .Values.logger.level }}"
           - name: KS_LOGGER_NAME
@@ -161,6 +154,8 @@ spec:
         volumeMounts:
           - name: "data"
             mountPath: "/data"
+          - name: tmp-dir
+            mountPath: /tmp
           - name: {{ .Values.global.cloudConfig }}
             mountPath: /etc/config/clusterData.json
             readOnly: true
@@ -203,6 +198,8 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+        - name: tmp-dir
+          emptyDir: {}
         - name: {{ .Values.global.cloudConfig }}
           configMap:
             name: {{ .Values.global.cloudConfig }}
@@ -219,10 +216,6 @@ spec:
         {{- if eq (include "kubescape.certificates.strategy" .) "initContainer" }}
         - name: "ca-certificates"
           emptyDir: {}
-        - name: storage-certgen-scripts
-          configMap:
-            name: {{ .Values.storage.name }}-certgen-scripts-{{ include "kubescape.certgen.scriptsHash" . }}
-            defaultMode: 0755
         {{- else }}
         - name: "ca-certificates"
           secret:

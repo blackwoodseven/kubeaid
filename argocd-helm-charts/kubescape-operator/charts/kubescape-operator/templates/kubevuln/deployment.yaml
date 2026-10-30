@@ -34,6 +34,9 @@ spec:
         {{- include "kubescape-operator.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "app" .Values.kubevuln.name "tier" .Values.global.namespaceTier) | nindent 8 }}
         {{- with .Values.kubevuln.podLabels }}{{- toYaml . | nindent 8 }}{{- end }}
         kubescape.io/tier: "core"
+        {{- if and .Values.cloudProviderMetadata.aksWorkloadIdentityClientID (not .Values.cloudProviderMetadata.awsIamRoleArn) (not .Values.cloudProviderMetadata.gkeServiceAccount) }}
+        azure.workload.identity/use: "true"
+        {{- end }}
     spec:
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -179,6 +182,12 @@ spec:
               value: "{{ .Values.logger.level }}"
             - name: KS_LOGGER_NAME
               value: "sbom-scanner"
+            {{- if ne .Values.global.httpsProxy "" }}
+            - name: HTTPS_PROXY
+              value: "{{ .Values.global.httpsProxy }}"
+            - name : no_proxy
+              value: "{{ $no_proxy_envar_list }}"
+            {{- end }}
           volumeMounts:
             - name: sbom-comm
               mountPath: /sbom-comm
@@ -222,7 +231,9 @@ spec:
             secretName: {{ .Values.global.extraCaCertificates.secretName }}
       {{- end }}
         - name: tmp-dir
-          {{- if .Values.kubevuln.tmpDirPersistence.enabled }}
+          {{- if and .Values.kubevuln.tmpDirPersistence.enabled .Values.kubevuln.tmpDirPersistence.ephemeral }}
+          {{- include "kubevuln.ephemeralVolume" .Values.kubevuln.tmpDirPersistence | nindent 10 }}
+          {{- else if .Values.kubevuln.tmpDirPersistence.enabled }}
           persistentVolumeClaim:
             claimName: kubescape-{{ .Values.kubevuln.name }}-tmp
           {{- else }}
@@ -237,7 +248,9 @@ spec:
             - key: "clusterData"
               path: "clusterData.json"
         - name: "grype-db"
-          {{- if .Values.kubevuln.config.grypeDbPersistence }}
+          {{- if .Values.kubevuln.grypeDbEphemeral.enabled }}
+          {{- include "kubevuln.ephemeralVolume" .Values.kubevuln.grypeDbEphemeral | nindent 10 }}
+          {{- else if .Values.kubevuln.config.grypeDbPersistence }}
           persistentVolumeClaim:
             claimName: kubescape-{{ .Values.kubevuln.name }}
           {{- else }}

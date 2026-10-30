@@ -13,8 +13,6 @@ operatorConfig: {{ include (printf "%s/operator/configmap.yaml" $.Template.BaseP
 proxySecret: {{ include (printf "%s/%s/%s" $.Template.BasePath $.Values.global.proxySecretDirectory "proxy-secret.yaml") . | replace .Chart.AppVersion "" | sha256sum }}
 storageConfig: {{ include (printf "%s/storage/configmap.yaml" $.Template.BasePath) . | replace .Chart.AppVersion "" | sha256sum }}
 synchronizerConfig: {{ include (printf "%s/synchronizer/configmap.yaml" $.Template.BasePath) . | replace .Chart.AppVersion "" | sha256sum }}
-admissionCertgenScripts: {{ include (printf "%s/operator/admission-webhook/configmap.yaml" $.Template.BasePath) . | replace .Chart.AppVersion "" | sha256sum }}
-storageCertgenScripts: {{ include (printf "%s/storage/certgen/configmap.yaml" $.Template.BasePath) . | replace .Chart.AppVersion "" | sha256sum }}
 {{- end -}}
 
 
@@ -30,8 +28,6 @@ storageCertgenScripts: {{ include (printf "%s/storage/certgen/configmap.yaml" $.
     {{- fail (printf "nodeAgent.config.extra.backendStorageEnabled must be a bool (true or false), got %s %v" (kindOf $val) $val) -}}
   {{- end -}}
   {{- $backendStorage = $val -}}
-{{- else if eq (index .Values.capabilities "backend-storage" | default "") "enable" -}}
-  {{- $backendStorage = true -}}
 {{- end -}}
 continuousScan: {{ and (eq .Values.capabilities.continuousScan "enable") (not $submit) }}
 createCloudSecret: {{ $createCloudSecret }}
@@ -174,8 +170,8 @@ warnings:
 {{- end }}
 {{- end -}}
 
-{{- define "kubescape.certgen.scriptsHash" -}}
-{{- printf "%s%s" (.Files.Get "scripts/certgen-create.sh") (.Files.Get "scripts/certgen-patch.sh") | sha256sum | trunc 8 -}}
+{{- define "kubescape.commandScripts.name" -}}
+{{- printf "%s-command-scripts" .Values.operator.name -}}
 {{- end }}
 
 {{- define "kubescape.certificates.strategy" -}}
