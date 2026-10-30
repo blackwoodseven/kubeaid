@@ -108,3 +108,12 @@ kyverno:
   # is above 1, and spreads the pods over nodes with a preferred anti-affinity.
   admissionController:
     replicas: 3
+
+  # The policies.kyverno.io CRDs render empty labels and annotations maps when
+  # none are set, which Argo CD shows as a diff on every refresh. These CRDs are
+  # also too big for client-side apply, so the annotation forces server-side apply.
+  kyverno-api:
+    labels:
+      app.kubernetes.io/part-of: kyverno
+    annotations:
+      argocd.argoproj.io/sync-options: ServerSideApply=true
