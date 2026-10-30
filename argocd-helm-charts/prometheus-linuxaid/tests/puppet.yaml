@@ -9,58 +9,60 @@ tests:
     input_series:
       - series: 'puppet_report{host="atat.example",environment="1_0_0"}'
         values: 0x3000
-      - series: 'puppet_status{state="failed",host="atat01.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat01.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat02.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat02.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat03.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat03.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat04.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat04.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat05.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat05.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat06.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat06.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat07.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat07.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat08.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat08.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat09.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat09.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat10.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat10.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat11.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat11.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat12.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat12.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat13.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat13.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat14.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat14.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat15.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat15.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat16.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat16.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat17.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat17.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat18.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat18.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat19.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat19.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat20.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat20.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat21.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat21.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat22.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat22.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat23.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat23.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat24.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat24.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat25.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat25.example",environment="v1_0_0"}'
         values: 1x3000
-      - series: 'puppet_status{state="failed",host="atat26.example",environment="master"}'
+      - series: 'puppet_status{state="failed",host="atat26.example",environment="v1_0_0"}'
         values: 1x3000  # 2 days
+      - series: 'puppet_status{state="failed",host="atat27.example",environment="master"}'
+        values: 1x3000  # not a release environment, must be ignored
 
     alert_rule_test:
       - alertname: 'monitor::system::puppet::last_run'
@@ -91,7 +93,7 @@ tests:
 
                 You can get the list of nodes on prom dashboard by running this query
                 ```sh
-                sum by (host) (puppet_status{environment="master",state="failed"} == 1)
+                sum by (host) (puppet_status{environment=~"v?[0-9]+_[0-9]+_[0-9]+",state="failed"} == 1)
                 ```
 
                 Puppetboard for the corresponding node should show that the past
